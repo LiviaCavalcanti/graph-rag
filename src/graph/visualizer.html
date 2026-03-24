@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPG Visualizer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0d0f12;
+    --surface: #13161b;
+    --surface2: #1a1e25;
+    --border: #252932;
+    --border2: #2e3540;
+    --text: #c9d1e0;
+    --muted: #5a6478;
+    --accent: #4f8ef7;
+
+    --METHOD:    #4f8ef7;
+    --CALL:      #3ecf8e;
+    --IDENTIFIER:#a78bfa;
+    --LITERAL:   #f59e0b;
+    --RETURN:    #f472b6;
+    --BLOCK:     #64748b;
+    --CONTROL_STRUCTURE: #fb923c;
+    --LOCAL:     #2dd4bf;
+    --PARAM:     #e879f9;
+    --UNKNOWN:   #475569;
+
+    --AST:       #4f8ef7;
+    --CFG:       #3ecf8e;
+    --CDG:       #fb923c;
+    --REF:       #a78bfa;
+    --ARGUMENT:  #f59e0b;
+    --EDGE:      #475569;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex: 1;
+  }
+
+  select, input[type=text] {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  select:focus, input[type=text]:focus { border-color: var(--accent); }
+
+  button {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  button:hover { background: var(--border); border-color: var(--accent); color: #fff; }
+
+  .stats {
+    display: flex;
+    gap: 12px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .stat {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .stat span { color: var(--text); font-weight: 500; }
+
+  #file-btn {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 500;
+  }
+  #file-btn:hover { opacity: 0.85; }
+
+  main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    cursor: grab;
+  }
+  #canvas-wrap.grabbing { cursor: grabbing; }
+
+  canvas { display: block; width: 100%; height: 100%; }
+
+  #sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .side-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .side-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 10px;
+  }
+
+  .node-info { font-size: 12px; line-height: 1.8; }
+  .node-info .ni-type {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+  }
+  .node-info .ni-label { color: var(--text); word-break: break-all; margin-bottom: 6px; font-size: 13px; }
+  .node-info .ni-row { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; }
+  .node-info .ni-row span { color: var(--text); }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 5px;
+    cursor: pointer;
+    transition: color 0.1s;
+  }
+  .legend-item:hover { color: var(--text); }
+  .legend-dot {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .legend-edge {
+    width: 18px; height: 2px;
+    flex-shrink: 0;
+    border-radius: 1px;
+  }
+
+  #empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    pointer-events: none;
+  }
+  #empty-state .es-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  #empty-state .es-sub { font-size: 12px; color: #303540; }
+
+  #tooltip {
+    position: absolute;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 11px;
+    pointer-events: none;
+    display: none;
+    max-width: 200px;
+    line-height: 1.7;
+    z-index: 10;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .hint {
+    position: absolute;
+    bottom: 12px;
+    left: 16px;
+    font-size: 10px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    pointer-events: none;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CPG//VIZ</div>
+  <div class="controls">
+    <input type="file" id="file-input" accept=".json" style="display:none">
+    <button id="file-btn" onclick="document.getElementById('file-input').click()">Load graph_viz.json</button>
+    <select id="layout-sel">
+      <option value="force">Force-directed</option>
+      <option value="hierarchical">Hierarchical</option>
+      <option value="circular">Circular</option>
+    </select>
+    <select id="type-filter"><option value="all">All node types</option></select>
+    <select id="edge-filter"><option value="all">All edge types</option></select>
+    <input type="text" id="search" placeholder="Search label…" style="width:140px">
+    <button onclick="resetView()">Reset view</button>
+  </div>
+  <div class="stats">
+    <div class="stat">nodes <span id="s-nodes">—</span></div>
+    <div class="stat">edges <span id="s-edges">—</span></div>
+    <div class="stat">visible <span id="s-vis">—</span></div>
+  </div>
+</header>
+
+<main>
+  <div id="canvas-wrap">
+    <canvas id="canvas"></canvas>
+    <div id="empty-state">
+      <div class="es-title">No graph loaded</div>
+      <div class="es-sub">Click "Load graph_viz.json" to begin</div>
+    </div>
+    <div id="tooltip"></div>
+    <div class="hint">drag · scroll to zoom · click to inspect</div>
+  </div>
+
+  <div id="sidebar">
+    <div class="side-section">
+      <div class="side-title">Selected node</div>
+      <div class="node-info" id="node-info">
+        <div style="font-size:11px;color:var(--muted)">Click a node to inspect</div>
+      </div>
+    </div>
+    <div class="side-section">
+      <div class="side-title">Node types</div>
+      <div id="node-legend"></div>
+    </div>
+    <div class="side-section">
+      <div class="side-title">Edge types</div>
+      <div id="edge-legend"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const wrap = document.getElementById('canvas-wrap');
+
+let allNodes = [], allEdges = [], nodeMap = {};
+let pan = {x: 0, y: 0}, zoom = 1;
+let dragging = null, draggingNode = null, selectedNode = null;
+let simRunning = false, animFrame = null;
+
+const NODE_R = 10;
+
+function nodeColor(type) {
+  return getComputedStyle(document.documentElement).getPropertyValue('--' + type).trim() || '#475569';
+}
+
+function edgeColor(label) {
+  return getComputedStyle(document.documentElement).getPropertyValue('--' + label).trim() || '#475569';
+}
+
+document.getElementById('file-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => loadGraph(JSON.parse(ev.target.result));
+  reader.readAsText(file);
+});
+
+function loadGraph(data) {
+  document.getElementById('empty-state').style.display = 'none';
+
+  allNodes = data.nodes.map(n => ({
+    ...n,
+    x: Math.random() * 1200 + 100,
+    y: Math.random() * 800 + 100,
+    vx: 0, vy: 0,
+  }));
+  allEdges = data.edges;
+  nodeMap = {};
+  allNodes.forEach(n => nodeMap[n.id] = n);
+
+  document.getElementById('s-nodes').textContent = allNodes.length;
+  document.getElementById('s-edges').textContent = allEdges.length;
+
+  const types = [...new Set(allNodes.map(n => n.type))].sort();
+  const etypes = [...new Set(allEdges.map(e => e.label))].sort();
+
+  const tf = document.getElementById('type-filter');
+  tf.innerHTML = '<option value="all">All node types</option>';
+  types.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; tf.appendChild(o); });
+
+  const ef = document.getElementById('edge-filter');
+  ef.innerHTML = '<option value="all">All edge types</option>';
+  etypes.forEach(t => { const o = document.createElement('option'); o.value = t; o.textContent = t; ef.appendChild(o); });
+
+  const nl = document.getElementById('node-legend');
+  nl.innerHTML = types.map(t => `<div class="legend-item" onclick="filterType('${t}')"><div class="legend-dot" style="background:${nodeColor(t)}"></div>${t}</div>`).join('');
+
+  const el = document.getElementById('edge-legend');
+  el.innerHTML = etypes.map(t => `<div class="legend-item"><div class="legend-edge" style="background:${edgeColor(t)}"></div>${t}</div>`).join('');
+
+  pan = {x: wrap.clientWidth / 2, y: wrap.clientHeight / 2};
+  zoom = 0.8;
+
+  simRunning = true;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  runSim();
+}
+
+function filterType(t) {
+  document.getElementById('type-filter').value = t;
+  draw();
+}
+
+function visibleNodes() {
+  const tf = document.getElementById('type-filter').value;
+  const search = document.getElementById('search').value.toLowerCase();
+  return allNodes.filter(n => {
+    if (tf !== 'all' && n.type !== tf) return false;
+    if (search && !n.label.toLowerCase().includes(search)) return false;
+    return true;
+  });
+}
+
+function visibleEdges(visSet) {
+  const ef = document.getElementById('edge-filter').value;
+  return allEdges.filter(e => {
+    if (!visSet.has(e.src) || !visSet.has(e.dst)) return false;
+    if (ef !== 'all' && e.label !== ef) return false;
+    return true;
+  });
+}
+
+function runSim() {
+  if (!simRunning) return;
+  forceStep();
+  draw();
+  animFrame = requestAnimationFrame(runSim);
+}
+
+function forceStep() {
+  const repulse = 3000, k = 80, damp = 0.78;
+  const vis = new Set(visibleNodes().map(n => n.id));
+  const nodes = allNodes.filter(n => vis.has(n.id));
+
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const a = nodes[i], b = nodes[j];
+      const dx = b.x - a.x, dy = b.y - a.y;
+      const d = Math.sqrt(dx*dx + dy*dy) || 1;
+      const f = repulse / (d * d);
+      const fx = f * dx / d, fy = f * dy / d;
+      a.vx -= fx; a.vy -= fy;
+      b.vx += fx; b.vy += fy;
+    }
+  }
+
+  const edgesVis = visibleEdges(vis);
+  edgesVis.forEach(e => {
+    const a = nodeMap[e.src], b = nodeMap[e.dst];
+    if (!a || !b) return;
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const d = Math.sqrt(dx*dx + dy*dy) || 1;
+    const f = (d - k) * 0.04;
+    const fx = f * dx / d, fy = f * dy / d;
+    a.vx += fx; a.vy += fy;
+    b.vx -= fx; b.vy -= fy;
+  });
+
+  nodes.forEach(n => {
+    if (n === draggingNode) return;
+    n.vx *= damp; n.vy *= damp;
+    n.x += n.vx; n.y += n.vy;
+  });
+}
+
+function draw() {
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (!allNodes.length) return;
+
+  const vis = new Set(visibleNodes().map(n => n.id));
+  const edges = visibleEdges(vis);
+  const nodes = allNodes.filter(n => vis.has(n.id));
+
+  document.getElementById('s-vis').textContent = nodes.length;
+
+  ctx.save();
+  ctx.translate(pan.x, pan.y);
+  ctx.scale(zoom, zoom);
+
+  // edges
+  edges.forEach(e => {
+    const a = nodeMap[e.src], b = nodeMap[e.dst];
+    if (!a || !b) return;
+    const isSel = selectedNode && (selectedNode.id === e.src || selectedNode.id === e.dst);
+    const alpha = selectedNode ? (isSel ? 0.85 : 0.06) : 0.25;
+    const col = edgeColor(e.label);
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = col;
+    ctx.lineWidth = isSel ? 1.5 : 0.8;
+    const angle = Math.atan2(b.y - a.y, b.x - a.x);
+    const ex = b.x - (NODE_R + 4) * Math.cos(angle);
+    const ey = b.y - (NODE_R + 4) * Math.sin(angle);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(ex, ey);
+    ctx.stroke();
+    // arrowhead
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    ctx.lineTo(ex - 7*Math.cos(angle-0.4), ey - 7*Math.sin(angle-0.4));
+    ctx.lineTo(ex - 7*Math.cos(angle+0.4), ey - 7*Math.sin(angle+0.4));
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  });
+
+  // nodes
+  nodes.forEach(n => {
+    const isSel = selectedNode && selectedNode.id === n.id;
+    const alpha = selectedNode && !isSel ? 0.3 : 1;
+    ctx.globalAlpha = alpha;
+    const col = nodeColor(n.type);
+    const r = isSel ? NODE_R + 3 : NODE_R;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = col + '28';
+    ctx.fill();
+    ctx.strokeStyle = col;
+    ctx.lineWidth = isSel ? 2 : 1.2;
+    ctx.stroke();
+    // label
+    ctx.fillStyle = col;
+    ctx.font = `${zoom < 0.5 ? 0 : 9}px JetBrains Mono, monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    if (zoom >= 0.5) {
+      const lbl = n.label.length > 14 ? n.label.slice(0, 14) + '…' : n.label;
+      ctx.fillText(lbl, n.x, n.y + r + 3);
+    }
+    ctx.globalAlpha = 1;
+  });
+
+  ctx.restore();
+}
+
+function canvasXY(e) {
+  const r = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - r.left - pan.x) / zoom,
+    y: (e.clientY - r.top - pan.y) / zoom,
+  };
+}
+
+function nodeAt(cx, cy) {
+  return allNodes.find(n => Math.hypot(n.x - cx, n.y - cy) < NODE_R + 4);
+}
+
+canvas.addEventListener('mousedown', e => {
+  const {x, y} = canvasXY(e);
+  const n = nodeAt(x, y);
+  if (n) {
+    draggingNode = n;
+    simRunning = false;
+    selectNode(n);
+  } else {
+    dragging = {sx: e.clientX - pan.x, sy: e.clientY - pan.y};
+    selectedNode = null;
+    clearNodeInfo();
+  }
+  wrap.classList.add('grabbing');
+  draw();
+});
+
+canvas.addEventListener('mousemove', e => {
+  if (draggingNode) {
+    const {x, y} = canvasXY(e);
+    draggingNode.x = x; draggingNode.y = y;
+    draw();
+  } else if (dragging) {
+    pan.x = e.clientX - dragging.sx;
+    pan.y = e.clientY - dragging.sy;
+    draw();
+  } else {
+    const {x, y} = canvasXY(e);
+    const n = nodeAt(x, y);
+    const tip = document.getElementById('tooltip');
+    if (n) {
+      const r = wrap.getBoundingClientRect();
+      tip.style.display = 'block';
+      tip.style.left = (e.clientX - r.left + 14) + 'px';
+      tip.style.top = (e.clientY - r.top + 14) + 'px';
+      tip.style.color = nodeColor(n.type);
+      tip.textContent = n.type + ' · ' + n.label;
+    } else {
+      tip.style.display = 'none';
+    }
+  }
+});
+
+canvas.addEventListener('mouseup', () => {
+  dragging = null; draggingNode = null;
+  wrap.classList.remove('grabbing');
+});
+canvas.addEventListener('mouseleave', () => {
+  dragging = null; draggingNode = null;
+  document.getElementById('tooltip').style.display = 'none';
+  wrap.classList.remove('grabbing');
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = e.deltaY > 0 ? 0.9 : 1.11;
+  zoom = Math.max(0.1, Math.min(5, zoom * factor));
+  if (!simRunning) draw();
+}, {passive: false});
+
+function selectNode(n) {
+  selectedNode = n;
+  const inE  = allEdges.filter(e => e.dst === n.id);
+  const outE = allEdges.filter(e => e.src === n.id);
+  const col = nodeColor(n.type);
+  document.getElementById('node-info').innerHTML = `
+    <div class="ni-type" style="background:${col}22;color:${col}">${n.type}</div>
+    <div class="ni-label">${n.label}</div>
+    <div class="ni-row">in edges <span>${inE.length}</span></div>
+    <div class="ni-row">out edges <span>${outE.length}</span></div>
+    <div class="ni-row">edge types <span style="font-size:10px">${[...new Set([...inE,...outE].map(e=>e.label))].join(', ')}</span></div>
+    <div class="ni-row">id <span style="font-size:10px;word-break:break-all">${n.id}</span></div>
+  `;
+}
+
+function clearNodeInfo() {
+  document.getElementById('node-info').innerHTML = '<div style="font-size:11px;color:var(--muted)">Click a node to inspect</div>';
+}
+
+function resetView() {
+  pan = {x: wrap.clientWidth / 2, y: wrap.clientHeight / 2};
+  zoom = 0.8;
+  if (!simRunning) draw();
+}
+
+document.getElementById('layout-sel').addEventListener('change', e => {
+  const v = e.target.value;
+  if (v === 'hierarchical') { hierarchicalLayout(); simRunning = false; draw(); }
+  else if (v === 'circular') { circularLayout(); simRunning = false; draw(); }
+  else { allNodes.forEach(n => { n.vx = (Math.random()-0.5)*10; n.vy = (Math.random()-0.5)*10; }); simRunning = true; runSim(); }
+});
+
+document.getElementById('type-filter').addEventListener('change', () => { if (!simRunning) draw(); });
+document.getElementById('edge-filter').addEventListener('change', () => { if (!simRunning) draw(); });
+document.getElementById('search').addEventListener('input', () => { if (!simRunning) draw(); });
+
+function hierarchicalLayout() {
+  const layers = {};
+  allNodes.forEach(n => layers[n.id] = undefined);
+  const roots = allNodes.filter(n => !allEdges.some(e => e.dst === n.id));
+  roots.forEach(n => layers[n.id] = 0);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    allEdges.forEach(e => {
+      if (layers[e.src] !== undefined) {
+        const nl = layers[e.src] + 1;
+        if (layers[e.dst] === undefined || layers[e.dst] < nl) { layers[e.dst] = nl; changed = true; }
+      }
+    });
+  }
+  allNodes.forEach(n => { if (layers[n.id] === undefined) layers[n.id] = 0; });
+  const maxL = Math.max(...Object.values(layers));
+  const byLayer = {};
+  allNodes.forEach(n => { const l = layers[n.id]; byLayer[l] = byLayer[l] || []; byLayer[l].push(n); });
+  for (let l = 0; l <= maxL; l++) {
+    const arr = byLayer[l] || [];
+    arr.forEach((n, i) => {
+      n.x = (i + 1) * (1400 / (arr.length + 1));
+      n.y = (l + 1) * (900 / (maxL + 2));
+    });
+  }
+}
+
+function circularLayout() {
+  const cx = 700, cy = 500, r = 400;
+  allNodes.forEach((n, i) => {
+    const a = (i / allNodes.length) * Math.PI * 2 - Math.PI / 2;
+    n.x = cx + r * Math.cos(a);
+    n.y = cy + r * Math.sin(a);
+  });
+}
+
+window.addEventListener('resize', () => { if (!simRunning) draw(); });
+</script>
+</body>
+</html>
