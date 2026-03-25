@@ -117,26 +117,35 @@ def export_graph_json(G, out_path="graph_viz.json"):
     print(f"Exported {len(nodes)} nodes, {len(edges)} edges → {out_path}")
 
 
-# --- Execution Workflow ---
-# CHANGE THIS: Use the WSL mount path and forward slashes
-JOERN_BIN_DIR = "/home/z0050s2b/bin/joern/joern-cli"
-source_dir = "test_input.c"
-cpg_file = "entry_1.bin"
-graphml_out = "entry_1_graphml"
+def get_cpg(joern_bin_dir, source_file, out_dir="cpg", export_for_visualization=False):
+    """
+    Execute the code2CPG for 1 file
+    """
+    cpg_file = os.path.join(out_dir, f"{source_file}.bin")
+    graphml_out = os.path.join(out_dir, f"{source_file}_cpg_graphml")
 
-generator = CPGGenerator(JOERN_BIN_DIR)
+    generator = CPGGenerator(JOERN_BIN_DIR)
 
-# 1. Create the CPG
-generator.generate_cpg(source_dir, cpg_file)
+    # 1. Create the CPG using joern cmd
+    generator.generate_cpg(source_dir, cpg_file)
 
-# 2. Export it so Python can read it
-generator.export_to_graphml(cpg_file, graphml_out)
+    # 2. Export it so Python can read it
+    generator.export_to_graphml(cpg_file, graphml_out)
 
-# 3. Manipulate via NetworkX
-# Note: joern-export creates a directory of files; you'd point to the specific export
-graph = manipulate_graph(f"{graphml_out}")
+    # 3. Manipulate via NetworkX
+    graph = manipulate_graph(f"{graphml_out}")
 
-export_graph_json(graph, "graph_viz.json")
+    if export_for_visualization:
+        # use the html file to visualize it
+        export_graph_json(graph, "graph_viz.json")
 
-# 4. Save to a simple output file (GraphML is great for visualization tools like Gephi)
-nx.write_graphml(graph, "final_cpg.graphml")
+        # 4. Save to a simple output file (GraphML is great for visualization tools like Gephi)
+        nx.write_graphml(graph, "final_cpg.graphml")
+    return graph
+
+
+if __name__ == "__main__":
+    JOERN_BIN_DIR = "/home/z0050s2b/bin/joern/joern-cli"
+    source_dir = "test_input.c"
+
+    get_cpg(JOERN_BIN_DIR, source_dir)
