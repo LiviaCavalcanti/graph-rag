@@ -53,6 +53,7 @@ dependencies = [
     { name = "black" },
     { name = "isort" },
     { name = "networkx" },
+    { name = "numpy" },
     { name = "rustworkx" },
 ]
 
@@ -61,6 +62,7 @@ requires-dist = [
     { name = "black", specifier = ">=26.3.1" },
     { name = "isort", specifier = ">=8.0.1" },
     { name = "networkx", specifier = ">=3.6.1" },
+    { name = "numpy", specifier = ">=2.4.3" },
     { name = "rustworkx", specifier = ">=0.17.1" },
 ]
 
