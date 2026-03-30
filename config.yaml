@@ -1,0 +1,26 @@
+data:
+  autopatch:
+    path:
+joern:
+  export_root:
+  joern_root:
+graph:
+  node_types:
+    - METHOD
+    - METHOD_PARAMETER_IN
+    - BLOCK
+    - LOCAL
+    - CALL
+    - IDENTIFIER
+    - LITERAL
+    - RETURN
+    - CONTROL_STRUCTURE
+    - FIELD_IDENTIFIER
+    - UNKNOWN
+  edge_types:
+    - AST
+    - CFG
+    - CDG
+    - REF
+    - ARGUMENT
+    - RECEIVER
