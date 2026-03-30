@@ -48,7 +48,7 @@ class CPGGenerator:
 
 
 def manipulate_graph(graphml_dir):
-    # Find all the Joern exported each function in every directory
+    # Find all the Joern exported: each function is a directory
     # each generated file is named export.xml/
     export_files = glob.glob(
         os.path.join(graphml_dir, "**", "export.xml"), recursive=True
@@ -81,8 +81,6 @@ def manipulate_graph(graphml_dir):
     print(f"Loaded {len(export_files) - len(failed)}/{len(export_files)} graphs")
     print(f"Total — Nodes: {len(G.nodes)}, Edges: {len(G.edges)}")
     return G
-
-    import json
 
 
 def export_graph_json(G, out_path="graph_viz.json"):
@@ -124,7 +122,7 @@ def get_cpg(joern_bin_dir, source_file, out_dir="cpg", export_for_visualization=
     cpg_file = os.path.join(out_dir, f"{source_file}.bin")
     graphml_out = os.path.join(out_dir, f"{source_file}_cpg_graphml")
 
-    generator = CPGGenerator(JOERN_BIN_DIR)
+    generator = CPGGenerator(joern_bin_dir)
 
     # 1. Create the CPG using joern cmd
     generator.generate_cpg(source_dir, cpg_file)
@@ -145,6 +143,7 @@ def get_cpg(joern_bin_dir, source_file, out_dir="cpg", export_for_visualization=
 
 
 if __name__ == "__main__":
+    # TODO: remove my path
     JOERN_BIN_DIR = "/home/z0050s2b/bin/joern/joern-cli"
     source_dir = "test_input.c"
 
