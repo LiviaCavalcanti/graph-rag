@@ -1,7 +1,8 @@
 import yaml
 import argparse
+from data.autopatch import AutoPatchDataset
 
-DATASETS = ["autopatch", 'cvefixes']
+DATASETS = {"autopatch": AutoPatchDataset, 'cvefixes': None}
 
 def main(cfg):
     active_datasets = [name for name in DATASETS if cfg['data'].get(name)]
@@ -9,6 +10,7 @@ def main(cfg):
         ds_cfg = cfg['data'][ds_name]
         # instantiate the dataset class with the config params
         dataset = DATASETS[ds_name](ds_cfg)
+        print(f"-----------{dataset.name()}-----------")
     print("Hello from graph-rag!")
 
 
