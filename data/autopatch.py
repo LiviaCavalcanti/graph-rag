@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 from typing import Iterator
 import glob
 import os
@@ -21,17 +23,35 @@ class AutoPatchDataset(BaseDataset):
         return "AutoPatch"
     
     def _variants_to_use(self) -> list[tuple[str, str]]:
-        if self.config.get('include_variants', False):
+        if self.cfg.get('include_variants', False):
             return _VARIANTS + [_ORIGINAL_VARIANT]
         else:
             return [_ORIGINAL_VARIANT]
     
-    def _load_files(self):
-        datset_path = self.config["path"]
-        glob.glob(
-        os.path.join(datset_path, "**", "export.xml"), recursive=True
-    )
+    def _load_db_entry(self, cve_dir: Path):
+        db_path = cve_dir / 'out_v2' / 'db_entry.json'
+        if not db_path.exists():
+            return None
+        try:
+            return json.loads(db_path.read_text())
+        except json.JSONDecoderError:
+            return None
+     
 
     def stream(self) -> Iterator[FunctionPair]:
+        dataset_path = Path(self.cfg["path"])
+        print()
+        files_to_use = self._variants_to_use()
 
-        ...
+        for cve_dir in sorted(dataset_path.iterdir()):
+            print(cve_dir)
+            db = self._load_db_entry(cve_dir)
+            cve_id    = str(db.get('cve_id', cve_dir.name))
+            cwe_id    = str(db.get('cwe_type', ''))
+            func_name = str(db.get('function_name', ''))
+
+            yield FunctionPair(
+                cve_id    = cve_id,
+                func_name = func_name,
+            )
+        
