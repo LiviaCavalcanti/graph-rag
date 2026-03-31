@@ -3,11 +3,23 @@ name = "graph-rag"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "black>=26.3.1",
     "isort>=8.0.1",
     "networkx>=3.6.1",
     "numpy>=2.4.3",
+    "pyyaml>=6.0.3",
     "rustworkx>=0.17.1",
+    "scatter>=0.1.4",
+    "torch>=2.11.0",
+    "torch-geometric>=2.7.0",
 ]
+
+
+[tool.uv.extra-build-dependencies]
+torch-scatter = ["torch", "setuptools"]
+torch-sparse = ["torch", "setuptools"]
+torch-cluster = ["torch", "setuptools"]
+torch-spline-conv = ["torch", "setuptools"]
+pyg-lib = ["torch", "setuptools"]
