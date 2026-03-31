@@ -1,6 +1,7 @@
 data:
   autopatch:
-    path:
+    path: data_raw/CVE-list
+    add_variants: false
 joern:
   export_root:
   joern_root:
