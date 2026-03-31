@@ -1,6 +1,7 @@
 data:
   autopatch:
-    path: data_raw/CVE-list
+    path: CVE-list
+    graphml_root: graphml
     add_variants: false
 joern:
   export_root:
