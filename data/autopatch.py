@@ -43,11 +43,10 @@ class AutoPatchDataset(BaseDataset):
             return None
 
     def _make_pair(
-        self, cve_id: str, func_name: str, variant: str, meta: dict
+        self, root: str, cve_id: str, func_name: str, variant: str, meta: dict
     ) -> FunctionPair | None:
-        G_before = load_function_graph(func_name, cve_id, hint=variant)
-
-        G_after = load_function_graph(func_name, cve_id, hint=variant)
+        G_before = load_function_graph(root, version='before', func_name=func_name, cve_id=cve_id, hint=variant)
+        G_after = load_function_graph(root, version='after', func_name=func_name, cve_id=cve_id, hint=variant)
 
         if G_before is None and G_after is None:
             return None
@@ -75,7 +74,7 @@ class AutoPatchDataset(BaseDataset):
 
     def stream(self) -> Iterator[FunctionPair]:
         dataset_path = Path(self.cfg["path"])
-        files_to_use = self._variants_to_use()
+        root = self.cfg['graphml_root']
 
         for cve_dir in sorted(dataset_path.iterdir()):
             print(cve_dir)
@@ -98,6 +97,7 @@ class AutoPatchDataset(BaseDataset):
 
             if original_code_path.exists() and original_fixed_path.exists():
                 pair = self._make_pair(
+                    root,
                     cve_id,
                     func_name,
                     variant="original",
@@ -114,7 +114,9 @@ class AutoPatchDataset(BaseDataset):
                         **base_meta,
                     },
                 )
+                print(f"{pair}\n ------------------------\n\n\n")
                 if pair is not None:
+                    print(f"{pair}\n ------------------------")
                     yield pair
 
             # augmented data
@@ -132,6 +134,7 @@ class AutoPatchDataset(BaseDataset):
                                 variant_name = json_file.replace(".json", "")
 
                                 pair = self._make_pair(
+                                    root,
                                     cve_id,
                                     func_name,
                                     meta={
