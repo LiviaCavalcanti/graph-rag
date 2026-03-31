@@ -8,9 +8,11 @@ class FunctionPair:
     """
     Canonical dataset loader.
     """
+
     cve_id: str
     func_name: str
     meta: dict = field(default_factory=dict)
+
 
 class BaseDataset(ABC):
 
