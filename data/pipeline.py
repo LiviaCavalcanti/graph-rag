@@ -15,7 +15,11 @@ def load_single_graph(export_xml_path: str) -> nx.MultiDiGraph | None:
 
 
 def load_function_graph(
-    graphml_root, cve_id, version, func_name
+    graphml_root: str,
+    cve_id: str,
+    version: str,
+    func_name: str,
+    hint: str | None = None,
 ) -> nx.MultiDiGraph | None:
     patterns = [
         str(Path(graphml_root) / f"*{cve_id}*{version}*" / "**" / f"{func_name}.xml"),
@@ -28,8 +32,14 @@ def load_function_graph(
         ),
         str(Path(graphml_root) / "**" / f"{func_name}.xml" / "export.xml"),
     ]
+
+    if hint:
+        patterns.append(str(Path(graphml_root) / cve_id / hint / version / "**" / f"{func_name}.xml" / "export.xml"))
+
+    
     for pattern in patterns:
         matches = glob.glob(pattern, recursive=True)
+        print(f"matches: {matches}")
         if matches:
             return load_single_graph(matches[0])
 
