@@ -26,3 +26,13 @@ graph:
     - REF
     - ARGUMENT
     - RECEIVER
+embeddings:
+  active: [netlsd]
+  dim: 128
+  netlsd:
+    timescales: 128
+rag:
+  index_path: rag/faiss.index
+  metadata_path: rag/metadata.json
+  top_k: 5
+  embedding_variant: netlsd
