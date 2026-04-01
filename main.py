@@ -24,7 +24,7 @@ def _process_job(job: ExportJob, joern_bin_dir: str):
     graph_folder = out_dir / "graph"
 
     try:
-        write_c_file(job.source_code, c_file)
+        write_c_file(job.source_code, c_file, supplementary_code=job.supplementary_code)
     except Exception as e:
         return False, f"write failed {job.cve_id}: {e}"
 
@@ -83,7 +83,6 @@ def main(cfg):
         for pair in dataset.stream():
             try:
                 emb = indexer.embed_one(pair.G_vuln)
-                print("Returned the embedding: ", emb)
                 # index.add(pair, emb, variant) index to RAG
                 total += 1
                 if total % 5 == 0:
