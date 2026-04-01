@@ -1,3 +1,4 @@
+import subprocess
 import glob
 import tempfile
 import textwrap
@@ -127,4 +128,44 @@ def write_c_file(source_code: str, dest_path: Path) -> Path:
     dest_path.write_text(scaffold)
     return dest_path
 
-def run_joern_export():...
+
+def run_joern_export(
+    joern_bir_dir: str, source_file: str, out_dir: str, graph_dir: str
+) -> bool:
+    joern_bin = Path(joern_bir_dir)
+    source = Path(source_file)
+    out = Path(out_dir)
+    graph_out = Path(graph_dir)
+    cpg_file = out / "cpg.bin"
+
+    out.mkdir(parents=True, exist_ok=True)
+
+    parse_cmd = [
+        str(joern_bin / "joern-parse"),
+        str(source),
+        "--output",
+        str(cpg_file),
+    ]
+
+    result = subprocess.run(parse_cmd, capture_output=True, text=True, timeout=120)
+    if result.returncode != 0:
+        return False
+    export_cmd = [
+        str(joern_bin / "joern-export"),
+        "--repr",
+        "cpg",
+        "--format",
+        "graphml",
+        str(cpg_file),
+        "--out",
+        str(graph_out),
+    ]
+
+    result = subprocess.run(
+        export_cmd,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+
+    return result.returncode == 0
