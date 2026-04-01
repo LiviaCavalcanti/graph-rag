@@ -1,8 +1,11 @@
 import json
 from pathlib import Path
 from typing import Iterator
-from .base import BaseDataset, FunctionPair
-from .pipeline import load_function_graph, compute_graph_diff
+
+from graph.joern_graph import get_cpg
+
+from .base import BaseDataset, FunctionPair, ExportJob
+from .pipeline import compute_graph_diff, load_function_graph
 
 # augmented versions
 _VARIANTS = [
@@ -45,8 +48,12 @@ class AutoPatchDataset(BaseDataset):
     def _make_pair(
         self, root: str, cve_id: str, func_name: str, variant: str, meta: dict
     ) -> FunctionPair | None:
-        G_before = load_function_graph(root, version='before', func_name=func_name, cve_id=cve_id, hint=variant)
-        G_after = load_function_graph(root, version='after', func_name=func_name, cve_id=cve_id, hint=variant)
+        G_before = load_function_graph(
+            root, version="before", func_name=func_name, cve_id=cve_id, hint=variant
+        )
+        G_after = load_function_graph(
+            root, version="after", func_name=func_name, cve_id=cve_id, hint=variant
+        )
 
         if G_before is None and G_after is None:
             return None
@@ -74,7 +81,7 @@ class AutoPatchDataset(BaseDataset):
 
     def stream(self) -> Iterator[FunctionPair]:
         dataset_path = Path(self.cfg["path"])
-        root = self.cfg['graphml_root']
+        root = self.cfg["graphml_root"]
 
         for cve_dir in sorted(dataset_path.iterdir()):
             print(cve_dir)
@@ -152,3 +159,75 @@ class AutoPatchDataset(BaseDataset):
                                 )
 
                                 yield pair
+
+    def export_jobs(self, graphml_root: str) -> Iterator[ExportJob]:
+        root = Path(self.cfg["root"])
+        variants = self._variants_to_use()
+
+        for cve_dir in sorted(root.iterdir()):
+            if not cve_dir.is_dir():
+                continue
+            db = self._load_db_entry(cve_dir=cve_dir)
+            if db is None:
+                continue
+
+            cve_id = str(db.get("cve_id", cve_dir.name))
+            func_name = str(db.get("function_name", ""))
+            base = Path(graphml_root) / cve_id
+
+            before_path = cve_dir / "original_code.txt"
+            after_path = cve_dir / "original_code_fixed.txt"
+
+            if before_path.exists() and after_path.exists():
+                yield ExportJob(
+                    cve_id=cve_id,
+                    func_name=func_name,
+                    variant="original",
+                    source_code=before_path.read_text(),
+                    version="before",
+                    out_dir=str(base / "original" / "before"),
+                )
+
+                yield ExportJob(
+                    cve_id=cve_id,
+                    func_name=func_name,
+                    variant="original",
+                    source_code=after_path.read_text(),
+                    version="after",
+                    out_dir=str(base / "original" / "after"),
+                )
+
+                if self.cfg.get("include_variants", False):
+                    code_dir = cve_dir / "out_v2" / "code"
+                    if code_dir.exists():
+                        for json_file, fixed_c_file in variants:
+                            variant_data = self._load_variant_json(
+                                code_dir=code_dir, json_file=json_file
+                            )
+
+                            if variant_data is not None and not variant_data.get(
+                                "is_vulnerable", False
+                            ):
+                                fixed_c_path = code_dir / fixed_c_file
+
+                                if fixed_c_file.exists():
+                                    variant_name = json_file.replace(".json", "")
+
+                                    yield ExportJob(
+                                        cve_id=cve_id,
+                                        func_name=func_name,
+                                        variant="augmented",
+                                        version="before",
+                                        source_code=variant_data.get(
+                                            "re_implemented_code", ""
+                                        ),
+                                        out_dir=str(base / variant_name / "before"),
+                                    )
+                                    yield ExportJob(
+                                        cve_id=cve_id,
+                                        func_name=func_name,
+                                        variant="augmented",
+                                        version="after",
+                                        source_code=fixed_c_path.read_text(),
+                                        out_dir=str(base / variant_name / "after"),
+                                    )
