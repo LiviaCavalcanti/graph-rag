@@ -81,7 +81,7 @@ class AutoPatchDataset(BaseDataset):
             return None
 
     def stream(self) -> Iterator[FunctionPair]:
-        dataset_path = Path(self.cfg["path"])
+        dataset_path = Path(self.cfg["root"])
         root = self.cfg["graphml_root"]
 
         for cve_dir in sorted(dataset_path.iterdir()):
@@ -175,13 +175,13 @@ class AutoPatchDataset(BaseDataset):
             db = self._load_db_entry(cve_dir=cve_dir)
             if db is None:
                 continue
-
+            
             cve_id = str(db.get("cve_id", cve_dir.name))
             func_name = str(db.get("function_name", ""))
             base = Path(graphml_root) / cve_id
 
             before_path = cve_dir / "original_code.txt"
-            after_path = cve_dir / "original_code_fixed.txt"
+            after_path = cve_dir / "original_code_fixed.c"
 
             if before_path.exists() and after_path.exists():
                 yield ExportJob(
