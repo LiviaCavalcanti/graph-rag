@@ -20,5 +20,5 @@ class NetLSDEmbedder(BaseEmbedder):
         desc = netlsd.heat(H, timescales=timescales)
         desc = desc.astype(np.float32)
 
-        norm = np.linala.norm(desc)
+        norm = np.linalg.norm(desc)
         return desc / (norm + 1e-8)
