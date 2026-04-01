@@ -2,6 +2,14 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Iterator
 
+@dataclass
+class ExportJob:
+    cve_id: str
+    func_name: str
+    variant: str    # original, augmented (autopatch)
+    version: str    # before(vulnerable), after(patched) 
+    source_code: str
+    out_dir: str    # final detination for export.xml
 
 @dataclass
 class FunctionPair:
