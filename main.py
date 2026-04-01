@@ -1,17 +1,37 @@
 import argparse
 from functools import partial
 from multiprocessing import Pool, cpu_count
+from pathlib import Path
 
 import yaml
 
 from data.autopatch import AutoPatchDataset
 from data.base import ExportJob
+from data.pipeline import run_joern_export, write_c_file
 from src.embeddings import build_embedders
 
 DATASETS = {"autopatch": AutoPatchDataset, "cvefixes": None}
 
 
-def _process_job(job: ExportJob, joern_bin_dir: str): ...
+def _process_job(job: ExportJob, joern_bin_dir: str):
+    out_dir = Path(job.out_dir)
+    existing = list(out_dir.glob("**/export.xml"))
+    if existing:
+        return True, f"skip {job.cve_id}/{job.variant}/{job.version} already exists"
+
+    c_file = out_dir / f"{job.func_name or 'function'}.c"
+
+    try:
+        write_c_file(job.source_code, c_file)
+    except Exception as e:
+        return False, f"write failed {job.cve_id}: {e}"
+
+    success = run_joern_export(joern_bin_dir, str(c_file), str(out_dir))
+    label = f"{job.cve_id}/{job.variant}/{job.version}"
+
+    return success, f"{'ok' if success else 'FAIL'} {label}"
+
+
 def run_export(cfg: str, dataset_name: str | None = None):
     joern_bin_dir = cfg["joern"]["bin_dir"]
     workers = cfg["joern"].get("workers", max(1, cpu_count() - 1))
