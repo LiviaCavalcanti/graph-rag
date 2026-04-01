@@ -29,6 +29,18 @@ def run_export(cfg: str, dataset_name: str | None = None):
 
         worker_fn = partial(_process_job, joern_bin_dir=joern_bin_dir)
 
+        ok = fail = skipped = 0
+        with Pool(processes=workers) as pool:
+            for success, msg in pool.imap_unordered(worker_fn, jobs, chunksize=4):
+                if "skip" in msg:
+                    skipped += 1
+                elif "fail" in msg:
+                    fail += 1
+                    print(f" {msg} \n")
+                else:
+                    ok += 1
+        print(f"Done \n    ok: {ok}  -  skipped: {skipped}  -  fail: {fail}")
+
 
 def main(cfg):
     active_datasets = [name for name in DATASETS if cfg["data"].get(name)]
