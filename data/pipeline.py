@@ -1,5 +1,8 @@
 import glob
 from pathlib import Path
+import glob
+import tempfile
+import textwrap
 
 import networkx as nx
 
@@ -93,3 +96,34 @@ def compute_graph_diff(
                 G_vuln.nodes[n]["diff"] = "context"
 
     return G_vuln
+
+def write_c_file(source_code: str, dest_path: Path) -> Path:
+    """
+    Write raw source (function snippet or full file) to a .c file.
+    Wraps in a minimal compilable scaffold if it looks like a bare function.
+    """
+    stripped = source_code.strip()
+
+    # strip markdown code fences if present (AutoPatch LLM outputs)
+    if stripped.startswith('```'):
+        lines = stripped.splitlines()
+        stripped = '\n'.join(
+            l for l in lines
+            if not l.strip().startswith('```')
+        ).strip()
+
+    # minimal scaffold so Joern can parse without errors
+    scaffold = textwrap.dedent("""\
+        /* auto-generated wrapper for Joern CPG export */
+        typedef unsigned int u32;
+        typedef int bool;
+        #define NULL ((void*)0)
+        #define false 0
+        #define true 1
+
+        {code}
+    """).format(code=stripped)
+
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
+    dest_path.write_text(scaffold)
+    return dest_path
