@@ -11,7 +11,6 @@ class NetLSDEmbedder(BaseEmbedder):
         return "netlsd"
 
     def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
-        print(f"so it is in the embed {G}")
         if G.number_of_nodes() == 0:
             return np.zeros(self.dim, dtype=np.float32)
 
