@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-import numpy as np
+
 import networkx as nx
+import numpy as np
 
 
 class BaseEmbedder(ABC):
