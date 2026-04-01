@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Iterator
+import networkx as nx
 
 
 @dataclass
@@ -22,6 +23,10 @@ class FunctionPair:
     cve_id: str
     func_name: str
     meta: dict = field(default_factory=dict)
+    G_before: nx.MultiDiGraph
+    G_after: nx.MultiDiGraph
+    G_vuln: nx.MultiDiGraph
+    project: str
 
 
 class BaseDataset(ABC):
