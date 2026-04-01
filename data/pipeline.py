@@ -1,5 +1,6 @@
 import glob
 from pathlib import Path
+
 import networkx as nx
 
 
@@ -34,9 +35,18 @@ def load_function_graph(
     ]
 
     if hint:
-        patterns.append(str(Path(graphml_root) / cve_id / hint / version / "**" / f"{func_name}.xml" / "export.xml"))
+        patterns.append(
+            str(
+                Path(graphml_root)
+                / cve_id
+                / hint
+                / version
+                / "**"
+                / f"{func_name}.xml"
+                / "export.xml"
+            )
+        )
 
-    
     for pattern in patterns:
         matches = glob.glob(pattern, recursive=True)
         print(f"matches: {matches}")
