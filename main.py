@@ -17,16 +17,20 @@ def _process_job(job: ExportJob, joern_bin_dir: str):
     out_dir = Path(job.out_dir)
     existing = list(out_dir.glob("**/export.xml"))
     if existing:
+        print(f"skip {job.cve_id}/{job.variant}/{job.version} already exists")
         return True, f"skip {job.cve_id}/{job.variant}/{job.version} already exists"
 
     c_file = out_dir / f"{job.func_name or 'function'}.c"
+    graph_folder = out_dir / "graph"
 
     try:
         write_c_file(job.source_code, c_file)
     except Exception as e:
         return False, f"write failed {job.cve_id}: {e}"
 
-    success = run_joern_export(joern_bin_dir, str(c_file), str(out_dir))
+    success = run_joern_export(
+        joern_bin_dir, str(c_file), str(out_dir), str(graph_folder)
+    )
     label = f"{job.cve_id}/{job.variant}/{job.version}"
 
     return success, f"{'ok' if success else 'FAIL'} {label}"
@@ -54,7 +58,7 @@ def run_export(cfg: str, dataset_name: str | None = None):
             for success, msg in pool.imap_unordered(worker_fn, jobs, chunksize=4):
                 if "skip" in msg:
                     skipped += 1
-                elif "fail" in msg:
+                elif "fail" in msg.lower():
                     fail += 1
                     print(f" {msg} \n")
                 else:
@@ -77,7 +81,6 @@ def main(cfg):
         print(f"-----------{dataset.name()}-----------")
 
         for pair in dataset.stream():
-            print(pair)
             try:
                 emb = indexer.embed_one(pair.G_vuln)
                 print("Returned the embedding: ", emb)
@@ -94,7 +97,9 @@ def main(cfg):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="config.yaml")
-    parser.add_argument("--mode", choices=["index", "query", "export"], default="export")
+    parser.add_argument(
+        "--mode", choices=["index", "query", "export"], default="export"
+    )
     parser.add_argument("--dataset", choices=["autopatch"], default="autopatch")
 
     args = parser.parse_args()
