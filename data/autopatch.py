@@ -86,7 +86,6 @@ class AutoPatchDataset(BaseDataset):
         root = self.cfg["graphml_root"]
 
         for cve_dir in sorted(dataset_path.iterdir()):
-            print(cve_dir)
             db = self._load_db_entry(cve_dir)
             if db is None:
                 continue
@@ -181,13 +180,15 @@ class AutoPatchDataset(BaseDataset):
 
             before_path = cve_dir / "original_code.txt"
             after_path = cve_dir / "original_code_fixed.c"
+            supp_path = cve_dir / 'supplementary_code.txt'
 
             if before_path.exists() and after_path.exists():
                 yield ExportJob(
                     cve_id=cve_id,
                     func_name=func_name,
                     variant="original",
-                    source_code=before_path.read_text(),
+                    source_code=before_path.read_text(encoding='utf-8', errors='replace'),
+                    supplementary_code=supp_path,
                     version="before",
                     out_dir=str(base / "original" / "before"),
                 )
@@ -196,7 +197,8 @@ class AutoPatchDataset(BaseDataset):
                     cve_id=cve_id,
                     func_name=func_name,
                     variant="original",
-                    source_code=after_path.read_text(),
+                    source_code=after_path.read_text(encoding='utf-8', errors='replace'),
+                    supplementary_code=supp_path,
                     version="after",
                     out_dir=str(base / "original" / "after"),
                 )
