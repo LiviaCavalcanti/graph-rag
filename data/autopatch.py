@@ -5,7 +5,7 @@ from typing import Iterator
 from src.graph.joern_graph import get_cpg
 
 from .base import BaseDataset, ExportJob, FunctionPair
-from .pipeline import compute_graph_diff, load_function_graph
+from .pipeline import compute_graph_diff, load_cpg_dir, cpg_dir_for
 
 # augmented versions
 _VARIANTS = [
@@ -49,12 +49,12 @@ class AutoPatchDataset(BaseDataset):
     def _make_pair(
         self, root: str, cve_id: str, func_name: str, variant: str, meta: dict
     ) -> FunctionPair | None:
-        G_before = load_function_graph(
-            root, version="before", func_name=func_name, cve_id=cve_id, hint=variant
-        )
-        G_after = load_function_graph(
-            root, version="after", func_name=func_name, cve_id=cve_id, hint=variant
-        )
+        G_before = load_cpg_dir(cpg_dir_for(
+            root, version="before", cve_id=cve_id, variant=variant
+        ))
+        G_after = load_cpg_dir(cpg_dir_for(
+            root, version="after", cve_id=cve_id, variant=variant
+        ))
 
         if G_before is None or G_after is None:
             print(f'One of the graphs returned none for the CVE ID {cve_id}')
