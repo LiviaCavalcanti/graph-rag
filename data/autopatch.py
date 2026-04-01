@@ -56,7 +56,8 @@ class AutoPatchDataset(BaseDataset):
             root, version="after", func_name=func_name, cve_id=cve_id, hint=variant
         )
 
-        if G_before is None and G_after is None:
+        if G_before is None or G_after is None:
+            print(f'One of the graphs returned none for the CVE ID {cve_id}')
             return None
         if G_before.number_of_nodes() == 0 or G_after.number_of_nodes() == 0:
             return None
@@ -122,9 +123,7 @@ class AutoPatchDataset(BaseDataset):
                         **base_meta,
                     },
                 )
-                print(f"{pair}\n ------------------------\n\n\n")
                 if pair is not None:
-                    print(f"{pair}\n ------------------------")
                     yield pair
 
             # augmented data
