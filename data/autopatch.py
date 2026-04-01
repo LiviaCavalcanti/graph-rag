@@ -2,9 +2,9 @@ import json
 from pathlib import Path
 from typing import Iterator
 
-from graph.joern_graph import get_cpg
+from src.graph.joern_graph import get_cpg
 
-from .base import BaseDataset, FunctionPair, ExportJob
+from .base import BaseDataset, ExportJob, FunctionPair
 from .pipeline import compute_graph_diff, load_function_graph
 
 # augmented versions
@@ -18,6 +18,7 @@ _VARIANTS = [
     ("re_implemented_o3-mini.json", "re_implemented_o3-mini_fixed.c"),
 ]
 
+_ORIGINAL_VARIANT = ('augmented.json', 'augmented_fixed.c')
 
 class AutoPatchDataset(BaseDataset):
     """
@@ -159,7 +160,11 @@ class AutoPatchDataset(BaseDataset):
                                 )
 
                                 yield pair
-
+    def _variants_to_use(self) -> list[tuple[str, str]]:
+        if self.cfg.get('include_variants', False):
+            return _VARIANTS
+        return [_ORIGINAL_VARIANT]
+    
     def export_jobs(self, graphml_root: str) -> Iterator[ExportJob]:
         root = Path(self.cfg["root"])
         variants = self._variants_to_use()
