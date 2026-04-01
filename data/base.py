@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Iterator
+
 import networkx as nx
 
 
@@ -22,11 +23,11 @@ class FunctionPair:
 
     cve_id: str
     func_name: str
-    meta: dict = field(default_factory=dict)
     G_before: nx.MultiDiGraph
     G_after: nx.MultiDiGraph
     G_vuln: nx.MultiDiGraph
     project: str
+    meta: dict = field(default_factory=dict)
 
 
 class BaseDataset(ABC):
@@ -51,4 +52,4 @@ class BaseDataset(ABC):
         return list(self.stream())
 
     @abstractmethod
-    def export_job(self, graphml_root: str) -> Iterator[ExportJob]: ...
+    def export_jobs(self, graphml_root: str) -> Iterator[ExportJob]: ...
