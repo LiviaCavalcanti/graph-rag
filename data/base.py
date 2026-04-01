@@ -49,3 +49,6 @@ class BaseDataset(ABC):
 
     def load_all(self):
         return list(self.stream())
+
+    @abstractmethod
+    def export_job(self, graphml_root: str) -> Iterator[ExportJob]: ...
