@@ -80,7 +80,6 @@ def compute_graph_diff(
     changed_nodes |= {v for u, v, _ in removed_edges | added_edges}
 
     neighbourhood = set()
-    G_vuln = nx.MultiDiGraph()
     for n in changed_nodes:
         if n in G_before:
             neighbourhood |= set(G_before.predecessors(n))
@@ -95,7 +94,10 @@ def compute_graph_diff(
                 G_vuln.nodes[n]["diff"] = "added"
             else:
                 G_vuln.nodes[n]["diff"] = "context"
-
+    print(changed_nodes)
+    if changed_nodes == set():
+        print('No patch changes to graph')
+        G_vuln = nx.MultiDiGraph()
     return G_vuln
 
 
