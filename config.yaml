@@ -1,11 +1,12 @@
 data:
   autopatch:
-    path: CVE-list
+    root: CVE-list
     graphml_root: graphml
     add_variants: false
 joern:
-  export_root:
-  joern_root:
+  workers: 8
+  timeout_s: 120
+  bin_dir: /home/YOUR-USER/bin/joern/joern-cli
 graph:
   node_types:
     - METHOD
