@@ -1,8 +1,7 @@
 import glob
-from pathlib import Path
-import glob
 import tempfile
 import textwrap
+from pathlib import Path
 
 import networkx as nx
 
@@ -97,6 +96,7 @@ def compute_graph_diff(
 
     return G_vuln
 
+
 def write_c_file(source_code: str, dest_path: Path) -> Path:
     """
     Write raw source (function snippet or full file) to a .c file.
@@ -105,11 +105,10 @@ def write_c_file(source_code: str, dest_path: Path) -> Path:
     stripped = source_code.strip()
 
     # strip markdown code fences if present (AutoPatch LLM outputs)
-    if stripped.startswith('```'):
+    if stripped.startswith("```"):
         lines = stripped.splitlines()
-        stripped = '\n'.join(
-            l for l in lines
-            if not l.strip().startswith('```')
+        stripped = "\n".join(
+            l for l in lines if not l.strip().startswith("```")
         ).strip()
 
     # minimal scaffold so Joern can parse without errors
@@ -127,3 +126,5 @@ def write_c_file(source_code: str, dest_path: Path) -> Path:
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     dest_path.write_text(scaffold)
     return dest_path
+
+def run_joern_export():...
