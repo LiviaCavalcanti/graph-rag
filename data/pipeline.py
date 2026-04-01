@@ -18,46 +18,78 @@ def load_single_graph(export_xml_path: str) -> nx.MultiDiGraph | None:
     return G
 
 
-def load_function_graph(
-    graphml_root: str,
-    cve_id: str,
-    version: str,
-    func_name: str,
-    hint: str | None = None,
-) -> nx.MultiDiGraph | None:
-    patterns = [
-        str(Path(graphml_root) / f"*{cve_id}*{version}*" / "**" / f"{func_name}.xml"),
-        str(
-            Path(graphml_root)
-            / f"*{version}*"
-            / "**"
-            / f"{func_name}.xml"
-            / "export.xml"
-        ),
-        str(Path(graphml_root) / "**" / f"{func_name}.xml" / "export.xml"),
+# def load_function_graph(
+#     graphml_root: str,
+#     cve_id: str,
+#     version: str,
+#     func_name: str,
+#     hint: str | None = None,
+# ) -> nx.MultiDiGraph | None:
+#     # patterns = [
+#     #     str(Path(graphml_root) / f"*{cve_id}*{version}*" / "**" / f"{func_name}.xml"),
+#     #     str(
+#     #         Path(graphml_root)
+#     #         / f"*{version}*"
+#     #         / "**"
+#     #         / f"{func_name}.xml"
+#     #         / "export.xml"
+#     #     ),
+#     #     str(Path(graphml_root) / "**" / f"{func_name}.xml" / "export.xml"),
+#     # ]
+
+#     if hint:
+#         patterns = []
+#         patterns.append(
+#             str(
+#                 Path(graphml_root)
+#                 / cve_id
+#                 / hint
+#                 / version
+#                 / "**"
+#                 / f"{func_name}.xml"
+#                 / "export.xml"
+#             )
+#         )
+
+#     for pattern in patterns:
+#         matches = glob.glob(pattern, recursive=True)
+#         if matches:
+#             return load_single_graph(matches[0])
+
+#     return None
+
+def cpg_dir_for(graphml_root: str, cve_id:str, variant:str, version:str) -> str:
+    return str(Path(graphml_root) / cve_id / variant / version / 'graph')
+
+def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
+    root = Path(graph_dir)
+    if not(root/'graph').exists() and root.name != 'graph':
+        root = root / 'graph'
+
+    files = glob.glob(str(root / '**' / 'export.xml'), recursive=True)
+    if not files:
+        raise FileNotFoundError(f"No export.xml found under {root}")
+    G = nx.MultiDiGraph()
+    for f in files:
+        try:
+            sub = nx.read_graphml(f, node_type=str, force_multigraph=True)
+            G.update(sub)
+        except Exception as e:
+            print(f" warning: could not parse {f}: {e}")
+
+    noise = [
+        n for n, attr in G.nodes(data=True)
+        if attr.get('labelV') in ('COMMENT', 'UNKNOWN')
     ]
+    G.remove_nodes_from(noise)
 
-    if hint:
-        patterns.append(
-            str(
-                Path(graphml_root)
-                / cve_id
-                / hint
-                / version
-                / "**"
-                / f"{func_name}.xml"
-                / "export.xml"
-            )
-        )
+    dangling = [
+        (u, v, k) for u, v, k in G.edges(keys=True)
+        if u not in G.nodes or v not in G.nodes
+    ]
+    G.remove_edges_from(dangling)
 
-    for pattern in patterns:
-        matches = glob.glob(pattern, recursive=True)
-        print(f"matches: {matches}")
-        if matches:
-            return load_single_graph(matches[0])
-
-    return None
-
+    return G
 
 def compute_graph_diff(
     G_before: nx.MultiDiGraph, G_after: nx.MultiDiGraph
@@ -94,7 +126,6 @@ def compute_graph_diff(
                 G_vuln.nodes[n]["diff"] = "added"
             else:
                 G_vuln.nodes[n]["diff"] = "context"
-    print(changed_nodes)
     if changed_nodes == set():
         print('No patch changes to graph')
         G_vuln = nx.MultiDiGraph()
