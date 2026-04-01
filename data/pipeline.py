@@ -3,8 +3,26 @@ import glob
 import tempfile
 import textwrap
 from pathlib import Path
-
+import re
 import networkx as nx
+
+
+def extract_c_snippets(text: str) -> list[str]:
+    pattern = re.compile(r"```(?:c|cpp)?\s*\n(.*?)```", re.DOTALL)
+    return [m.group(1).strip() for m in pattern.finditer(text)]
+
+
+def read_supplementary_code(supp_path: Path) -> str:
+    if not supp_path.exists():
+        print(f"Path for supplementary code does not exist {supp_path}")
+        return ""
+
+    raw = supp_path.read_text(encoding="utf-8", errors="replace")
+    snippets = extract_c_snippets(raw)
+    if not snippets:
+        return raw.strip()
+
+    return "\n\n".join(snippets)
 
 
 def load_single_graph(export_xml_path: str) -> nx.MultiDiGraph | None:
@@ -58,15 +76,17 @@ def load_single_graph(export_xml_path: str) -> nx.MultiDiGraph | None:
 
 #     return None
 
-def cpg_dir_for(graphml_root: str, cve_id:str, variant:str, version:str) -> str:
-    return str(Path(graphml_root) / cve_id / variant / version / 'graph')
+
+def cpg_dir_for(graphml_root: str, cve_id: str, variant: str, version: str) -> str:
+    return str(Path(graphml_root) / cve_id / variant / version / "graph")
+
 
 def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
     root = Path(graph_dir)
-    if not(root/'graph').exists() and root.name != 'graph':
-        root = root / 'graph'
+    if not (root / "graph").exists() and root.name != "graph":
+        root = root / "graph"
 
-    files = glob.glob(str(root / '**' / 'export.xml'), recursive=True)
+    files = glob.glob(str(root / "**" / "export.xml"), recursive=True)
     if not files:
         raise FileNotFoundError(f"No export.xml found under {root}")
     G = nx.MultiDiGraph()
@@ -78,18 +98,21 @@ def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
             print(f" warning: could not parse {f}: {e}")
 
     noise = [
-        n for n, attr in G.nodes(data=True)
-        if attr.get('labelV') in ('COMMENT', 'UNKNOWN')
+        n
+        for n, attr in G.nodes(data=True)
+        if attr.get("labelV") in ("COMMENT", "UNKNOWN")
     ]
     G.remove_nodes_from(noise)
 
     dangling = [
-        (u, v, k) for u, v, k in G.edges(keys=True)
+        (u, v, k)
+        for u, v, k in G.edges(keys=True)
         if u not in G.nodes or v not in G.nodes
     ]
     G.remove_edges_from(dangling)
 
     return G
+
 
 def compute_graph_diff(
     G_before: nx.MultiDiGraph, G_after: nx.MultiDiGraph
@@ -127,24 +150,32 @@ def compute_graph_diff(
             else:
                 G_vuln.nodes[n]["diff"] = "context"
     if changed_nodes == set():
-        print('No patch changes to graph')
+        print("No patch changes to graph")
         G_vuln = nx.MultiDiGraph()
     return G_vuln
 
 
-def write_c_file(source_code: str, dest_path: Path) -> Path:
+def write_c_file(
+    source_code: str, dest_path: Path, supplementary_code: str = ""
+) -> Path:
     """
     Write raw source (function snippet or full file) to a .c file.
     Wraps in a minimal compilable scaffold if it looks like a bare function.
     """
-    stripped = source_code.strip()
 
-    # strip markdown code fences if present (AutoPatch LLM outputs)
-    if stripped.startswith("```"):
-        lines = stripped.splitlines()
-        stripped = "\n".join(
-            l for l in lines if not l.strip().startswith("```")
-        ).strip()
+    def strip_fences(code: str) -> str:
+        stripped = source_code.strip()
+
+        # strip markdown code fences if present (AutoPatch LLM outputs)
+        if stripped.startswith("```"):
+            lines = stripped.splitlines()
+            stripped = "\n".join(
+                l for l in lines if not l.strip().startswith("```")
+            ).strip()
+        return stripped
+
+    main_code = strip_fences(source_code)
+    supp_code = strip_fences(supplementary_code)
 
     # minimal scaffold so Joern can parse without errors
     scaffold = textwrap.dedent("""\
@@ -155,8 +186,10 @@ def write_c_file(source_code: str, dest_path: Path) -> Path:
         #define false 0
         #define true 1
 
+        {supplementary}
+                               
         {code}
-    """).format(code=stripped)
+    """).format(code=main_code, supplementary=supplementary_code)
 
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     dest_path.write_text(scaffold)
