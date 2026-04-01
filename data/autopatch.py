@@ -18,7 +18,8 @@ _VARIANTS = [
     ("re_implemented_o3-mini.json", "re_implemented_o3-mini_fixed.c"),
 ]
 
-_ORIGINAL_VARIANT = ('augmented.json', 'augmented_fixed.c')
+_ORIGINAL_VARIANT = ("augmented.json", "augmented_fixed.c")
+
 
 class AutoPatchDataset(BaseDataset):
     """
@@ -49,15 +50,15 @@ class AutoPatchDataset(BaseDataset):
     def _make_pair(
         self, root: str, cve_id: str, func_name: str, variant: str, meta: dict
     ) -> FunctionPair | None:
-        G_before = load_cpg_dir(cpg_dir_for(
-            root, version="before", cve_id=cve_id, variant=variant
-        ))
-        G_after = load_cpg_dir(cpg_dir_for(
-            root, version="after", cve_id=cve_id, variant=variant
-        ))
+        G_before = load_cpg_dir(
+            cpg_dir_for(root, version="before", cve_id=cve_id, variant=variant)
+        )
+        G_after = load_cpg_dir(
+            cpg_dir_for(root, version="after", cve_id=cve_id, variant=variant)
+        )
 
         if G_before is None or G_after is None:
-            print(f'One of the graphs returned none for the CVE ID {cve_id}')
+            print(f"One of the graphs returned none for the CVE ID {cve_id}")
             return None
         if G_before.number_of_nodes() == 0 or G_after.number_of_nodes() == 0:
             return None
@@ -65,7 +66,7 @@ class AutoPatchDataset(BaseDataset):
         return FunctionPair(
             cve_id=cve_id,
             func_name=func_name,
-            project='autopatch',
+            project="autopatch",
             G_before=G_before,
             G_after=G_after,
             G_vuln=compute_graph_diff(G_before, G_after),
@@ -158,11 +159,12 @@ class AutoPatchDataset(BaseDataset):
                                 )
 
                                 yield pair
+
     def _variants_to_use(self) -> list[tuple[str, str]]:
-        if self.cfg.get('include_variants', False):
+        if self.cfg.get("include_variants", False):
             return _VARIANTS
         return [_ORIGINAL_VARIANT]
-    
+
     def export_jobs(self, graphml_root: str) -> Iterator[ExportJob]:
         root = Path(self.cfg["root"])
         variants = self._variants_to_use()
@@ -173,21 +175,23 @@ class AutoPatchDataset(BaseDataset):
             db = self._load_db_entry(cve_dir=cve_dir)
             if db is None:
                 continue
-            
+
             cve_id = str(db.get("cve_id", cve_dir.name))
             func_name = str(db.get("function_name", ""))
             base = Path(graphml_root) / cve_id
 
             before_path = cve_dir / "original_code.txt"
             after_path = cve_dir / "original_code_fixed.c"
-            supp_path = cve_dir / 'supplementary_code.txt'
+            supp_path = cve_dir / "supplementary_code.txt"
 
             if before_path.exists() and after_path.exists():
                 yield ExportJob(
                     cve_id=cve_id,
                     func_name=func_name,
                     variant="original",
-                    source_code=before_path.read_text(encoding='utf-8', errors='replace'),
+                    source_code=before_path.read_text(
+                        encoding="utf-8", errors="replace"
+                    ),
                     supplementary_code=supp_path,
                     version="before",
                     out_dir=str(base / "original" / "before"),
@@ -197,7 +201,9 @@ class AutoPatchDataset(BaseDataset):
                     cve_id=cve_id,
                     func_name=func_name,
                     variant="original",
-                    source_code=after_path.read_text(encoding='utf-8', errors='replace'),
+                    source_code=after_path.read_text(
+                        encoding="utf-8", errors="replace"
+                    ),
                     supplementary_code=supp_path,
                     version="after",
                     out_dir=str(base / "original" / "after"),

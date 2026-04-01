@@ -13,6 +13,7 @@ class ExportJob:
     version: str  # before(vulnerable), after(patched)
     source_code: str
     out_dir: str  # final detination for export.xml
+    supplementary_code: str = ""  # to support autopatch
 
 
 @dataclass
