@@ -40,7 +40,7 @@ def run_export(cfg: str, dataset_name: str | None = None):
 
     for ds_name in active:
         ds_cfg = cfg["data"][ds_name]
-        dataset = DATASETS[ds_name](ds_name)
+        dataset = DATASETS[ds_name](ds_cfg)
         graphml_root = ds_cfg["graphml_root"]
 
         print(f"\n -------------- exporting {dataset.name()}--------------")
@@ -94,7 +94,7 @@ def main(cfg):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="config.yaml")
-    parser.add_argument("--mode", choices=["index", "query", "export"], default="index")
+    parser.add_argument("--mode", choices=["index", "query", "export"], default="export")
     parser.add_argument("--dataset", choices=["autopatch"], default="autopatch")
 
     args = parser.parse_args()
