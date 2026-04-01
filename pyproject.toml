@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "black>=26.3.1",
     "isort>=8.0.1",
+    "netlsd>=1.0.2",
     "networkx>=3.6.1",
     "numpy>=2.4.3",
     "pyyaml>=6.0.3",
