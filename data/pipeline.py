@@ -234,5 +234,6 @@ def run_joern_export(
         text=True,
         timeout=120,
     )
-
+    if result.returncode != 0:
+        print(result)
     return result.returncode == 0
