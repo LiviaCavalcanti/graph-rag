@@ -64,7 +64,7 @@ class AutoPatchDataset(BaseDataset):
         return FunctionPair(
             cve_id=cve_id,
             func_name=func_name,
-            dataset=self.name(),
+            project='autopatch',
             G_before=G_before,
             G_after=G_after,
             G_vuln=compute_graph_diff(G_before, G_after),
