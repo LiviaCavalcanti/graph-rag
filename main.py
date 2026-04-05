@@ -5,9 +5,9 @@ from pathlib import Path
 
 import yaml
 
-from data.autopatch import AutoPatchDataset
-from data.base import ExportJob
-from data.pipeline import run_joern_export, write_c_file
+from src.data.autopatch import AutoPatchDataset
+from src.data.base import ExportJob
+from src.data.pipeline import run_joern_export, write_c_file
 from src.embeddings import build_embedders
 
 DATASETS = {"autopatch": AutoPatchDataset, "cvefixes": None}
