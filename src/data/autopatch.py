@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Iterator
 
-from graph.joern_graph import get_cpg
+from src.graph.joern_graph import get_cpg
 
 from .base import BaseDataset, ExportJob, FunctionPair
 from .pipeline import compute_graph_diff, load_cpg_dir, cpg_dir_for
