@@ -13,7 +13,17 @@ class FAISSIndex:
         self.metadata: list[dict] = []
 
     def add(self, pair:FunctionPair, embedding: np.ndarray, variant: str):
-        ...
+        vec = embedding.reshape(1, -1).astype(np.float32)
+        self.index.add(vec)
+        self.metadata.append({
+            'cve_id':    pair.cve_id,
+            'cwe_id':    pair.cwe_id,
+            'func_name': pair.func_name,
+            'project':   pair.project,
+            'variant':   variant,
+            'n_nodes':   pair.G_vuln.number_of_nodes(),
+            **pair.meta,
+        })
 
     def save(self):
         self.index_path.parent.mkdir(parents=True, exist_ok=True)
