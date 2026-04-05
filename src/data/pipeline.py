@@ -90,24 +90,31 @@ def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
     if not files:
         raise FileNotFoundError(f"No export.xml found under {root}")
     G = nx.MultiDiGraph()
+    
+    # track which node IDs were explicitly declared in a <node> element
+    # vs implicitly created by NetworkX when an edge referenced them
+    declared_nodes: set[str] = set()
     for f in files:
         try:
             sub = nx.read_graphml(f, node_type=str, force_multigraph=True)
+            declared_nodes.update(sub.nodes())
             G.update(sub)
         except Exception as e:
-            print(f" warning: could not parse {f}: {e}")
+            print(f" warning: could not parse {f}: {e} \n Content was:\n{Path(f).read_text()}")
 
-    noise = [
-        n
-        for n, attr in G.nodes(data=True)
-        if attr.get("labelV") in ("COMMENT", "UNKNOWN")
-    ]
+    noise = {
+        n for n, attr in G.nodes(data=True)
+        if attr.get('labelV') in ('COMMENT', 'UNKNOWN')
+    }
+    declared_nodes -= noise
     G.remove_nodes_from(noise)
+    phantom_nodes = set(G.nodes()) - declared_nodes
+    G.remove_nodes_from(phantom_nodes)
 
+    # clean edges of removed phantom 
     dangling = [
-        (u, v, k)
-        for u, v, k in G.edges(keys=True)
-        if u not in G.nodes or v not in G.nodes
+        (u, v, k) for u, v, k in G.edges(keys=True)
+        if u not in G._node or v not in G._node
     ]
     G.remove_edges_from(dangling)
 
@@ -129,19 +136,19 @@ def compute_graph_diff(
     changed_nodes = removed_nodes | added_nodes
 
     removed_edges = edge_set(G_before) - edge_set(G_after)
-    added_edges = edge_set(G_after) - edge_set(G_after)
+    added_edges = edge_set(G_after) - edge_set(G_before)
 
     changed_nodes |= {u for u, v, _ in removed_edges | added_edges}
     changed_nodes |= {v for u, v, _ in removed_edges | added_edges}
 
     neighbourhood = set()
     for n in changed_nodes:
+
         if n in G_before:
             neighbourhood |= set(G_before.predecessors(n))
             neighbourhood |= set(G_before.successors(n))
         vuln_nodes = changed_nodes | neighbourhood
         G_vuln = G_before.subgraph(vuln_nodes).copy()
-
         for n in G_vuln.nodes():
             if n in removed_nodes:
                 G_vuln.nodes[n]["diff"] = "removed"
