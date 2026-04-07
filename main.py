@@ -97,6 +97,7 @@ def run_pipeline(cfg):
             except Exception as e:
                 print(f"   skip {pair.cve_id} / {pair.func_name}:  {e}")
 
+    index.save()
     print(f"\nDone. \nTotal indexed: {total}")
 
 def run_query(cfg: dict, cve_id: str):
