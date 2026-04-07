@@ -118,7 +118,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="config.yaml")
     parser.add_argument(
-        "--mode", choices=["index", "query", "export"], default="export"
+        "--mode", choices=["index", "query", "export", "experiment"], default="export"
     )
     parser.add_argument("--dataset", choices=["autopatch"], default="autopatch")
     parser.add_argument("--cve")
