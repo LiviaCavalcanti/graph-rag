@@ -120,18 +120,37 @@ if __name__ == "__main__":
         "--mode", choices=["index", "query", "export"], default="export"
     )
     parser.add_argument("--dataset", choices=["autopatch"], default="autopatch")
+    parser.add_argument("--cve")
+    parser.add_argument('--loo', action='store_true',
+                    help='run leave-one-out eval (slow, max 1000 samples)')
 
     args = parser.parse_args()
-
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
 
+    active = [n for n in DATASETS if cfg['data'].get(n)]
     if args.mode == "export":
         run_export(cfg, args.dataset)
     elif args.mode == "index":
-        main(cfg)
+        run_pipeline(cfg)
     elif args.mode == "query":
-        # to be verified
-        # if not args.cve:
-        #     raise ValueError("--cve required for query mode")
-        raise NotImplementedError()
+        # change it to query by code snippet.
+        if not args.cve:
+            raise ValueError("--cve required for query mode")
+        run_query(cfg, args.cve)
+    elif args.mode == 'experiment':
+        from experiments.runner import run_experiment
+
+        # load all pairs from all active datasets
+        all_pairs = []
+        for ds_name in active:
+            ds_cfg  = cfg['data'][ds_name]
+            dataset = DATASETS[ds_name](ds_cfg)
+            print(f"Loading {dataset.name()}...")
+            all_pairs.extend(dataset.load_all())
+
+        run_experiment(
+            pairs             = all_pairs,
+            cfg               = cfg,
+            run_leave_one_out = args.loo,
+        )
