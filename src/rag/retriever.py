@@ -18,7 +18,7 @@ class Retriever:
         for dist, idx in zip(distances[0], indices[0]):
             if idx == -1:
                 continue
-            record = dict(self.index.metadata)
+            record = dict(self.index.metadata[0])
             record['score'] = float(dist)
             results.append(record)
 
