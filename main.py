@@ -99,6 +99,19 @@ def run_pipeline(cfg):
 
     print(f"\nDone. \nTotal indexed: {total}")
 
+def run_query(cfg: dict, cve_id: str):
+    from src.rag.retriever import Retriever
+
+    rag_cfg = cfg['rag']
+    index = FAISSIndex(
+        dim=cfg['embeddings']['dim'],
+        index_path = rag_cfg['index_path'],
+        metadata_path=rag_cfg['metadata_path'],
+    )
+    index.load()
+    retriever = Retriever(index, top_k=rag['top_k'])
+    for r in retriever.query_by_cve(cve_id):
+        print(r)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
