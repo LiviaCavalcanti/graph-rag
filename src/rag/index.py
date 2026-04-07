@@ -17,7 +17,7 @@ class FAISSIndex:
         self.index.add(vec)
         self.metadata.append({
             'cve_id':    pair.cve_id,
-            'cwe_id':    pair.cwe_id,
+            # 'cwe_id':    pair.cwe_id,
             'func_name': pair.func_name,
             'project':   pair.project,
             'variant':   variant,
