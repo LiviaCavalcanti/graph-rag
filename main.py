@@ -110,7 +110,7 @@ def run_query(cfg: dict, cve_id: str):
         metadata_path=rag_cfg['metadata_path'],
     )
     index.load()
-    retriever = Retriever(index, top_k=rag['top_k'])
+    retriever = Retriever(index, top_k=rag_cfg['top_k'])
     for r in retriever.query_by_cve(cve_id):
         print(r)
 
