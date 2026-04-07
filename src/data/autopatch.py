@@ -48,7 +48,7 @@ class AutoPatchDataset(BaseDataset):
             return None
 
     def _make_pair(
-        self, root: str, cve_id: str, func_name: str, variant: str, meta: dict
+        self, root: str, cve_id: str, cwe_id: str, func_name: str, variant: str, meta: dict
     ) -> FunctionPair | None:
         G_before = load_cpg_dir(
             cpg_dir_for(root, version="before", cve_id=cve_id, variant=variant)
@@ -65,6 +65,7 @@ class AutoPatchDataset(BaseDataset):
 
         return FunctionPair(
             cve_id=cve_id,
+            cwe_id=cwe_id,
             func_name=func_name,
             project="autopatch",
             G_before=G_before,
@@ -91,7 +92,7 @@ class AutoPatchDataset(BaseDataset):
             if db is None:
                 continue
             cve_id = str(db.get("cve_id", cve_dir.name))
-            # cwe_id    = str(db.get('cwe_type', ''))
+            cwe_id    = str(db.get('cwe_type', ''))
             func_name = str(db.get("function_name", ""))
 
             base_meta = {
@@ -108,6 +109,7 @@ class AutoPatchDataset(BaseDataset):
                 pair = self._make_pair(
                     root,
                     cve_id,
+                    cwe_id,
                     func_name,
                     variant="original",
                     meta={
@@ -143,6 +145,7 @@ class AutoPatchDataset(BaseDataset):
                                 pair = self._make_pair(
                                     root,
                                     cve_id,
+                                    cwe_id,
                                     func_name,
                                     meta={
                                         "dataset": self.name(),
