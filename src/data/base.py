@@ -23,6 +23,7 @@ class FunctionPair:
     """
 
     cve_id: str
+    cwe_id: str
     func_name: str
     G_before: nx.MultiDiGraph
     G_after: nx.MultiDiGraph
