@@ -9,6 +9,7 @@ from src.data.autopatch import AutoPatchDataset
 from src.data.base import ExportJob
 from src.data.pipeline import run_joern_export, write_c_file
 from src.embeddings import build_embedders
+from src.rag.index import FAISSIndex
 
 DATASETS = {"autopatch": AutoPatchDataset, "cvefixes": None}
 
@@ -66,13 +67,19 @@ def run_export(cfg: str, dataset_name: str | None = None):
         print(f"Done \n    ok: {ok}  -  skipped: {skipped}  -  fail: {fail}")
 
 
-def main(cfg):
+def run_pipeline(cfg):
     active_datasets = [name for name in DATASETS if cfg["data"].get(name)]
     rag_cfg = cfg["rag"]
     variant = rag_cfg["embedding_variant"]
     embedders = build_embedders(cfg)
-    total = 0
     indexer = next(e for e in embedders if e.name == variant)
+    index = FAISSIndex(
+        dim = cfg['embeddings']['dim'],
+        index_path = rag_cfg['index_path'],
+        metadata_path = rag_cfg['metadata_path'],
+    )    
+    
+    total = 0
 
     for ds_name in active_datasets:
         ds_cfg = cfg["data"][ds_name]
@@ -83,7 +90,7 @@ def main(cfg):
         for pair in dataset.stream():
             try:
                 emb = indexer.embed_one(pair.G_vuln)
-                # index.add(pair, emb, variant) index to RAG
+                index.add(pair, emb, variant) # index to RAG
                 total += 1
                 if total % 5 == 0:
                     print(f" indexed {total} pairs.. ")
