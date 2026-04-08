@@ -36,8 +36,6 @@ class FAISSIndex:
         self.metadata = json.loads(self.metadata_path.read_text())
         print(f"Index loaded: {self.index.ntotal} vectors")
 
-    # rag/index.py — add this method to FAISSIndex
-
     def add_raw(self, embedding: np.ndarray, meta: dict):
         """Used by leave-one-out eval — bypasses FunctionPair."""
         vec = embedding.reshape(1, -1).astype(np.float32)
