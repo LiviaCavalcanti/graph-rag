@@ -1,3 +1,9 @@
+# generated files
+graphml/
+joern/
+experiment*.py
+CVE-list/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
