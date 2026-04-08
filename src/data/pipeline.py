@@ -65,6 +65,7 @@ def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
         (u, v, k) for u, v, k in G.edges(keys=True)
         if u not in G._node or v not in G._node
     ]
+    print(f"{graph_dir} -- Declared nodes: {len(declared_nodes)}, noise: {len(noise)}, dangling nodes: {len(dangling)}")
     G.remove_edges_from(dangling)
 
     return G
@@ -131,7 +132,7 @@ def write_c_file(
         return stripped
 
     main_code = strip_fences(source_code)
-    supp_code = strip_fences(supplementary_code)
+    supp_code = ''#strip_fences(supplementary_code)
 
     # minimal scaffold so Joern can parse without errors
     scaffold = textwrap.dedent("""\
@@ -145,7 +146,7 @@ def write_c_file(
         {supplementary}
                                
         {code}
-    """).format(code=main_code, supplementary=supplementary_code)
+    """).format(code=main_code, supplementary=supp_code)
 
     dest_path.parent.mkdir(parents=True, exist_ok=True)
     dest_path.write_text(scaffold)
@@ -168,10 +169,12 @@ def run_joern_export(
         str(source),
         "--output",
         str(cpg_file),
+        "--language", "c",
     ]
 
     result = subprocess.run(parse_cmd, capture_output=True, text=True, timeout=120)
     if result.returncode != 0:
+        print(f"EXPORT ERROR: {result.stderr} , {result}")
         return False
     export_cmd = [
         str(joern_bin / "joern-export"),
@@ -192,4 +195,5 @@ def run_joern_export(
     )
     if result.returncode != 0:
         print(result)
+        print(f"EXPORT ERROR: {result.stderr}")
     return result.returncode == 0
