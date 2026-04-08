@@ -3,6 +3,9 @@ graphml/
 joern/
 experiment*.py
 CVE-list/
+experiments/diagnostics/
+src/rag/*.index
+src/rag/metadata.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
