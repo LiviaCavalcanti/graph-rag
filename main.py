@@ -30,7 +30,7 @@ def _process_job(job: ExportJob, joern_bin_dir: str):
         return False, f"write failed {job.cve_id}: {e}"
 
     success = run_joern_export(
-        joern_bin_dir, str(c_file), str(out_dir), str(graph_folder)
+        joern_bin_dir, c_file, str(out_dir), str(graph_folder)
     )
     label = f"{job.cve_id}/{job.variant}/{job.version}"
 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="config.yaml")
     parser.add_argument(
-        "--mode", choices=["index", "query", "export", "experiment"], default="export"
+        "--mode", choices=["index", "query", "export", "experiment", "diagnostics"], default="export"
     )
     parser.add_argument("--dataset", choices=["autopatch"], default="autopatch")
     parser.add_argument("--cve")
@@ -155,3 +155,15 @@ if __name__ == "__main__":
             cfg               = cfg,
             run_leave_one_out = args.loo,
         )
+    elif args.mode == 'diagnostics':
+        from src.diagnostics import run_diagnostics
+
+        # load all pairs from all active datasets
+        all_pairs = []
+        for ds_name in active:
+            ds_cfg  = cfg['data'][ds_name]
+            dataset = DATASETS[ds_name](ds_cfg)
+            print(f"Loading {dataset.name()}...")
+            all_pairs.extend(dataset.load_all())
+
+        run_diagnostics(all_pairs)
