@@ -1,6 +1,5 @@
 import subprocess
 import glob
-import tempfile
 import textwrap
 from pathlib import Path
 import re
@@ -55,6 +54,7 @@ def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
         n for n, attr in G.nodes(data=True)
         if attr.get('labelV') in ('COMMENT', 'UNKNOWN')
     }
+    
     declared_nodes -= noise
     G.remove_nodes_from(noise)
     phantom_nodes = set(G.nodes()) - declared_nodes
@@ -67,7 +67,6 @@ def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
     ]
     print(f"{graph_dir} -- Declared nodes: {len(declared_nodes)}, noise: {len(noise)}, dangling nodes: {len(dangling)}")
     G.remove_edges_from(dangling)
-
     return G
 
 
@@ -75,7 +74,7 @@ def compute_graph_diff(
     G_before: nx.MultiDiGraph, G_after: nx.MultiDiGraph
 ) -> nx.MultiDiGraph:
     def edge_set(G):
-        return {(u, v, d.get("label", "")) for u, v, d in G.edges(data=True)}
+        return {(u, v, d.get("labelE") or d.get("label", "")) for u, v, d in G.edges(data=True)}
 
     nodes_before = set(G_before.nodes())
     nodes_after = set(G_after.nodes())
