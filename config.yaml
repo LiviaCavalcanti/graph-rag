@@ -28,12 +28,18 @@ graph:
     - ARGUMENT
     - RECEIVER
 embeddings:
-  active: [netlsd]
-  dim: 128
+  active: [netlsd, wl, gin, combined]
+  dim: 65
   netlsd:
     timescales: 128
+  wl:
+    num_iterations: 4
+    hidden_dim: 64
+  gin:
+    hidden_dim: 128
+    num_layers: 3
 rag:
-  index_path: rag/faiss.index
-  metadata_path: rag/metadata.json
+  index_path: src/rag/faiss.index
+  metadata_path: src/rag/metadata.json
   top_k: 5
   embedding_variant: netlsd
