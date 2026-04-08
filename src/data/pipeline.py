@@ -25,64 +25,13 @@ def read_supplementary_code(supp_path: Path) -> str:
     return "\n\n".join(snippets)
 
 
-def load_single_graph(export_xml_path: str) -> nx.MultiDiGraph | None:
-    G = nx.read_graphml(export_xml_path, node_type=str, force_multigraph=True)
-    nodes_to_remove = [
-        n
-        for n, attr in G.nodes(data=True)
-        if attr.get("lableV") in ("COMMENT", "UNKNOWN")
-    ]
-    G.remove_nodes_from(nodes_to_remove)
-    return G
-
-
-# def load_function_graph(
-#     graphml_root: str,
-#     cve_id: str,
-#     version: str,
-#     func_name: str,
-#     hint: str | None = None,
-# ) -> nx.MultiDiGraph | None:
-#     # patterns = [
-#     #     str(Path(graphml_root) / f"*{cve_id}*{version}*" / "**" / f"{func_name}.xml"),
-#     #     str(
-#     #         Path(graphml_root)
-#     #         / f"*{version}*"
-#     #         / "**"
-#     #         / f"{func_name}.xml"
-#     #         / "export.xml"
-#     #     ),
-#     #     str(Path(graphml_root) / "**" / f"{func_name}.xml" / "export.xml"),
-#     # ]
-
-#     if hint:
-#         patterns = []
-#         patterns.append(
-#             str(
-#                 Path(graphml_root)
-#                 / cve_id
-#                 / hint
-#                 / version
-#                 / "**"
-#                 / f"{func_name}.xml"
-#                 / "export.xml"
-#             )
-#         )
-
-#     for pattern in patterns:
-#         matches = glob.glob(pattern, recursive=True)
-#         if matches:
-#             return load_single_graph(matches[0])
-
-#     return None
-
-
 def cpg_dir_for(graphml_root: str, cve_id: str, variant: str, version: str) -> str:
     return str(Path(graphml_root) / cve_id / variant / version / "graph")
 
 
 def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
     root = Path(graph_dir)
+    print(f"Loading CPG from {root}")
     if not (root / "graph").exists() and root.name != "graph":
         root = root / "graph"
 
