@@ -48,13 +48,13 @@ class AutoPatchDataset(BaseDataset):
             return None
 
     def _make_pair(
-        self, root: str, cve_id: str, cwe_id: str, func_name: str, variant: str, meta: dict
+        self, root: str, cve_dir: Path, cve_id: str, cwe_id: str, func_name: str, variant: str, meta: dict
     ) -> FunctionPair | None:
         G_before = load_cpg_dir(
-            cpg_dir_for(root, version="before", cve_id=cve_id, variant=variant)
+            cpg_dir_for(root, version="before", cve_id=cve_dir.name, variant=variant)
         )
         G_after = load_cpg_dir(
-            cpg_dir_for(root, version="after", cve_id=cve_id, variant=variant)
+            cpg_dir_for(root, version="after", cve_id=cve_dir.name, variant=variant)
         )
 
         if G_before is None or G_after is None:
@@ -108,9 +108,10 @@ class AutoPatchDataset(BaseDataset):
             if original_code_path.exists() and original_fixed_path.exists():
                 pair = self._make_pair(
                     root,
-                    cve_id,
-                    cwe_id,
-                    func_name,
+                    cve_id=cve_id,
+                    cwe_id=cwe_id,
+                    func_name=func_name,
+                    cve_dir=cve_dir,
                     variant="original",
                     meta={
                         "dataset": self.name(),
@@ -144,9 +145,10 @@ class AutoPatchDataset(BaseDataset):
 
                                 pair = self._make_pair(
                                     root,
-                                    cve_id,
-                                    cwe_id,
-                                    func_name,
+                                    cve_id=cve_id,
+                                    cwe_id=cwe_id,
+                                    func_name=func_name,
+                                    cve_dir=cve_dir,
                                     meta={
                                         "dataset": self.name(),
                                         "variant": variant_name,
@@ -178,8 +180,7 @@ class AutoPatchDataset(BaseDataset):
             db = self._load_db_entry(cve_dir=cve_dir)
             if db is None:
                 continue
-
-            cve_id = str(db.get("cve_id", cve_dir.name))
+            cve_id = str( cve_dir.name)
             func_name = str(db.get("function_name", ""))
             base = Path(graphml_root) / cve_id
 
