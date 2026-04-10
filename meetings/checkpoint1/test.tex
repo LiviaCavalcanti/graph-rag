@@ -184,45 +184,46 @@
 
   \vspace{0.6em}
   \begin{description}[\textbf{CVEFixes}]
-    \item[\textbf{BigVul}] 3,500+ CVEs as CSV with
-      \texttt{func\_before}/\texttt{func\_after} columns.
-      Largest C/C++ vulnerability dataset.
-    \item[\textbf{CVEFixes}] SQLite DB; method-level before/after
-      pairs linked to commit history.
     \item[\textbf{AutoPatch}] Folder-per-CVE with original source
       \emph{and} LLM-reimplemented variants
       (GPT-4o, DeepSeek-R1, LLaMA, o3-mini).
       Enables augmented generalisation testing.
+      % \item[\textbf{BigVul}] 3,500+ CVEs as CSV with
+      % \texttt{func\_before}/\texttt{func\_after} columns.
+      % Largest C/C++ vulnerability dataset.
+    \item[\textbf{CVEFixes} (Optional)] SQLite DB; method-level before/after
+      pairs linked to commit history.
   \end{description}
 
-  \vspace{0.6em}
-  \begin{alertblock}{Design decision}
+  % \vspace{0.6em}
+  
+\end{column}
+\begin{column}{0.45\textwidth}
+  \begin{block}{Design decision}
     \texttt{export\_jobs()} parallelises Joern over functions;
     \texttt{stream()} feeds the index builder.
     Adding a new dataset = one class, two methods.
-  \end{alertblock}
-\end{column}
-\begin{column}{0.45\textwidth}
-  \centering
-  \begin{tikzpicture}[scale=0.9,
-    ds/.style={rounded corners=4pt,draw=c1!50,fill=c1!8,
-               minimum width=3.2cm,minimum height=0.65cm,
-               font=\scriptsize\sffamily,align=center},
-    iface/.style={rounded corners=4pt,draw=c3,fill=c3!10,
-                  minimum width=3.2cm,minimum height=0.65cm,
-                  font=\scriptsize\sffamily\bfseries,align=center},
-    out/.style={rounded corners=4pt,draw=hit,fill=hit!8,
-                minimum width=3.2cm,minimum height=0.65cm,
-                font=\scriptsize\sffamily,align=center}]
-    \node[ds] (bv) at (0,3.2)  {BigVul (CSV)};
-    \node[ds] (cf) at (0,2.4)  {CVEFixes (SQLite)};
-    \node[ds] (ap) at (0,1.6)  {AutoPatch (folders)};
-    \node[iface] (bd) at (0,0.7) {BaseDataset interface};
-    \draw[->,c1!60] (bv)--(bd);
-    \draw[->,c1!60] (cf)--(bd);
-    \draw[->,c1!60] (ap)--(bd);
-    % \draw[->,c3,thick] (bd)--(fp);
-  \end{tikzpicture}
+  \end{block}
+  % \centering
+  % \begin{tikzpicture}[scale=0.9,
+  %   ds/.style={rounded corners=4pt,draw=c1!50,fill=c1!8,
+  %              minimum width=3.2cm,minimum height=0.65cm,
+  %              font=\scriptsize\sffamily,align=center},
+  %   iface/.style={rounded corners=4pt,draw=c3,fill=c3!10,
+  %                 minimum width=3.2cm,minimum height=0.65cm,
+  %                 font=\scriptsize\sffamily\bfseries,align=center},
+  %   out/.style={rounded corners=4pt,draw=hit,fill=hit!8,
+  %               minimum width=3.2cm,minimum height=0.65cm,
+  %               font=\scriptsize\sffamily,align=center}]
+  %   \node[ds] (bv) at (0,3.2)  {BigVul (CSV)};
+  %   \node[ds] (cf) at (0,2.4)  {CVEFixes (SQLite)};
+  %   \node[ds] (ap) at (0,1.6)  {AutoPatch (folders)};
+  %   \node[iface] (bd) at (0,0.7) {BaseDataset interface};
+  %   \draw[->,c1!60] (bv)--(bd);
+  %   \draw[->,c1!60] (cf)--(bd);
+  %   \draw[->,c1!60] (ap)--(bd);
+  %   % \draw[->,c3,thick] (bd)--(fp);
+  % \end{tikzpicture}
 \end{column}
 \end{columns}
 \end{frame}
@@ -248,16 +249,16 @@
   diff produced $G_{\text{vuln}} \approx G_{\text{before}}$,
   making all graphs indistinguishable.
 
-  \vspace{0.6em}
-  Changed nodes are typed and weighted:
+  % \vspace{0.6em}
+  % Changed nodes are typed and weighted:
 
-  \vspace{0.3em}
-  \begin{tabular}{ll}
-    \texttt{removed} / \texttt{added} & weight 1.0 \\
-    \texttt{mutated} (code changed)   & weight 0.8 \\
-    \texttt{rewired} (edge changed)   & weight 0.6 \\
-    \texttt{context} ($n$-hop)        & weight 0.1--0.3 \\
-  \end{tabular}
+  % \vspace{0.3em}
+  % \begin{tabular}{ll}
+  %   \texttt{removed} / \texttt{added} & weight 1.0 \\
+  %   \texttt{mutated} (code changed)   & weight 0.8 \\
+  %   \texttt{rewired} (edge changed)   & weight 0.6 \\
+  %   \texttt{context} ($n$-hop)        & weight 0.1--0.3 \\
+  % \end{tabular}
 
   \vspace{0.6em}
   \textbf{Step 3 — PDG-Anchored Slice}\\[2pt]
@@ -267,9 +268,9 @@
   inflates $G_{\text{vuln}}$.
 
 \end{column}
-\begin{column}{0.45\textwidth}
+\begin{column}{0.3\textwidth}
   \centering
-  \begin{tikzpicture}[scale=0.85,
+  \begin{tikzpicture}[
     box/.style={draw=c1!40,rounded corners=3pt,fill=c1!6,
                 minimum width=3.1cm,minimum height=0.6cm,
                 font=\scriptsize\sffamily,align=center},
@@ -282,9 +283,9 @@
     \node[box] (s)  at (0, 4.5) {C/C++ source (.c)};
     \node[box] (j)  at (0, 3.6) {Joern CPG (GraphML)};
     \node[box] (m)  at (0, 2.7) {Merged MultiDiGraph};
-    \node[dec] (d)  at (0, 1.8) {Semantic diff\\(fingerprint match)};
-    \node[dec] (sl) at (0, 0.9) {PDG slice\\($n$-hop on dep.\ edges)};
-    \node[res] (gv) at (0, 0.0) {$G_{\text{vuln}}$ with diff weights};
+    \node[dec] (d)  at (0, 1.75) {Semantic diff\\(fingerprint match)};
+    \node[dec] (sl) at (0, 0.75) {PDG slice\\($n$-hop on dep.\ edges)};
+    \node[res] (gv) at (0, -0.20) {$G_{\text{vuln}}$ with diff weights};
     \foreach \a/\b in {s/j,j/m,m/d,d/sl,sl/gv}
       \draw[->,thick,black!35] (\a)--(\b);
   \end{tikzpicture}
@@ -292,34 +293,34 @@
 \end{columns}
 \end{frame}
 
-\begin{frame}{Graph Extraction Strategies Compared}
-\centering
-\begin{tabular}{lp{5.8cm}cc}
-  \toprule
-  \textbf{Strategy} & \textbf{Rationale} & \textbf{Signal} & \textbf{Noise} \\
-  \midrule
-  ID-based diff & Original approach; broken by non-det.\ IDs
-    & \textcolor{miss}{\faIcon{times}} & \textcolor{miss}{\faIcon{times}} \\[3pt]
-  Semantic $n$-hop & Fingerprint matching + context ($n{=}1,2$ optimal)
-    & \textcolor{warn}{\faIcon{adjust}} & \textcolor{warn}{\faIcon{adjust}} \\[3pt]
-  CFG-only & Removes AST dominance; focuses on execution paths
-    & \textcolor{warn}{\faIcon{adjust}} & \textcolor{hit}{\faIcon{check}} \\[3pt]
-  PDG slice & Bidirectional BFS on \texttt{REACHING\_DEF}+\texttt{CDG};
-    captures data \& control deps
-    & \textcolor{hit}{\faIcon{check}} & \textcolor{hit}{\faIcon{check}} \\[3pt]
-  Motif histogram & 8-dim count of vulnerability-shaped 3-node patterns;
-    CWE-agnostic
-    & \textcolor{hit}{\faIcon{check}} & \textcolor{hit}{\faIcon{check}} \\
-  \bottomrule
-\end{tabular}
+% \begin{frame}{Graph Extraction Strategies Compared}
+% \centering
+% \begin{tabular}{lp{5.8cm}cc}
+%   \toprule
+%   \textbf{Strategy} & \textbf{Rationale} & \textbf{Signal} & \textbf{Noise} \\
+%   \midrule
+%   ID-based diff & Original approach; broken by non-det.\ IDs
+%     & \textcolor{miss}{\faIcon{times}} & \textcolor{miss}{\faIcon{times}} \\[3pt]
+%   Semantic $n$-hop & Fingerprint matching + context ($n{=}1,2$ optimal)
+%     & \textcolor{warn}{\faIcon{adjust}} & \textcolor{warn}{\faIcon{adjust}} \\[3pt]
+%   CFG-only & Removes AST dominance; focuses on execution paths
+%     & \textcolor{warn}{\faIcon{adjust}} & \textcolor{hit}{\faIcon{check}} \\[3pt]
+%   PDG slice & Bidirectional BFS on \texttt{REACHING\_DEF}+\texttt{CDG};
+%     captures data \& control deps
+%     & \textcolor{hit}{\faIcon{check}} & \textcolor{hit}{\faIcon{check}} \\[3pt]
+%   Motif histogram & 8-dim count of vulnerability-shaped 3-node patterns;
+%     CWE-agnostic
+%     & \textcolor{hit}{\faIcon{check}} & \textcolor{hit}{\faIcon{check}} \\
+%   \bottomrule
+% \end{tabular}
 
-\vspace{1em}
-\begin{block}{Key finding}
-  AST edges represent $> 70\%$ of CPG edges in most exports.
-  Strategies that restrict to PDG/CFG reduce $|G_{\text{vuln}}|$ and
-  increase signal density — fewer nodes, more vulnerability-relevant.
-\end{block}
-\end{frame}
+% \vspace{1em}
+% \begin{block}{Key finding}
+%   AST edges represent $> 70\%$ of CPG edges in most exports.
+%   Strategies that restrict to PDG/CFG reduce $|G_{\text{vuln}}|$ and
+%   increase signal density — fewer nodes, more vulnerability-relevant.
+% \end{block}
+% \end{frame}
 
 % ══════════════════════════════════════════════════════════════════════
 \section{Embedders}
@@ -348,28 +349,28 @@ Output: L2-normalised 128-dim vector per function graph.}
   \end{description}
 
 \end{column}
-\begin{column}{0.48\textwidth}
+% \begin{column}{0.48\textwidth}
 
-  \textbf{\textcolor{c3}{Semantic embedder}}
-  \begin{description}[\textbf{Motif}]
-    \item[\textbf{Motif}] Three signals concatenated:
-      \begin{itemize}
-        \item Motif histogram (8-dim vulnerability patterns)
-        \item CODE token features: ptr / alloc / free / lock / cast
-          density per graph
-        \item NetLSD on PDG slice (16-dim)
-      \end{itemize}
-      Projected via Gaussian random projection.
-      \textit{Designed for CWEs where topology is uniform.}
-  \end{description}
+%   \textbf{\textcolor{c3}{Semantic embedder}}
+%   \begin{description}[\textbf{Motif}]
+%     \item[\textbf{Motif}] Three signals concatenated:
+%       \begin{itemize}
+%         \item Motif histogram (8-dim vulnerability patterns)
+%         \item CODE token features: ptr / alloc / free / lock / cast
+%           density per graph
+%         \item NetLSD on PDG slice (16-dim)
+%       \end{itemize}
+%       Projected via Gaussian random projection.
+%       \textit{Designed for CWEs where topology is uniform.}
+%   \end{description}
 
-  \vspace{0.8em}
-  \begin{block}{\texttt{diff\_weight} bias}
-    All embedders weight pooling toward \texttt{removed},
-    \texttt{added}, and \texttt{mutated} nodes — ensuring
-    changed code dominates the embedding.
-  \end{block}
-\end{column}
+%   \vspace{0.8em}
+%   \begin{block}{\texttt{diff\_weight} bias}
+%     All embedders weight pooling toward \texttt{removed},
+%     \texttt{added}, and \texttt{mutated} nodes — ensuring
+%     changed code dominates the embedding.
+%   \end{block}
+% \end{column}
 \end{columns}
 \end{frame}
 
@@ -408,7 +409,7 @@ interface, swap via \texttt{config.yaml}.
 
 \vspace{1em}
 \centering
-\begin{tikzpicture}[scale=0.9,
+\begin{tikzpicture}[
   q/.style={rounded corners=3pt,draw=c3,fill=c3!8,
             minimum width=2.2cm,minimum height=0.55cm,
             font=\scriptsize\sffamily,align=center},
@@ -416,9 +417,9 @@ interface, swap via \texttt{config.yaml}.
             minimum width=2.5cm,minimum height=0.55cm,
             font=\scriptsize\sffamily,align=center}]
   \node[q] (qv) at (0,0)    {Query vector};
-  \node[q] (fi) at (3.0,0)  {FAISS\,/\,HNSW};
-  \node[r] (tk) at (6.2,0)  {Top-$k$ CVE metadata};
-  \node[r] (ag) at (9.5,0)  {Agent context};
+  \node[q] (fi) at (3.3,0)  {FAISS\,/\,HNSW};
+  \node[r] (tk) at (6.5,0)  {Top-$k$ CVE metadata};
+  \node[r] (ag) at (10,0)  {Agent context};
   \draw[->,thick,c3]  (qv)--(fi)
     node[midway,above,font=\tiny\sffamily] {embed};
   \draw[->,thick,hit] (fi)--(tk)
@@ -590,21 +591,21 @@ interface, swap via \texttt{config.yaml}.
       agents for patch suggestion workflow.
   \end{enumerate}
 \end{column}
-\begin{column}{0.48\textwidth}
-  \textbf{Research questions open}
-  \begin{enumerate}\setcounter{enumi}{6}
-    \item \textbf{RQ1:} Does PDG-anchored embedding
-      outperform spectral embedding for
-      data-dependency CWEs (UAF, race)?
-    \item \textbf{RQ2:} Does motif histogram alone
-      outperform NetLSD?
-      (If yes: topology adds noise, not signal.)
-    \item \textbf{RQ3:} Can the system generalise
-      to CVEs unseen during indexing?
-      (Temporal split: train pre-$Y$, query $Y{+}1$.)
-    \item \textbf{RQ4:} What is the minimum index
-      size for clinically useful precision@5?
-  \end{enumerate}
+\begin{column}{0.3\textwidth}
+  % \textbf{Research questions open}
+  % \begin{enumerate}\setcounter{enumi}{6}
+  %   \item \textbf{RQ1:} Does PDG-anchored embedding
+  %     outperform spectral embedding for
+  %     data-dependency CWEs (UAF, race)?
+  %   \item \textbf{RQ2:} Does motif histogram alone
+  %     outperform NetLSD?
+  %     (If yes: topology adds noise, not signal.)
+  %   \item \textbf{RQ3:} Can the system generalise
+  %     to CVEs unseen during indexing?
+  %     (Temporal split: train pre-$Y$, query $Y{+}1$.)
+  %   \item \textbf{RQ4:} What is the minimum index
+  %     size for clinically useful precision@5?
+  % \end{enumerate}
 
   \vspace{0.5em}
   \begin{alertblock}{Thesis claim to validate}
@@ -619,8 +620,8 @@ interface, swap via \texttt{config.yaml}.
 \begin{frame}[plain]
 \centering
 \vspace{3em}
-{\Large\bfseries\color{c1} Thank you}\\[1em]
-{\color{gray} Questions welcome}\\[2em]
+% {\Large\bfseries\color{c1} Thank you}\\[1em]
+% {\color{gray} Questions welcome}\\[2em]
 \begin{tikzpicture}
   \node[draw=c1!30,rounded corners=6pt,fill=c1!5,
         minimum width=8cm,minimum height=1.2cm,
