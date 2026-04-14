@@ -74,9 +74,11 @@ class WLEmbedder(BaseEmbedder):
         pooled  = []
         for conv in self.convs:
             colours = conv(colours, data.edge_index)
+            colours = colours % self.embedding.num_embeddings
             emb     = self.embedding(colours)
             pooled.append(global_add_pool(emb, data.batch))  # (1, hidden_dim)
 
+            
         out = torch.cat(pooled, dim=1)           # (1, hidden_dim * num_iterations)
         out = self.proj(out).detach().numpy()[0] # (dim,)
 
