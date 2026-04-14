@@ -26,11 +26,10 @@
 \setbeamertemplate{footline}[frame number]
 \setbeamerfont{frametitle}{series=\bfseries}
 
-\title{\textbf{graph-rag}\\[4pt]
-       \large CPG-Based Vulnerability Retrieval}
+\title{\textbf{Graph-Based Vulnerability Retrieval}\\[4pt]}
 \subtitle{Master's Thesis — Technical Progress}
 \author{Lívia}
-\institute{TU Munich · Siemens AI Engineering}
+\institute{TU Munich · Siemens}
 \date{\today}
 
 \begin{document}
@@ -58,7 +57,7 @@
 \section{Motivation}
 % ══════════════════════════════════════════════════════════════════════
 
-\begin{frame}{Why Graph-Based Vulnerability Retrieval?}
+\begin{frame}{Visual Recap}
 \begin{columns}[T]
 \begin{column}{0.55\textwidth}
   \textbf{The problem:} Given a new vulnerable function, find the
@@ -172,61 +171,61 @@
 \end{columns}
 \end{frame}
 
-% ══════════════════════════════════════════════════════════════════════
-\section{Data Foundation}
-% ══════════════════════════════════════════════════════════════════════
+% % ══════════════════════════════════════════════════════════════════════
+% \section{Data Foundation}
+% % ══════════════════════════════════════════════════════════════════════
 
-\begin{frame}{Data Foundation: Datasets \& Loader Design}
-\begin{columns}[T]
-\begin{column}{0.52\textwidth}
-  \textbf{Supported datasets} — all yield \texttt{FunctionPair}
-  objects via a common \texttt{BaseDataset} interface:
+% \begin{frame}{Data Foundation: Datasets \& Loader Design}
+% \begin{columns}[T]
+% \begin{column}{0.52\textwidth}
+%   \textbf{Supported datasets} — all yield \texttt{FunctionPair}
+%   objects via a common \texttt{BaseDataset} interface:
 
-  \vspace{0.6em}
-  \begin{description}[\textbf{CVEFixes}]
-    \item[\textbf{AutoPatch}] Folder-per-CVE with original source
-      \emph{and} LLM-reimplemented variants
-      (GPT-4o, DeepSeek-R1, LLaMA, o3-mini).
-      Enables augmented generalisation testing.
-      % \item[\textbf{BigVul}] 3,500+ CVEs as CSV with
-      % \texttt{func\_before}/\texttt{func\_after} columns.
-      % Largest C/C++ vulnerability dataset.
-    \item[\textbf{CVEFixes} (Optional)] SQLite DB; method-level before/after
-      pairs linked to commit history.
-  \end{description}
+%   \vspace{0.6em}
+%   \begin{description}[\textbf{CVEFixes}]
+%     \item[\textbf{AutoPatch}] Folder-per-CVE with original source
+%       \emph{and} LLM-reimplemented variants
+%       (GPT-4o, DeepSeek-R1, LLaMA, o3-mini).
+%       Enables augmented generalisation testing.
+%       % \item[\textbf{BigVul}] 3,500+ CVEs as CSV with
+%       % \texttt{func\_before}/\texttt{func\_after} columns.
+%       % Largest C/C++ vulnerability dataset.
+%     \item[\textbf{CVEFixes} (Optional)] SQLite DB; method-level before/after
+%       pairs linked to commit history.
+%   \end{description}
 
-  % \vspace{0.6em}
+%   % \vspace{0.6em}
   
-\end{column}
-\begin{column}{0.45\textwidth}
-  \begin{block}{Design decision}
-    \texttt{export\_jobs()} parallelises Joern over functions;
-    \texttt{stream()} feeds the index builder.
-    Adding a new dataset = one class, two methods.
-  \end{block}
-  % \centering
-  % \begin{tikzpicture}[scale=0.9,
-  %   ds/.style={rounded corners=4pt,draw=c1!50,fill=c1!8,
-  %              minimum width=3.2cm,minimum height=0.65cm,
-  %              font=\scriptsize\sffamily,align=center},
-  %   iface/.style={rounded corners=4pt,draw=c3,fill=c3!10,
-  %                 minimum width=3.2cm,minimum height=0.65cm,
-  %                 font=\scriptsize\sffamily\bfseries,align=center},
-  %   out/.style={rounded corners=4pt,draw=hit,fill=hit!8,
-  %               minimum width=3.2cm,minimum height=0.65cm,
-  %               font=\scriptsize\sffamily,align=center}]
-  %   \node[ds] (bv) at (0,3.2)  {BigVul (CSV)};
-  %   \node[ds] (cf) at (0,2.4)  {CVEFixes (SQLite)};
-  %   \node[ds] (ap) at (0,1.6)  {AutoPatch (folders)};
-  %   \node[iface] (bd) at (0,0.7) {BaseDataset interface};
-  %   \draw[->,c1!60] (bv)--(bd);
-  %   \draw[->,c1!60] (cf)--(bd);
-  %   \draw[->,c1!60] (ap)--(bd);
-  %   % \draw[->,c3,thick] (bd)--(fp);
-  % \end{tikzpicture}
-\end{column}
-\end{columns}
-\end{frame}
+% \end{column}
+% \begin{column}{0.45\textwidth}
+%   \begin{block}{Design decision}
+%     \texttt{export\_jobs()} parallelises Joern over functions;
+%     \texttt{stream()} feeds the index builder.
+%     Adding a new dataset = one class, two methods.
+%   \end{block}
+%   % \centering
+%   % \begin{tikzpicture}[scale=0.9,
+%   %   ds/.style={rounded corners=4pt,draw=c1!50,fill=c1!8,
+%   %              minimum width=3.2cm,minimum height=0.65cm,
+%   %              font=\scriptsize\sffamily,align=center},
+%   %   iface/.style={rounded corners=4pt,draw=c3,fill=c3!10,
+%   %                 minimum width=3.2cm,minimum height=0.65cm,
+%   %                 font=\scriptsize\sffamily\bfseries,align=center},
+%   %   out/.style={rounded corners=4pt,draw=hit,fill=hit!8,
+%   %               minimum width=3.2cm,minimum height=0.65cm,
+%   %               font=\scriptsize\sffamily,align=center}]
+%   %   \node[ds] (bv) at (0,3.2)  {BigVul (CSV)};
+%   %   \node[ds] (cf) at (0,2.4)  {CVEFixes (SQLite)};
+%   %   \node[ds] (ap) at (0,1.6)  {AutoPatch (folders)};
+%   %   \node[iface] (bd) at (0,0.7) {BaseDataset interface};
+%   %   \draw[->,c1!60] (bv)--(bd);
+%   %   \draw[->,c1!60] (cf)--(bd);
+%   %   \draw[->,c1!60] (ap)--(bd);
+%   %   % \draw[->,c3,thick] (bd)--(fp);
+%   % \end{tikzpicture}
+% \end{column}
+% \end{columns}
+% \end{frame}
 
 % ══════════════════════════════════════════════════════════════════════
 \section{Graph Representation}
@@ -386,11 +385,10 @@ interface, swap via \texttt{config.yaml}.
 \vspace{0.8em}
 \begin{columns}[T]
 \begin{column}{0.46\textwidth}
-  \begin{block}{FAISS Flat (IndexFlatIP)}
+  \begin{block}{FAISS Flat}
     \begin{itemize}
       \item Exact cosine search (inner product on L2-normed vectors)
       \item Guaranteed correct top-$k$
-      \item Linear $O(n)$ query — suitable up to $\sim$100k vectors
       \item \textbf{Role:} correctness baseline in all experiments
     \end{itemize}
   \end{block}
@@ -400,9 +398,7 @@ interface, swap via \texttt{config.yaml}.
     \begin{itemize}
       \item Approximate nearest-neighbour via proximity graph
       \item $O(\log n)$ query time
-      \item Tunable recall/speed: \texttt{M} (connectivity),
-        \texttt{ef\_search} (beam width)
-      \item \textbf{Role:} production backend at $>$10k vectors
+      \item \textbf{Role:} test backend for $>$10k vectors
     \end{itemize}
   \end{block}
 \end{column}
@@ -434,7 +430,7 @@ interface, swap via \texttt{config.yaml}.
 \section{Experiments \& Early Results}
 % ══════════════════════════════════════════════════════════════════════
 
-\begin{frame}{Experiment Design}
+\begin{frame}[fragile]{Experiment Design}
 \begin{columns}[T]
 \begin{column}{0.50\textwidth}
   \textbf{Grid evaluated:}
@@ -443,40 +439,34 @@ interface, swap via \texttt{config.yaml}.
   \vspace{0.5em}
   \textbf{Metrics} (all unsupervised — no labelled queries yet):
   \begin{description}[\textbf{CWE recall}]
-    \item[\textbf{Hit@K}] Fraction of queries where correct CVE
-      appears in top-$K$ ($K \in \{1,5,10\}$).
+    \item[\textbf{Hit@K}] Fraction of queries where correct CVE appears in top-$K$ ($K \in \{1,5,10\}$).
     \item[\textbf{MRR}] Mean reciprocal rank.
-    \item[\textbf{CWE recall}] Fraction of top-$K$ sharing
-      the query's CWE type — measures cluster quality.
-    \item[\textbf{Eff. dim}] Participation ratio of PCA
-      eigenvalues — detects embedding collapse.
+    \item[\textbf{CWE recall}] Fraction of top-$K$ sharing the query's CWE type — measures cluster quality.
+    \item[\textbf{Eff. dim}] Participation ratio of PCA eigenvalues — detects embedding collapse.
   \end{description}
 
 \end{column}
 \begin{column}{0.47\textwidth}
   \centering
-  % radar-like bar showing metric coverage
   \begin{tikzpicture}[scale=0.8]
     \foreach \y/\lbl/\col/\val in {
-      4.5/{Self-retrieval}/c1/0.046,
-      3.6/{Leave-one-out}/c2/0.023,
-      2.7/{CWE recall (macro)}/c3/0.181,
-      1.8/{Memory Leak}/hit/0.500,
+      4.5/{Self-retrieval}/c1/0.914,
+      3.6/{Leave-one-out}/c2/0.093,
+      2.7/{CWE recall (macro)}/c3/0.303,
+      1.8/{Memory Leak}/hit/1.000,
       0.9/{Deadlock}/hit/0.333,
-      0.0/{Race Condition}/miss/0.167}{
-      \node[left,font=\tiny\sffamily,text width=3cm,align=right]
-        at (0,\y) {\lbl};
-      \fill[\col!70,rounded corners=1pt]
-        (0.1,\y-0.22) rectangle ({0.1+4.5*\val},\y+0.22);
-      \node[right,font=\tiny\sffamily\bfseries,\col!80!black]
-        at ({0.1+4.5*\val+0.05},\y) {\val};
+      0.0/{Race Condition}/hit/0.333}{
+      \node[left,font=\tiny\sffamily,text width=3cm,align=right] at (0,\y) {\lbl};
+      \fill[\col!70,rounded corners=1pt] (0.1,\y-0.22) rectangle ({0.1+4.5*\val},\y+0.22);
+      \node[right,font=\tiny\sffamily\bfseries,\col!80!black] at ({0.1+4.5*\val+0.05},\y) {\val};
     }
     \draw[black!15] (0.1,-0.3)--(0.1,4.9);
     \foreach \x/\v in {0.1/0, 1.15/0.25, 2.35/0.5, 3.55/0.75, 4.6/1.0}
       \node[below,font=\tiny\color{black!40}] at (\x,-0.35) {\v};
   \end{tikzpicture}
 
-  {\scriptsize\color{gray} Best result: NetLSD on $G_{\text{vuln}}$, 65 pairs}
+  \medskip
+  {\scriptsize\color{gray} Best result: GIN on $G_{\text{vuln}}$, 75 pairs}
 \end{column}
 \end{columns}
 \end{frame}
@@ -509,55 +499,52 @@ interface, swap via \texttt{config.yaml}.
   \item[\faIcon{code}\;] \textbf{Semantic features are necessary.}
     t-SNE of node-type histograms shows random CWE distribution —
     topology does not separate vulnerability classes.
-    CODE attribute coverage is 100\%: semantic embedders have
-    the raw material to work with.
-    \textit{Motif embedder and PDG-slice experiments pending.}
 \end{enumerate}
 \end{frame}
 
-\begin{frame}{CWE-Level Retrieval — Current State}
-\centering
-\vspace{-0.3em}
+% \begin{frame}{CWE-Level Retrieval — Current State}
+% \centering
+% \vspace{-0.3em}
 
-\begin{tikzpicture}[scale=0.95]
-  % y-axis labels and bars
-  \foreach \y/\cwe/\val/\col in {
-    7.2/{Memory Leak}/0.50/hit,
-    6.3/{Deadlock}/0.333/hit,
-    5.4/{NULL Ptr Deref}/0.255/warn,
-    4.5/{Incorrect Return Check}/0.333/warn,
-    3.6/{Integer Overflow}/0.25/warn,
-    2.7/{Use After Free}/0.177/miss,
-    1.8/{Race Condition}/0.166/miss,
-    0.9/{Improper Locking}/0.166/miss,
-    0.0/{Resource Exhaustion}/0.0/miss}{
-    \node[left,font=\scriptsize\sffamily,text width=4.2cm,align=right]
-      at (0,\y) {\cwe};
-    \fill[\col!65,rounded corners=2pt]
-      (0.15,\y-0.3) rectangle ({0.15+6.0*\val},\y+0.3);
-    \node[right,font=\scriptsize\sffamily\bfseries,\col!80!black]
-      at ({0.15+6.0*\val+0.1},\y) {\pgfmathprintnumber[fixed,precision=2]{\val}};
-  }
+% \begin{tikzpicture}[scale=0.95]
+%   % y-axis labels and bars
+%   \foreach \y/\cwe/\val/\col in {
+%     7.2/{Memory Leak}/0.50/hit,
+%     6.3/{Deadlock}/0.333/hit,
+%     5.4/{NULL Ptr Deref}/0.255/warn,
+%     4.5/{Incorrect Return Check}/0.333/warn,
+%     3.6/{Integer Overflow}/0.25/warn,
+%     2.7/{Use After Free}/0.177/miss,
+%     1.8/{Race Condition}/0.166/miss,
+%     0.9/{Improper Locking}/0.166/miss,
+%     0.0/{Resource Exhaustion}/0.0/miss}{
+%     \node[left,font=\scriptsize\sffamily,text width=4.2cm,align=right]
+%       at (0,\y) {\cwe};
+%     \fill[\col!65,rounded corners=2pt]
+%       (0.15,\y-0.3) rectangle ({0.15+6.0*\val},\y+0.3);
+%     \node[right,font=\scriptsize\sffamily\bfseries,\col!80!black]
+%       at ({0.15+6.0*\val+0.1},\y) {\pgfmathprintnumber[fixed,precision=2]{\val}};
+%   }
 
-  % macro avg line
-  \draw[c3,thick,dashed] ({0.15+6.0*0.1819},-0.4)--({0.15+6.0*0.1819},7.7)
-    node[above,font=\tiny\sffamily\bfseries,c3] {macro avg 0.18};
+%   % macro avg line
+%   \draw[c3,thick,dashed] ({0.15+6.0*0.1819},-0.4)--({0.15+6.0*0.1819},7.7)
+%     node[above,font=\tiny\sffamily\bfseries,c3] {macro avg 0.18};
 
-  % axis
-  \draw[black!20] (0.15,-0.45)--(0.15,7.7);
-  \foreach \x/\v in {0.15/0, 1.65/0.25, 3.15/0.50, 4.65/0.75, 6.15/1.0}
-    \node[below,font=\tiny\color{black!40}] at (\x,-0.5) {\v};
-  \node[below,font=\scriptsize\color{black!50}] at (3.15,-1.0)
-    {CWE-group recall (fraction of top-10 with same CWE)};
-\end{tikzpicture}
+%   % axis
+%   \draw[black!20] (0.15,-0.45)--(0.15,7.7);
+%   \foreach \x/\v in {0.15/0, 1.65/0.25, 3.15/0.50, 4.65/0.75, 6.15/1.0}
+%     \node[below,font=\tiny\color{black!40}] at (\x,-0.5) {\v};
+%   \node[below,font=\scriptsize\color{black!50}] at (3.15,-1.0)
+%     {CWE-group recall (fraction of top-10 with same CWE)};
+% \end{tikzpicture}
 
-\vspace{0.2em}
-{\scriptsize
-  \textcolor{hit}{\faIcon{circle}}\;Structurally distinctive \quad
-  \textcolor{warn}{\faIcon{circle}}\;Moderate \quad
-  \textcolor{miss}{\faIcon{circle}}\;Topology insufficient — semantic features needed
-}
-\end{frame}
+% \vspace{0.2em}
+% {\scriptsize
+%   \textcolor{hit}{\faIcon{circle}}\;Structurally distinctive \quad
+%   \textcolor{warn}{\faIcon{circle}}\;Moderate \quad
+%   \textcolor{miss}{\faIcon{circle}}\;Topology insufficient — semantic features needed
+% }
+% \end{frame}
 
 % ══════════════════════════════════════════════════════════════════════
 \section{Next Steps}
@@ -565,7 +552,7 @@ interface, swap via \texttt{config.yaml}.
 
 \begin{frame}{Next Steps}
 \begin{columns}[T]
-\begin{column}{0.48\textwidth}
+\begin{column}{0.6\textwidth}
   % \textbf{Immediate (in progress)}
   % \begin{enumerate}
   %   \item Validate PDG edge export — confirm
@@ -584,8 +571,6 @@ interface, swap via \texttt{config.yaml}.
     
     \item Change the calculation of graph differences. 
       Instead of using the graph difference sets, look for a semantic difference (change of the nodes contents).
-     \item Fix scaffold contamination — annotate
-      and exclude boilerplate Joern nodes.
   \end{enumerate}
 \end{column}
 \begin{column}{0.3\textwidth}
