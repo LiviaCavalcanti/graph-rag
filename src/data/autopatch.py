@@ -5,7 +5,7 @@ from typing import Iterator
 from src.graph.joern_graph import get_cpg
 
 from .base import BaseDataset, ExportJob, FunctionPair
-from .pipeline import compute_graph_diff, load_cpg_dir, cpg_dir_for
+from .pipeline import compute_graph_diff, load_cpg_dir, cpg_dir_for, read_supplementary_code
 
 # augmented versions
 _VARIANTS = [
@@ -189,6 +189,7 @@ class AutoPatchDataset(BaseDataset):
             if not after_path.exists():
                 after_path = cve_dir / "original_code_fixed.cpp"
             supp_path = cve_dir / "supplementary_code.txt"
+            supp_text = read_supplementary_code(supp_path)
 
             if before_path.exists() and after_path.exists():
                 yield ExportJob(
@@ -198,7 +199,7 @@ class AutoPatchDataset(BaseDataset):
                     source_code=before_path.read_text(
                         encoding="utf-8"
                     ),
-                    supplementary_code=supp_path,
+                    supplementary_code=supp_text,
                     version="before",
                     out_dir=str(base / "original" / "before"),
                 )
@@ -210,7 +211,7 @@ class AutoPatchDataset(BaseDataset):
                     source_code=after_path.read_text(
                         encoding="utf-8"
                     ),
-                    supplementary_code=supp_path,
+                    supplementary_code=supp_text,
                     version="after",
                     out_dir=str(base / "original" / "after"),
                 )
