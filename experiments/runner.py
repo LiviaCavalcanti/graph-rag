@@ -69,20 +69,18 @@ class ExperimentResult:
 
 def _run_code_query_eval(
     pairs: list,
-    embeddings: np.ndarray,
     retriever,
     embedder,
     ks: list[int],
 ) -> dict:
-
-
     from collections import defaultdict
 
-    hits = defaultdict(int)
-    mrrs = []
-    n=0
+    hits        = defaultdict(int)
+    mrrs        = []
+    raw_queries = []
+    n           = 0
 
-    for i, pair in enumerate(pairs):
+    for pair in pairs:
         if pair.meta.get("dataset") == "autopatch" and pair.meta.get("variant") != "original":
             query_graph = pair.G_before
         else:
@@ -93,21 +91,31 @@ def _run_code_query_eval(
         results = retriever.query(query_vec, top_k=max(ks))
         for k in ks:
             hits[k] += int(any(r['cve_id'] == pair.cve_id for r in results[:k]))
-        
-        mrrs.append(next(
+        mrr = next(
             (1.0 / (j + 1) for j, r in enumerate(results) if r['cve_id'] == pair.cve_id),
             0.0
-        ))
+        )
+        mrrs.append(mrr)
+        raw_queries.append({
+            'query_cve': pair.cve_id,
+            'query_cwe': pair.cwe_id,
+            'hit':       mrr > 0,
+            'mrr':       mrr,
+            'retrieved': [
+                {'rank': j + 1, 'cve_id': r.get('cve_id'), 'cwe_id': r.get('cwe_id'), 'score': r.get('score')}
+                for j, r in enumerate(results)
+            ],
+        })
+        n += 1
 
-        n+=1
+    if n == 0:
+        return {'n': 0, 'raw_queries': []}
 
-    if n== 0:
-        return {'n': 0}
-    
     return {
         **{f'hit@{k}': hits[k] / n for k in ks},
-        'mrr': float(np.mean(mrrs)),
-        'n': n
+        'mrr':        float(np.mean(mrrs)),
+        'n':          n,
+        'raw_queries': raw_queries,
     }
 
 
@@ -206,7 +214,9 @@ def run_experiment(
 
             # ── build index ──────────────────────────────────────────
             t0    = time.perf_counter()
-            index = _build_index(backend_name, embedder.dim, run_dir, embedder.name, graph_variant)
+            index_dir = run_dir / 'indices'
+            index_dir.mkdir(exist_ok=True)
+            index = _build_index(backend_name, embedder.dim, index_dir, embedder.name, graph_variant)
             for pair, vec, _ in zip(pairs, embeddings, meta_list):
                 index.add(pair, vec, embedder.name)
             index.save()
@@ -220,8 +230,9 @@ def run_experiment(
             print(f"    latency p50={latency['p50_ms']:.2f}ms  p99={latency['p99_ms']:.2f}ms")
 
             # ── self-retrieval ───────────────────────────────────────
-            sr = _run_code_query_eval(pairs, embeddings, retriever, embedder, ks=ks)
-            print(sr)
+            sr = _run_code_query_eval(pairs, retriever, embedder, ks=ks)
+            # Omitting self-retrieval for its lengthy raw query logs, but they are available in the CellResult for later analysis.
+            # print(sr)
             if sr.get('n') == 0:
                 print(f"    code-query hit@1=NaN  mrr=-1")
             else:
