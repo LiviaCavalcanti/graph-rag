@@ -131,7 +131,7 @@ def write_c_file(
         return stripped
 
     main_code = strip_fences(source_code)
-    supp_code = ''#strip_fences(supplementary_code)
+    supp_code = strip_fences(supplementary_code) if supplementary_code else ''
 
     # minimal scaffold so Joern can parse without errors
     scaffold = textwrap.dedent("""\
