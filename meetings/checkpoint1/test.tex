@@ -41,9 +41,9 @@
 \end{frame}
 
 % ── outline ───────────────────────────────────────────────────────────
-\begin{frame}{Agenda}
-\tableofcontents
-\end{frame}
+% \begin{frame}{Agenda}
+% \tableofcontents
+% \end{frame}
 
 \section{Motivation}
 \section{System Architecture}
@@ -65,12 +65,12 @@
   most structurally similar historical CVEs — enabling automated
   patch suggestion.
 
-  \vspace{1em}
-  \begin{block}{Why not text search?}
-    Two buffer overflows in different codebases share \emph{structure},
-    not tokens. Variable names, formatting, and language style vary;
-    the \emph{program dependence pattern} does not.
-  \end{block}
+  % \vspace{1em}
+  % \begin{block}{Why not text search?}
+  %   Two buffer overflows in different codebases share \emph{structure},
+  %   not tokens. Variable names, formatting, and language style vary;
+  %   the \emph{program dependence pattern} does not.
+  % \end{block}
 
   \vspace{0.8em}
   \textbf{Key insight:} Code Property Graphs (CPGs) unify AST,
@@ -131,7 +131,7 @@
   \node (n2) [block,fill=c2,text=white,right=0.5cm of n1]
     {II.\\CPG\\Construction};
   \node (n3) [block,fill=c3,text=white,right=0.5cm of n2]
-    {III.\\Semantic\\Diff};
+    {III.\\Vulnerability\\Diff};
   \node (n4) [block,fill=c4,text=white,right=0.5cm of n3]
     {IV.\\Graph\\Embedding};
   \node (n5) [block,fill=c5,text=white,right=0.5cm of n4]
@@ -159,7 +159,7 @@
 \begin{columns}[t]
   \begin{column}{0.33\textwidth}\centering
     \textbf{\textcolor{c1}{Data Layer}}\\
-    \scriptsize Multi-dataset normalisation into uniform CPG format.
+    \scriptsize Dataset interface to CPG format.
   \end{column}
   \begin{column}{0.33\textwidth}\centering
     \textbf{\textcolor{c3}{Vector Layer}}\\
@@ -239,13 +239,12 @@
   \textbf{Step 1 — CPG Export (Joern)}\\[2pt]
   \texttt{joern-export --repr all} produces one
   \texttt{export.xml} per function covering
-  AST, CFG, CDG, and PDG (\texttt{REACHING\_DEF}) edges.
+  AST, CFG, and PDG edges.
 
   \vspace{0.8em}
-  \textbf{Step 2 — Semantic Graph Diff}\\[2pt]
-  \textit{Key decision:} match nodes by
-  \texttt{(type, normalised CODE)}, not by Joern ID.
-  Joern assigns non-deterministic IDs across runs — ID-based
+  \textbf{Step 2 — Graph Diff}\\[2pt]
+  Match nodes by Joern ID.
+  \textit{Identified problem:} Joern assigns non-deterministic IDs across runs — ID-based
   diff produced $G_{\text{vuln}} \approx G_{\text{before}}$,
   making all graphs indistinguishable.
 
@@ -261,11 +260,14 @@
   % \end{tabular}
 
   \vspace{0.6em}
-  \textbf{Step 3 — PDG-Anchored Slice}\\[2pt]
-  Neighbourhood expansion follows only \texttt{CFG},
-  \texttt{CDG}, \texttt{REACHING\_DEF} edges —
-  eliminating the AST-dominated noise that
-  inflates $G_{\text{vuln}}$.
+  \textbf{Step 3 — CPG Slice}\\[2pt]
+  Extract the nodes that diverge and its neighbors with a hop-based of 1 scheme.
+  % \textbf{Step 3 — PDG-Anchored Slice}\\[2pt]
+
+  % Neighbourhood expansion follows only \texttt{CFG},
+  % \texttt{CDG}, \texttt{REACHING\_DEF} edges —
+  % eliminating the AST-dominated noise that
+  % inflates $G_{\text{vuln}}$.
 
 \end{column}
 \begin{column}{0.3\textwidth}
@@ -285,7 +287,7 @@
     \node[box] (m)  at (0, 2.7) {Merged MultiDiGraph};
     \node[dec] (d)  at (0, 1.75) {Semantic diff\\(fingerprint match)};
     \node[dec] (sl) at (0, 0.75) {PDG slice\\($n$-hop on dep.\ edges)};
-    \node[res] (gv) at (0, -0.20) {$G_{\text{vuln}}$ with diff weights};
+    \node[res] (gv) at (0, -0.20) {$G_{\text{vuln}}$};
     \foreach \a/\b in {s/j,j/m,m/d,d/sl,sl/gv}
       \draw[->,thick,black!35] (\a)--(\b);
   \end{tikzpicture}
@@ -339,13 +341,12 @@ Output: L2-normalised 128-dim vector per function graph.}
     \item[\textbf{NetLSD}] Heat trace of the graph Laplacian.
       Permutation-invariant; captures global shape.
       \textit{Collapses on graphs $<5$ nodes.}
-    \item[\textbf{WL}] Weisfeiler-Lehman colour refinement +
-      weighted pooling. Subtree kernel equivalent.
+    \item[\textbf{WL}] Weisfeiler-Lehman colour refinement. Subtree kernel equivalent.
     \item[\textbf{GIN}] 3-layer Graph Isomorphism Network with
       frozen random weights. Johnson-Lindenstrauss
       distance preservation via MLP non-linearity.
-    \item[\textbf{Combined}] NetLSD + WL + GIN concatenated,
-      PCA-reduced. Most robust to individual collapse.
+    \item[\textbf{Combined}] NetLSD + WL + GIN concatenated.
+    More robust to individual collapse.
   \end{description}
 
 \end{column}
@@ -451,10 +452,6 @@ interface, swap via \texttt{config.yaml}.
       eigenvalues — detects embedding collapse.
   \end{description}
 
-  \vspace{0.5em}
-  \textbf{Experiments E1--E8:}
-  $n$-hop tightness, subgraph strategies,
-  semantic features, motif-only baseline, hybrid.
 \end{column}
 \begin{column}{0.47\textwidth}
   \centering
@@ -569,26 +566,26 @@ interface, swap via \texttt{config.yaml}.
 \begin{frame}{Next Steps}
 \begin{columns}[T]
 \begin{column}{0.48\textwidth}
-  \textbf{Immediate (in progress)}
-  \begin{enumerate}
-    \item Validate PDG edge export — confirm
-      \texttt{REACHING\_DEF} density before
-      investing in PDG-slice experiments.
-    \item Run E7/E8: motif embedder on PDG slice
-      vs.\ pure semantic baseline.
-    \item Fix scaffold contamination — annotate
-      and exclude boilerplate Joern nodes.
-  \end{enumerate}
+  % \textbf{Immediate (in progress)}
+  % \begin{enumerate}
+  %   \item Validate PDG edge export — confirm
+  %     \texttt{REACHING\_DEF} density before
+  %     investing in PDG-slice experiments.
+  %   \item Run E7/E8: motif embedder on PDG slice
+  %     vs.\ pure semantic baseline.
+   
+  % \end{enumerate}
 
   \vspace{0.8em}
   \textbf{Short term}
   \begin{enumerate}\setcounter{enumi}{3}
     \item Construct held-out query set with known
       CVE targets for honest precision/recall.
-    \item Scale to full BigVul ($\sim$3,500 CVEs)
-      and CVEFixes ($\sim$10,000 pairs).
-    \item Integrate \texttt{Retriever} into ADK
-      agents for patch suggestion workflow.
+    
+    \item Change the calculation of graph differences. 
+      Instead of using the graph difference sets, look for a semantic difference (change of the nodes contents).
+     \item Fix scaffold contamination — annotate
+      and exclude boilerplate Joern nodes.
   \end{enumerate}
 \end{column}
 \begin{column}{0.3\textwidth}
@@ -608,11 +605,10 @@ interface, swap via \texttt{config.yaml}.
   % \end{enumerate}
 
   \vspace{0.5em}
-  \begin{alertblock}{Thesis claim to validate}
-    Graph-structural similarity between $G_{\text{vuln}}$
-    subgraphs is sufficient signal for vulnerability
-    retrieval without labelled training data.
-  \end{alertblock}
+  \begin{block}{Current Goal}
+    Find a sweetspot of the graph content and diff operation to then focus on $G_{\text{vuln}}$
+    semantic embedder, then iterate.
+  \end{block}
 \end{column}
 \end{columns}
 \end{frame}
