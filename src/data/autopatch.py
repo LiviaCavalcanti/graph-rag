@@ -186,6 +186,8 @@ class AutoPatchDataset(BaseDataset):
 
             before_path = cve_dir / "original_code.txt"
             after_path = cve_dir / "original_code_fixed.c"
+            if not after_path.exists():
+                after_path = cve_dir / "original_code_fixed.cpp"
             supp_path = cve_dir / "supplementary_code.txt"
 
             if before_path.exists() and after_path.exists():
@@ -194,7 +196,7 @@ class AutoPatchDataset(BaseDataset):
                     func_name=func_name,
                     variant="original",
                     source_code=before_path.read_text(
-                        encoding="utf-8", errors="replace"
+                        encoding="utf-8"
                     ),
                     supplementary_code=supp_path,
                     version="before",
@@ -206,7 +208,7 @@ class AutoPatchDataset(BaseDataset):
                     func_name=func_name,
                     variant="original",
                     source_code=after_path.read_text(
-                        encoding="utf-8", errors="replace"
+                        encoding="utf-8"
                     ),
                     supplementary_code=supp_path,
                     version="after",
