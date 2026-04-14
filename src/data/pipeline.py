@@ -163,12 +163,13 @@ def run_joern_export(
 
     out.mkdir(parents=True, exist_ok=True)
 
+    # use newFrontend for better C++ support, but it can be much slower and more memory-hungry than the default frontend
     parse_cmd = [
         str(joern_bin / "joern-parse"),
         str(source),
         "--output",
         str(cpg_file),
-        "--language", "c",
+        "--language", "newc",
     ]
 
     result = subprocess.run(parse_cmd, capture_output=True, text=True, timeout=120)
