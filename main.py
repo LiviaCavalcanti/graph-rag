@@ -4,6 +4,7 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
 import yaml
+from tqdm import tqdm
 
 from src.data.autopatch import AutoPatchDataset
 from src.data.base import ExportJob
@@ -21,7 +22,7 @@ def _process_job(job: ExportJob, joern_bin_dir: str):
         print(f"skip {job.cve_id}/{job.variant}/{job.version} already exists")
         return True, f"skip {job.cve_id}/{job.variant}/{job.version} already exists"
 
-    c_file = out_dir / f"{job.func_name or 'function'}.c"
+    c_file = out_dir / f"{job.func_name or 'function'}.cpp"
     graph_folder = out_dir / "graph"
 
     try:
@@ -56,14 +57,17 @@ def run_export(cfg: str, dataset_name: str | None = None):
 
         ok = fail = skipped = 0
         with Pool(processes=workers) as pool:
-            for success, msg in pool.imap_unordered(worker_fn, jobs, chunksize=4):
-                if "skip" in msg:
-                    skipped += 1
-                elif "fail" in msg.lower():
-                    fail += 1
-                    print(f" {msg} \n")
-                else:
-                    ok += 1
+            with tqdm(total=len(jobs), desc=ds_name, unit='job') as pbar:
+                for success, msg in pool.imap_unordered(worker_fn, jobs, chunksize=4):
+                    if "skip" in msg:
+                        skipped += 1
+                    elif "fail" in msg.lower():
+                        fail += 1
+                        tqdm.write(f" {msg}")
+                    else:
+                        ok += 1
+                    pbar.set_postfix(ok=ok, skip=skipped, fail=fail)
+                    pbar.update(1)
         print(f"Done \n    ok: {ok}  -  skipped: {skipped}  -  fail: {fail}")
 
 
