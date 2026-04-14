@@ -131,8 +131,8 @@ class AutoPatchDataset(BaseDataset):
 
             # augmented data
             if self.cfg.get("include_variants", False):
-                code_dir = cve_dir / "out_v2" / "code"
-                if not code_dir.exists():
+                code_dir = cve_dir / "patch_augmented"
+                if code_dir.exists():
                     for json_file, fixed_file in _VARIANTS:
                         variant_data = self._load_variant_json(code_dir, json_file)
                         if variant_data:
