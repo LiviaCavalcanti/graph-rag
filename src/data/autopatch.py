@@ -103,7 +103,7 @@ class AutoPatchDataset(BaseDataset):
 
             # original code
             original_code_path = cve_dir / "original_code.txt"
-            original_fixed_path = cve_dir / "original_code_fixed.c"
+            original_fixed_path = cve_dir / "vuln_patch.txt"
 
             if original_code_path.exists() and original_fixed_path.exists():
                 pair = self._make_pair(
