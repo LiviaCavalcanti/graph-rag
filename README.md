@@ -4,30 +4,6 @@ Structure-aware RAG system for automated vulnerability detection using Code Prop
 
 ---
 
-## Architecture
-
-```
-graph-rag/
-├── config.yaml                  # all settings live here
-├── main.py                      # CLI entrypoint
-├── data/
-│   ├── base.py                  # FunctionPair + ExportJob dataclasses, BaseDataset interface
-│   ├── pipeline.py              # graph loading, Joern export, graph diff
-│   ├── bigvul.py                # BigVul dataset
-│   ├── cvefixes.py              # CVEFixes dataset
-│   └── autopatch.py             # AutoPatch dataset
-├── embeddings/
-│   ├── base.py                  # BaseEmbedder interface
-│   ├── netlsd.py                # NetLSD (spectral descriptor, no training)
-│   ├── wl.py                    # WL baseline (Weisfeiler-Lehman, no training)
-│   └── __init__.py              # embedder registry
-├── rag/
-│   ├── index.py                 # FAISS index build + save/load
-│   └── retriever.py             # query interface for agents
-└── agents/
-    └── __init__.py              # load_retriever() — single call for ADK agents
-```
-
 ### Pipeline stages
 
 ```
@@ -75,7 +51,7 @@ CVE-list/CVE-XXXX-YYYY/
 |---|---|---|
 | `netlsd` | Network Laplacian Spectral Descriptor — heat trace of graph Laplacian | none |
 | `wl` | Weisfeiler-Lehman colour refinement → pooled → linear projection | none |
-
+| `gin` | Neural equivalent of the WL test that learns a differentiable function to aggregate neighbor information | none |
 Both output L2-normalised vectors of configurable dimension (default 128). The active embedder for FAISS indexing is set in `config.yaml` under `rag.embedding_variant`.
 
 ---
@@ -119,7 +95,7 @@ data:
     include_variants: false          # set true to include LLM-generated variants
 
 embeddings:
-  active: [netlsd, wl]
+  active: [netlsd, wl, gin, combined]
   dim: 128
 
 rag:
@@ -143,8 +119,6 @@ python main.py --config config.yaml --mode export
 
 # export a single dataset
 python main.py --config config.yaml --mode export --dataset autopatch
-python main.py --config config.yaml --mode export --dataset bigvul
-python main.py --config config.yaml --mode export --dataset cvefixes
 ```
 
 Exported graphs are written to:
@@ -162,13 +136,9 @@ python main.py --config config.yaml --mode index
 ```
 
 ### Step 3 — query
-
-Look up stored metadata by CVE ID (no embedding needed):
-
-```bash
-python main.py --config config.yaml --mode query --cve CVE-2025-22017
 ```
-
+# TODO
+````
 ---
 
 ## Using from ADK agents
@@ -190,27 +160,136 @@ for r in results:
 # or look up by CVE ID directly
 results = retriever.query_by_cve('CVE-2025-22017')
 ```
+---
+
+## Experiment evaluation
+
+Run the full evaluation grid (all embedders × all graph variants × all backends):
+
+```bash
+python main.py --config config.yaml --mode experiment
+```
+
+Results are written to `experiments/output/<run_id>/`:
+- `results.json` — full structured output including per-query raw data
+- `summary.json` — flat table suitable for pandas
+- `all_runs.json` — cumulative log across all runs
+- `visualizations/dashboard_performance.png`
+- `visualizations/dashboard_quality.png`
+- `visualizations/dashboard_metrics.png`
 
 ---
 
-## Adding a new dataset
+### Metrics
 
-1. Create `data/mydata.py` subclassing `BaseDataset`
-2. Implement `name()`, `stream()` → yields `FunctionPair`, and `export_jobs()` → yields `ExportJob`
-3. Register in `main.py`:
+The experiment runner evaluates each cell in the grid (one embedder × one graph variant × one backend) across three complementary metric families.
+
+---
+
+#### 1. Code-query retrieval (self_retrieval)
+
+**What it measures:** given the vulnerability subgraph of a CVE as the query, does the index return the same CVE in the top-k results?
+
+**How it is computed:**
+
+For each `FunctionPair` in the dataset:
+1. The query graph is selected: `G_vuln` (the vulnerability-relevant subgraph) for original samples, `G_before` for LLM-generated variants.
+2. The query graph is embedded with the same embedder used to build the index.
+3. The index is queried with `top_k` results.
+4. A result is a **hit** at rank `k` if the correct CVE ID appears anywhere in the top-k list.
+
+$$\text{Hit@k} = \frac{1}{N} \sum_{i=1}^{N} \mathbf{1}[\text{cve\_id}_i \in \text{top-k results}_i]$$
+
+$$\text{MRR} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{\text{rank of first correct result}_i}$$
+
+Samples whose embedding has near-zero norm (degenerate graphs) are skipped and not counted in N.
+
+**Output fields** (`self_retrieval`):
+
+| Field | Description |
+|---|---|
+| `hit@1`, `hit@5`, `hit@10` | Fraction of queries with correct CVE in top-k |
+| `mrr` | Mean reciprocal rank |
+| `n` | Number of valid (non-degenerate) queries |
+| `raw_queries` | Per-query list: `query_cve`, `query_cwe`, `hit`, `mrr`, and ranked `retrieved` items with `cve_id`, `cwe_id`, `score` |
+
+---
+
+#### 2. CWE-group recall (cwe_recall)
+
+**What it measures:** for each sample, do the top-k retrieved results share the same vulnerability type (CWE)? This evaluates clustering quality without needing exact CVE matches.
+
+**How it is computed:**
+
+Samples are grouped by CWE. A CWE with only one sample is a **singleton** and is excluded from scoring (there are no same-type peers to retrieve).
+
+For each sample $i$ with $\text{CWE} = c$, let $S_c$ be the set of all other samples with the same CWE. The index is queried and self is excluded by CVE ID:
+
+$$\text{Recall}_i = \frac{|\{r \in \text{top-k}\setminus\{i\} : \text{cwe}(r) = c\}|}{\min(k,\, |S_c|)}$$
+
+$$\text{CWE Recall}(c) = \frac{1}{|S_c|} \sum_{i \in S_c} \text{Recall}_i$$
+
+$$\text{Macro Avg} = \frac{1}{|\mathcal{C}|} \sum_{c \in \mathcal{C}} \text{CWE Recall}(c)$$
+
+where $\mathcal{C}$ is the set of CWEs with at least 2 samples.
+
+**Output fields** (`cwe_recall`):
+
+| Field | Description |
+|---|---|
+| `per_cwe` | Dict of `cwe → {recall, support}` for each qualifying CWE |
+| `macro_avg` | Unweighted mean of per-CWE recall |
+| `n_cwes` | Number of CWEs with ≥ 2 samples |
+| `n_singletons` | Number of CWEs with only 1 sample (excluded) |
+| `raw_queries` | Per-query list: `query_cve`, `query_cwe`, `recall`, and ranked `retrieved` items |
+
+---
+
+#### 3. Embedding space statistics (space_stats)
+
+**What it measures:** intrinsic quality of the embedding space, independent of any retrieval task. Useful for detecting collapsed embeddings before running retrieval.
+
+| Field | Description |
+|---|---|
+| `mean_norm`, `std_norm` | Mean and std of L2 norms (should be ≈1.0 after normalisation) |
+| `mean_pairwise_sim` | Mean cosine similarity over a random subset of 500 pairs |
+| `std_pairwise_sim` | Std of pairwise similarities (low std → collapsed space) |
+| `min_pairwise_sim`, `max_pairwise_sim` | Range of similarities |
+| `effective_dim` | Participation ratio of PCA eigenvalues: $(\sum \lambda_i)^2 / \sum \lambda_i^2$. Value of 1 means the space has collapsed to one direction; value of $d$ means all dimensions are used equally. |
+
+---
+
+#### 4. Leave-one-out retrieval (leave_one_out, optional)
+
+**What it measures:** same as code-query retrieval but more honest — for each sample, the index is rebuilt on all *other* samples, then queried. Avoids the trivial self-match.
+
+Enabled only when `run_leave_one_out=True` and dataset size ≤ 1000. Reports the same `hit@k` and `mrr` fields.
+
+---
+
+#### Computing precision and recall yourself
+
+Each cell in `results.json` contains a `raw_queries` array under both `self_retrieval` and `cwe_recall`. Each entry includes the full ranked list of retrieved items. You can recompute any metric directly:
+
 ```python
-from data.mydata import MyDataset
-DATASETS = { ..., 'mydata': MyDataset }
-```
-4. Add config block in `config.yaml` under `data.mydata`
+import json
 
-## Adding a new embedder
+with open("experiments/output/<run_id>/results.json") as f:
+    data = json.load(f)
 
-1. Create `embeddings/myembedder.py` subclassing `BaseEmbedder`
-2. Implement `name` property and `embed_one(G) -> np.ndarray`
-3. Register in `embeddings/__init__.py`:
-```python
-from .myembedder import MyEmbedder
-REGISTRY = { ..., 'myembedder': MyEmbedder }
+cell = data['cells'][0]  # pick a cell
+
+# precision@5 for code-query retrieval
+queries = cell['self_retrieval']['raw_queries']
+p5 = sum(
+    any(r['cve_id'] == q['query_cve'] for r in q['retrieved'][:5])
+    for q in queries
+) / len(queries)
+
+# per-CWE recall from raw data
+from collections import defaultdict
+cwe_recalls = defaultdict(list)
+for q in cell['cwe_recall']['raw_queries']:
+    cwe_recalls[q['query_cwe']].append(q['recall'])
+per_cwe = {cwe: sum(v)/len(v) for cwe, v in cwe_recalls.items()}
 ```
-4. Add to `embeddings.active` list in `config.yaml`
