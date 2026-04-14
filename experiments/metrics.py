@@ -127,7 +127,7 @@ def cwe_group_recall(
     print(f"Metadata contains {len(by_cwe)} unique CWEs, plus {unknown_cwe_count} with unknown CWE.")
 
     cwe_recalls = {}
-    another_cwe_recalls = {}
+    raw_queries  = []
     n_singletons = 0
     for cwe, indices in by_cwe.items():
         if len(indices) < 2:
@@ -140,19 +140,27 @@ def cwe_group_recall(
             results  = [r for r in results if r.get('cve_id') != metadata[i]['cve_id']][:top_k]
             same_cwe = sum(1 for r in results if r.get('cwe_id') == cwe)
             possible = min(top_k, len(indices) - 1)
-            recalls.append(same_cwe / possible if possible > 0 else 0.0)
+            recall   = same_cwe / possible if possible > 0 else 0.0
+            recalls.append(recall)
+            raw_queries.append({
+                'query_cve':   metadata[i]['cve_id'],
+                'query_cwe':   cwe,
+                'recall':      recall,
+                'retrieved':   [
+                    {'rank': j + 1, 'cve_id': r.get('cve_id'), 'cwe_id': r.get('cwe_id'), 'score': r.get('score')}
+                    for j, r in enumerate(results)
+                ],
+            })
 
-        cwe_recalls[cwe] = float(np.mean(recalls))
-        another_cwe_recalls[cwe] = {'recall': float(np.mean(recalls)), 'support': len(indices)}
-    macro_avg = float(np.mean(list(cwe_recalls.values()))) if cwe_recalls else 0.0
-    
-    
+        cwe_recalls[cwe] = {'recall': float(np.mean(recalls)), 'support': len(indices)}
+
+    macro_avg = float(np.mean([v['recall'] for v in cwe_recalls.values()])) if cwe_recalls else 0.0
     return {
-        'per_cwe':     cwe_recalls,
-        'macro_avg':   macro_avg,
-        'n_cwes':      len(cwe_recalls),
+        'per_cwe':      cwe_recalls,
+        'macro_avg':    macro_avg,
+        'n_cwes':       len(cwe_recalls),
         'n_singletons': n_singletons,
-        'per_cwe_detailed': another_cwe_recalls,
+        'raw_queries':  raw_queries,
     }
 
 def embedding_space_stats(embeddings: np.ndarray) -> dict:
