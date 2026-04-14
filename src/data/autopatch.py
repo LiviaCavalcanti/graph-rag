@@ -228,7 +228,7 @@ class AutoPatchDataset(BaseDataset):
                             ):
                                 fixed_c_path = code_dir / fixed_c_file
 
-                                if fixed_c_file.exists():
+                                if fixed_c_path.exists():
                                     variant_name = json_file.replace(".json", "")
 
                                     yield ExportJob(
