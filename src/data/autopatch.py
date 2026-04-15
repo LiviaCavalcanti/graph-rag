@@ -131,38 +131,41 @@ class AutoPatchDataset(BaseDataset):
 
             # augmented data
             if self.cfg.get("include_variants", False):
-                code_dir = cve_dir / "patch_augmented"
+                code_dir = cve_dir / "out_v2" / "code"
                 if code_dir.exists():
                     for json_file, fixed_file in _VARIANTS:
                         variant_data = self._load_variant_json(code_dir, json_file)
                         if variant_data:
-                            # only consider the entries that have a vulnerability
-                            if not variant_data.get("is_vulnerable", False):
+                            # only consider re-implementations that preserved the vulnerability
+                            if not variant_data.get("is_vulnerable", True):
                                 continue
                             fixed_c_path = code_dir / fixed_file
-                            if fixed_c_path.exists():
-                                variant_name = json_file.replace(".json", "")
+                            if not fixed_c_path.exists():
+                                continue
+                            variant_name = json_file.replace(".json", "")
 
-                                pair = self._make_pair(
-                                    root,
-                                    cve_id=cve_id,
-                                    cwe_id=cwe_id,
-                                    func_name=func_name,
-                                    cve_dir=cve_dir,
-                                    meta={
-                                        "dataset": self.name(),
-                                        "variant": variant_name,
-                                        "source_before": variant_data.get(
-                                            "re_implemented_code", ""
-                                        ),
-                                        "source_after": str(fixed_c_path),
-                                        "supplementary_code": variant_data.get(
-                                            "supplementary_code", ""
-                                        ),
-                                        **base_meta,
-                                    },
-                                )
+                            pair = self._make_pair(
+                                root,
+                                cve_id=cve_id,
+                                cwe_id=cwe_id,
+                                func_name=func_name,
+                                cve_dir=cve_dir,
+                                variant=variant_name,
+                                meta={
+                                    "dataset": self.name(),
+                                    "variant": variant_name,
+                                    "source_before": variant_data.get(
+                                        "re_implemented_code", ""
+                                    ),
+                                    "source_after": str(fixed_c_path),
+                                    "supplementary_code": variant_data.get(
+                                        "supplementary_code", ""
+                                    ),
+                                    **base_meta,
+                                },
+                            )
 
+                            if pair is not None:
                                 yield pair
 
     def _variants_to_use(self) -> list[tuple[str, str]]:
@@ -224,28 +227,28 @@ class AutoPatchDataset(BaseDataset):
                                 code_dir=code_dir, json_file=json_file
                             )
 
-                            if variant_data is not None and not variant_data.get(
+                            # only export re-implementations that preserved the vulnerability
+                            if variant_data is not None and variant_data.get(
                                 "is_vulnerable", False
                             ):
                                 fixed_c_path = code_dir / fixed_c_file
+                                variant_name = json_file.replace(".json", "")
 
+                                yield ExportJob(
+                                    cve_id=cve_id,
+                                    func_name=func_name,
+                                    variant=variant_name,
+                                    version="before",
+                                    source_code=variant_data.get(
+                                        "re_implemented_code", ""
+                                    ),
+                                    out_dir=str(base / variant_name / "before"),
+                                )
                                 if fixed_c_path.exists():
-                                    variant_name = json_file.replace(".json", "")
-
                                     yield ExportJob(
                                         cve_id=cve_id,
                                         func_name=func_name,
-                                        variant="augmented",
-                                        version="before",
-                                        source_code=variant_data.get(
-                                            "re_implemented_code", ""
-                                        ),
-                                        out_dir=str(base / variant_name / "before"),
-                                    )
-                                    yield ExportJob(
-                                        cve_id=cve_id,
-                                        func_name=func_name,
-                                        variant="augmented",
+                                        variant=variant_name,
                                         version="after",
                                         source_code=fixed_c_path.read_text(),
                                         out_dir=str(base / variant_name / "after"),
