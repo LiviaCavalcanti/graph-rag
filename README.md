@@ -52,7 +52,9 @@ CVE-list/CVE-XXXX-YYYY/
 | `netlsd` | Network Laplacian Spectral Descriptor — heat trace of graph Laplacian | none |
 | `wl` | Weisfeiler-Lehman colour refinement → pooled → linear projection | none |
 | `gin` | Neural equivalent of the WL test that learns a differentiable function to aggregate neighbor information | none |
-Both output L2-normalised vectors of configurable dimension (default 128). The active embedder for FAISS indexing is set in `config.yaml` under `rag.embedding_variant`.
+| `codebert` | Serialises node tokens → feeds to `microsoft/codebert-base` → mean-pools last hidden states | pre-trained (Microsoft) |
+
+All graph-based embedders output L2-normalised vectors of configurable dimension (default 128). CodeBERT outputs 768-dimensional vectors. The active embedder for FAISS indexing is set in `config.yaml` under `rag.embedding_variant`.
 
 ---
 
@@ -70,6 +72,28 @@ pip install networkx pandas netlsd torch torch_geometric faiss-cpu scikit-learn 
 # https://docs.joern.io/installation
 # set bin_dir in config.yaml to your joern-cli folder
 ```
+
+### CodeBERT model
+
+The `codebert` embedder requires the `microsoft/codebert-base` model weights. Choose one of the two options below.
+
+**Option A — download once and run offline (recommended)**
+```bash
+python -c "
+from huggingface_hub import snapshot_download
+snapshot_download(repo_id='microsoft/codebert-base', local_dir='models/codebert-base')
+"
+```
+The model will be loaded from `models/codebert-base/` automatically.
+
+**Option B — load directly from Hugging Face Hub at runtime**
+
+Set the model path in `config.yaml` to the Hub repo ID:
+```yaml
+embeddings:
+  codebert_model_path: microsoft/codebert-base   # fetched from HF Hub on first use
+```
+This requires an internet connection each run (the Hub will cache files in `~/.cache/huggingface/`).
 
 ---
 
