@@ -20,6 +20,7 @@ dependencies = [
     "torch>=2.11.0",
     "torch-geometric>=2.7.0",
     "tqdm>=4.67.3",
+    "transformers>=5.5.4",
 ]
 
 
