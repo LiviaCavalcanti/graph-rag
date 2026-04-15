@@ -128,6 +128,14 @@ if __name__ == "__main__":
     parser.add_argument("--cve")
     parser.add_argument('--loo', action='store_true',
                     help='run leave-one-out eval (slow, max 1000 samples)')
+    parser.add_argument('--split', action='store_true',
+                    help='enable experiment split mode (overrides config)')
+    parser.add_argument('--no-split', action='store_true',
+                    help='disable experiment split mode (overrides config)')
+    parser.add_argument('--split-test-ratio', type=float,
+                    help='test ratio for split mode, e.g. 0.2')
+    parser.add_argument('--aug-train-ratio', type=float,
+                    help='fraction of augmented train pairs to keep in index, e.g. 0.5')
 
     args = parser.parse_args()
     with open(args.config) as f:
@@ -145,6 +153,18 @@ if __name__ == "__main__":
         run_query(cfg, args.cve)
     elif args.mode == 'experiment':
         from experiments.runner import run_experiment
+
+        cfg.setdefault('experiment', {})
+        cfg['experiment'].setdefault('split', {})
+        split_cfg = cfg['experiment']['split']
+        if args.split:
+            split_cfg['enabled'] = True
+        if args.no_split:
+            split_cfg['enabled'] = False
+        if args.split_test_ratio is not None:
+            split_cfg['test_ratio'] = args.split_test_ratio
+        if args.aug_train_ratio is not None:
+            split_cfg['augmented_train_ratio'] = args.aug_train_ratio
 
         # load all pairs from all active datasets
         all_pairs = []
