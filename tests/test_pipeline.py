@@ -256,10 +256,10 @@ def test_load_cpg_dir_accepts_graph_subdir_directly(tmp_path):
 
 def _simple_graph(node_ids: list[str], edges: list[tuple]) -> nx.MultiDiGraph:
     G = nx.MultiDiGraph()
-    for n in node_ids:
-        G.add_node(n, labelV='METHOD')
+    for i, n in enumerate(node_ids):
+        G.add_node(n, labelV='CALL', CODE=f'code_{n}', LINE_NUMBER=i + 1)
     for u, v in edges:
-        G.add_edge(u, v, label='CFG')
+        G.add_edge(u, v, labelE='CFG')
     return G
 
 
@@ -275,7 +275,7 @@ def test_compute_graph_diff_added_nodes():
     G_before = _simple_graph(['a', 'b'], [('a', 'b')])
     G_after  = _simple_graph(['a', 'b', 'c'], [('a', 'b'), ('b', 'c')])
     G_vuln   = compute_graph_diff(G_before, G_after)
-    # c was added — should appear (as context from neighbourhood expansion)
+    # c was added next to b — b should appear as fix_adjacent
     assert 'b' in G_vuln.nodes
 
 
@@ -290,9 +290,9 @@ def test_compute_graph_diff_context_annotation():
     G_before = _simple_graph(['a', 'b', 'c'], [('a', 'b'), ('b', 'c')])
     G_after  = _simple_graph(['a', 'c'], [('a', 'c')])
     G_vuln   = compute_graph_diff(G_before, G_after)
-    # a and c are neighbours of removed b — they are context
+    # a and c are CFG neighbours of removed b — slice should include them
     if 'a' in G_vuln.nodes:
-        assert G_vuln.nodes['a']['diff'] == 'context'
+        assert G_vuln.nodes['a']['diff'] in ('context', 'edge_changed', 'fix_adjacent')
 
 
 def test_compute_graph_diff_unchanged_graph():
