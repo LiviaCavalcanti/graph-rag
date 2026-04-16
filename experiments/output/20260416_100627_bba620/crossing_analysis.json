@@ -1,0 +1,6733 @@
+{
+  "run_id": "20260416_100627_bba620",
+  "generated_at": "2026-04-16T10:45:18.455594+00:00",
+  "settings": {
+    "prob_floor": 0.12,
+    "margin_floor": 0.005,
+    "temperature": 1.0,
+    "cascade_order": [
+      "combined",
+      "codebert_seq",
+      "gin",
+      "codebert_pattern",
+      "wl",
+      "rgcn",
+      "vuln_pattern",
+      "netlsd"
+    ]
+  },
+  "n_queries": 73,
+  "n_approaches": 8,
+  "approaches": [
+    "combined",
+    "codebert_seq",
+    "vuln_pattern",
+    "codebert_pattern",
+    "netlsd",
+    "wl",
+    "gin",
+    "rgcn"
+  ],
+  "approach_summary": [
+    {
+      "approach": "combined",
+      "hit_at_1": 63,
+      "total": 73,
+      "rate": 0.863013698630137
+    },
+    {
+      "approach": "codebert_seq",
+      "hit_at_1": 55,
+      "total": 73,
+      "rate": 0.7534246575342466
+    },
+    {
+      "approach": "vuln_pattern",
+      "hit_at_1": 38,
+      "total": 73,
+      "rate": 0.5205479452054794
+    },
+    {
+      "approach": "codebert_pattern",
+      "hit_at_1": 52,
+      "total": 73,
+      "rate": 0.7123287671232876
+    },
+    {
+      "approach": "netlsd",
+      "hit_at_1": 24,
+      "total": 73,
+      "rate": 0.3287671232876712
+    },
+    {
+      "approach": "wl",
+      "hit_at_1": 49,
+      "total": 73,
+      "rate": 0.6712328767123288
+    },
+    {
+      "approach": "gin",
+      "hit_at_1": 55,
+      "total": 73,
+      "rate": 0.7534246575342466
+    },
+    {
+      "approach": "rgcn",
+      "hit_at_1": 44,
+      "total": 73,
+      "rate": 0.6027397260273972
+    }
+  ],
+  "strategy_summary": [
+    {
+      "strategy": "individual_best",
+      "hit_at_1": 63,
+      "total": 73,
+      "rate": 0.863013698630137
+    },
+    {
+      "strategy": "oracle",
+      "hit_at_1": 70,
+      "total": 73,
+      "rate": 0.958904109589041
+    },
+    {
+      "strategy": "majority_vote",
+      "hit_at_1": 66,
+      "total": 73,
+      "rate": 0.9041095890410958
+    },
+    {
+      "strategy": "confidence_weighted_vote",
+      "hit_at_1": 64,
+      "total": 73,
+      "rate": 0.8767123287671232
+    },
+    {
+      "strategy": "reciprocal_rank_fusion",
+      "hit_at_1": 54,
+      "total": 73,
+      "rate": 0.7397260273972602
+    },
+    {
+      "strategy": "fallback_cascade",
+      "hit_at_1": 63,
+      "total": 73,
+      "rate": 0.863013698630137
+    }
+  ],
+  "per_query_detail": [
+    {
+      "query_idx": 0,
+      "query_cve": "CVE-2025-21825",
+      "query_cwe": "Race Condition",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21825",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21825",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21825",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21825",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21825",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21825",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 1,
+      "query_cve": "CVE-2022-49733",
+      "query_cwe": "Race Condition",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2022-49733",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2022-49733",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2022-49733",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2022-49733",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2022-49733",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2022-49733",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2022-49733",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2022-49733",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2022-49733",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2022-49733",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2022-49733",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2022-49733",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2022-49733",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2022-49733",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 2,
+      "query_cve": "CVE-2025-21998",
+      "query_cwe": "Race Condition",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21997",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-22017",
+          "hit_at_1": false,
+          "true_cve_rank": 10,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-7967",
+          "hit_at_1": false,
+          "true_cve_rank": 7,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21998",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21998",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21998",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21998",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21998",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21998",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 3,
+      "query_cve": "CVE-2025-21998",
+      "query_cwe": "Race Condition",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21701",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21998",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21998",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21998",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21998",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21998",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21998",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 4,
+      "query_cve": "CVE-2025-21825",
+      "query_cwe": "Race Condition",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-22007",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21825",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21825",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21825",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21825",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21825",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21825",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21825",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 5,
+      "query_cve": "CVE-2024-56605",
+      "query_cwe": "Use After Free",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 6,
+      "query_cve": "CVE-2024-56605",
+      "query_cwe": "Use After Free",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-27530",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 7,
+      "query_cve": "CVE-2025-21858",
+      "query_cwe": "Use After Free",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21858",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21858",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21858",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21858",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21858",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21858",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21858",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21858",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21858",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21858",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21858",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21858",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21858",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21858",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 8,
+      "query_cve": "CVE-2025-22004",
+      "query_cwe": "Use After Free",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-22004",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-22004",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-22004",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-22004",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-22004",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": false,
+          "true_cve_rank": 10,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-22004",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-22004",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-22004",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-22004",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-22004",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-22004",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 9,
+      "query_cve": "CVE-2025-21652",
+      "query_cwe": "Use After Free",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21652",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21701",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21701",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21991",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21864",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21991",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21652",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21652",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21701",
+          "hit": false
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21801",
+          "hit": false
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21701",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21801",
+          "hit": false
+        }
+      }
+    },
+    {
+      "query_idx": 10,
+      "query_cve": "CVE-2024-56605",
+      "query_cwe": "Use After Free",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-22017",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-22017",
+          "hit_at_1": false,
+          "true_cve_rank": 6,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21841",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-56605",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-56605",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 11,
+      "query_cve": "CVE-2025-21861",
+      "query_cwe": "Use After Free",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21861",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21861",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21861",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21861",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21861",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21861",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 12,
+      "query_cve": "CVE-2024-4741",
+      "query_cwe": "Use After Free",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-4741",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-4741",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21697",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-4741",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-4741",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-4741",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-4741",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-4741",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-4741",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-4741",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-4741",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-4741",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-4741",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-4741",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 13,
+      "query_cve": "CVE-2024-58083",
+      "query_cwe": "Use After Free",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-58083",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-58083",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-58083",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-58083",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-58083",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-58083",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-58083",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-58083",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-58083",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-58083",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-58083",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-58083",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-58083",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-58083",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 14,
+      "query_cve": "CVE-2025-21652",
+      "query_cwe": "Use After Free",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21652",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21701",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21701",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21991",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21864",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21991",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21652",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21652",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21701",
+          "hit": false
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21801",
+          "hit": false
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21701",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21801",
+          "hit": false
+        }
+      }
+    },
+    {
+      "query_idx": 15,
+      "query_cve": "CVE-2025-21652",
+      "query_cwe": "Use After Free",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21652",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21701",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-22017",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-12692",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21864",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21991",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21652",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21652",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21652",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21652",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21701",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21652",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 16,
+      "query_cve": "CVE-2025-21861",
+      "query_cwe": "Use After Free",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21861",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21861",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21861",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21861",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21861",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21861",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 17,
+      "query_cve": "CVE-2024-36617",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-36617",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-36617",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21841",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-36619",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-36617",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2022-49733",
+          "hit_at_1": false,
+          "true_cve_rank": 4,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21815",
+          "hit_at_1": false,
+          "true_cve_rank": 9,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 18,
+      "query_cve": "CVE-2024-57254",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-57254",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-57254",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-57254",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-57254",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-36619",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-57254",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-57254",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-58082",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-57254",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-57254",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-57254",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-57254",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-57254",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-57254",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 19,
+      "query_cve": "CVE-2024-57255",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21909",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-57255",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-57255",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-57255",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-57255",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-57255",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-57255",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 20,
+      "query_cve": "CVE-2024-57256",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-57256",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-57262",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-57262",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-57262",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-57256",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-57256",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-57256",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-57262",
+          "hit_at_1": false,
+          "true_cve_rank": 4,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-57256",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-57256",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-57256",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-57262",
+          "hit": false
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-57262",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-57262",
+          "hit": false
+        }
+      }
+    },
+    {
+      "query_idx": 21,
+      "query_cve": "CVE-2024-36617",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-36617",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-36619",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21697",
+          "hit_at_1": false,
+          "true_cve_rank": 7,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-36619",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21815",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21671",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-36617",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-36619",
+          "hit": false
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21809",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-36619",
+          "hit": false
+        }
+      }
+    },
+    {
+      "query_idx": 22,
+      "query_cve": "CVE-2024-57255",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-57255",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-57255",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-57255",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-57255",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-57255",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-57255",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 23,
+      "query_cve": "CVE-2024-57262",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-57262",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-57262",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-57262",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-57262",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21804",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-57256",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-57256",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-57262",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-57262",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-57262",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-57262",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-57262",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-57262",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-57262",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 24,
+      "query_cve": "CVE-2024-57262",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-57256",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-57256",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-27530",
+          "hit_at_1": false,
+          "true_cve_rank": 4,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-57256",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-27530",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-57256",
+          "hit_at_1": false,
+          "true_cve_rank": 6,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-57256",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-57262",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-57256",
+          "hit": false
+        },
+        "oracle": {
+          "prediction": "CVE-2024-57262",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-57256",
+          "hit": false
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-57256",
+          "hit": false
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21995",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-57256",
+          "hit": false
+        }
+      }
+    },
+    {
+      "query_idx": 25,
+      "query_cve": "CVE-2025-21997",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21997",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21997",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-36617",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21997",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21997",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21997",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21997",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21997",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21997",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21997",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21997",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21997",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21997",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21997",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 26,
+      "query_cve": "CVE-2024-36617",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-36617",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-36617",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21804",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-36619",
+          "hit_at_1": false,
+          "true_cve_rank": 8,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": false,
+          "true_cve_rank": 9,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-36617",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-36617",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-36617",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 27,
+      "query_cve": "CVE-2024-53142",
+      "query_cwe": "Out-of-bounds Write",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-58022",
+          "hit": false
+        },
+        "oracle": {
+          "prediction": "CVE-2024-58022",
+          "hit": false
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-58022",
+          "hit": false
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-58022",
+          "hit": false
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-58022",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-58022",
+          "hit": false
+        }
+      }
+    },
+    {
+      "query_idx": 28,
+      "query_cve": "CVE-2024-58022",
+      "query_cwe": "NULL Pointer Dereference",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-58022",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-58022",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-58022",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-58022",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-58022",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-58022",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 29,
+      "query_cve": "CVE-2024-58074",
+      "query_cwe": "NULL Pointer Dereference",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21858",
+          "hit_at_1": false,
+          "true_cve_rank": 8,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-12692",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": false,
+          "true_cve_rank": 6,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 30,
+      "query_cve": "CVE-2024-58074",
+      "query_cwe": "NULL Pointer Dereference",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21858",
+          "hit_at_1": false,
+          "true_cve_rank": 7,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-58075",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-12692",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 31,
+      "query_cve": "CVE-2025-21901",
+      "query_cwe": "NULL Pointer Dereference",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21842",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21842",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-27530",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21901",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21901",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21901",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21901",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21901",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21901",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 32,
+      "query_cve": "CVE-2024-58074",
+      "query_cwe": "NULL Pointer Dereference",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-58075",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-22007",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 33,
+      "query_cve": "CVE-2025-21901",
+      "query_cwe": "NULL Pointer Dereference",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-58083",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21995",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-58083",
+          "hit": false
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21901",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21901",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21901",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21901",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21901",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 34,
+      "query_cve": "CVE-2024-58081",
+      "query_cwe": "NULL Pointer Dereference",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": false,
+          "true_cve_rank": 9,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-22014",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-22014",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": false,
+          "true_cve_rank": 7,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": false,
+          "true_cve_rank": 6,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-22014",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-58022",
+          "hit": false
+        },
+        "oracle": {
+          "prediction": "CVE-2024-58022",
+          "hit": false
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-58022",
+          "hit": false
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-58022",
+          "hit": false
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-58022",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-58022",
+          "hit": false
+        }
+      }
+    },
+    {
+      "query_idx": 35,
+      "query_cve": "CVE-2025-21864",
+      "query_cwe": "NULL Pointer Dereference",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-12381",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21864",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21864",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-22007",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21864",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-22007",
+          "hit_at_1": false,
+          "true_cve_rank": 4,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-12381",
+          "hit": false
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21864",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21864",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21864",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21864",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21864",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 36,
+      "query_cve": "CVE-2025-22007",
+      "query_cwe": "NULL Pointer Dereference",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-22014",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": false
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-22007",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-36619",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-22007",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21910",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21910",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21843",
+          "hit_at_1": false,
+          "true_cve_rank": 8,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-22014",
+          "hit": false
+        },
+        "oracle": {
+          "prediction": "CVE-2025-22007",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-22007",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-22007",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21910",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-22014",
+          "hit": false
+        }
+      }
+    },
+    {
+      "query_idx": 37,
+      "query_cve": "CVE-2024-58074",
+      "query_cwe": "NULL Pointer Dereference",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21858",
+          "hit_at_1": false,
+          "true_cve_rank": 7,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-58075",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-12692",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-58074",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 38,
+      "query_cve": "CVE-2024-58022",
+      "query_cwe": "NULL Pointer Dereference",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-58022",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-58022",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-58022",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-58022",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-58022",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2024-58022",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-58022",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 39,
+      "query_cve": "CVE-2024-58075",
+      "query_cwe": "Unchecked Return Value",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-58075",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2024-58075",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21909",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-58075",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-12692",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-22007",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-58075",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-58075",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-58075",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-58075",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21809",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-58075",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 40,
+      "query_cve": "CVE-2024-58082",
+      "query_cwe": "Incorrect Check of Function Return Value",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": false,
+          "true_cve_rank": 10,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-4741",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-4741",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-22017",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21809",
+          "hit": false
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21809",
+          "hit": false
+        },
+        "majority_vote": {
+          "prediction": "CVE-2024-4741",
+          "hit": false
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2024-4741",
+          "hit": false
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21901",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21809",
+          "hit": false
+        }
+      }
+    },
+    {
+      "query_idx": 41,
+      "query_cve": "CVE-2025-22017",
+      "query_cwe": "Incorrect Check of Function Return Value",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-22017",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": false,
+          "true_cve_rank": 4,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-22017",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-57262",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": false,
+          "true_cve_rank": 7,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-22017",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-22017",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-22017",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-22017",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-22017",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-22017",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-22017",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-22017",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-22017",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 42,
+      "query_cve": "CVE-2024-58082",
+      "query_cwe": "Incorrect Check of Function Return Value",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2024-58082",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2024-4741",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-22014",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-56675",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21652",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21697",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2024-58082",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2024-58082",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21801",
+          "hit": false
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21801",
+          "hit": false
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21901",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2024-58082",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 43,
+      "query_cve": "CVE-2025-21697",
+      "query_cwe": "Expired Pointer Dereference",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21697",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": false,
+          "true_cve_rank": 10,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21697",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21987",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21697",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21697",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21804",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21809",
+          "hit": false
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21697",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21697",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21697",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21697",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21697",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 44,
+      "query_cve": "CVE-2025-21697",
+      "query_cwe": "Expired Pointer Dereference",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21697",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21909",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21804",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21697",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21697",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21697",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21804",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21697",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21697",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21697",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21697",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21697",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21697",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 45,
+      "query_cve": "CVE-2025-21702",
+      "query_cwe": "Operation on a Resource after Expiration or Release",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21702",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21702",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21702",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21702",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21702",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21702",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 46,
+      "query_cve": "CVE-2025-21702",
+      "query_cwe": "Operation on a Resource after Expiration or Release",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21702",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21702",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21702",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21702",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21702",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21702",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 47,
+      "query_cve": "CVE-2025-21799",
+      "query_cwe": "Assignment of a Fixed Address to a Pointer",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21799",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21799",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21995",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21799",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21799",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2024-58074",
+          "hit_at_1": false,
+          "true_cve_rank": 9,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21799",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21799",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21799",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21799",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21809",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21799",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 48,
+      "query_cve": "CVE-2025-21809",
+      "query_cwe": "Improper Locking",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21697",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21815",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-57262",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 49,
+      "query_cve": "CVE-2025-21801",
+      "query_cwe": "Improper Locking",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 50,
+      "query_cve": "CVE-2025-21809",
+      "query_cwe": "Improper Locking",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 51,
+      "query_cve": "CVE-2025-21801",
+      "query_cwe": "Improper Locking",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21701",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21701",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 52,
+      "query_cve": "CVE-2025-21809",
+      "query_cwe": "Improper Locking",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 53,
+      "query_cve": "CVE-2025-21801",
+      "query_cwe": "Improper Locking",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-22017",
+          "hit_at_1": false,
+          "true_cve_rank": 6,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21909",
+          "hit_at_1": false,
+          "true_cve_rank": 6,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21801",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 54,
+      "query_cve": "CVE-2025-21809",
+      "query_cwe": "Improper Locking",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 55,
+      "query_cve": "CVE-2025-21809",
+      "query_cwe": "Improper Locking",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21809",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 56,
+      "query_cve": "CVE-2025-21804",
+      "query_cwe": "Return of Stack Variable Address After Scope",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21804",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21804",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21804",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21804",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21804",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-22017",
+          "hit_at_1": false,
+          "true_cve_rank": 4,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21804",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21804",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21804",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21804",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21804",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21804",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21804",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 57,
+      "query_cve": "CVE-2025-21859",
+      "query_cwe": "Deadlock",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21841",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21859",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21859",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21859",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21859",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21859",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21859",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 58,
+      "query_cve": "CVE-2025-21807",
+      "query_cwe": "Deadlock",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21807",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21807",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21807",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21807",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21809",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21807",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 59,
+      "query_cve": "CVE-2025-21859",
+      "query_cwe": "Deadlock",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": false,
+          "true_cve_rank": 4,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21901",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21859",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21859",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21859",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21859",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21859",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21859",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 60,
+      "query_cve": "CVE-2025-21807",
+      "query_cwe": "Deadlock",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21809",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-27530",
+          "hit_at_1": false,
+          "true_cve_rank": 4,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21807",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21807",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21807",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21807",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21809",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21807",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 61,
+      "query_cve": "CVE-2025-21815",
+      "query_cwe": "Integer Underflow",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21815",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21815",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21815",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21815",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21815",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21815",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21815",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21815",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21815",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21815",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21815",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21815",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21815",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21815",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 62,
+      "query_cve": "CVE-2025-21838",
+      "query_cwe": "Improper Control of a Resource Through Its Lifetime",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21838",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21838",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21838",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21838",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21838",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21838",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21838",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21838",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21838",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21838",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21838",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21838",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21838",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21838",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 63,
+      "query_cve": "CVE-2025-21841",
+      "query_cwe": "Memory Leak",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21841",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21841",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21841",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21841",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-22004",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21841",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21841",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21909",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21841",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21841",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21841",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21841",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21841",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21841",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 64,
+      "query_cve": "CVE-2025-21995",
+      "query_cwe": "Memory Leak",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21995",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21995",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21995",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21995",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": false,
+          "true_cve_rank": 10,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21995",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21995",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21995",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21995",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21995",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21995",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21995",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21995",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21995",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 65,
+      "query_cve": "CVE-2025-21842",
+      "query_cwe": "Incorrect Type Conversion or Cast",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21842",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21842",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21842",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21842",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21815",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21842",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21842",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21842",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21842",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21842",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21842",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21842",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21842",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21842",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 66,
+      "query_cve": "CVE-2025-21987",
+      "query_cwe": "Use of Uninitialized Variable",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21987",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21987",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21995",
+          "hit_at_1": false,
+          "true_cve_rank": 10,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21987",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21861",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21987",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21987",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21987",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21987",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21987",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21987",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21987",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21809",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21987",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 67,
+      "query_cve": "CVE-2025-21843",
+      "query_cwe": "Use of Uninitialized Variable",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21843",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21843",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21843",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21843",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21843",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21843",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21843",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21843",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21843",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21843",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21843",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21843",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21843",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21843",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 68,
+      "query_cve": "CVE-2025-21909",
+      "query_cwe": "Business Logic Errors",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21909",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21815",
+          "hit_at_1": false,
+          "true_cve_rank": 4,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21841",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2024-57256",
+          "hit_at_1": false,
+          "true_cve_rank": 6,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21909",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-57255",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21909",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21909",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21909",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21909",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21909",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21909",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21909",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 69,
+      "query_cve": "CVE-2025-21910",
+      "query_cwe": "Improper Input Validation",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21910",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21910",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21701",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21910",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-58083",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21801",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2024-56675",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21910",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21910",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21910",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21910",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21910",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21864",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21910",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 70,
+      "query_cve": "CVE-2025-21991",
+      "query_cwe": "Improper Validation of Array Index",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21702",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21991",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21807",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21991",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": false
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2024-56675",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-12692",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-21838",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21841",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21702",
+          "hit": false
+        },
+        "oracle": {
+          "prediction": "CVE-2025-21991",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-21991",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-21991",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21809",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21991",
+          "hit": true
+        }
+      }
+    },
+    {
+      "query_idx": 71,
+      "query_cve": "CVE-2025-22010",
+      "query_cwe": "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-21697",
+          "hit_at_1": false,
+          "true_cve_rank": 4,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-22010",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21903",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-22010",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21991",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2024-12692",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-22010",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21998",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-21697",
+          "hit": false
+        },
+        "oracle": {
+          "prediction": "CVE-2025-22010",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-22010",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-22010",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-21809",
+          "hit": false
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-21697",
+          "hit": false
+        }
+      }
+    },
+    {
+      "query_idx": 72,
+      "query_cve": "CVE-2025-22010",
+      "query_cwe": "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+      "approaches": {
+        "combined": {
+          "top1_cve": "CVE-2025-22010",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "codebert_seq": {
+          "top1_cve": "CVE-2025-21991",
+          "hit_at_1": false,
+          "true_cve_rank": 2,
+          "uncertain": true
+        },
+        "vuln_pattern": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": false,
+          "true_cve_rank": 5,
+          "uncertain": true
+        },
+        "codebert_pattern": {
+          "top1_cve": "CVE-2025-21991",
+          "hit_at_1": false,
+          "true_cve_rank": 9,
+          "uncertain": true
+        },
+        "netlsd": {
+          "top1_cve": "CVE-2025-21815",
+          "hit_at_1": false,
+          "true_cve_rank": null,
+          "uncertain": true
+        },
+        "wl": {
+          "top1_cve": "CVE-2025-21697",
+          "hit_at_1": false,
+          "true_cve_rank": 10,
+          "uncertain": true
+        },
+        "gin": {
+          "top1_cve": "CVE-2025-22010",
+          "hit_at_1": true,
+          "true_cve_rank": 1,
+          "uncertain": true
+        },
+        "rgcn": {
+          "top1_cve": "CVE-2025-21859",
+          "hit_at_1": false,
+          "true_cve_rank": 3,
+          "uncertain": true
+        }
+      },
+      "strategies": {
+        "individual_best": {
+          "prediction": "CVE-2025-22010",
+          "hit": true
+        },
+        "oracle": {
+          "prediction": "CVE-2025-22010",
+          "hit": true
+        },
+        "majority_vote": {
+          "prediction": "CVE-2025-22010",
+          "hit": true
+        },
+        "confidence_weighted_vote": {
+          "prediction": "CVE-2025-22010",
+          "hit": true
+        },
+        "reciprocal_rank_fusion": {
+          "prediction": "CVE-2025-22010",
+          "hit": true
+        },
+        "fallback_cascade": {
+          "prediction": "CVE-2025-22010",
+          "hit": true
+        }
+      }
+    }
+  ],
+  "pairwise_complementarity": {
+    "combined+combined": {
+      "union_hit": 63,
+      "union_rate": 0.863013698630137,
+      "both_hit": 63,
+      "only_a": 0,
+      "only_b": 0,
+      "neither": 10
+    },
+    "combined+codebert_seq": {
+      "union_hit": 69,
+      "union_rate": 0.9452054794520548,
+      "both_hit": 49,
+      "only_a": 14,
+      "only_b": 6,
+      "neither": 4
+    },
+    "combined+vuln_pattern": {
+      "union_hit": 64,
+      "union_rate": 0.8767123287671232,
+      "both_hit": 37,
+      "only_a": 26,
+      "only_b": 1,
+      "neither": 9
+    },
+    "combined+codebert_pattern": {
+      "union_hit": 69,
+      "union_rate": 0.9452054794520548,
+      "both_hit": 46,
+      "only_a": 17,
+      "only_b": 6,
+      "neither": 4
+    },
+    "combined+netlsd": {
+      "union_hit": 63,
+      "union_rate": 0.863013698630137,
+      "both_hit": 24,
+      "only_a": 39,
+      "only_b": 0,
+      "neither": 10
+    },
+    "combined+wl": {
+      "union_hit": 64,
+      "union_rate": 0.8767123287671232,
+      "both_hit": 48,
+      "only_a": 15,
+      "only_b": 1,
+      "neither": 9
+    },
+    "combined+gin": {
+      "union_hit": 66,
+      "union_rate": 0.9041095890410958,
+      "both_hit": 52,
+      "only_a": 11,
+      "only_b": 3,
+      "neither": 7
+    },
+    "combined+rgcn": {
+      "union_hit": 65,
+      "union_rate": 0.8904109589041096,
+      "both_hit": 42,
+      "only_a": 21,
+      "only_b": 2,
+      "neither": 8
+    },
+    "codebert_seq+combined": {
+      "union_hit": 69,
+      "union_rate": 0.9452054794520548,
+      "both_hit": 49,
+      "only_a": 6,
+      "only_b": 14,
+      "neither": 4
+    },
+    "codebert_seq+codebert_seq": {
+      "union_hit": 55,
+      "union_rate": 0.7534246575342466,
+      "both_hit": 55,
+      "only_a": 0,
+      "only_b": 0,
+      "neither": 18
+    },
+    "codebert_seq+vuln_pattern": {
+      "union_hit": 58,
+      "union_rate": 0.7945205479452054,
+      "both_hit": 35,
+      "only_a": 20,
+      "only_b": 3,
+      "neither": 15
+    },
+    "codebert_seq+codebert_pattern": {
+      "union_hit": 56,
+      "union_rate": 0.7671232876712328,
+      "both_hit": 51,
+      "only_a": 4,
+      "only_b": 1,
+      "neither": 17
+    },
+    "codebert_seq+netlsd": {
+      "union_hit": 56,
+      "union_rate": 0.7671232876712328,
+      "both_hit": 23,
+      "only_a": 32,
+      "only_b": 1,
+      "neither": 17
+    },
+    "codebert_seq+wl": {
+      "union_hit": 63,
+      "union_rate": 0.863013698630137,
+      "both_hit": 41,
+      "only_a": 14,
+      "only_b": 8,
+      "neither": 10
+    },
+    "codebert_seq+gin": {
+      "union_hit": 63,
+      "union_rate": 0.863013698630137,
+      "both_hit": 47,
+      "only_a": 8,
+      "only_b": 8,
+      "neither": 10
+    },
+    "codebert_seq+rgcn": {
+      "union_hit": 61,
+      "union_rate": 0.8356164383561644,
+      "both_hit": 38,
+      "only_a": 17,
+      "only_b": 6,
+      "neither": 12
+    },
+    "vuln_pattern+combined": {
+      "union_hit": 64,
+      "union_rate": 0.8767123287671232,
+      "both_hit": 37,
+      "only_a": 1,
+      "only_b": 26,
+      "neither": 9
+    },
+    "vuln_pattern+codebert_seq": {
+      "union_hit": 58,
+      "union_rate": 0.7945205479452054,
+      "both_hit": 35,
+      "only_a": 3,
+      "only_b": 20,
+      "neither": 15
+    },
+    "vuln_pattern+vuln_pattern": {
+      "union_hit": 38,
+      "union_rate": 0.5205479452054794,
+      "both_hit": 38,
+      "only_a": 0,
+      "only_b": 0,
+      "neither": 35
+    },
+    "vuln_pattern+codebert_pattern": {
+      "union_hit": 55,
+      "union_rate": 0.7534246575342466,
+      "both_hit": 35,
+      "only_a": 3,
+      "only_b": 17,
+      "neither": 18
+    },
+    "vuln_pattern+netlsd": {
+      "union_hit": 42,
+      "union_rate": 0.5753424657534246,
+      "both_hit": 20,
+      "only_a": 18,
+      "only_b": 4,
+      "neither": 31
+    },
+    "vuln_pattern+wl": {
+      "union_hit": 53,
+      "union_rate": 0.726027397260274,
+      "both_hit": 34,
+      "only_a": 4,
+      "only_b": 15,
+      "neither": 20
+    },
+    "vuln_pattern+gin": {
+      "union_hit": 58,
+      "union_rate": 0.7945205479452054,
+      "both_hit": 35,
+      "only_a": 3,
+      "only_b": 20,
+      "neither": 15
+    },
+    "vuln_pattern+rgcn": {
+      "union_hit": 51,
+      "union_rate": 0.6986301369863014,
+      "both_hit": 31,
+      "only_a": 7,
+      "only_b": 13,
+      "neither": 22
+    },
+    "codebert_pattern+combined": {
+      "union_hit": 69,
+      "union_rate": 0.9452054794520548,
+      "both_hit": 46,
+      "only_a": 6,
+      "only_b": 17,
+      "neither": 4
+    },
+    "codebert_pattern+codebert_seq": {
+      "union_hit": 56,
+      "union_rate": 0.7671232876712328,
+      "both_hit": 51,
+      "only_a": 1,
+      "only_b": 4,
+      "neither": 17
+    },
+    "codebert_pattern+vuln_pattern": {
+      "union_hit": 55,
+      "union_rate": 0.7534246575342466,
+      "both_hit": 35,
+      "only_a": 17,
+      "only_b": 3,
+      "neither": 18
+    },
+    "codebert_pattern+codebert_pattern": {
+      "union_hit": 52,
+      "union_rate": 0.7123287671232876,
+      "both_hit": 52,
+      "only_a": 0,
+      "only_b": 0,
+      "neither": 21
+    },
+    "codebert_pattern+netlsd": {
+      "union_hit": 54,
+      "union_rate": 0.7397260273972602,
+      "both_hit": 22,
+      "only_a": 30,
+      "only_b": 2,
+      "neither": 19
+    },
+    "codebert_pattern+wl": {
+      "union_hit": 62,
+      "union_rate": 0.8493150684931506,
+      "both_hit": 39,
+      "only_a": 13,
+      "only_b": 10,
+      "neither": 11
+    },
+    "codebert_pattern+gin": {
+      "union_hit": 62,
+      "union_rate": 0.8493150684931506,
+      "both_hit": 45,
+      "only_a": 7,
+      "only_b": 10,
+      "neither": 11
+    },
+    "codebert_pattern+rgcn": {
+      "union_hit": 61,
+      "union_rate": 0.8356164383561644,
+      "both_hit": 35,
+      "only_a": 17,
+      "only_b": 9,
+      "neither": 12
+    },
+    "netlsd+combined": {
+      "union_hit": 63,
+      "union_rate": 0.863013698630137,
+      "both_hit": 24,
+      "only_a": 0,
+      "only_b": 39,
+      "neither": 10
+    },
+    "netlsd+codebert_seq": {
+      "union_hit": 56,
+      "union_rate": 0.7671232876712328,
+      "both_hit": 23,
+      "only_a": 1,
+      "only_b": 32,
+      "neither": 17
+    },
+    "netlsd+vuln_pattern": {
+      "union_hit": 42,
+      "union_rate": 0.5753424657534246,
+      "both_hit": 20,
+      "only_a": 4,
+      "only_b": 18,
+      "neither": 31
+    },
+    "netlsd+codebert_pattern": {
+      "union_hit": 54,
+      "union_rate": 0.7397260273972602,
+      "both_hit": 22,
+      "only_a": 2,
+      "only_b": 30,
+      "neither": 19
+    },
+    "netlsd+netlsd": {
+      "union_hit": 24,
+      "union_rate": 0.3287671232876712,
+      "both_hit": 24,
+      "only_a": 0,
+      "only_b": 0,
+      "neither": 49
+    },
+    "netlsd+wl": {
+      "union_hit": 50,
+      "union_rate": 0.684931506849315,
+      "both_hit": 23,
+      "only_a": 1,
+      "only_b": 26,
+      "neither": 23
+    },
+    "netlsd+gin": {
+      "union_hit": 55,
+      "union_rate": 0.7534246575342466,
+      "both_hit": 24,
+      "only_a": 0,
+      "only_b": 31,
+      "neither": 18
+    },
+    "netlsd+rgcn": {
+      "union_hit": 46,
+      "union_rate": 0.6301369863013698,
+      "both_hit": 22,
+      "only_a": 2,
+      "only_b": 22,
+      "neither": 27
+    },
+    "wl+combined": {
+      "union_hit": 64,
+      "union_rate": 0.8767123287671232,
+      "both_hit": 48,
+      "only_a": 1,
+      "only_b": 15,
+      "neither": 9
+    },
+    "wl+codebert_seq": {
+      "union_hit": 63,
+      "union_rate": 0.863013698630137,
+      "both_hit": 41,
+      "only_a": 8,
+      "only_b": 14,
+      "neither": 10
+    },
+    "wl+vuln_pattern": {
+      "union_hit": 53,
+      "union_rate": 0.726027397260274,
+      "both_hit": 34,
+      "only_a": 15,
+      "only_b": 4,
+      "neither": 20
+    },
+    "wl+codebert_pattern": {
+      "union_hit": 62,
+      "union_rate": 0.8493150684931506,
+      "both_hit": 39,
+      "only_a": 10,
+      "only_b": 13,
+      "neither": 11
+    },
+    "wl+netlsd": {
+      "union_hit": 50,
+      "union_rate": 0.684931506849315,
+      "both_hit": 23,
+      "only_a": 26,
+      "only_b": 1,
+      "neither": 23
+    },
+    "wl+wl": {
+      "union_hit": 49,
+      "union_rate": 0.6712328767123288,
+      "both_hit": 49,
+      "only_a": 0,
+      "only_b": 0,
+      "neither": 24
+    },
+    "wl+gin": {
+      "union_hit": 58,
+      "union_rate": 0.7945205479452054,
+      "both_hit": 46,
+      "only_a": 3,
+      "only_b": 9,
+      "neither": 15
+    },
+    "wl+rgcn": {
+      "union_hit": 55,
+      "union_rate": 0.7534246575342466,
+      "both_hit": 38,
+      "only_a": 11,
+      "only_b": 6,
+      "neither": 18
+    },
+    "gin+combined": {
+      "union_hit": 66,
+      "union_rate": 0.9041095890410958,
+      "both_hit": 52,
+      "only_a": 3,
+      "only_b": 11,
+      "neither": 7
+    },
+    "gin+codebert_seq": {
+      "union_hit": 63,
+      "union_rate": 0.863013698630137,
+      "both_hit": 47,
+      "only_a": 8,
+      "only_b": 8,
+      "neither": 10
+    },
+    "gin+vuln_pattern": {
+      "union_hit": 58,
+      "union_rate": 0.7945205479452054,
+      "both_hit": 35,
+      "only_a": 20,
+      "only_b": 3,
+      "neither": 15
+    },
+    "gin+codebert_pattern": {
+      "union_hit": 62,
+      "union_rate": 0.8493150684931506,
+      "both_hit": 45,
+      "only_a": 10,
+      "only_b": 7,
+      "neither": 11
+    },
+    "gin+netlsd": {
+      "union_hit": 55,
+      "union_rate": 0.7534246575342466,
+      "both_hit": 24,
+      "only_a": 31,
+      "only_b": 0,
+      "neither": 18
+    },
+    "gin+wl": {
+      "union_hit": 58,
+      "union_rate": 0.7945205479452054,
+      "both_hit": 46,
+      "only_a": 9,
+      "only_b": 3,
+      "neither": 15
+    },
+    "gin+gin": {
+      "union_hit": 55,
+      "union_rate": 0.7534246575342466,
+      "both_hit": 55,
+      "only_a": 0,
+      "only_b": 0,
+      "neither": 18
+    },
+    "gin+rgcn": {
+      "union_hit": 62,
+      "union_rate": 0.8493150684931506,
+      "both_hit": 37,
+      "only_a": 18,
+      "only_b": 7,
+      "neither": 11
+    },
+    "rgcn+combined": {
+      "union_hit": 65,
+      "union_rate": 0.8904109589041096,
+      "both_hit": 42,
+      "only_a": 2,
+      "only_b": 21,
+      "neither": 8
+    },
+    "rgcn+codebert_seq": {
+      "union_hit": 61,
+      "union_rate": 0.8356164383561644,
+      "both_hit": 38,
+      "only_a": 6,
+      "only_b": 17,
+      "neither": 12
+    },
+    "rgcn+vuln_pattern": {
+      "union_hit": 51,
+      "union_rate": 0.6986301369863014,
+      "both_hit": 31,
+      "only_a": 13,
+      "only_b": 7,
+      "neither": 22
+    },
+    "rgcn+codebert_pattern": {
+      "union_hit": 61,
+      "union_rate": 0.8356164383561644,
+      "both_hit": 35,
+      "only_a": 9,
+      "only_b": 17,
+      "neither": 12
+    },
+    "rgcn+netlsd": {
+      "union_hit": 46,
+      "union_rate": 0.6301369863013698,
+      "both_hit": 22,
+      "only_a": 22,
+      "only_b": 2,
+      "neither": 27
+    },
+    "rgcn+wl": {
+      "union_hit": 55,
+      "union_rate": 0.7534246575342466,
+      "both_hit": 38,
+      "only_a": 6,
+      "only_b": 11,
+      "neither": 18
+    },
+    "rgcn+gin": {
+      "union_hit": 62,
+      "union_rate": 0.8493150684931506,
+      "both_hit": 37,
+      "only_a": 7,
+      "only_b": 18,
+      "neither": 11
+    },
+    "rgcn+rgcn": {
+      "union_hit": 44,
+      "union_rate": 0.6027397260273972,
+      "both_hit": 44,
+      "only_a": 0,
+      "only_b": 0,
+      "neither": 29
+    }
+  },
+  "combined_miss_deep_dive": {
+    "n_misses": 10,
+    "n_rescued_by_any_approach": 7,
+    "n_rescued_by_rrf": 3,
+    "n_rescued_by_cascade": 4,
+    "n_all_uncertain": 9,
+    "misses": [
+      {
+        "query_cve": "CVE-2024-57262",
+        "query_cwe": "Integer Overflow or Wraparound",
+        "combined_uncertain": true,
+        "combined_true_rank": 2,
+        "rescued_by_approaches": [
+          "rgcn"
+        ],
+        "strategy_hits": {
+          "individual_best": false,
+          "oracle": true,
+          "majority_vote": false,
+          "confidence_weighted_vote": false,
+          "reciprocal_rank_fusion": false,
+          "fallback_cascade": false
+        }
+      },
+      {
+        "query_cve": "CVE-2024-53142",
+        "query_cwe": "Out-of-bounds Write",
+        "combined_uncertain": true,
+        "combined_true_rank": 3,
+        "rescued_by_approaches": [],
+        "strategy_hits": {
+          "individual_best": false,
+          "oracle": false,
+          "majority_vote": false,
+          "confidence_weighted_vote": false,
+          "reciprocal_rank_fusion": false,
+          "fallback_cascade": false
+        }
+      },
+      {
+        "query_cve": "CVE-2025-21901",
+        "query_cwe": "NULL Pointer Dereference",
+        "combined_uncertain": true,
+        "combined_true_rank": 5,
+        "rescued_by_approaches": [
+          "codebert_seq",
+          "vuln_pattern",
+          "codebert_pattern",
+          "rgcn"
+        ],
+        "strategy_hits": {
+          "individual_best": false,
+          "oracle": true,
+          "majority_vote": true,
+          "confidence_weighted_vote": true,
+          "reciprocal_rank_fusion": true,
+          "fallback_cascade": true
+        }
+      },
+      {
+        "query_cve": "CVE-2024-58081",
+        "query_cwe": "NULL Pointer Dereference",
+        "combined_uncertain": true,
+        "combined_true_rank": 9,
+        "rescued_by_approaches": [],
+        "strategy_hits": {
+          "individual_best": false,
+          "oracle": false,
+          "majority_vote": false,
+          "confidence_weighted_vote": false,
+          "reciprocal_rank_fusion": false,
+          "fallback_cascade": false
+        }
+      },
+      {
+        "query_cve": "CVE-2025-21864",
+        "query_cwe": "NULL Pointer Dereference",
+        "combined_uncertain": true,
+        "combined_true_rank": null,
+        "rescued_by_approaches": [
+          "codebert_seq",
+          "codebert_pattern",
+          "gin"
+        ],
+        "strategy_hits": {
+          "individual_best": false,
+          "oracle": true,
+          "majority_vote": true,
+          "confidence_weighted_vote": true,
+          "reciprocal_rank_fusion": true,
+          "fallback_cascade": true
+        }
+      },
+      {
+        "query_cve": "CVE-2025-22007",
+        "query_cwe": "NULL Pointer Dereference",
+        "combined_uncertain": false,
+        "combined_true_rank": null,
+        "rescued_by_approaches": [
+          "codebert_seq",
+          "codebert_pattern"
+        ],
+        "strategy_hits": {
+          "individual_best": false,
+          "oracle": true,
+          "majority_vote": true,
+          "confidence_weighted_vote": true,
+          "reciprocal_rank_fusion": false,
+          "fallback_cascade": false
+        }
+      },
+      {
+        "query_cve": "CVE-2024-58082",
+        "query_cwe": "Incorrect Check of Function Return Value",
+        "combined_uncertain": true,
+        "combined_true_rank": 10,
+        "rescued_by_approaches": [],
+        "strategy_hits": {
+          "individual_best": false,
+          "oracle": false,
+          "majority_vote": false,
+          "confidence_weighted_vote": false,
+          "reciprocal_rank_fusion": false,
+          "fallback_cascade": false
+        }
+      },
+      {
+        "query_cve": "CVE-2025-21697",
+        "query_cwe": "Expired Pointer Dereference",
+        "combined_uncertain": true,
+        "combined_true_rank": 3,
+        "rescued_by_approaches": [
+          "codebert_seq",
+          "codebert_pattern",
+          "wl",
+          "gin"
+        ],
+        "strategy_hits": {
+          "individual_best": false,
+          "oracle": true,
+          "majority_vote": true,
+          "confidence_weighted_vote": true,
+          "reciprocal_rank_fusion": true,
+          "fallback_cascade": true
+        }
+      },
+      {
+        "query_cve": "CVE-2025-21991",
+        "query_cwe": "Improper Validation of Array Index",
+        "combined_uncertain": true,
+        "combined_true_rank": 2,
+        "rescued_by_approaches": [
+          "codebert_seq",
+          "codebert_pattern"
+        ],
+        "strategy_hits": {
+          "individual_best": false,
+          "oracle": true,
+          "majority_vote": true,
+          "confidence_weighted_vote": true,
+          "reciprocal_rank_fusion": false,
+          "fallback_cascade": true
+        }
+      },
+      {
+        "query_cve": "CVE-2025-22010",
+        "query_cwe": "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+        "combined_uncertain": true,
+        "combined_true_rank": 4,
+        "rescued_by_approaches": [
+          "codebert_seq",
+          "codebert_pattern",
+          "gin"
+        ],
+        "strategy_hits": {
+          "individual_best": false,
+          "oracle": true,
+          "majority_vote": true,
+          "confidence_weighted_vote": true,
+          "reciprocal_rank_fusion": false,
+          "fallback_cascade": false
+        }
+      }
+    ]
+  }
+}
