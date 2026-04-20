@@ -1,10 +1,17 @@
 import collections
 import json
+import sys
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import seaborn as sns
+from pathlib import Path
+
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 # ── helpers ────────────────────────────────────────────────────────────
@@ -404,8 +411,8 @@ def create_summary_dashboard(raw_data: dict) -> plt.Figure:
 def generate_visualizations(raw_data: dict, output_dir: str) -> None:
     """Generate and save all dashboards to output_dir/visualizations/."""
     import os
-    output_dir = os.path.join(output_dir, 'visualizations')
-    os.makedirs(output_dir, exist_ok=True)
+    vis_dir = os.path.join(output_dir, 'visualizations')
+    os.makedirs(vis_dir, exist_ok=True)
 
     sns.set_theme(style='whitegrid')
 
@@ -419,13 +426,20 @@ def generate_visualizations(raw_data: dict, output_dir: str) -> None:
     for filename, fn in dashboards:
         try:
             fig = fn(raw_data)
-            fig.savefig(os.path.join(output_dir, filename), dpi=150, bbox_inches='tight')
+            fig.savefig(os.path.join(vis_dir, filename), dpi=150, bbox_inches='tight')
             plt.close(fig)
         except Exception as e:
             print(f"  [warning] {filename} failed: {e}")
             plt.close('all')
 
-    print(f"Visualizations saved → {output_dir}")
+    print(f"Visualizations saved → {vis_dir}")
+
+    # Generate unified HTML dashboard if possible
+    try:
+        from experiments.dashboard import generate_html_dashboard
+        generate_html_dashboard(output_dir)
+    except Exception as e:
+        print(f"  [warning] unified dashboard failed: {e}")
 
 
 # ── backwards-compat stubs (used by existing tests/runner imports) ─────
