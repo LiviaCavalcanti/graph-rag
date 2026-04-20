@@ -55,7 +55,7 @@
       why modern C++ trips the parser and how we mitigate it
 
     \vspace{0.6em}
-    \item[\textcolor{c4}{\faIcon{cut}}] \textbf{Graph slicing} —
+    \item[\textcolor{c5}{\faIcon{cut}}] \textbf{Graph slicing} —
       semantic diff and $G_{\text{vuln}}$ extraction
 
     \vspace{0.6em}
@@ -137,187 +137,6 @@
     \textbf{\textcolor{c5}{Retrieval Layer}}\\
     \scriptsize ANN search; self-retrieval \& CWE recall evaluated.
   \end{column}
-\end{columns}
-\end{frame}
-
-% ══════════════════════════════════════════════════════════════════════
-\section{Graph Slicing}
-% ══════════════════════════════════════════════════════════════════════
-
-% fix for using #
-\begin{frame}[fragile]{Graph Slicing: Algorithm}
-\begin{columns}[T]
-  \begin{column}{0.52\textwidth}
-
-    \textbf{Pseudocode — vulnerability subgraph extraction}
-
-    \vspace{0.3em}
-    {\scriptsize
-    \begin{tabular}{@{}r@{\;\;}l}
-      1: & \textbf{Input:} CPG$_{\text{before}}$, CPG$_{\text{after}}$, hop budget $k$ \\
-      2: & \textbf{Output:} $G_{\text{vuln}}$ \\[2pt]
-      3: & \textbf{for each} node $v$ \textbf{in} CPG$_{\text{before}}$ $\cup$ CPG$_{\text{after}}$: \\
-      4: & \quad $\text{fp}(v) \gets (\text{node\_type}(v),\;\text{CODE}(v))$ \\[2pt]
-      5: & $F_b \gets \{ \text{fp}(v) \mid v \in \text{CPG}_{\text{before}} \}$ \\
-      6: & $F_a \gets \{ \text{fp}(v) \mid v \in \text{CPG}_{\text{after}} \}$ \\[2pt]
-      7: & $\textcolor{miss}{\text{Removed}} \gets F_b \setminus F_a$ \\
-      8: & $\textcolor{hit}{\text{Added}} \gets F_a \setminus F_b$ \\
-      9: & $\text{Changed} \gets \textcolor{miss}{\text{Removed}} \cup \textcolor{hit}{\text{Added}}$ \\[2pt]
-    10: & $\textcolor{warn!85!black}{\text{Context}} \gets \varnothing$ \\
-    11: & \textbf{for each} $v \in \text{Changed}$: \\
-    12: & \quad $\textcolor{warn!85!black}{\text{Context}} \mathrel{{+}{=}}
-            \text{Nbrs}_{k}(v,\;\text{PDG}{\cup}\text{CDG}{\cup}\text{CFG})$ \\[2pt]
-    13: & $V_{\text{vuln}} \gets \text{Changed} \cup \textcolor{warn!85!black}{\text{Context}}$ \\
-    14: & \textbf{return} $G_{\text{vuln}} \gets
-            \text{Induced}(\text{CPG}_{\text{after}},\;V_{\text{vuln}})$
-    \end{tabular}}
-
-    \vspace{0.4em}
-    {\scriptsize Currently $k = 1$; context nodes add structural
-    anchors without flooding $G_{\text{vuln}}$ with unchanged code.}
-
-  \end{column}
-  
-  \begin{column}{0.45\textwidth}
-
-    \textbf{Key steps illustrated}
-
-    \vspace{0.4em}
-    \centering
-    \begin{tikzpicture}[
-      box/.style={rectangle,rounded corners=3pt,draw=#1!60,fill=#1!8,
-                  font=\scriptsize\sffamily,minimum width=5cm,
-                  minimum height=0.55cm,align=center},
-      arr/.style={->,thick,#1!50}]
-      \node[box=c1] (fp) at (0,3.6) {Fingerprint each node (type, code)};
-      \node[box=miss] (diff) at (0,2.4) {Set diff $\to$ removed / added nodes};
-      \node[box=warn] (ctx) at (0,1.2) {$k$-hop expansion along PDG/CDG/CFG};
-      \node[box=hit] (ind) at (0,0) {Induced subgraph on CPG$_{\text{after}}$};
-      \draw[arr=c1] (fp) -- (diff);
-      \draw[arr=miss] (diff) -- (ctx);
-      \draw[arr=warn] (ctx) -- (ind);
-    \end{tikzpicture}
-
-    \vspace{0.5em}
-    {\scriptsize\color{black!55}
-    The fingerprint is invariant to Joern's non-deterministic
-    node IDs — two parses of the same file yield identical
-    fingerprint multisets.}
-
-  \end{column}
-\end{columns}
-\end{frame}
-
-\begin{frame}{Graph Slicing: Rationale}
-\begin{columns}[T]
-\begin{column}{0.55\textwidth}
-
-  \textbf{Design rationale}
-
-  \vspace{0.3em}
-  \begin{itemize}\setlength{\itemsep}{4pt}
-    \item \textbf{Fingerprint matching} (l.\,4) — invariant to Joern's
-          non-deterministic node IDs; two runs of the same file
-          yield the same fingerprint set.
-    \item \textbf{Symmetric set difference} (l.\,7--8) — captures both
-          deletions and insertions, following the standard
-          \emph{program differencing} formulation [1].
-    \item \textbf{$k$-hop context expansion} (l.\,11--12) — preserves
-          the data- and control-flow neighbourhood of every change,
-          grounded in Weiser's \emph{program slicing} criterion [2].
-    \item \textbf{Induced subgraph} (l.\,14) — retains all original
-          CPG edge types (AST, CFG, CDG, PDG) between selected nodes,
-          so structural embedders see the full local topology [3].
-  \end{itemize}
-
-\end{column}
-\begin{column}{0.42\textwidth}
-
-  \textbf{References}
-
-  \vspace{0.3em}
-  {\small\color{black!70}
-  \begin{enumerate}\setlength{\itemsep}{6pt}
-    \item Horwitz — \emph{Identifying the semantic and textual
-          differences between two versions of a program}, PLDI '90.
-    \item Weiser — \emph{Program Slicing}, IEEE TSE, 1984.
-    \item Yamaguchi et al. — \emph{Modeling and Discovering
-          Vulnerabilities with Code Property Graphs}, IEEE S\&P '14.
-  \end{enumerate}}
-
-\end{column}
-\end{columns}
-\end{frame}
-
-\begin{frame}{Graph Slicing: Visualization}
-\begin{columns}[T]
-\begin{column}{0.50\textwidth}
-
-  \textbf{Problem with the old approach}\\[3pt]
-  Joern assigns non-deterministic node IDs across runs.
-  ID-based diff produced $G_{\text{vuln}} \approx G_{\text{before}}$ —
-  all functions appeared structurally identical.
-
-  \vspace{0.9em}
-  \textbf{After the fix}\\[3pt]
-  Fingerprint-based matching yields a compact $G_{\text{vuln}}$
-  containing only the vulnerability-relevant substructure:
-  \begin{itemize}
-    \item \textcolor{miss}{\textbf{Removed}} — node in $G_{\text{before}}$ only
-    \item \textcolor{hit}{\textbf{Added}} — node in $G_{\text{after}}$ only
-    \item \textcolor{warn!90!black}{\textbf{Context}} — unchanged $k$-hop neighbours\\
-          reachable via PDG/CDG/CFG edges
-  \end{itemize}
-
-  \vspace{0.6em}
-  {\scriptsize\color{black!55}
-  The induced subgraph preserves the original edge types
-  (AST, CFG, CDG, PDG) so that structural embedders (GIN, WL)
-  can capture the local topology of the change.}
-
-\end{column}
-\begin{column}{0.46\textwidth}
-  \centering
-  \begin{tikzpicture}[
-    fn/.style={circle,draw=c1,fill=c1!12,font=\tiny\sffamily\bfseries,
-               minimum size=0.65cm,inner sep=1pt},
-    rm/.style={circle,draw=miss,fill=miss!15,font=\tiny\sffamily,
-               minimum size=0.65cm,inner sep=1pt},
-    ad/.style={circle,draw=hit,fill=hit!15,font=\tiny\sffamily,
-               minimum size=0.65cm,inner sep=1pt},
-    cx/.style={circle,draw=warn!80,fill=warn!10,font=\tiny\sffamily,
-               minimum size=0.65cm,inner sep=1pt},
-    lbl/.style={font=\scriptsize\sffamily\bfseries},
-    arr/.style={->,thick,black!30}]
-
-    \node[lbl,c1]  at (-1.9, 3.2) {$G_{\text{before}}$};
-    \node[fn] (b1) at (-1.9, 2.5) {fn};
-    \node[fn] (b2) at (-2.7, 1.5) {ptr};
-    \node[rm] (b3) at (-1.1, 1.5) {\textcolor{miss}{free}};
-    \node[fn] (b4) at (-1.9, 0.5) {use};
-    \draw[arr] (b1)--(b2); \draw[arr] (b1)--(b3);
-    \draw[->,miss,thick] (b3)--(b4); \draw[arr] (b2)--(b4);
-
-    \node[lbl,hit]  at (1.9, 3.2) {$G_{\text{after}}$};
-    \node[fn] (a1) at (1.9, 2.5) {fn};
-    \node[fn] (a2) at (1.1, 1.5) {ptr};
-    \node[ad] (a3) at (2.7, 1.5) {\textcolor{hit}{chk}};
-    \node[fn] (a4) at (1.9, 0.5) {use};
-    \draw[arr] (a1)--(a2); \draw[arr] (a1)--(a3);
-    \draw[->,hit,thick] (a3)--(a4); \draw[arr] (a2)--(a4);
-
-    \node[font=\tiny\sffamily\bfseries,c3] at (0, 1.8) {$\Rightarrow$\,diff};
-
-    \node[lbl,c3] at (0, -0.1) {$G_{\text{vuln}}$};
-    \node[rm] (v1) at (-0.8, -0.8) {\textcolor{miss}{free}};
-    \node[ad] (v2) at ( 0.8, -0.8) {\textcolor{hit}{chk}};
-    \node[cx] (v3) at ( 0.0, -1.7) {\textcolor{warn!80!black}{use}};
-    \draw[->,miss,thick] (v1)--(v3);
-    \draw[->,hit,thick]  (v2)--(v3);
-    \node[font=\tiny\sffamily,black!50,align=center] at (0,-2.4)
-      {\textcolor{miss}{removed} \quad \textcolor{hit}{added} \quad \textcolor{warn!80!black}{context}};
-  \end{tikzpicture}
-\end{column}
 \end{columns}
 \end{frame}
 
@@ -455,6 +274,411 @@
 \end{column}
 \end{columns}
 \end{frame}
+
+
+% ══════════════════════════════════════════════════════════════════════
+\section{Graph Slicing}
+% ══════════════════════════════════════════════════════════════════════
+
+
+\begin{frame}{Graph Slicing: Visualization}
+\begin{columns}[T]
+\begin{column}{0.50\textwidth}
+
+  \textbf{Problem with the old approach}\\[3pt]
+  Joern assigns non-deterministic node IDs across runs.
+  ID-based diff produced $G_{\text{vuln}} \approx G_{\text{before}}$ —
+  all functions appeared structurally identical.
+
+  \vspace{0.9em}
+  \textbf{After the fix}\\[3pt]
+  Fingerprint-based matching yields a compact $G_{\text{vuln}}$
+  containing only the vulnerability-relevant substructure:
+  \begin{itemize}
+    \item \textcolor{miss}{\textbf{Removed}} — node in $G_{\text{before}}$ only
+    \item \textcolor{hit}{\textbf{Added}} — node in $G_{\text{after}}$ only
+    \item \textcolor{warn!90!black}{\textbf{Context}} — unchanged $k$-hop neighbours\\
+          reachable via PDG/CDG/CFG edges
+  \end{itemize}
+
+  \vspace{0.6em}
+  {\scriptsize\color{black!55}
+  The induced subgraph preserves the original edge types
+  (AST, CFG, CDG, PDG) so that structural embedders (GIN, WL)
+  can capture the local topology of the change.}
+
+\end{column}
+\begin{column}{0.46\textwidth}
+  \centering
+  \begin{tikzpicture}[
+    fn/.style={circle,draw=c1,fill=c1!12,font=\tiny\sffamily\bfseries,
+               minimum size=0.65cm,inner sep=1pt},
+    rm/.style={circle,draw=miss,fill=miss!15,font=\tiny\sffamily,
+               minimum size=0.65cm,inner sep=1pt},
+    ad/.style={circle,draw=hit,fill=hit!15,font=\tiny\sffamily,
+               minimum size=0.65cm,inner sep=1pt},
+    cx/.style={circle,draw=warn!80,fill=warn!10,font=\tiny\sffamily,
+               minimum size=0.65cm,inner sep=1pt},
+    lbl/.style={font=\scriptsize\sffamily\bfseries},
+    arr/.style={->,thick,black!30}]
+
+    \node[lbl,c1]  at (-1.9, 3.2) {$G_{\text{before}}$};
+    \node[fn] (b1) at (-1.9, 2.5) {fn};
+    \node[fn] (b2) at (-2.7, 1.5) {ptr};
+    \node[rm] (b3) at (-1.1, 1.5) {\textcolor{miss}{free}};
+    \node[fn] (b4) at (-1.9, 0.5) {use};
+    \draw[arr] (b1)--(b2); \draw[arr] (b1)--(b3);
+    \draw[->,miss,thick] (b3)--(b4); \draw[arr] (b2)--(b4);
+
+    \node[lbl,hit]  at (1.9, 3.2) {$G_{\text{after}}$};
+    \node[fn] (a1) at (1.9, 2.5) {fn};
+    \node[fn] (a2) at (1.1, 1.5) {ptr};
+    \node[ad] (a3) at (2.7, 1.5) {\textcolor{hit}{chk}};
+    \node[fn] (a4) at (1.9, 0.5) {use};
+    \draw[arr] (a1)--(a2); \draw[arr] (a1)--(a3);
+    \draw[->,hit,thick] (a3)--(a4); \draw[arr] (a2)--(a4);
+
+    \node[font=\tiny\sffamily\bfseries,c3] at (0, 1.8) {$\Rightarrow$\,diff};
+
+    \node[lbl,c3] at (0, -0.1) {$G_{\text{vuln}}$};
+    \node[rm] (v1) at (-0.8, -0.8) {\textcolor{miss}{free}};
+    \node[ad] (v2) at ( 0.8, -0.8) {\textcolor{hit}{chk}};
+    \node[cx] (v3) at ( 0.0, -1.7) {\textcolor{warn!80!black}{use}};
+    \draw[->,miss,thick] (v1)--(v3);
+    \draw[->,hit,thick]  (v2)--(v3);
+    \node[font=\tiny\sffamily,black!50,align=center] at (0,-2.4)
+      {\textcolor{miss}{removed} \quad \textcolor{hit}{added} \quad \textcolor{warn!80!black}{context}};
+  \end{tikzpicture}
+\end{column}
+\end{columns}
+\end{frame}
+
+% fix for using #
+\begin{frame}[fragile]{Graph Slicing: Algorithm}
+\begin{columns}[T]
+  \begin{column}{0.52\textwidth}
+
+    \textbf{Pseudocode — vulnerability subgraph extraction}
+
+    \vspace{0.3em}
+    {\scriptsize
+    \begin{tabular}{@{}r@{\;\;}l}
+      1: & \textbf{Input:} CPG$_{\text{before}}$, CPG$_{\text{after}}$, hop budget $k$ \\
+      2: & \textbf{Output:} $G_{\text{vuln}}$ \\[2pt]
+      3: & \textbf{for each} node $v$ \textbf{in} CPG$_{\text{before}}$ $\cup$ CPG$_{\text{after}}$: \\
+      4: & \quad $\text{fp}(v) \gets (\text{node\_type}(v),\;\text{CODE}(v))$ \\[2pt]
+      5: & $F_b \gets \{ \text{fp}(v) \mid v \in \text{CPG}_{\text{before}} \}$ \\
+      6: & $F_a \gets \{ \text{fp}(v) \mid v \in \text{CPG}_{\text{after}} \}$ \\[2pt]
+      7: & $\textcolor{miss}{\text{Removed}} \gets F_b \setminus F_a$ \\
+      8: & $\textcolor{hit}{\text{Added}} \gets F_a \setminus F_b$ \\
+      9: & $\text{Changed} \gets \textcolor{miss}{\text{Removed}} \cup \textcolor{hit}{\text{Added}}$ \\[2pt]
+    10: & $\textcolor{warn!85!black}{\text{Context}} \gets \varnothing$ \\
+    11: & \textbf{for each} $v \in \text{Changed}$: \\
+    12: & \quad $\textcolor{warn!85!black}{\text{Context}} \mathrel{{+}{=}}
+            \text{Nbrs}_{k}(v,\;\text{PDG}{\cup}\text{CDG}{\cup}\text{CFG})$ \\[2pt]
+    13: & $V_{\text{vuln}} \gets \text{Changed} \cup \textcolor{warn!85!black}{\text{Context}}$ \\
+    14: & \textbf{return} $G_{\text{vuln}} \gets
+            \text{Induced}(\text{CPG}_{\text{after}},\;V_{\text{vuln}})$
+    \end{tabular}}
+
+    \vspace{0.4em}
+    {\scriptsize Currently $k = 1$; context nodes add structural
+    anchors without flooding $G_{\text{vuln}}$ with unchanged code.}
+
+  \end{column}
+  
+  \begin{column}{0.45\textwidth}
+
+    \textbf{Key steps illustrated}
+
+    \vspace{0.4em}
+    \centering
+    \begin{tikzpicture}[
+      box/.style={rectangle,rounded corners=3pt,draw=#1!60,fill=#1!8,
+                  font=\scriptsize\sffamily,minimum width=5cm,
+                  minimum height=0.55cm,align=center},
+      arr/.style={->,thick,#1!50}]
+      \node[box=c1] (fp) at (0,3.6) {Fingerprint each node (type, code)};
+      \node[box=miss] (diff) at (0,2.4) {Set diff $\to$ removed / added nodes};
+      \node[box=warn] (ctx) at (0,1.2) {$k$-hop expansion along PDG/CDG/CFG};
+      \node[box=hit] (ind) at (0,0) {Induced subgraph on CPG$_{\text{after}}$};
+      \draw[arr=c1] (fp) -- (diff);
+      \draw[arr=miss] (diff) -- (ctx);
+      \draw[arr=warn] (ctx) -- (ind);
+    \end{tikzpicture}
+
+    \vspace{0.5em}
+    {\scriptsize\color{black!55}
+    The fingerprint is invariant to Joern's non-deterministic
+    node IDs — two parses of the same file yield identical
+    fingerprint multisets.}
+
+  \end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Graph Slicing: Rationale}
+\begin{columns}[T]
+\begin{column}{0.55\textwidth}
+
+  \textbf{Design rationale}
+
+  \vspace{0.3em}
+  \begin{itemize}\setlength{\itemsep}{4pt}
+    \item \textbf{Fingerprint matching} (l.\,4) — invariant to Joern's
+          non-deterministic node IDs; two runs of the same file
+          yield the same fingerprint set.
+    \item \textbf{Symmetric set difference} (l.\,7--8) — captures both
+          deletions and insertions, following the standard
+          \emph{program differencing} formulation [1].
+    \item \textbf{$k$-hop context expansion} (l.\,11--12) — preserves
+          the data- and control-flow neighbourhood of every change,
+          grounded in Weiser's \emph{program slicing} criterion [2].
+    \item \textbf{Induced subgraph} (l.\,14) — retains all original
+          CPG edge types (AST, CFG, CDG, PDG) between selected nodes,
+          so structural embedders see the full local topology [3].
+  \end{itemize}
+
+\end{column}
+\begin{column}{0.42\textwidth}
+
+  \textbf{References}
+
+  \vspace{0.3em}
+  {\small\color{black!70}
+  \begin{enumerate}\setlength{\itemsep}{6pt}
+    \item Horwitz — \emph{Identifying the semantic and textual
+          differences between two versions of a program}, PLDI '90.
+    \item Weiser — \emph{Program Slicing}, IEEE TSE, 1984.
+    \item Yamaguchi et al. — \emph{Modeling and Discovering
+          Vulnerabilities with Code Property Graphs}, IEEE S\&P '14.
+  \end{enumerate}}
+
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{Graph Slicing: In Practice}
+\begin{columns}[T]
+\begin{column}{0.50\textwidth}
+
+  \textbf{Slice statistics — 65 CVEs}\\[3pt]
+  With \texttt{SLICE\_DEPTH\,=\,3} the BFS captures the
+  \textbf{entire} $G_{\text{before}}$ for 59 of 65 CVEs.
+  Only 6 CVEs see any node reduction:
+
+  \vspace{0.5em}
+  {\scriptsize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{lccr}
+    \toprule
+    \textbf{CVE} & \textbf{Before} & \textbf{$G_{\text{vuln}}$} & \textbf{Ratio} \\
+    \midrule
+    CVE-2025-21910 & 60  & 45  & \textbf{0.75} \\
+    CVE-2025-21843 & 91  & 77  & 0.85 \\
+    CVE-2025-21801 & 192 & 174 & 0.91 \\
+    CVE-2025-21838 & 187 & 173 & 0.93 \\
+    CVE-2025-21856 & 182 & 168 & 0.92 \\
+    CVE-2025-21809 & 105 & 98  & 0.93 \\
+    \midrule
+    \emph{Other 59} & — & — & \emph{1.00} \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.5em}
+  {\scriptsize\color{black!55}
+  Median graph: 191 nodes / 1\,485 edges (before)\\
+  vs.\ 187 nodes / 1\,449 edges ($G_{\text{vuln}}$).}
+
+\end{column}
+\begin{column}{0.47\textwidth}
+
+  \textbf{Key insight}\\[3pt]
+  At depth 3, the BFS rarely \emph{prunes} — but the diff
+  still transforms retrieval dramatically:
+
+  \vspace{0.5em}
+  \centering
+  {\scriptsize
+  \renewcommand{\arraystretch}{1.1}
+  \begin{tabular}{lcc}
+    \toprule
+    \textbf{Embedder} & \textbf{$G_{\text{before}}$} & \textbf{$G_{\text{vuln}}$} \\
+    \midrule
+    Combined & 13.7\% & \textbf{84.9\%} \\
+    GIN      & 49.3\% & \textbf{69.9\%} \\
+    WL       &  4.1\% & \textbf{67.1\%} \\
+    NetLSD   &  2.7\% & \textbf{37.0\%} \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.6em}
+  \raggedright
+  The performance leap comes from the
+  \textbf{diff annotations} — each node gets a label
+  (\texttt{removed}, \texttt{fix\_adjacent},
+  \texttt{edge\_changed}, \texttt{context}) and a weight
+  (1.0 / 0.8 / 0.6 / 0.2).
+
+  \vspace{0.4em}
+  {\scriptsize\color{black!55}
+  Structural embedders use these labels as node features,
+  so identical topologies with different patch locations
+  produce distinct embeddings — even when $|V_{\text{vuln}}|
+  = |V_{\text{before}}|$.}
+
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Diff Annotation: Design}
+
+  \textbf{What — four-tier node labelling}\\[3pt]
+  After the set-diff identifies changed nodes (step 1--2 of the
+  algorithm) and the BFS expands context (step 3), every node in
+  $G_{\text{vuln}}$ receives a \emph{diff type} and a scalar
+  \emph{relevance weight}:
+
+  \vspace{0.4em}
+  {\scriptsize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{llcl}
+    \toprule
+    \textbf{Label} & \textbf{Meaning} & $w$ & \textbf{Detection} \\
+    \midrule
+    \texttt{removed}      & Code deleted by the patch
+      & 1.0 & $\text{fp} \in F_b \setminus F_a$ \\
+    \texttt{fix\_adjacent} & Neighbour of an inserted fix
+      & 0.8 & adj.\ to added node in $G_{\text{after}}$ \\
+    \texttt{edge\_changed} & Endpoint of a changed edge
+      & 0.6 & edge fp differs before/after \\
+    \texttt{context}       & Unchanged; reached by BFS
+      & 0.2 & $k$-hop flow-edge expansion \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.5em}
+  Embedders that use these weights:
+  \begin{itemize}\setlength{\itemsep}{1pt}
+    {
+    \item \textbf{RGCN} — scalar node feature + weighted global pooling
+    \item \textbf{CodeBERT seq} — filter ($w > 0.3$) and sort by $w$
+    \item \textbf{GIN, WL, NetLSD} — use the diff \emph{label} (not weight)
+          as a categorical node feature}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Diff Annotation: Design}
+
+  \textbf{Why — causal proximity to the vulnerability}\\[3pt]
+  The weight hierarchy reflects \textbf{distance from the actual
+  code change}, following the principle that statements closer
+  to the patch site carry more discriminative information for
+  retrieval:
+
+  \vspace{0.3em}
+  \begin{enumerate}\setlength{\itemsep}{3pt}
+    {\small
+    \item \textbf{Directly changed code} ($w = 1.0$) —
+          the vulnerability root cause; highest signal [1].
+    \item \textbf{Fix-adjacent} ($w = 0.8$) —
+          where the developer inserted the fix; marks the
+          ``attack surface boundary'' [2].
+    \item \textbf{Edge-changed} ($w = 0.6$) —
+          structural ripple: a control/data-flow edge was
+          rewired, indicating indirect semantic impact.
+    \item \textbf{Context} ($w = 0.2$) —
+          unchanged but reachable; provides structural
+          anchors so embedders see local topology, following
+          Weiser's slicing criterion [3].}
+  \end{enumerate}
+
+  \vspace{0.3em}
+  {\scriptsize\color{black!55}
+  [1] Li et al. — \emph{VulDeePecker: A Deep Learning-Based System
+  for Vulnerability Detection}, NDSS '18.\\[1pt]
+  [2] Yamaguchi et al. — \emph{Modeling and Discovering
+  Vulnerabilities with Code Property Graphs}, IEEE S\&P '14.\\[1pt]
+  [3] Weiser — \emph{Program Slicing}, IEEE TSE, 1984.}
+
+\end{frame}
+\begin{frame}[fragile]{$G_{\text{before}}$ vs $G_{\text{vuln}}$ — Why Diff Annotations Matter}
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+
+  \textbf{SR@1 — before vs.\ after diff labelling}
+
+  \vspace{0.4em}
+  \centering
+  \begin{tikzpicture}[
+    bar/.style={rounded corners=1pt,minimum height=0.45cm},
+    lbl/.style={font=\tiny\sffamily,text width=2cm,align=right}]
+    \foreach \y/\name/\vb/\vv/\col in {
+      4.2/Combined/0.137/0.849/c1,
+      3.0/GIN/0.493/0.699/c2,
+      1.8/WL/0.041/0.671/c2,
+      0.6/NetLSD/0.027/0.370/miss}{
+      % label
+      \node[lbl] at (-0.1,\y+0.22) {\name};
+      % G_before bar
+      \fill[\col!30,bar] (0.0,\y) rectangle ({5.0*\vb},\y+0.35);
+      \node[right,font=\tiny\sffamily,black!50] at ({5.0*\vb+0.05},\y+0.175)
+        {\pgfmathparse{\vb*100}\pgfmathprintnumber[fixed,precision=1]{\pgfmathresult}\%};
+      % G_vuln bar
+      \fill[\col!70,bar] (0.0,\y-0.42) rectangle ({5.0*\vv},\y-0.07);
+      \node[right,font=\tiny\sffamily\bfseries,\col!80!black]
+        at ({5.0*\vv+0.05},\y-0.245)
+        {\pgfmathparse{\vv*100}\pgfmathprintnumber[fixed,precision=1]{\pgfmathresult}\%};
+    }
+    % axis
+    \draw[black!15] (0,-0.1)--(0,4.8);
+    \node[below,font=\tiny\color{black!40}] at (0,-0.2) {0};
+    \node[below,font=\tiny\color{black!40}] at (2.5,-0.2) {50\%};
+    \node[below,font=\tiny\color{black!40}] at (5.0,-0.2) {100\%};
+    % legend
+    \fill[c1!30,rounded corners=1pt] (0.2,5.3) rectangle (0.7,5.55);
+    \node[right,font=\tiny\sffamily] at (0.75,5.42) {$G_{\text{before}}$};
+    \fill[c1!70,rounded corners=1pt] (2.2,5.3) rectangle (2.7,5.55);
+    \node[right,font=\tiny\sffamily] at (2.75,5.42) {$G_{\text{vuln}}$};
+  \end{tikzpicture}
+
+  \vspace{0.3em}
+  {\scriptsize\color{black!55}
+  Same 225 pairs, same embedders.
+  Only difference: diff labels on $G_{\text{vuln}}$ nodes.}
+
+\end{column}
+\begin{column}{0.49\textwidth}
+
+  \textbf{What changed between the two runs?}
+
+  \vspace{0.3em}
+  \begin{itemize}\setlength{\itemsep}{2pt}
+    \item $G_{\text{before}}$ has \textbf{no diff labels} —
+          every node looks the same to the embedder.
+    \item $G_{\text{vuln}}$ annotates each node with a diff type
+          (\texttt{removed}, \texttt{fix\_adjacent},
+          \texttt{edge\_changed}, \texttt{context}) and a weight
+          (1.0 / 0.8 / 0.6 / 0.2).
+    \item Structural embedders (GIN, WL) consume these labels as
+          \textbf{node features}, so identical topologies with
+          different patch locations produce distinct vectors.
+  \end{itemize}
+
+  \vspace{0.3em}
+  \begin{block}{Takeaway}
+    \scriptsize
+    The diff annotation is the dominant signal — not graph pruning.
+    Combined jumps from 13.7\% to 84.9\% SR@1 ($\mathbf{+71.2}$\,pp).
+    WL gains +63\,pp — especially sensitive to node-label information.
+  \end{block}
+
+\end{column}
+\end{columns}
+\end{frame}
+
+
 
 % ══════════════════════════════════════════════════════════════════════
 \section{Embedders}
@@ -724,7 +948,6 @@
 \begin{frame}[plain]
 \centering
 \vspace{3em}
-{\Large\bfseries\color{c1} Thank you}\\[1.2em]
 \begin{tikzpicture}
   \node[draw=c1!30,rounded corners=6pt,fill=c1!5,
         minimum width=9cm,minimum height=1.2cm,
