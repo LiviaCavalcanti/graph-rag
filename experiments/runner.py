@@ -13,6 +13,7 @@ One run = one dataset snapshot. Multiple runs can be compared later.
 """
 
 import json
+import os
 import time
 import uuid
 import random
@@ -298,6 +299,26 @@ def _run_cross_cwe_recall(
     }
 
 
+def _read_code_file(path: str | None, max_chars: int = 4000) -> str:
+    """Read source code from a file path or inline string, truncating if needed."""
+    if not path:
+        return ""
+    from pathlib import Path as _Path
+    p = _Path(path)
+    if p.exists():
+        try:
+            text = p.read_text(errors='replace')
+            if len(text) > max_chars:
+                text = text[:max_chars] + f"\n... [truncated at {max_chars} chars]"
+            return text
+        except Exception:
+            return ""
+    # path may be inline code (augmented variants store the code directly in source_before)
+    if len(path) > 20:
+        return path[:max_chars] + ("\n... [truncated]" if len(path) > max_chars else "")
+    return ""
+
+
 def _run_code_query_eval(
     pairs: list,
     retriever,
@@ -327,13 +348,28 @@ def _run_code_query_eval(
             0.0
         )
         mrrs.append(mrr)
+
+        # Attach query source code (vulnerable version used for embedding)
+        query_code = pair.meta.get('source_before')
+
         raw_queries.append({
-            'query_cve': pair.cve_id,
-            'query_cwe': pair.cwe_id,
-            'hit':       mrr > 0,
-            'mrr':       mrr,
+            'query_cve':   pair.cve_id,
+            'query_cwe':   pair.cwe_id,
+            'query_func':  pair.func_name,
+            'query_variant': pair.meta.get('variant', ''),
+            'query_code':  query_code,
+            'hit':         mrr > 0,
+            'mrr':         mrr,
             'retrieved': [
-                {'rank': j + 1, 'cve_id': r.get('cve_id'), 'cwe_id': r.get('cwe_id'), 'score': r.get('score')}
+                {
+                    'rank':      j + 1,
+                    'cve_id':    r.get('cve_id'),
+                    'cwe_id':    r.get('cwe_id'),
+                    'func_name': r.get('func_name'),
+                    'variant':   r.get('variant'),
+                    'score':     r.get('score'),
+                    'code':      _read_code_file(r.get('source_before')) if r.get('source_before') and os.path.exists(r.get('source_before')) else r.get('source_before'),
+                }
                 for j, r in enumerate(results)
             ],
         })
