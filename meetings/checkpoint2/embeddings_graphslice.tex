@@ -47,8 +47,7 @@
 
 % ── agenda ────────────────────────────────────────────────────────────
 \begin{frame}{Agenda}
-\begin{columns}[T]
-\begin{column}{0.55\textwidth}
+
   \begin{enumerate}
     \vspace{0.6em}
     \item[\textcolor{c3}{\faIcon{project-diagram}}] \textbf{Joern parsing issues} —
@@ -73,20 +72,7 @@
     \vspace{0.6em}
     \item[\textcolor{hit}{\faIcon{lightbulb}}] \textbf{Key findings \& next steps}
   \end{enumerate}
-\end{column}
-\begin{column}{0.42\textwidth}
-  \begin{block}{Focus of this checkpoint}
-    Stages \textbf{III} (vulnerability diff) and \textbf{IV} (graph embedding)
-    of the end-to-end pipeline.\\[0.5em]
-    Main questions addressed:
-    \begin{itemize}
-      \item Which embedder best separates CVEs?
-      \item Do structural or semantic features cluster CWEs better?
-      \item Where do retrievals fail, and why?
-    \end{itemize}
-  \end{block}
-\end{column}
-\end{columns}
+
 \end{frame}
 
 % ══════════════════════════════════════════════════════════════════════
@@ -613,14 +599,14 @@
   \centering
   \begin{tikzpicture}[
     bar/.style={rounded corners=1pt,minimum height=0.45cm},
-    lbl/.style={font=\tiny\sffamily,text width=2cm,align=right}]
+    lbl/.style={font=\tiny\sffamily,anchor=east}]
     \foreach \y/\name/\vb/\vv/\col in {
       4.2/Combined/0.137/0.849/c1,
       3.0/GIN/0.493/0.699/c2,
       1.8/WL/0.041/0.671/c2,
       0.6/NetLSD/0.027/0.370/miss}{
       % label
-      \node[lbl] at (-0.1,\y+0.22) {\name};
+      \node[lbl] at (-0.12,\y+0.22) {\name};
       % G_before bar
       \fill[\col!30,bar] (0.0,\y) rectangle ({5.0*\vb},\y+0.35);
       \node[right,font=\tiny\sffamily,black!50] at ({5.0*\vb+0.05},\y+0.175)
@@ -861,10 +847,6 @@
       Concatenating all three structural signals (NetLSD + WL + GIN)
       outperforms each individually.
 
-    \vspace{0.7em}
-    \item[\faIcon{compress-arrows-alt}] \textbf{NetLSD collapses on small graphs.}\\
-      Effective dimension $\approx 1$; pairwise cosine $> 0.99$.
-      Cannot be used as sole embedder on $G_{\text{vuln}}$ subgraphs.
   \end{enumerate}
 \end{column}
 \begin{column}{0.48\textwidth}
@@ -880,11 +862,6 @@
       Confusions occur between structurally similar patch patterns
       (e.g.\ null-check $\approx$ lock-guard).
       This justifies knowledge-graph-based re-ranking.
-
-    \vspace{0.7em}
-    \item[\faIcon{exclamation-triangle}] \textbf{Self-retrieval is a lower bound.}\\
-      No held-out query split yet.
-      True generalisation performance is unknown.
   \end{enumerate}
 \end{column}
 \end{columns}
