@@ -23,12 +23,13 @@ from pathlib import Path
 from itertools import product
 from collections import defaultdict
 from dataclasses import dataclass, field, asdict
+import logging
 
 from src.rag.index import FAISSIndex
 from src.rag.hnsw import HNSWIndex
 from src.rag.retriever import Retriever
 from src.embeddings import build_embedders
-from experiments.metrics import (
+from src.metrics.metrics import (
     leave_one_out_metrics,
     embedding_space_stats,
 )
@@ -69,10 +70,12 @@ class ExperimentResult:
 
 
 def _is_original_pair(pair) -> bool:
+    """Determine if a pair is from the original dataset vs augmented, based on metadata."""
     return pair.meta.get('variant') == 'original'
 
 
 def _split_by_variant(pairs: list) -> tuple[list, list]:
+    """Split pairs into original vs augmented based on metadata."""
     original = [p for p in pairs if _is_original_pair(p)]
     augmented = [p for p in pairs if not _is_original_pair(p)]
     return original, augmented
@@ -97,9 +100,13 @@ def _stratified_split_pairs(
     rng = random.Random(seed)
 
     by_cwe = defaultdict(list)
+    unknown_cwe_count = 0
     for p in pairs:
         cwe = p.cwe_id if p.cwe_id and p.cwe_id != 'UNKNOWN' else '__UNKNOWN__'
         by_cwe[cwe].append(p)
+        if p.cwe_id and p.cwe_id != 'UNKNOWN':
+            unknown_cwe_count += 1
+    logging.info(f"Stratified split: {len(by_cwe)} CWEs (including {unknown_cwe_count} UNKNOWN)")
 
     train, test = [], []
     for cwe_pairs in by_cwe.values():
@@ -155,9 +162,9 @@ def _build_split_plan(pairs: list, cfg: dict) -> tuple[list, list, dict]:
     and query set is held-out augmented test.
     """
     split_cfg = (cfg or {}).get('experiment', {}).get('split', {})
-    enabled = bool(split_cfg.get('enabled', False))
+    split_enabled = bool(split_cfg.get('enabled', False))
 
-    if not enabled:
+    if not split_enabled:
         return pairs[:], pairs[:], {
             'enabled': False,
             'index_n': len(pairs),
@@ -169,11 +176,14 @@ def _build_split_plan(pairs: list, cfg: dict) -> tuple[list, list, dict]:
     test_ratio = float(split_cfg.get('test_ratio', 0.2))
     use_stratified = bool(split_cfg.get('stratified', True))
     include_real_in_index = bool(split_cfg.get('include_real_in_index', True))
+    # fraction of the augmented training set to keep in the index; ablation on how much augmented data helps
+    # for fractions between 0 and 1, we randomly sample a subset of the augmented training pairs
     aug_train_ratio = float(split_cfg.get('augmented_train_ratio', 1.0))
     query_source = str(split_cfg.get('query_source', 'augmented_test'))
 
     real_pairs, aug_pairs = _split_by_variant(pairs)
 
+    # Stratified split on augmented pairs; real pairs are typically too few to split meaningfully, so we can optionally include them all in the index for training signal.
     if use_stratified:
         aug_train, aug_test = _stratified_split_pairs(aug_pairs, test_ratio=test_ratio, seed=seed)
     else:
@@ -183,8 +193,10 @@ def _build_split_plan(pairs: list, cfg: dict) -> tuple[list, list, dict]:
         cut = int(round(len(shuffled) * (1.0 - max(0.0, min(0.9, test_ratio)))))
         aug_train, aug_test = shuffled[:cut], shuffled[cut:]
 
+    # include on training set the augmented pairs that are not held out for testing, but we can optionally sample only a fraction of them to see how it impacts results
     aug_train_kept = _sample_pairs(aug_train, keep_ratio=aug_train_ratio, seed=seed + 13)
 
+    # Build index/query sets according to config. Default is all pairs in both sets for maximum training signal, but with split enabled we typically want to hold out the augmented test set as queries and keep the real + augmented train pairs in the index.
     index_pairs = []
     if include_real_in_index:
         index_pairs.extend(real_pairs)
