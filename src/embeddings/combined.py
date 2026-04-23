@@ -1,3 +1,6 @@
+import pickle
+from pathlib import Path
+
 import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import normalize
@@ -52,3 +55,21 @@ class CombinedEmbedder(BaseEmbedder):
 
         projected = self._pca.transform(raws).astype(np.float32)
         return normalize(projected, norm='l2')
+
+    def save_pca(self, path: str | Path) -> None:
+        """Persist the fitted PCA model to disk."""
+        if not self._fitted:
+            raise RuntimeError("PCA not fitted yet — call embed_many() first")
+        path = Path(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "wb") as f:
+            pickle.dump(self._pca, f)
+        print(f"    [combined] PCA saved → {path}")
+
+    def load_pca(self, path: str | Path) -> None:
+        """Load a previously fitted PCA model from disk."""
+        path = Path(path)
+        with open(path, "rb") as f:
+            self._pca = pickle.load(f)
+        self._fitted = True
+        print(f"    [combined] PCA loaded ← {path}")
