@@ -1,6 +1,6 @@
-from rag.retriever import Retriever
-from rag.index import FAISSIndex
-from embeddings import build_embedders
+from src.rag.retriever import Retriever
+from src.rag.index import FAISSIndex
+from src.embeddings import build_embedders
 import yaml
 
 
