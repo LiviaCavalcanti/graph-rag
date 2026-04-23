@@ -42,6 +42,15 @@ def collect_changed_code(
         line = int(attr.get('LINE_NUMBER', 9999) or 9999)
         changed.append((dw, line, code))
 
+    # Fallback: no nodes passed the diff threshold → use ALL code nodes
+    if not changed:
+        for nd in G.nodes():
+            code = (G.nodes[nd].get('CODE', '') or '').strip()
+            if not code:
+                continue
+            line = int(G.nodes[nd].get('LINE_NUMBER', 9999) or 9999)
+            changed.append((0.0, line, code))
+
     if not changed:
         return ''
 
