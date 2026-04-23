@@ -4,100 +4,230 @@ This directory contains the evaluation pipeline for the graph-RAG retrieval syst
 
 ---
 
-## Quick start
+## End-to-end pipeline
 
-All scripts are meant to be run from the **repo root**, not from inside `experiments/`.
+```mermaid
+flowchart LR
+    subgraph Data
+        A[CVE-list/<br/>source code] --> B[AutoPatchDataset]
+        B --> C["FunctionPair[]<br/>(G_before, G_after, G_vuln)"]
+    end
 
-```bash
-# 1. Run a full experiment (embeds corpus, builds indices, evaluates all cells)
-uv run python -m experiments.runner
+    subgraph Split["Train / Test Split"]
+        C --> D{split<br/>enabled?}
+        D -- yes --> E["Stratified split<br/>(seed, test_ratio)"]
+        D -- no --> F["all_vs_all<br/>(index = query)"]
+        E --> G[index_pairs<br/>real + aug_train]
+        E --> H[query_pairs<br/>aug_test]
+        F --> G
+        F --> H
+    end
 
-# 2. Analyse miss patterns and build the miss dashboard
-uv run python experiments/analyze_misses.py experiments/output/<run_id>/results.json
+    subgraph Embed["Embedding"]
+        G --> I["embed_many(index_graphs)"]
+        H --> J["embed_many(query_graphs)"]
+    end
 
-# 3. Run the crossing / fusion strategy analysis and build the unified dashboard
-uv run python experiments/verify_crossing.py experiments/output/<run_id>/results.json
-```
+    subgraph Index["Vector Index"]
+        I --> K[HNSW Index<br/>+ metadata]
+    end
 
-Step 3 produces the main `dashboard.html` that you probably want to open in a browser. Steps 1–2 are prerequisites — step 3 will complain if `results.json` isn't there.
+    subgraph Eval["Evaluation"]
+        J --> L[Query Retriever]
+        K --> L
+        L --> M["hit@k, MRR,<br/>CVE P/R/F1,<br/>CWE recall"]
+    end
 
-If you want to regenerate the dashboard without re-running the analysis (e.g., after changing `dashboard.py`):
-
-```python
-from experiments.dashboard import generate_html_dashboard
-generate_html_dashboard("experiments/output/<run_id>")
+    M --> N[results.json]
+    N --> O[analyze_misses.py]
+    N --> P[verify_crossing.py]
+    O --> Q[miss_dashboard.html]
+    P --> R[dashboard.html]
 ```
 
 ---
 
-## Scripts
+## Experiment scripts
 
-### `runner.py`
+### `runner.py` — main grid experiment
 
-The main experiment entry point. It sweeps a grid of `(embedder × backend)` combinations, embeds the full CVE corpus once per embedder, builds a retrieval index for each backend, and then runs self-retrieval evaluation on every cell. Results land in `experiments/output/<run_id>/results.json`.
+Sweeps a grid of `(embedder × backend)` cells. Each cell embeds the corpus, builds an ANN index, and evaluates retrieval.
 
-A "cell" is one `(embedder, backend)` pair. Each cell records:
+```mermaid
+flowchart TD
+    A[Load pairs + config] --> B[Build split plan]
+    B --> C{For each embedder}
+    C --> D["embed_many(index_graphs)<br/>fit PCA on index"]
+    D --> E{For each backend}
+    E --> F[Build HNSW index]
+    F --> G["Query: embed_one(query_graph)<br/>project through index PCA"]
+    G --> H["Evaluate:<br/>hit@k, MRR, CWE recall"]
+    H --> I[CellResult]
+    I --> E
+    E --> C
+    C --> J[results.json]
+```
 
-- **Embedding cost** — how long it took to embed the corpus
-- **Index build time** — how long the ANN index took to build
-- **Query latency** — p50, p95, p99 in milliseconds
-- **Space stats** — mean pairwise cosine similarity, effective dimensionality
-- **Self-retrieval** — Hit@1, Hit@5, Hit@10, MRR
-- **CWE recall** — how well the embedding clusters by vulnerability class
-- **Leave-one-out** — a stricter retrieval test (can be slow; skipped for large corpora)
-- **Raw queries** — the full retrieved list for every query, used by downstream analysis
+**Key detail — asymmetric query protocol:**
+- Augmented queries use `G_before` (full pre-patch graph, no diff labels)
+- Original queries use `G_vuln` (sliced + diff-labeled)
+- PCA is fitted once on index embeddings and applied unchanged to queries
+- Each query is embedded individually via `embed_one()`
 
-The run ID is a timestamp + short hash, e.g. `20260416_100627_bba620`.
+A "cell" records: embedding cost, index build time, query latency (p50/p95/p99), space stats, self-retrieval (Hit@1/5/10, MRR), CWE recall, leave-one-out (optional), and raw per-query results.
 
 ---
 
-### `analyze_misses.py`
+### `slicing_comparison.py` — graph variant ablation
 
-Takes `results.json` and digs into the failure cases. For every approach it asks:
+Compares four graph representations in a 2×2 factorial design (slicing × labelling):
 
-- When the top-1 CVE is wrong, is the **CWE still correct**? (Wrong CVE, right vulnerability class — a "soft hit")
-- How far down the ranking does the **true CVE** appear?
-- When the system is wrong, is it at least **uncertain about it**? (Low confidence → wrong is more forgivable than high confidence → wrong)
+```mermaid
+flowchart TD
+    A[Load pairs + split] --> B{For each variant}
+
+    B --> V1["G_before<br/>full graph, no diff"]
+    B --> V2["G_before_labeled<br/>full graph + diff labels"]
+    B --> V3["G_vuln_no_labels<br/>sliced, no diff"]
+    B --> V4["G_vuln<br/>sliced + diff labels"]
+
+    V1 --> C{For each embedder}
+    V2 --> C
+    V3 --> C
+    V4 --> C
+
+    C --> D["Reset PCA state"]
+    D --> E["embed_many(index_graphs)<br/>⚠ PCA fit includes all data"]
+    E --> F[Build HNSW index]
+    F --> G["embed_many(query_graphs)"]
+    G --> H["Evaluate retrieval"]
+    H --> I[Comparison table]
+```
+
+**⚠ Known issue:** This script resets PCA per variant and batch-embeds queries alongside index data. This causes PCA to be fitted on query+index jointly, which leaks information. The correct protocol (used by `runner.py`) fits PCA on index only and projects queries through that same PCA.
+
+Query variant options:
+- Default: queries use the same graph variant as the index
+- `--query-variant runner_compat`: reproduces `runner.py`'s asymmetric protocol (The query always use G_before for querying)
+- `--query-variant G_before`: fixes all queries to `G_before`
+
+---
+
+### `analyze_misses.py` — failure analysis
+
+Takes `results.json` and analyses retrieval failures:
+
+```mermaid
+flowchart LR
+    A[results.json] --> B[For each cell]
+    B --> C{Top-1 correct?}
+    C -- miss --> D["Wrong CVE,<br/>right CWE?"]
+    C -- miss --> E["True CVE rank<br/>in results"]
+    C -- miss --> F["Confidence:<br/>softmax prob + margin"]
+    D --> G["miss_analysis.json"]
+    E --> G
+    F --> G
+    G --> H[miss_dashboard.html]
+```
 
 Produces:
-- `miss_analysis.json` — structured per-cell statistics
+- `miss_analysis.json` — structured per-cell miss/uncertainty statistics
 - `miss_dashboard.html` — standalone HTML with charts and tables
 
 ---
 
-### `verify_crossing.py`
+### `verify_crossing.py` — fusion strategies
 
-The most interesting analysis. The hypothesis is that different embedding approaches make *different* mistakes — so if you could combine them intelligently, you might do better than any single approach. This script tests several combination strategies:
+Tests whether combining embedders recovers individual misses:
 
-| Strategy | How it works |
-|---|---|
-| **individual_best** | Just the best single approach (baseline) |
-| **oracle** | Hit if *any* approach gets it right — the theoretical ceiling |
-| **majority_vote** | Pick whichever CVE most approaches rank first |
-| **confidence_weighted_vote** | Like majority vote, but uncertain approaches get down-weighted (0.25×) |
-| **reciprocal_rank_fusion** | Classic RRF: score = Σ 1/(60 + rank) across all approaches |
-| **fallback_cascade** | Try the best approach first; if it's uncertain, fall back to the next confident one |
+```mermaid
+flowchart TD
+    A[results.json] --> B[Collect per-query predictions<br/>from all approaches]
 
-"Uncertain" means the top score is below a probability floor *or* the margin between rank-1 and rank-2 is too small (uses a softmax + thresholds that match the miss analysis defaults).
+    B --> S1["Oracle<br/>any hit → hit"]
+    B --> S2["Majority vote<br/>most common top-1 CVE"]
+    B --> S3["Confidence-weighted vote<br/>down-weight uncertain"]
+    B --> S4["RRF<br/>Σ 1/(60 + rank)"]
+    B --> S5["Fallback cascade<br/>best → next confident"]
 
-The cascade order is computed automatically — approaches are sorted by their Hit@1 rate, so the most reliable one gets tried first.
+    S1 --> C[crossing_analysis.json]
+    S2 --> C
+    S3 --> C
+    S4 --> C
+    S5 --> C
+    C --> D["dashboard.py → dashboard.html"]
+```
 
-Produces:
-- `crossing_analysis.json` — full results including per-query strategy outcomes
-- `dashboard.html` (via `dashboard.py`) — the unified dashboard
+The cascade order is computed automatically — approaches sorted by Hit@1.
 
 ---
 
-### `dashboard.py`
+### `knowledge_experiment.py` — CWE ontology + callgraph
 
-Reads `results.json`, `miss_analysis.json`, and `crossing_analysis.json` from a run directory and produces a single self-contained `dashboard.html` with four tabs:
+Adds domain knowledge on top of retrieval results:
 
-- **Overview** — Hit@1, MRR, and a leaderboard across all approaches
-- **Deep Dive** — per-approach charts (latency, space stats, miss breakdown)
-- **Crossing Strategies** — how the fusion strategies compare, pairwise complementarity heatmap, combined-approach miss deep-dive
-- **Code Explorer** — query-by-query inspection: the vulnerable function on the left, what each approach retrieved on the right
+```mermaid
+flowchart LR
+    A[results.json] --> B[Load CWE ontology]
+    B --> C["Wu-Palmer similarity<br/>between CWE pairs"]
+    A --> D["Extract cross-CVE<br/>callgraph"]
+    D --> E["Shared callee<br/>similarity matrix"]
+    C --> F["Confusion analysis:<br/>CWE distance of misses"]
+    E --> G["Callgraph-augmented<br/>reranking"]
+    F --> H[knowledge_dashboard.html]
+    G --> H
+```
 
-The Code Explorer is particularly useful for manual analysis — you can filter the query list by which fusion strategy *failed* on it, then step through those queries one by one to see what each individual approach retrieved and why the combination went wrong.
+---
+
+### `dashboard.py` — unified HTML dashboard
+
+Reads all analysis JSONs and produces a single self-contained `dashboard.html` with four tabs:
+
+| Tab | Content |
+|---|---|
+| **Overview** | Hit@1, MRR leaderboard across all approaches |
+| **Deep Dive** | Per-approach charts (latency, space stats, miss breakdown) |
+| **Crossing Strategies** | Fusion comparison, complementarity heatmap |
+| **Code Explorer** | Query-by-query inspection with source code |
+
+---
+
+## Quick start
+
+All scripts run from the **repo root**:
+
+```bash
+# 1. Full grid experiment
+uv run python -m experiments.runner
+
+# 2. Slicing methodology comparison
+uv run python -m experiments.slicing_comparison --config config.yaml --query-variant runner_compat
+
+# 3. Miss analysis
+uv run python experiments/analyze_misses.py experiments/output/<run_id>/results.json
+
+# 4. Fusion strategies + dashboard
+uv run python experiments/verify_crossing.py experiments/output/<run_id>/results.json
+```
+
+---
+
+## Output structure
+
+```
+experiments/output/<run_id>/
+├── results.json              # runner.py output
+├── slicing_comparison.json   # slicing_comparison.py output
+├── miss_analysis.json        # analyze_misses.py output
+├── crossing_analysis.json    # verify_crossing.py output
+├── dashboard.html            # unified dashboard
+├── miss_dashboard.html       # miss-specific dashboard
+├── knowledge_dashboard.html  # knowledge experiment dashboard
+└── indices/                  # HNSW index files
+    ├── <embedder>__<variant>__hnsw.index
+    └── <embedder>__<variant>__hnsw_meta.json
+```
 
 ---
 
