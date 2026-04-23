@@ -21,6 +21,9 @@ class GINEmbedder(BaseEmbedder):
         hidden_dim = cfg.get('gin', {}).get('hidden_dim', 128)
         num_layers = cfg.get('gin', {}).get('num_layers', 3)
 
+        seed = cfg.get('gin', {}).get('seed', 42)
+        torch.manual_seed(seed)
+
         self.input_proj = torch.nn.Linear(in_dim, hidden_dim)
         self.convs = torch.nn.ModuleList()
         self.bns   = torch.nn.ModuleList()
