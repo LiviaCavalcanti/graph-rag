@@ -1,4 +1,5 @@
 import argparse
+import sys
 from functools import partial
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
@@ -122,7 +123,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="config.yaml")
     parser.add_argument(
-        "--mode", choices=["index", "query", "export", "experiment", "diagnostics"], default="export"
+        "--mode", choices=["index", "query", "export", "experiment", "diagnostics", "batch"], default="export"
     )
     parser.add_argument("--dataset", choices=["autopatch"], default="autopatch")
     parser.add_argument("--cve")
@@ -136,6 +137,15 @@ if __name__ == "__main__":
                     help='test ratio for split mode, e.g. 0.2')
     parser.add_argument('--aug-train-ratio', type=float,
                     help='fraction of augmented train pairs to keep in index, e.g. 0.5')
+    # batch-mode arguments
+    parser.add_argument('--batch-size', type=int, default=10,
+                    help='queries per batch flush (batch mode, default: 10)')
+    parser.add_argument('--max-queries', type=int, default=None,
+                    help='limit total queries for testing (batch mode)')
+    parser.add_argument('--model', default=None,
+                    help='Azure model/deployment name (batch mode, default: MODEL_NAME from .env)')
+    parser.add_argument('--resume', default=None,
+                    help='path to run dir to resume (batch mode)')
 
     args = parser.parse_args()
     with open(args.config) as f:
@@ -191,3 +201,69 @@ if __name__ == "__main__":
             all_pairs.extend(dataset.load_all())
 
         run_diagnostics(all_pairs)
+
+    elif args.mode == 'batch':
+        import json as _json
+        import os as _os
+
+        from dotenv import load_dotenv
+
+        from src.agents.batch_inference import run_batch_inference
+        from experiments.common import load_pairs, build_split
+        from src.rag.oracle import OracleRetriever
+
+        load_dotenv()
+
+        if not _os.getenv("AZURE_API_KEY") or not _os.getenv("AZURE_API_BASEURL"):
+            print("ERROR: Set AZURE_API_KEY and AZURE_API_BASEURL in .env")
+            sys.exit(1)
+
+        # apply split overrides (same as experiment mode)
+        cfg.setdefault('experiment', {})
+        cfg['experiment'].setdefault('split', {})
+        split_cfg = cfg['experiment']['split']
+        if args.split:
+            split_cfg['enabled'] = True
+        if args.no_split:
+            split_cfg['enabled'] = False
+        if args.split_test_ratio is not None:
+            split_cfg['test_ratio'] = args.split_test_ratio
+        if args.aug_train_ratio is not None:
+            split_cfg['augmented_train_ratio'] = args.aug_train_ratio
+
+        # load pairs and split
+        pairs = load_pairs(cfg)
+        index_pairs, query_pairs, split_info = build_split(pairs, cfg)
+
+        if args.max_queries:
+            query_pairs = query_pairs[:args.max_queries]
+
+        # build oracle retriever
+        retriever = OracleRetriever(index_pairs)
+        print(f"Oracle retriever built from {len(index_pairs)} index pairs")
+
+        # preload db_entry.json for all CVEs
+        cve_root = Path(cfg['data']['autopatch']['root'])
+        db_cache = {}
+        for d in sorted(cve_root.iterdir()):
+            if not d.is_dir():
+                continue
+            db_path = d / 'out_v2' / 'db_entry.json'
+            if db_path.exists():
+                try:
+                    db = _json.loads(db_path.read_text())
+                    db_cache[db.get('cve_id', d.name)] = db
+                except (_json.JSONDecodeError, OSError):
+                    continue
+        print(f"Cached {len(db_cache)} db_entries")
+
+        run_batch_inference(
+            query_pairs=query_pairs,
+            retriever=retriever,
+            db_cache=db_cache,
+            model_name=args.model,
+            batch_size=args.batch_size,
+            run_tag='batch_oracle',
+            resume_dir=args.resume,
+            meta_extra={'mode': 'oracle', 'split_info': split_info},
+        )
