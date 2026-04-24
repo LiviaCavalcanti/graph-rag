@@ -2,6 +2,8 @@ import json
 from pathlib import Path
 from typing import Iterator
 
+import networkx as nx
+
 from src.graph.joern_graph import get_cpg
 
 from .base import BaseDataset, ExportJob, FunctionPair
@@ -172,6 +174,83 @@ class AutoPatchDataset(BaseDataset):
         if self.cfg.get("include_variants", False):
             return _VARIANTS
         return [_ORIGINAL_VARIANT]
+
+    def load_lightweight(self) -> list[FunctionPair]:
+        """Load pairs with metadata only — no CPG/graph loading.
+
+        Returns FunctionPair objects with empty graphs but full meta, suitable
+        for batch inference where only db_entry + variant metadata are needed.
+        """
+        _empty = nx.MultiDiGraph()
+        dataset_path = Path(self.cfg["root"])
+        pairs: list[FunctionPair] = []
+
+        for cve_dir in sorted(dataset_path.iterdir()):
+            db = self._load_db_entry(cve_dir)
+            if db is None:
+                continue
+            cve_id = str(db.get("cve_id", cve_dir.name))
+            cwe_id = str(db.get("cwe_type", ""))
+            func_name = str(db.get("function_name", ""))
+
+            base_meta = {
+                "root_cause": db.get("root_cause", ""),
+                "fix_list": db.get("fix_list", []),
+                "function_prototype": db.get("function_prototype", ""),
+                "dir_name": cve_dir.name,
+            }
+
+            # original variant
+            original_code_path = cve_dir / "original_code.txt"
+            original_fixed_path = cve_dir / "vuln_patch.txt"
+            if original_code_path.exists() and original_fixed_path.exists():
+                pairs.append(FunctionPair(
+                    cve_id=cve_id, cwe_id=cwe_id, func_name=func_name,
+                    project="autopatch",
+                    G_before=_empty, G_after=_empty, G_vuln=_empty,
+                    meta={
+                        "dataset": self.name(),
+                        "variant": "original",
+                        "source_before": str(original_code_path),
+                        "source_after": str(original_fixed_path),
+                        "supplementary_code": (
+                            (cve_dir / "supplementary_code.txt").read_text()
+                            if (cve_dir / "supplementary_code.txt").exists()
+                            else ""
+                        ),
+                        **base_meta,
+                    },
+                ))
+
+            # augmented variants
+            if self.cfg.get("include_variants", False):
+                code_dir = cve_dir / "out_v2" / "code"
+                if code_dir.exists():
+                    for json_file, fixed_file in _VARIANTS:
+                        variant_data = self._load_variant_json(code_dir, json_file)
+                        if not variant_data:
+                            continue
+                        if not variant_data.get("is_vulnerable", True):
+                            continue
+                        fixed_c_path = code_dir / fixed_file
+                        if not fixed_c_path.exists():
+                            continue
+                        variant_name = json_file.replace(".json", "")
+                        pairs.append(FunctionPair(
+                            cve_id=cve_id, cwe_id=cwe_id, func_name=func_name,
+                            project="autopatch",
+                            G_before=_empty, G_after=_empty, G_vuln=_empty,
+                            meta={
+                                "dataset": self.name(),
+                                "variant": variant_name,
+                                "source_before": variant_data.get("re_implemented_code", ""),
+                                "source_after": str(fixed_c_path),
+                                "supplementary_code": variant_data.get("supplementary_code", ""),
+                                **base_meta,
+                            },
+                        ))
+
+        return pairs
 
     def export_jobs(self, graphml_root: str) -> Iterator[ExportJob]:
         root = Path(self.cfg["root"])
