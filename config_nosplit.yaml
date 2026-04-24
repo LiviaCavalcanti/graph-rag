@@ -1,0 +1,52 @@
+data:
+  autopatch:
+    root: CVE-list
+    graphml_root: graphml_augmented
+    include_variants: true
+joern:
+  workers: 8
+  timeout_s: 120
+  bin_dir: /home/z0050s2b/bin/joern/joern-cli
+graph:
+  node_types:
+    - METHOD
+    - METHOD_PARAMETER_IN
+    - METHOD_PARAMETER_OUT
+    - METHOD_RETURN
+    - BLOCK
+    - LOCAL
+    - CALL
+    - IDENTIFIER
+    - LITERAL
+    - RETURN
+    - CONTROL_STRUCTURE
+    - FIELD_IDENTIFIER
+    - UNKNOWN
+  edge_types:
+    - AST
+    - CFG
+    - CDG
+    - REF
+    - ARGUMENT
+    - RECEIVER
+embeddings:
+  active: [combined, codebert_seq, gin, wl, codebert_pattern, rgcn]
+  dim: 128
+  netlsd:
+    timescales: 128
+  wl:
+    num_iterations: 4
+    hidden_dim: 64
+  gin:
+    hidden_dim: 128
+    num_layers: 3
+  rgcn:
+    codebert_model: /home/z0050s2b/code/graph-rag/models/codebert-base/
+rag:
+  index_path: src/rag/faiss.index
+  metadata_path: src/rag/metadata.json
+  top_k: 5
+  embedding_variant: wl
+experiment:
+  split:
+    enabled: false
