@@ -1,0 +1,64 @@
+{
+    "array": [
+        {
+            "query_cve": "CVE-2025-22007",
+            "query_cwe": "NULL Pointer Dereference",
+            "query_variant": "re_implemented_gpt-4o",
+            "top1_score": 1.014456,
+            "top1_correct": false,
+            "score_gap": 0.012778,
+            "top1_cve": "CVE-2024-4741",
+            "top1_func": "tls_free_buffers",
+            "top1_variant": "original",
+            "ground_truth_patch": "CVE-list/CVE-2025-22007/out_v2/code/re_implemented_gpt-4o_fixed.c"
+        },
+        {
+            "query_cve": "CVE-2024-53142",
+            "query_cwe": "Out-of-bounds Write",
+            "query_variant": "re_implemented_llama",
+            "top1_score": 0.902022,
+            "top1_correct": false,
+            "score_gap": 0.0,
+            "top1_cve": "CVE-2024-58022",
+            "top1_func": "th1520_map_mmio",
+            "top1_variant": "augmented",
+            "ground_truth_patch": "CVE-list/CVE-2024-53142_1/out_v2/code/re_implemented_llama_fixed.c"
+        },
+        {
+            "query_cve": "CVE-2024-58022",
+            "query_cwe": "NULL Pointer Dereference",
+            "query_variant": "re_implemented_deepseek-r1",
+            "top1_score": 0.902022,
+            "top1_correct": true,
+            "score_gap": 0.0,
+            "top1_cve": "CVE-2024-58022",
+            "top1_func": "th1520_map_mmio",
+            "top1_variant": "augmented",
+            "ground_truth_patch": "CVE-list/CVE-2024-58022/out_v2/code/re_implemented_deepseek-r1_fixed.c"
+        },
+        {
+            "query_cve": "CVE-2024-58081",
+            "query_cwe": "NULL Pointer Dereference",
+            "query_variant": "augmented",
+            "top1_score": 0.902022,
+            "top1_correct": false,
+            "score_gap": 0.0,
+            "top1_cve": "CVE-2024-58022",
+            "top1_func": "th1520_map_mmio",
+            "top1_variant": "augmented",
+            "ground_truth_patch": "CVE-list/CVE-2024-58081/out_v2/code/augmented_fixed.c"
+        },
+        {
+            "query_cve": "CVE-2024-58022",
+            "query_cwe": "NULL Pointer Dereference",
+            "query_variant": "re_implemented_deepseek",
+            "top1_score": 0.902022,
+            "top1_correct": true,
+            "score_gap": 0.0,
+            "top1_cve": "CVE-2024-58022",
+            "top1_func": "th1520_map_mmio",
+            "top1_variant": "augmented",
+            "ground_truth_patch": "CVE-list/CVE-2024-58022/out_v2/code/re_implemented_deepseek_fixed.c"
+        }
+    ]
+}

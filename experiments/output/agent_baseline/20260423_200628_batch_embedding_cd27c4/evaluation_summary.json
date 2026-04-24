@@ -1,0 +1,92 @@
+{
+  "total_records": 73,
+  "evaluated": 20,
+  "skipped": 53,
+  "exact_matches": 0,
+  "normalised_exact_matches": 0,
+  "avg_char_sequence_ratio": 0.5082,
+  "avg_line_sequence_ratio": 0.5699,
+  "avg_normalised_edit_distance": 0.4524,
+  "avg_token_jaccard": 0.5942,
+  "avg_token_jaccard_multiset": 0.5737,
+  "avg_bleu_1": 0.591,
+  "avg_bleu_2": 0.5596,
+  "avg_bleu_4": 0.5076,
+  "avg_codebleu_proxy": 0.5448,
+  "by_cwe": {
+    "Integer Overflow or Wraparound": {
+      "count": 3,
+      "avg_bleu_4": 0.6368,
+      "avg_token_jaccard": 0.6752,
+      "avg_char_ratio": 0.4699,
+      "avg_codebleu_proxy": 0.6414,
+      "exact_matches": 0
+    },
+    "Race Condition": {
+      "count": 5,
+      "avg_bleu_4": 0.4156,
+      "avg_token_jaccard": 0.5276,
+      "avg_char_ratio": 0.4213,
+      "avg_codebleu_proxy": 0.4491,
+      "exact_matches": 0
+    },
+    "Use After Free": {
+      "count": 12,
+      "avg_bleu_4": 0.5137,
+      "avg_token_jaccard": 0.6016,
+      "avg_char_ratio": 0.5539,
+      "avg_codebleu_proxy": 0.5606,
+      "exact_matches": 0
+    }
+  },
+  "by_variant": {
+    "augmented": {
+      "count": 2,
+      "avg_bleu_4": 0.5483,
+      "avg_token_jaccard": 0.5147,
+      "avg_char_ratio": 0.55,
+      "avg_codebleu_proxy": 0.5442,
+      "exact_matches": 0
+    },
+    "re_implemented_deepseek": {
+      "count": 4,
+      "avg_bleu_4": 0.5481,
+      "avg_token_jaccard": 0.6247,
+      "avg_char_ratio": 0.4882,
+      "avg_codebleu_proxy": 0.5858,
+      "exact_matches": 0
+    },
+    "re_implemented_deepseek-r1": {
+      "count": 5,
+      "avg_bleu_4": 0.5607,
+      "avg_token_jaccard": 0.6261,
+      "avg_char_ratio": 0.584,
+      "avg_codebleu_proxy": 0.5802,
+      "exact_matches": 0
+    },
+    "re_implemented_gpt-4o": {
+      "count": 4,
+      "avg_bleu_4": 0.4354,
+      "avg_token_jaccard": 0.5432,
+      "avg_char_ratio": 0.4098,
+      "avg_codebleu_proxy": 0.5042,
+      "exact_matches": 0
+    },
+    "re_implemented_llama": {
+      "count": 2,
+      "avg_bleu_4": 0.659,
+      "avg_token_jaccard": 0.7486,
+      "avg_char_ratio": 0.5946,
+      "avg_codebleu_proxy": 0.6641,
+      "exact_matches": 0
+    },
+    "re_implemented_o3-mini": {
+      "count": 3,
+      "avg_bleu_4": 0.3338,
+      "avg_token_jaccard": 0.5182,
+      "avg_char_ratio": 0.454,
+      "avg_codebleu_proxy": 0.4064,
+      "exact_matches": 0
+    }
+  }
+}
