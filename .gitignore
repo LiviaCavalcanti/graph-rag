@@ -42,6 +42,16 @@ MANIFEST
 *.manifest
 *.spec
 
+# latex
+*.aux
+*.out
+*.toc
+*.fdb_latexmk
+*.fls
+*.nav
+*.vrb
+*.synctex.gz
+
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
