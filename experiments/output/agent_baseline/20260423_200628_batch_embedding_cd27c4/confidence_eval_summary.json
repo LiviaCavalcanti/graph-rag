@@ -1,0 +1,71 @@
+{
+  "score_stats": {
+    "min": 0.0779,
+    "max": 0.9554,
+    "mean": 0.2338,
+    "median": 0.1793,
+    "p75": 0.2329,
+    "p90": 0.3338,
+    "random_baseline": 0.1261
+  },
+  "thresholds": [
+    {
+      "threshold": 0.1261,
+      "tp": 54,
+      "fp": 6,
+      "fn": 4,
+      "tn": 9,
+      "precision": 0.9,
+      "recall": 0.931,
+      "f1": 0.9153,
+      "accuracy": 0.863,
+      "confident_total": 60,
+      "confident_correct": 54,
+      "label": "random"
+    },
+    {
+      "threshold": 0.1793,
+      "tp": 33,
+      "fp": 4,
+      "fn": 25,
+      "tn": 11,
+      "precision": 0.8919,
+      "recall": 0.569,
+      "f1": 0.6947,
+      "accuracy": 0.6027,
+      "confident_total": 37,
+      "confident_correct": 33,
+      "label": "p50"
+    },
+    {
+      "threshold": 0.2329,
+      "tp": 16,
+      "fp": 3,
+      "fn": 42,
+      "tn": 12,
+      "precision": 0.8421,
+      "recall": 0.2759,
+      "f1": 0.4156,
+      "accuracy": 0.3836,
+      "confident_total": 19,
+      "confident_correct": 16,
+      "label": "p75"
+    },
+    {
+      "threshold": 0.3338,
+      "tp": 5,
+      "fp": 3,
+      "fn": 53,
+      "tn": 12,
+      "precision": 0.625,
+      "recall": 0.0862,
+      "f1": 0.1515,
+      "accuracy": 0.2329,
+      "confident_total": 8,
+      "confident_correct": 5,
+      "label": "p90"
+    }
+  ],
+  "high_confidence_threshold": 0.2329,
+  "high_confidence_count": 16
+}

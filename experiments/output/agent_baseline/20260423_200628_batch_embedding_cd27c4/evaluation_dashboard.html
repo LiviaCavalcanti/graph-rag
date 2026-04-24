@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Evaluation Dashboard &mdash; 20260423_200628_batch_embedding_cd27c4</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>:root {
+  --c0: #4361EE; --c1: #F72585; --c2: #7209B7; --c3: #FB8500;
+  --c4: #06D6A0; --c5: #118AB2; --c6: #FFD166; --c7: #EF476F;
+  --bg: #f5f4f0; --surface: #ffffff; --ink: #1a1a2e; --muted: #6b7280;
+  --accent: var(--c0); --accent-light: #eef0fd; --border: #e2e0db;
+  --radius: 12px; --shadow: 0 4px 24px rgba(10,10,40,.07);
+}
+*, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+body { font-family: "Inter","Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--ink); font-size:14px; line-height:1.6; }
+a { color:var(--accent); }
+.topbar { background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%); color:#fff; padding:18px 32px; display:flex; align-items:center; gap:16px; }
+.topbar h1 { font-size:1.4rem; font-weight:700; letter-spacing:-.5px; }
+.topbar .run-id { font-size:.8rem; background:#ffffff22; padding:3px 10px; border-radius:99px; }
+.tab-nav { background:var(--surface); border-bottom:2px solid var(--border); display:flex; padding:0 32px; gap:4px; position:sticky; top:0; z-index:10; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.tab-btn { padding:12px 20px; border:none; background:none; cursor:pointer; font-size:.95rem; font-weight:500; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px; transition:color .2s,border-color .2s; }
+.tab-btn:hover { color:var(--ink); }
+.tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
+.content { max-width:1300px; margin:0 auto; padding:28px 24px 64px; }
+.tab-panel { display:none; }
+.tab-panel.active { display:block; }
+h2 { font-size:1.5rem; font-weight:700; margin-bottom:6px; }
+h3 { font-size:1.05rem; font-weight:600; margin-bottom:12px; }
+p.sub { color:var(--muted); margin-bottom:20px; font-size:.92rem; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px 24px; margin-bottom:18px; box-shadow:var(--shadow); }
+.stat-row { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:20px; }
+.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; min-width:160px; box-shadow:var(--shadow); flex:1; }
+.stat-card.accent { background:var(--accent-light); border-color:var(--accent); }
+.stat-card.warn { background:#fff0f3; border-color:#c62828; }
+.stat-card.ok { background:#e8faf3; border-color:#146c43; }
+.stat-label { font-size:.78rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
+.stat-value { font-size:1.9rem; font-weight:700; color:var(--ink); line-height:1.2; }
+.stat-sub { font-size:.8rem; color:var(--muted); margin-top:4px; }
+table { width:100%; border-collapse:collapse; font-size:.9rem; }
+th, td { padding:9px 12px; text-align:left; border-bottom:1px solid var(--border); }
+th { background:var(--bg); font-weight:600; font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; }
+tr:hover td { background:#f9f8f5; }
+.scroll-x { overflow-x:auto; }
+.sparkbar-wrap { display:inline-flex; align-items:center; gap:6px; }
+.sparkbar { display:inline-block; height:10px; border-radius:3px; }
+.sparkbar-label { font-size:.82rem; color:var(--ink); }
+.dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+.pill { display:inline-block; padding:2px 8px; border-radius:99px; font-size:.78rem; background:var(--accent-light); color:var(--accent); }
+.pill.warn { background:#fff0f3; color:#c62828; }
+.pill.ok { background:#e8faf3; color:#146c43; }
+.chart-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(440px,1fr)); gap:18px; margin-bottom:18px; }
+.chart-card { min-height:280px; }
+.gauge-row { display:flex; flex-wrap:wrap; gap:18px; margin-bottom:20px; }
+.gauge-card { flex:1; min-width:180px; text-align:center; }
+.gauge-ring { position:relative; width:120px; height:120px; margin:0 auto 8px; }
+.gauge-ring svg { transform:rotate(-90deg); }
+.gauge-ring .value { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:1.4rem; font-weight:700; }
+.high-conf-table td.cve { font-family:"JetBrains Mono","Fira Code",monospace; font-size:.82rem; }
+td.num { text-align:right; font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<div class="topbar"><h1>Evaluation Dashboard</h1><span class="run-id">20260423_200628_batch_embedding_cd27c4</span></div>
+<nav class="tab-nav"><button class="tab-btn active" data-tab="tab-overview">Overview</button><button class="tab-btn" data-tab="tab-patch">Patch Quality</button><button class="tab-btn" data-tab="tab-retrieval">Retrieval</button><button class="tab-btn" data-tab="tab-confidence">Confidence</button><button class="tab-btn" data-tab="tab-highconf">High-Confidence Failures</button></nav>
+<main class="content">
+
+<section id="tab-overview" class="tab-panel active">
+  <h2>Pipeline Overview</h2>
+  <p class="sub">End-to-end evaluation: Retrieval &rarr; Patch Generation &rarr; Confidence Analysis</p>
+  <div class="stat-row">
+    <div class="stat-card accent"><div class="stat-label">Total Queries</div><div class="stat-value">73</div><div class="stat-sub">all evaluated</div></div>
+    <div class="stat-card ok"><div class="stat-label">Retrieval Hit@1</div><div class="stat-value">79.5%</div><div class="stat-sub">58 / 73 correct</div></div>
+    <div class="stat-card"><div class="stat-label">Retrieval MRR</div><div class="stat-value">0.834</div></div>
+    <div class="stat-card"><div class="stat-label">Avg BLEU-4</div><div class="stat-value">0.508</div><div class="stat-sub">patch vs ground truth</div></div>
+    <div class="stat-card warn"><div class="stat-label">Exact Matches</div><div class="stat-value">0</div><div class="stat-sub">out of 73</div></div>
+    <div class="stat-card"><div class="stat-label">High-Conf Failures</div><div class="stat-value">16</div><div class="stat-sub">retriever re-identifies vuln</div></div>
+  </div>
+  <div class="card"><h3>Dataset Split</h3><table>
+    <thead><tr><th>Split</th><th>Count</th></tr></thead><tbody>
+    <tr><td>Total pairs</td><td><strong>449</strong></td></tr>
+    <tr><td>Real (original)</td><td><strong>75</strong></td></tr>
+    <tr><td>Augmented total</td><td><strong>374</strong></td></tr>
+    <tr><td>Index (train)</td><td><strong>225</strong></td></tr>
+    <tr><td>Query (test)</td><td><strong>73</strong></td></tr>
+  </tbody></table></div>
+</section>
+<section id="tab-patch" class="tab-panel">
+  <h2>Patch Quality</h2>
+  <p class="sub">Generated patches vs ground-truth fixed functions &mdash; 20 records, 0 exact matches</p>
+  <div class="gauge-row">
+    <div class="card gauge-card"><h3>BLEU-4</h3><div class="gauge-ring"><svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#e2e0db" stroke-width="10"/><circle cx="60" cy="60" r="50" fill="none" stroke="#4361EE" stroke-width="10" stroke-dasharray="159.5 154.7" stroke-linecap="round"/></svg><span class="value">0.508</span></div></div>
+    <div class="card gauge-card"><h3>Token Jaccard</h3><div class="gauge-ring"><svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#e2e0db" stroke-width="10"/><circle cx="60" cy="60" r="50" fill="none" stroke="#06D6A0" stroke-width="10" stroke-dasharray="186.7 127.5" stroke-linecap="round"/></svg><span class="value">0.594</span></div></div>
+    <div class="card gauge-card"><h3>CodeBLEU</h3><div class="gauge-ring"><svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#e2e0db" stroke-width="10"/><circle cx="60" cy="60" r="50" fill="none" stroke="#7209B7" stroke-width="10" stroke-dasharray="171.2 143.0" stroke-linecap="round"/></svg><span class="value">0.545</span></div></div>
+    <div class="card gauge-card"><h3>Edit Distance</h3><div class="gauge-ring"><svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#e2e0db" stroke-width="10"/><circle cx="60" cy="60" r="50" fill="none" stroke="#F72585" stroke-width="10" stroke-dasharray="142.1 172.1" stroke-linecap="round"/></svg><span class="value">0.452</span></div><div class="stat-sub">normalised (lower = better)</div></div>
+  </div>
+  <div class="chart-grid">
+    <div class="card chart-card"><h3>Patch Quality by CWE</h3><canvas id="cwePatchChart" height="260"></canvas></div>
+    <div class="card chart-card"><h3>Patch Quality by Variant</h3><canvas id="variantPatchChart" height="260"></canvas></div>
+  </div>
+  <div class="card"><h3>By CWE Type</h3><div class="scroll-x"><table>
+    <thead><tr><th>CWE</th><th>Count</th><th>BLEU-4</th><th>Jaccard</th><th>CodeBLEU</th><th>Char Ratio</th></tr></thead>
+    <tbody id="cwePatchTable"></tbody></table></div></div>
+  <div class="card"><h3>By Variant</h3><table>
+    <thead><tr><th>Variant</th><th>Count</th><th>BLEU-4</th><th>Jaccard</th><th>CodeBLEU</th><th>Char Ratio</th></tr></thead>
+    <tbody id="variantPatchTable"></tbody></table></div>
+</section>
+<section id="tab-retrieval" class="tab-panel">
+  <h2>Retrieval Performance</h2>
+  <p class="sub">FAISS index with combined embedder (NetLSD+WL+GIN &rarr; PCA &rarr; 128d)</p>
+  <div class="stat-row">
+    <div class="stat-card accent"><div class="stat-label">Hit@1</div><div class="stat-value">79.5%</div><div class="stat-sub">58 / 73</div></div>
+    <div class="stat-card"><div class="stat-label">Hit@5</div><div class="stat-value">90.4%</div><div class="stat-sub">66 / 73</div></div>
+    <div class="stat-card"><div class="stat-label">MRR</div><div class="stat-value">0.834</div></div>
+    <div class="stat-card"><div class="stat-label">CWE Recall@5</div><div class="stat-value">94.5%</div><div class="stat-sub">69 / 73</div></div>
+  </div>
+  <div class="chart-grid">
+    <div class="card chart-card"><h3>Hit Rate Breakdown</h3><canvas id="hitRateChart" height="200"></canvas></div>
+    <div class="card chart-card"><h3>Score Distribution</h3><canvas id="scoreDistChart" height="200"></canvas></div>
+  </div>
+</section>
+<section id="tab-confidence" class="tab-panel">
+  <h2>Confidence Threshold Evaluation</h2>
+  <p class="sub">Evaluating retrieval confidence as a predictor of correct vulnerability identification</p>
+  <div class="chart-grid">
+    <div class="card chart-card"><h3>Precision / Recall / F1 by Threshold</h3><canvas id="prfChart" height="240"></canvas></div>
+    <div class="card chart-card"><h3>Confident Predictions</h3><canvas id="confCountChart" height="240"></canvas></div>
+  </div>
+  <div class="card"><h3>Threshold Results</h3><table>
+    <thead><tr><th>Threshold</th><th>Label</th><th>Confident</th><th>TP</th><th>FP</th><th>Precision</th><th>Recall</th><th>F1</th><th>Accuracy</th></tr></thead>
+    <tbody><tr><td>0.1261</td><td><span class="pill ">random</span></td><td>60</td><td>54</td><td>6</td><td><strong>90.0%</strong></td><td>93.1%</td><td>91.5%</td><td>86.3%</td></tr>
+<tr><td>0.1793</td><td><span class="pill ">p50</span></td><td>37</td><td>33</td><td>4</td><td><strong>89.2%</strong></td><td>56.9%</td><td>69.5%</td><td>60.3%</td></tr>
+<tr style="background:#eef0fd"><td>0.2329</td><td><span class="pill ok">p75</span></td><td>19</td><td>16</td><td>3</td><td><strong>84.2%</strong></td><td>27.6%</td><td>41.6%</td><td>38.4%</td></tr>
+<tr><td>0.3338</td><td><span class="pill warn">p90</span></td><td>8</td><td>5</td><td>3</td><td><strong>62.5%</strong></td><td>8.6%</td><td>15.2%</td><td>23.3%</td></tr>
+</tbody></table></div>
+</section>
+<section id="tab-highconf" class="tab-panel">
+  <h2>High-Confidence Patch Failures</h2>
+  <p class="sub">16 entries where the retriever confidently re-identifies the same CVE after patching.
+     Threshold: p75 (0.2329). All entries have <code>top1_correct = true</code>.</p>
+  <div class="stat-row">
+    <div class="stat-card warn"><div class="stat-label">Unsuccessful Patches</div><div class="stat-value">16</div><div class="stat-sub">same CVE re-identified</div></div>
+    <div class="stat-card"><div class="stat-label">Unique CVEs</div><div class="stat-value">13</div><div class="stat-sub">distinct vulnerabilities</div></div>
+    <div class="stat-card"><div class="stat-label">Max Score</div><div class="stat-value">0.955</div><div class="stat-sub">CVE-2024-58022</div></div>
+    <div class="stat-card"><div class="stat-label">Min Score</div><div class="stat-value">0.233</div><div class="stat-sub">CVE-2025-21910</div></div>
+  </div>
+  <div class="card"><h3>Score Distribution of Failures</h3><canvas id="highConfScoreChart" height="200" style="max-height:260px"></canvas></div>
+  <div class="card"><h3>All High-Confidence Failures</h3><div class="scroll-x"><table class="high-conf-table">
+    <thead><tr><th>#</th><th>Query CVE</th><th>CWE</th><th>Variant</th><th>Score</th><th>Gap</th><th>Top-1 Match</th><th>Top-1 Func</th></tr></thead>
+    <tbody><tr><td>1</td><td class="cve">CVE-2024-58022</td><td>NULL Pointer Dereference</td><td>re_implemented_deepseek-r1</td><td class="num"><strong>0.9554</strong></td><td class="num">0.0000</td><td class="cve">CVE-2024-58022</td><td>th1520_map_mmio</td></tr>
+<tr><td>2</td><td class="cve">CVE-2024-58022</td><td>NULL Pointer Dereference</td><td>re_implemented_deepseek</td><td class="num"><strong>0.9554</strong></td><td class="num">0.0000</td><td class="cve">CVE-2024-58022</td><td>th1520_map_mmio</td></tr>
+<tr><td>3</td><td class="cve">CVE-2024-58083</td><td>Use After Free</td><td>re_implemented_deepseek-r1</td><td class="num"><strong>0.3815</strong></td><td class="num">0.0154</td><td class="cve">CVE-2024-58083</td><td>kvm_get_vcpu</td></tr>
+<tr><td>4</td><td class="cve">CVE-2025-21801</td><td>Improper Locking</td><td>re_implemented_gpt-4o</td><td class="num"><strong>0.3452</strong></td><td class="num">0.0238</td><td class="cve">CVE-2025-21801</td><td>ravb_resume</td></tr>
+<tr><td>5</td><td class="cve">CVE-2024-4741</td><td>Use After Free</td><td>re_implemented_deepseek-r1</td><td class="num"><strong>0.3404</strong></td><td class="num">0.0619</td><td class="cve">CVE-2024-4741</td><td>tls_free_buffers</td></tr>
+<tr><td>6</td><td class="cve">CVE-2025-21861</td><td>Use After Free</td><td>re_implemented_o3-mini</td><td class="num"><strong>0.3073</strong></td><td class="num">0.0820</td><td class="cve">CVE-2025-21861</td><td>migrate_device_finalize</td></tr>
+<tr><td>7</td><td class="cve">CVE-2025-21861</td><td>Use After Free</td><td>re_implemented_deepseek-r1</td><td class="num"><strong>0.3001</strong></td><td class="num">0.0701</td><td class="cve">CVE-2025-21861</td><td>migrate_device_finalize</td></tr>
+<tr><td>8</td><td class="cve">CVE-2025-21997</td><td>Integer Overflow or Wraparound</td><td>augmented</td><td class="num"><strong>0.2965</strong></td><td class="num">0.0045</td><td class="cve">CVE-2025-21997</td><td>xp_create_and_assign_umem</td></tr>
+<tr><td>9</td><td class="cve">CVE-2025-21843</td><td>Use of Uninitialized Variable</td><td>re_implemented_o3-mini</td><td class="num"><strong>0.2866</strong></td><td class="num">0.1198</td><td class="cve">CVE-2025-21843</td><td>panthor_query_group_priorities_info</td></tr>
+<tr><td>10</td><td class="cve">CVE-2025-21809</td><td>Improper Locking</td><td>re_implemented_o3-mini</td><td class="num"><strong>0.2828</strong></td><td class="num">0.0043</td><td class="cve">CVE-2025-21809</td><td>rxrpc_new_incoming_peer</td></tr>
+<tr><td>11</td><td class="cve">CVE-2025-21702</td><td>Operation on a Resource after Expiration or Release</td><td>re_implemented_o3-mini</td><td class="num"><strong>0.2576</strong></td><td class="num">0.0143</td><td class="cve">CVE-2025-21702</td><td>pfifo_tail_enqueue</td></tr>
+<tr><td>12</td><td class="cve">CVE-2022-49733</td><td>Race Condition</td><td>re_implemented_o3-mini</td><td class="num"><strong>0.2562</strong></td><td class="num">0.0133</td><td class="cve">CVE-2022-49733</td><td>snd_pcm_oss_sync</td></tr>
+<tr><td>13</td><td class="cve">CVE-2024-57254</td><td>Integer Overflow or Wraparound</td><td>re_implemented_llama</td><td class="num"><strong>0.2427</strong></td><td class="num">0.0632</td><td class="cve">CVE-2024-57254</td><td>sqfs_inode_size</td></tr>
+<tr><td>14</td><td class="cve">CVE-2025-21842</td><td>Incorrect Type Conversion or Cast</td><td>re_implemented_llama</td><td class="num"><strong>0.2424</strong></td><td class="num">0.0038</td><td class="cve">CVE-2025-21842</td><td>init_user_queue</td></tr>
+<tr><td>15</td><td class="cve">CVE-2025-21809</td><td>Improper Locking</td><td>re_implemented_llama</td><td class="num"><strong>0.2397</strong></td><td class="num">0.0395</td><td class="cve">CVE-2025-21809</td><td>rxrpc_new_incoming_peer</td></tr>
+<tr><td>16</td><td class="cve">CVE-2025-21910</td><td>Improper Input Validation</td><td>re_implemented_llama</td><td class="num"><strong>0.2329</strong></td><td class="num">0.0162</td><td class="cve">CVE-2025-21910</td><td>is_an_alpha2</td></tr>
+</tbody></table></div></div>
+  <div class="card"><h3>CWE Breakdown of Failures</h3><canvas id="highConfCweChart" height="180"></canvas></div>
+  <div class="card"><h3>Variant Breakdown of Failures</h3><canvas id="highConfVariantChart" height="160"></canvas></div>
+</section>
+</main>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
+
+const byCwe = {"Integer Overflow or Wraparound": {"count": 3, "bleu4": 0.6368, "jaccard": 0.6752, "codebleu": 0.6414, "charRatio": 0.4699}, "Use After Free": {"count": 12, "bleu4": 0.5137, "jaccard": 0.6016, "codebleu": 0.5606, "charRatio": 0.5539}, "Race Condition": {"count": 5, "bleu4": 0.4156, "jaccard": 0.5276, "codebleu": 0.4491, "charRatio": 0.4213}};
+const byVariant = {"re_implemented_llama": {"count": 2, "bleu4": 0.659, "jaccard": 0.7486, "codebleu": 0.6641, "charRatio": 0.5946}, "re_implemented_deepseek-r1": {"count": 5, "bleu4": 0.5607, "jaccard": 0.6261, "codebleu": 0.5802, "charRatio": 0.584}, "augmented": {"count": 2, "bleu4": 0.5483, "jaccard": 0.5147, "codebleu": 0.5442, "charRatio": 0.55}, "re_implemented_deepseek": {"count": 4, "bleu4": 0.5481, "jaccard": 0.6247, "codebleu": 0.5858, "charRatio": 0.4882}, "re_implemented_gpt-4o": {"count": 4, "bleu4": 0.4354, "jaccard": 0.5432, "codebleu": 0.5042, "charRatio": 0.4098}, "re_implemented_o3-mini": {"count": 3, "bleu4": 0.3338, "jaccard": 0.5182, "codebleu": 0.4064, "charRatio": 0.454}};
+const variantColors = {"re_implemented_deepseek-r1": "#4361EE", "re_implemented_llama": "#F72585", "augmented": "#7209B7", "re_implemented_deepseek": "#FB8500", "re_implemented_o3-mini": "#06D6A0", "re_implemented_gpt-4o": "#118AB2"};
+
+function sparkbar(val, max, color) {
+  const w = Math.round((val / max) * 120);
+  return `<span class="sparkbar-wrap"><span class="sparkbar" style="width:${w}px;background:${color}"></span><span class="sparkbar-label">${val.toFixed(4)}</span></span>`;
+}
+
+// CWE table
+(function(){
+  const tbody = document.getElementById('cwePatchTable');
+  if (!tbody) return;
+  Object.entries(byCwe).sort((a,b) => b[1].bleu4 - a[1].bleu4).forEach(([cwe, d]) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${cwe}</td><td class="num">${d.count}</td>
+      <td>${sparkbar(d.bleu4, 1, '#4361EE')}</td><td>${sparkbar(d.jaccard, 1, '#06D6A0')}</td>
+      <td>${sparkbar(d.codebleu, 1, '#7209B7')}</td><td>${sparkbar(d.charRatio, 1, '#FB8500')}</td>`;
+    tbody.appendChild(tr);
+  });
+})();
+
+// Variant table
+(function(){
+  const tbody = document.getElementById('variantPatchTable');
+  if (!tbody) return;
+  Object.entries(byVariant).sort((a,b) => b[1].bleu4 - a[1].bleu4).forEach(([v, d]) => {
+    const c = variantColors[v] || '#999';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><span class="dot" style="background:${c}"></span>${v}</td><td class="num">${d.count}</td>
+      <td>${sparkbar(d.bleu4, 1, c)}</td><td>${sparkbar(d.jaccard, 1, c)}</td>
+      <td>${sparkbar(d.codebleu, 1, c)}</td><td>${sparkbar(d.charRatio, 1, c)}</td>`;
+    tbody.appendChild(tr);
+  });
+})();
+
+// CWE Patch chart
+(function(){
+  const el = document.getElementById('cwePatchChart'); if (!el) return;
+  const labels = Object.keys(byCwe);
+  new Chart(el, { type:'bar', data:{ labels, datasets:[
+    { label:'BLEU-4', data:labels.map(l=>byCwe[l].bleu4), backgroundColor:'#4361EE99' },
+    { label:'Jaccard', data:labels.map(l=>byCwe[l].jaccard), backgroundColor:'#06D6A099' },
+    { label:'CodeBLEU', data:labels.map(l=>byCwe[l].codebleu), backgroundColor:'#7209B799' },
+  ]}, options:{ indexAxis:'y', responsive:true, scales:{x:{min:0,max:1}}, plugins:{legend:{position:'bottom'}} } });
+})();
+
+// Variant Patch chart
+(function(){
+  const el = document.getElementById('variantPatchChart'); if (!el) return;
+  const labels = Object.keys(byVariant);
+  const colors = labels.map(l => variantColors[l] || '#999');
+  new Chart(el, { type:'bar', data:{ labels, datasets:[
+    { label:'BLEU-4', data:labels.map(l=>byVariant[l].bleu4), backgroundColor:colors.map(c=>c+'99') },
+    { label:'Jaccard', data:labels.map(l=>byVariant[l].jaccard), backgroundColor:colors.map(c=>c+'66') },
+    { label:'CodeBLEU', data:labels.map(l=>byVariant[l].codebleu), backgroundColor:colors.map(c=>c+'33') },
+  ]}, options:{ responsive:true, scales:{y:{min:0,max:1}}, plugins:{legend:{position:'bottom'}} } });
+})();
+
+// Hit rate chart
+(function(){
+  const el = document.getElementById('hitRateChart'); if (!el) return;
+  new Chart(el, { type:'bar', data:{ labels:['Hit@1','Hit@5','CWE Recall@5'],
+    datasets:[{ data:[0.7945,0.9041,0.9452], backgroundColor:['#4361EE','#06D6A0','#7209B7'] }] },
+    options:{ responsive:true, scales:{y:{min:0,max:1,ticks:{callback:v=>(v*100)+'%'}}}, plugins:{legend:{display:false}} } });
+})();
+
+// Score distribution
+(function(){
+  const el = document.getElementById('scoreDistChart'); if (!el) return;
+  const scores = [0.0779,0.1261,0.1793,0.2329,0.3338,0.9554];
+  new Chart(el, { type:'line', data:{ labels:['Min','Random BL','p50','p75','p90','Max'],
+    datasets:[{ label:'Top-1 Score', data:scores, borderColor:'#4361EE', backgroundColor:'#4361EE22', fill:true, tension:0.3, pointRadius:5 }] },
+    options:{ responsive:true, plugins:{legend:{display:false}} } });
+})();
+
+// PRF chart
+(function(){
+  const el = document.getElementById('prfChart'); if (!el) return;
+  const thr = [{"threshold": 0.1261, "tp": 54, "fp": 6, "fn": 4, "tn": 9, "precision": 0.9, "recall": 0.931, "f1": 0.9153, "accuracy": 0.863, "confident_total": 60, "confident_correct": 54, "label": "random"}, {"threshold": 0.1793, "tp": 33, "fp": 4, "fn": 25, "tn": 11, "precision": 0.8919, "recall": 0.569, "f1": 0.6947, "accuracy": 0.6027, "confident_total": 37, "confident_correct": 33, "label": "p50"}, {"threshold": 0.2329, "tp": 16, "fp": 3, "fn": 42, "tn": 12, "precision": 0.8421, "recall": 0.2759, "f1": 0.4156, "accuracy": 0.3836, "confident_total": 19, "confident_correct": 16, "label": "p75"}, {"threshold": 0.3338, "tp": 5, "fp": 3, "fn": 53, "tn": 12, "precision": 0.625, "recall": 0.0862, "f1": 0.1515, "accuracy": 0.2329, "confident_total": 8, "confident_correct": 5, "label": "p90"}];
+  const labels = thr.map(t => (t.label||t.threshold.toFixed(4))+'\n'+t.threshold.toFixed(3));
+  new Chart(el, { type:'line', data:{ labels,
+    datasets:[
+      { label:'Precision', data:thr.map(t=>t.precision), borderColor:'#4361EE', tension:0.3 },
+      { label:'Recall', data:thr.map(t=>t.recall), borderColor:'#F72585', tension:0.3 },
+      { label:'F1', data:thr.map(t=>t.f1), borderColor:'#06D6A0', tension:0.3 },
+    ] }, options:{ responsive:true, scales:{y:{min:0,max:1}}, plugins:{legend:{position:'bottom'}} } });
+})();
+
+// Confident count chart
+(function(){
+  const el = document.getElementById('confCountChart'); if (!el) return;
+  const thr = [{"threshold": 0.1261, "tp": 54, "fp": 6, "fn": 4, "tn": 9, "precision": 0.9, "recall": 0.931, "f1": 0.9153, "accuracy": 0.863, "confident_total": 60, "confident_correct": 54, "label": "random"}, {"threshold": 0.1793, "tp": 33, "fp": 4, "fn": 25, "tn": 11, "precision": 0.8919, "recall": 0.569, "f1": 0.6947, "accuracy": 0.6027, "confident_total": 37, "confident_correct": 33, "label": "p50"}, {"threshold": 0.2329, "tp": 16, "fp": 3, "fn": 42, "tn": 12, "precision": 0.8421, "recall": 0.2759, "f1": 0.4156, "accuracy": 0.3836, "confident_total": 19, "confident_correct": 16, "label": "p75"}, {"threshold": 0.3338, "tp": 5, "fp": 3, "fn": 53, "tn": 12, "precision": 0.625, "recall": 0.0862, "f1": 0.1515, "accuracy": 0.2329, "confident_total": 8, "confident_correct": 5, "label": "p90"}];
+  new Chart(el, { type:'bar', data:{ labels:thr.map(t=>t.label||t.threshold.toFixed(4)),
+    datasets:[
+      { label:'TP', data:thr.map(t=>t.tp), backgroundColor:'#06D6A0' },
+      { label:'FP', data:thr.map(t=>t.fp), backgroundColor:'#F72585' },
+    ] }, options:{ responsive:true, scales:{x:{stacked:true},y:{stacked:true}}, plugins:{legend:{position:'bottom'}} } });
+})();
+
+// High-conf score chart
+(function(){
+  const el = document.getElementById('highConfScoreChart'); if (!el) return;
+  const entries = [{"cve": "CVE-2024-58022\\n(re_implement)", "score": 0.9554}, {"cve": "CVE-2024-58022\\n(re_implement)", "score": 0.9554}, {"cve": "CVE-2024-58083\\n(re_implement)", "score": 0.3815}, {"cve": "CVE-2025-21801\\n(re_implement)", "score": 0.3452}, {"cve": "CVE-2024-4741\\n(re_implement)", "score": 0.3404}, {"cve": "CVE-2025-21861\\n(re_implement)", "score": 0.3073}, {"cve": "CVE-2025-21861\\n(re_implement)", "score": 0.3001}, {"cve": "CVE-2025-21997\\n(augmented)", "score": 0.2965}, {"cve": "CVE-2025-21843\\n(re_implement)", "score": 0.2866}, {"cve": "CVE-2025-21809\\n(re_implement)", "score": 0.2828}, {"cve": "CVE-2025-21702\\n(re_implement)", "score": 0.2576}, {"cve": "CVE-2022-49733\\n(re_implement)", "score": 0.2562}, {"cve": "CVE-2024-57254\\n(re_implement)", "score": 0.2427}, {"cve": "CVE-2025-21842\\n(re_implement)", "score": 0.2424}, {"cve": "CVE-2025-21809\\n(re_implement)", "score": 0.2397}, {"cve": "CVE-2025-21910\\n(re_implement)", "score": 0.2329}];
+  new Chart(el, { type:'bar', data:{ labels:entries.map(e=>e.cve),
+    datasets:[{ label:'Top-1 Similarity Score', data:entries.map(e=>e.score),
+      backgroundColor:entries.map(e=>e.score>0.5?'#c6282899':'#F7258599'),
+      borderColor:entries.map(e=>e.score>0.5?'#c62828':'#F72585'), borderWidth:1 }] },
+    options:{ responsive:true, scales:{y:{min:0,max:1,title:{display:true,text:'Similarity Score'}}}, plugins:{legend:{display:false}} } });
+})();
+
+// High-conf CWE doughnut
+(function(){
+  const el = document.getElementById('highConfCweChart'); if (!el) return;
+  const cweList = ["NULL Pointer Dereference", "NULL Pointer Dereference", "Use After Free", "Improper Locking", "Use After Free", "Use After Free", "Use After Free", "Integer Overflow or Wraparound", "Use of Uninitialized Variable", "Improper Locking", "Operation on a Resource after Expiration or Release", "Race Condition", "Integer Overflow or Wraparound", "Incorrect Type Conversion or Cast", "Improper Locking", "Improper Input Validation"];
+  const cweCounts = {};
+  cweList.forEach(c => cweCounts[c] = (cweCounts[c]||0) + 1);
+  const sorted = Object.entries(cweCounts).sort((a,b) => b[1]-a[1]);
+  const colors = ["#4361EE", "#F72585", "#7209B7", "#FB8500", "#06D6A0", "#118AB2", "#FFD166", "#EF476F", "#333"];
+  new Chart(el, { type:'doughnut', data:{ labels:sorted.map(s=>s[0]), datasets:[{data:sorted.map(s=>s[1]),backgroundColor:colors}] },
+    options:{ responsive:true, plugins:{legend:{position:'right'}} } });
+})();
+
+// High-conf variant bar
+(function(){
+  const el = document.getElementById('highConfVariantChart'); if (!el) return;
+  const varList = ["re_implemented_deepseek-r1", "re_implemented_deepseek", "re_implemented_deepseek-r1", "re_implemented_gpt-4o", "re_implemented_deepseek-r1", "re_implemented_o3-mini", "re_implemented_deepseek-r1", "augmented", "re_implemented_o3-mini", "re_implemented_o3-mini", "re_implemented_o3-mini", "re_implemented_o3-mini", "re_implemented_llama", "re_implemented_llama", "re_implemented_llama", "re_implemented_llama"];
+  const varCounts = {};
+  varList.forEach(v => varCounts[v] = (varCounts[v]||0) + 1);
+  const sorted = Object.entries(varCounts).sort((a,b) => b[1]-a[1]);
+  new Chart(el, { type:'bar', data:{ labels:sorted.map(s=>s[0]),
+    datasets:[{ label:'Failures', data:sorted.map(s=>s[1]), backgroundColor:sorted.map(s=>variantColors[s[0]]||'#999') }] },
+    options:{ responsive:true, scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}, plugins:{legend:{display:false}} } });
+})();
+</script>
+</body>
+</html>
