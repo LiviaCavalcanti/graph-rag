@@ -51,6 +51,7 @@ MANIFEST
 *.nav
 *.vrb
 *.synctex.gz
+*.snm
 
 # Installer logs
 pip-log.txt
