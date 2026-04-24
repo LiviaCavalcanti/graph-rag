@@ -144,6 +144,9 @@ def compute_graph_diff(
     for n in G_before:
         before_fp_to_nodes.setdefault(_node_fp(G_before, n), []).append(n)
 
+    # for the added nodes check their neighbors in G_after, 
+    # then find any nodes in G_before with the same fingerprint as those neighbors, 
+    # and mark them as 'fix_adjacent' (if not already marked as 'removed')
     for fp in added_fps:
         for n_after in after_fp_to_nodes.get(fp, []):
             neighbors = set(G_after.predecessors(n_after)) | set(G_after.successors(n_after))
