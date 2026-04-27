@@ -30,8 +30,10 @@ graph:
     - ARGUMENT
     - RECEIVER
 embeddings:
-  active: [netlsd, wl, gin, combined]
-  dim: 65
+  active: [wl, gin, rgcn, combined, codebert_seq, codebert_pattern]
+  dim: 128
+  projection: pca              # pca | none
+  l2_normalize: true            # true | false
   netlsd:
     timescales: 128
   wl:
@@ -42,7 +44,11 @@ embeddings:
     num_layers: 3
     seed: 42
   rgcn:
-    codebert_model: /home/z0050s2b/code/graph-rag/models/codebert-base/
+    hidden_dim: 128
+    num_layers: 3
+    seed: 42
+  codebert:
+    model_path: /home/z0050s2b/code/graph-rag/models/codebert-base/
 rag:
   index_path: src/rag/faiss.index
   metadata_path: src/rag/metadata.json
@@ -56,4 +62,4 @@ experiment:
     test_ratio: 0.2
     include_real_in_index: true
     augmented_train_ratio: 0.5
-    query_source: augmented_test
+    query_source: graphml_augmented
