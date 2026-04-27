@@ -4,8 +4,6 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.nn import WLConv, global_add_pool
 from torch_geometric.data import Data
-from torch_geometric.loader import DataLoader
-from sklearn.preprocessing import normalize
 from .base import BaseEmbedder
 
 NODE_TYPES = [
@@ -51,6 +49,9 @@ class WLEmbedder(BaseEmbedder):
         self.num_iterations = cfg.get('wl', {}).get('num_iterations', 4)
         self.hidden_dim     = cfg.get('wl', {}).get('hidden_dim', 64)
 
+        seed = cfg.get('wl', {}).get('seed', 42)
+        torch.manual_seed(seed)
+
         self.convs     = torch.nn.ModuleList([WLConv() for _ in range(self.num_iterations)])
         self.embedding = torch.nn.Embedding(8192, self.hidden_dim)
         self.proj      = torch.nn.Linear(self.hidden_dim * self.num_iterations, self.dim)
@@ -82,5 +83,4 @@ class WLEmbedder(BaseEmbedder):
         out = torch.cat(pooled, dim=1)           # (1, hidden_dim * num_iterations)
         out = self.proj(out).detach().numpy()[0] # (dim,)
 
-        norm = np.linalg.norm(out)
-        return (out / (norm + 1e-8)).astype(np.float32)
+        return self._norm_vec(out)
