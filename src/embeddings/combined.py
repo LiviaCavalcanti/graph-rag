@@ -1,9 +1,5 @@
-import pickle
-from pathlib import Path
-
 import numpy as np
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import normalize
 import networkx as nx
 from .base import BaseEmbedder
 from .netlsd import NetLSDEmbedder
@@ -31,11 +27,13 @@ class CombinedEmbedder(BaseEmbedder):
         return "combined"
 
     def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
-        # used after fit — returns PCA-projected vector
+        raw = self._raw_one(G)
+        if self.projection == 'none':
+            return self._norm_vec(raw)
         if not self._fitted:
             raise RuntimeError("Call embed_many() first to fit PCA")
-        raw = self._raw_one(G)
-        return self._pca.transform(raw.reshape(1, -1))[0].astype(np.float32)
+        proj = self._pca.transform(raw.reshape(1, -1))[0].astype(np.float32)
+        return self._norm_vec(proj)
 
     def _raw_one(self, G: nx.MultiDiGraph) -> np.ndarray:
         a = self._netlsd.embed_one(G)
@@ -46,6 +44,11 @@ class CombinedEmbedder(BaseEmbedder):
     def embed_many(self, graphs: list[nx.MultiDiGraph]) -> np.ndarray:
         raws = np.stack([self._raw_one(G) for G in graphs]).astype(np.float32)
 
+        if self.projection == 'none':
+            self.dim = raws.shape[1]
+            print(f"    [combined] no projection — dim={self.dim}")
+            return self._norm_mat(raws)
+
         if not self._fitted:
             self._pca = PCA(n_components=self.dim, random_state=42)
             self._pca.fit(raws)
@@ -54,22 +57,4 @@ class CombinedEmbedder(BaseEmbedder):
             print(f"    [combined] PCA fitted — explained variance: {explained:.2%}")
 
         projected = self._pca.transform(raws).astype(np.float32)
-        return normalize(projected, norm='l2')
-
-    def save_pca(self, path: str | Path) -> None:
-        """Persist the fitted PCA model to disk."""
-        if not self._fitted:
-            raise RuntimeError("PCA not fitted yet — call embed_many() first")
-        path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "wb") as f:
-            pickle.dump(self._pca, f)
-        print(f"    [combined] PCA saved → {path}")
-
-    def load_pca(self, path: str | Path) -> None:
-        """Load a previously fitted PCA model from disk."""
-        path = Path(path)
-        with open(path, "rb") as f:
-            self._pca = pickle.load(f)
-        self._fitted = True
-        print(f"    [combined] PCA loaded ← {path}")
+        return self._norm_mat(projected)
