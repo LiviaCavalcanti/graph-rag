@@ -27,4 +27,4 @@ class NetLSDEmbedder(BaseEmbedder):
         norm = np.linalg.norm(desc)
         if norm < 1e-8:
             return np.zeros(self.dim, dtype=np.float32)
-        return desc / (norm + 1e-8)
+        return self._norm_vec(desc)

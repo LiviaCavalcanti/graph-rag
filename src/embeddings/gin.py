@@ -74,5 +74,4 @@ class GINEmbedder(BaseEmbedder):
         ], dim=1)
         out = self.readout(out).detach().numpy()[0]
 
-        norm = np.linalg.norm(out)
-        return (out / (norm + 1e-8)).astype(np.float32)
+        return self._norm_vec(out)
