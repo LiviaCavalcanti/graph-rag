@@ -154,29 +154,39 @@ class CodeBERTSeqEmbedder(BaseEmbedder):
         return out
 
     def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
-        if not self._fitted:
+        if self.projection != 'none' and not self._fitted:
             raise RuntimeError("Call embed_many() first to fit PCA")
         self._load_codebert()
         code = collect_changed_code(G)
         raw = self.encode_batch([code])
+
+        if self.projection == 'none':
+            return self._norm_vec(raw[0])
+
         projected = self._pca.transform(raw)[0].astype(np.float32)
         if projected.shape[0] < self.dim:
             padded = np.zeros(self.dim, dtype=np.float32)
             padded[:projected.shape[0]] = projected
             projected = padded
-        norm = np.linalg.norm(projected)
-        return (projected / (norm + 1e-8)).astype(np.float32)
+        return self._norm_vec(projected)
 
     def embed_many(self, graphs: list) -> np.ndarray:
-        from sklearn.decomposition import PCA
-        from sklearn.preprocessing import normalize
         self._load_codebert()
 
         code_strings = [collect_changed_code(G) for G in graphs]
         raw = self.encode_batch(code_strings)
 
-        out = np.zeros((len(graphs), self.dim), dtype=np.float32)
         valid = np.linalg.norm(raw, axis=1) > 1e-8
+
+        if self.projection == 'none':
+            self.dim = raw.shape[1]
+            out = self._norm_mat(raw)
+            out[~valid] = 0.0
+            print(f"    [codebert_seq] no projection — dim={self.dim}")
+            return out
+
+        from sklearn.decomposition import PCA
+        out = np.zeros((len(graphs), self.dim), dtype=np.float32)
         if not valid.any():
             return out
 
@@ -197,6 +207,6 @@ class CodeBERTSeqEmbedder(BaseEmbedder):
                               dtype=np.float32)
             padded[:, :projected.shape[1]] = projected
             projected = padded
-        projected = normalize(projected, norm='l2')
+        projected = self._norm_mat(projected)
         projected[~valid] = 0.0
         return projected
