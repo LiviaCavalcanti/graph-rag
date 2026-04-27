@@ -52,27 +52,31 @@
     \item[\textcolor{c1}{\faIcon{redo}}]
       \textbf{Checkpoint 2 recap} — results \& open questions
 
-    \vspace{0.55em}
+    \vspace{0.45em}
+    \item[\textcolor{c6}{\faIcon{cut}}]
+      \textbf{Slicing ablation} — full graph vs.\ sliced, with/without diff labels
+
+    \vspace{0.45em}
     \item[\textcolor{c3}{\faIcon{sitemap}}]
       \textbf{CWE ontology} — structure \& Wu-Palmer similarity
 
-    \vspace{0.55em}
+    \vspace{0.45em}
     \item[\textcolor{c2}{\faIcon{code-branch}}]
       \textbf{Cross-CVE callgraph} — shared callee signatures as a second signal
 
-    \vspace{0.55em}
+    \vspace{0.45em}
     \item[\textcolor{c4}{\faIcon{sort-amount-up}}]
       \textbf{Knowledge-augmented reranking} — embedding $+$ Jaccard fusion
 
-    \vspace{0.55em}
+    \vspace{0.45em}
     \item[\textcolor{c5}{\faIcon{layer-group}}]
       \textbf{Embedder ensembles} — majority vote, cascade, RRF strategies
 
-    \vspace{0.55em}
+    \vspace{0.45em}
     \item[\textcolor{miss}{\faIcon{th}}]
       \textbf{Confusion analysis} — where every embedder still fails
 
-    \vspace{0.55em}
+    \vspace{0.45em}
     \item[\textcolor{hit}{\faIcon{lightbulb}}]
       \textbf{Key findings \& next steps}
   \end{enumerate}
@@ -162,6 +166,503 @@
       graph structure with their originals.
       A held-out set is needed before drawing strong conclusions.
   \end{enumerate}
+\end{frame}
+
+% ══════════════════════════════════════════════════════════════════════
+\section{Slicing Ablation}
+% ══════════════════════════════════════════════════════════════════════
+
+\begin{frame}{Slicing Ablation: Nomenclature \& Metrics}
+\begin{columns}[T]
+\begin{column}{0.50\textwidth}
+
+  \textbf{Graph variants}
+
+  \vspace{0.3em}
+  {\small
+  \renewcommand{\arraystretch}{1.4}
+  \begin{tabular}{p{2.5cm}p{4.5cm}}
+    \toprule
+    \textbf{Symbol} & \textbf{Definition} \\
+    \midrule
+    $G_{\text{before}}$
+      & Full pre-patch CPG.  No diff labels, no slicing. \\
+    $G_{\text{before}}^{+\ell}$
+      & Full pre-patch CPG $+$ diff labels transferred from $G_{\text{vuln}}$.
+        Same size, extra node annotations. \\
+    $G_{\text{vuln}}^{-\ell}$
+      & Fingerprint-sliced subgraph.  Diff attributes (\texttt{diff}, \texttt{diff\_weight}) stripped. \\
+    $G_{\text{vuln}}$
+      & Fingerprint-sliced subgraph $+$ diff labels $+$ weights
+        ($w \in \{1.0, 0.8, 0.6, 0.2\}$). \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.6em}
+  {\scriptsize\color{black!55}
+  Labels: \texttt{removed} ($w{=}1.0$), \texttt{fix\_adjacent} ($w{=}0.8$),
+  \texttt{edge\_changed} ($w{=}0.6$), \texttt{context} ($w{=}0.2$).}
+
+\end{column}
+\begin{column}{0.47\textwidth}
+
+  \textbf{Evaluation metrics}
+
+  \vspace{0.3em}
+  {\small
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{p{2.0cm}p{4.5cm}}
+    \toprule
+    \textbf{Metric} & \textbf{Definition} \\
+    \midrule
+    hit@$k$
+      & Fraction of queries whose correct CVE appears in top-$k$ results. \\
+    MRR
+      & Mean reciprocal rank of the first correct CVE. \\
+    CVE Prec.
+      & Per-CVE binary hit (was the CVE found in top-$k$?), macro-averaged across CVE classes. \\
+    CVE Recall
+      & Fraction of same-CVE index items retrieved in top-$k$, macro-averaged. \\
+    CWE Recall
+      & Fraction of same-CWE items retrieved, macro-averaged over CWE classes. \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.3em}
+  {\scriptsize\color{black!55}
+  All precision/recall/F1 are \textbf{macro-averaged} per class
+  (each CVE/CWE contributes equally regardless of frequency).}
+
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Slicing Ablation: Three Experiment Configurations}
+
+  {\small\textbf{All runs:} 225 index, 73 query (seed=42, stratified).}
+
+  \vspace{0.3em}
+  {\scriptsize
+  \renewcommand{\arraystretch}{1.35}
+  \begin{tabular}{p{1.0cm}p{2.8cm}p{2.7cm}p{2.5cm}p{3.5cm}}
+    \toprule
+    & \textbf{Run A} & \textbf{Run B} & \textbf{Run C} \\
+    & {\scriptsize\texttt{ade634}} & {\scriptsize\texttt{e27850}} & {\scriptsize\texttt{f7fa6a}} \\
+    \midrule
+    \textbf{Script}
+      & \texttt{slicing\_comparison}
+      & \texttt{slicing\_comparison}
+      & \texttt{runner.py} \\
+    \textbf{Query protocol}
+      & Symmetric (query = same variant as index)
+      & \texttt{runner\_compat} (augmented$\to G_{\text{before}}$,\newline original$\to G_{\text{vuln}}$)
+      & Same as Run~B (implemented natively) \\
+    \textbf{PCA}
+      & Reset per variant; fit on index $\cup$ query batch
+      & Reset per variant; fit on index $\cup$ query batch
+      & Fit on index only; query projected through index PCA \\
+    \textbf{Embed}
+      & \texttt{embed\_many} (batch)
+      & \texttt{embed\_many} (batch)
+      & \texttt{embed\_one} per query \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.3em}
+  \begin{alertblock}{PCA leakage in Runs A \& B}
+    \scriptsize \texttt{slicing\_comparison.py} resets PCA per variant and calls \texttt{embed\_many()}
+    on index+query together $\Rightarrow$ PCA fitted on query data too (information leakage).
+    Run~C follows correct IR protocol: PCA fitted on index only, queries projected through it.
+  \end{alertblock}
+
+\end{frame}
+
+
+\begin{frame}{Slicing Ablation: Results — $G_{\text{vuln}}$ (hit@1, $n{=}73$)}
+
+  \vspace{-0.4em}
+  {\scriptsize
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{l *{3}{c} c *{3}{c} c *{3}{c}}
+    \toprule
+    & \multicolumn{3}{c}{\textbf{Run A} {\scriptsize(symmetric, PCA leak)}}
+    && \multicolumn{3}{c}{\textbf{Run B} {\scriptsize(runner\_compat, PCA leak)}}
+    && \multicolumn{3}{c}{\textbf{Run C} {\scriptsize(runner\_compat, correct PCA)}} \\
+    \cmidrule{2-4} \cmidrule{6-8} \cmidrule{10-12}
+    \textbf{Embedder}
+      & hit@1 & MRR & CWE
+      && hit@1 & MRR & CWE
+      && hit@1 & MRR & CWE \\
+    \midrule
+    \rowcolor{c1!12}
+    Combined
+      & 73.9\% & .776 & .429
+      && \chit{90.4\%} & \chit{.925} & \chit{.543}
+      && 82.2\% & .881 & .527 \\
+    GIN
+      & 69.9\% & .742 & .411
+      && 73.9\% & .788 & .450
+      && 72.6\% & .773 & .408 \\
+    CodeBERT seq
+      & \chit{76.7\%} & .796 & .395
+      && 75.3\% & .792 & .412
+      && 75.3\% & .793 & .412 \\
+    CodeBERT pat.
+      & \chit{76.7\%} & .792 & .409
+      && 71.2\% & .768 & .414
+      && 71.2\% & .768 & .415 \\
+    WL
+      & 67.1\% & .711 & .365
+      && 67.1\% & .720 & .432
+      && 65.8\% & .702 & .415 \\
+    RGCN
+      & 53.4\% & .629 & .339
+      && 60.3\% & .676 & .372
+      && 60.3\% & .676 & .372 \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.3em}
+  \begin{columns}[T]
+  \begin{column}{0.48\textwidth}
+    {\scriptsize\textbf{Key observations}}
+    \begin{itemize}\setlength{\itemsep}{1pt}
+      {\scriptsize
+      \item Combined is the \textbf{best embedder in every run}
+      \item Run B inflates Combined by $+$8.2~pp vs.\ Run C (PCA leakage)
+      \item CodeBERT seq stable across all runs ($\approx$75\%)}
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.48\textwidth}
+    {\scriptsize\textbf{CodeBERT is PCA-insensitive}}
+    \begin{itemize}\setlength{\itemsep}{1pt}
+      {\scriptsize
+      \item CodeBERT seq/pattern: nearly identical in Runs B \& C
+      \item High intrinsic dim (768d) makes PCA less impactful}
+    \end{itemize}
+  \end{column}
+  \end{columns}
+\end{frame}
+
+
+\begin{frame}{Combined Embedder: Why the Performance Varies}
+\begin{columns}[T]
+\begin{column}{0.52\textwidth}
+
+  \textbf{Combined = NetLSD $\|$ WL $\|$ GIN $\to$ PCA $\to$ L2}\\[3pt]
+  {\small Three structural sub-embedders concatenated (384d),
+  PCA-projected to 128d, L2-normalised.}
+
+  \vspace{0.5em}
+  \textbf{Why PCA leakage inflates Combined most}
+  \begin{enumerate}\setlength{\itemsep}{3pt}
+    {\small
+    \item \textbf{High raw dimensionality} (384d) makes PCA
+          the dominant transformation — small changes in
+          the covariance matrix shift all projections.
+    \item \textbf{Query graphs are structurally similar to
+          index graphs} (augmented variants share topology).
+          Including them in PCA fitting aligns the projection
+          axes to maximise variance across both sets.
+    \item For CodeBERT (768d $\to$ 128d), the first 128 PCA
+          components already capture $>95$\% of variance —
+          adding queries barely shifts the subspace.}
+  \end{enumerate}
+
+\end{column}
+\begin{column}{0.45\textwidth}
+
+  \textbf{Effective dimensionality confirms this}
+
+  \vspace{0.4em}
+  {\small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lcc}
+    \toprule
+    \textbf{Embedder} & \textbf{Run B} & \textbf{Run C} \\
+    & {\scriptsize PCA leak} & {\scriptsize correct} \\
+    \midrule
+    \rowcolor{c1!10}
+    Combined         & \textbf{32.5} & 10.4 \\
+    CodeBERT seq     & 15.3 & 14.7 \\
+    CodeBERT pat.    & 16.8 & 15.4 \\
+    GIN              & 10.0 & 11.0 \\
+    WL               & 8.0 & 4.6 \\
+    RGCN             & 2.3 & 2.0 \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.5em}
+  {\scriptsize\color{black!55}
+  With PCA leakage, Combined's effective dim triples
+  (10.4 $\to$ 32.5), meaning the projection captures
+  more discriminative directions — but at the cost of
+  fitting to test data.}
+
+  \vspace{0.4em}
+  {\scriptsize\color{black!55}
+  Run C (82.2\%) is the trustworthy number for Combined.}
+
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{Structural vs.\ Semantic Embedders: Analysis}
+\begin{columns}[T]
+\begin{column}{0.50\textwidth}
+
+  \textbf{Structural embedders} {\small(GIN, WL, Combined)}
+
+  \vspace{0.2em}
+  \begin{itemize}\setlength{\itemsep}{2pt}
+    {\scriptsize
+    \item Operate on \textbf{graph topology + node types} only — no pretrained LM.
+    \item \textbf{Combined is best overall} (82.2\% hit@1, Run C) — three complementary views
+          (spectrum, colour refinement, message passing).
+    \item GIN alone: 72.6\% — message-passing on node types is moderately discriminative.
+    \item WL (65.8\%) — low effective dim (4.6), colour histogram loses information.
+    \item \textbf{Strength:} fast ($<$10s for 225 graphs), no model dependencies.
+    \item \textbf{Weakness:} blind to code semantics — topologically identical patches
+          with different variable names $\to$ same embedding.}
+  \end{itemize}
+
+\end{column}
+\begin{column}{0.47\textwidth}
+
+  \textbf{Semantic embedders} {\small(CodeBERT seq, CodeBERT pat.)}
+
+  \vspace{0.2em}
+  \begin{itemize}\setlength{\itemsep}{2pt}
+    {\scriptsize
+    \item \textbf{CodeBERT [CLS]} on changed code text.
+          Pattern variant adds 34 structural features.
+    \item \textbf{Remarkably stable}: CodeBERT seq $\approx$ 75\% in every run —
+          insensitive to PCA protocol, variant, and query strategy.
+    \item Diff labels: modest $+$1.4~pp boost (\texttt{diff\_weight} $> 0.3$ filter).
+    \item \textbf{Strength:} captures code semantics (variable names, API calls, strings).
+    \item \textbf{Weakness:} ignores graph connectivity (seq); pattern adds $+$0~pp in Run C.}
+  \end{itemize}
+
+  \vspace{0.3em}
+  \begin{block}{\scriptsize Conclusion}
+    \scriptsize Graph structure carries \textbf{more discriminative signal}
+    than code text for vulnerability retrieval.
+    Combined (structural) beats CodeBERT by 7~pp.
+    Best path forward: hybrid approach.
+  \end{block}
+
+\end{column}
+\end{columns}
+\end{frame}
+
+% ══════════════════════════════════════════════════════════════════════
+\section{Embedding Pipeline Ablation}
+% ══════════════════════════════════════════════════════════════════════
+
+\begin{frame}[fragile]{Embedding Pipeline: Where PCA \& L2 Normalization Sit}
+
+  \centering
+  \begin{tikzpicture}[
+    box/.style={rounded corners=3pt, draw=#1!60, fill=#1!10,
+                minimum width=2.6cm, minimum height=0.7cm,
+                font=\small\sffamily, align=center},
+    arr/.style={->, thick, gray!70},
+    ablbl/.style={font=\scriptsize\sffamily\bfseries, #1}]
+
+    % pipeline boxes
+    \node[box=c1]  (graph)  at (0,0)     {$G_{\text{vuln}}$};
+    \node[box=c2]  (feat)   at (3.2,0)   {Raw features};
+    \node[box=c3]  (pca)    at (6.4,0)   {PCA};
+    \node[box=c5]  (l2)     at (9.2,0)   {L2 norm};
+    \node[box=hit] (faiss)  at (12.0,0)  {FAISS};
+
+    \draw[arr] (graph) -- (feat);
+    \draw[arr] (feat)  -- (pca);
+    \draw[arr] (pca)   -- (l2);
+    \draw[arr] (l2)    -- (faiss);
+
+    % dimension annotations
+    \node[below=4pt, font=\tiny\color{black!50}] at (feat.south) {768d / 846d / 384d};
+    \node[below=4pt, font=\tiny\color{black!50}] at (pca.south) {$\to$ 128d};
+    \node[below=4pt, font=\tiny\color{black!50}] at (l2.south) {$\|\mathbf{v}\|=1$};
+    \node[below=4pt, font=\tiny\color{black!50}] at (faiss.south) {inner product};
+
+    % ablation markers
+    \draw[miss, ultra thick, rounded corners=2pt]
+      ([shift={(-3pt,5pt)}]pca.north west) rectangle ([shift={(3pt,-3pt)}]pca.south east);
+    \node[ablbl=miss, above=6pt] at (pca.north) {Ablation A};
+
+    \draw[miss, ultra thick, rounded corners=2pt]
+      ([shift={(-3pt,5pt)}]l2.north west) rectangle ([shift={(3pt,-3pt)}]l2.south east);
+    \node[ablbl=miss, above=6pt] at (l2.north) {Ablation B};
+  \end{tikzpicture}
+
+  \vspace{0.8em}
+  \begin{columns}[T]
+  \begin{column}{0.48\textwidth}
+    \textbf{PCA} {\small(dimensionality reduction)}
+    \begin{itemize}\setlength{\itemsep}{2pt}
+      {\scriptsize
+      \item Projects high-dim features to 128d
+      \item Learns optimal linear basis from data
+      \item Decorrelates and compresses — fuses heterogeneous streams (e.g.\ 78d structural $+$ 768d CodeBERT)}
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.48\textwidth}
+    \textbf{L2 normalization} {\small(scale invariance)}
+    \begin{itemize}\setlength{\itemsep}{2pt}
+      {\scriptsize
+      \item Maps every embedding onto the unit hypersphere
+      \item FAISS inner product $=$ cosine similarity
+      \item Similarity depends on \textbf{direction} (pattern), not \textbf{magnitude} (graph size)}
+    \end{itemize}
+  \end{column}
+  \end{columns}
+\end{frame}
+
+
+\begin{frame}{Ablation Results: PCA and L2 Normalization ($n{=}225$, self-retrieval)}
+
+  \vspace{-0.3em}
+  {\scriptsize
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{3.5pt}
+  \begin{tabular}{l *{3}{c} c *{3}{c} c *{3}{c}}
+    \toprule
+    & \multicolumn{3}{c}{\textbf{PCA + L2} {\scriptsize(baseline)}}
+    && \multicolumn{3}{c}{\textbf{No PCA, L2 only} {\scriptsize(Abl.\ A)}}
+    && \multicolumn{3}{c}{\textbf{PCA, no L2} {\scriptsize(Abl.\ B)}} \\
+    \cmidrule{2-4} \cmidrule{6-8} \cmidrule{10-12}
+    \textbf{Embedder}
+      & hit@1 & MRR & CWE
+      && hit@1 & MRR & CWE
+      && hit@1 & MRR & CWE \\
+    \midrule
+    \rowcolor{c1!12}
+    Combined
+      & \chit{90.4\%} & \chit{.932} & \chit{.515}
+      && \cwarn{74.0\%} & .780 & .398
+      && \cmiss{1.4\%} & .047 & .071 \\
+    CodeBERT seq
+      & 75.3\% & .793 & .412
+      && 76.7\% & .799 & .402
+      && \cmiss{1.4\%} & .107 & .160 \\
+    GIN
+      & 72.6\% & .788 & .443
+      && 72.6\% & .788 & .443
+      && \cmiss{1.4\%} & .044 & .068 \\
+    CodeBERT pat.
+      & 71.2\% & .768 & .414
+      && 75.3\% & .788 & .394
+      && \cmiss{1.4\%} & .132 & .201 \\
+    WL
+      & 65.8\% & .723 & .430
+      && 67.1\% & .723 & .435
+      && \cmiss{0.0\%} & .045 & .065 \\
+    RGCN
+      & 60.3\% & .676 & .372
+      && \cwarn{67.1\%} & .733 & .390
+      && \cmiss{0.0\%} & .014 & .060 \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.4em}
+  \begin{columns}[T]
+  \begin{column}{0.32\textwidth}
+    {\scriptsize\textbf{\textcolor{hit}{Baseline: PCA + L2}}}
+    \begin{itemize}\setlength{\itemsep}{1pt}
+      {\scriptsize
+      \item Combined dominates: 90.4\%
+      \item PCA is critical for Combined ($-$16.4~pp without)}
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.32\textwidth}
+    {\scriptsize\textbf{\textcolor{warn}{Abl.\ A: No PCA}}}
+    \begin{itemize}\setlength{\itemsep}{1pt}
+      {\scriptsize
+      \item CodeBERT stable ($\pm$1~pp)
+      \item GIN identical — already 128d
+      \item Combined collapses: PCA fuses the 3 sub-embedders}
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.32\textwidth}
+    {\scriptsize\textbf{\textcolor{miss}{Abl.\ B: No L2}}}
+    \begin{itemize}\setlength{\itemsep}{1pt}
+      {\scriptsize
+      \item \textbf{Catastrophic failure} — all $<$2\%
+      \item Mean sim $>$100k (magnitude dominates)
+      \item L2 norm is non-negotiable}
+    \end{itemize}
+  \end{column}
+  \end{columns}
+\end{frame}
+
+
+\begin{frame}{Why L2 Normalization Is Non-Negotiable}
+\begin{columns}[T]
+\begin{column}{0.50\textwidth}
+
+  \textbf{The magnitude problem}
+
+  \vspace{0.3em}
+  {\small Without L2 normalization, FAISS inner product computes:}
+
+  $$\text{score}(q, d) = \mathbf{q} \cdot \mathbf{d} = \|\mathbf{q}\| \, \|\mathbf{d}\| \cos\theta$$
+
+  {\small The score is dominated by $\|\mathbf{q}\| \, \|\mathbf{d}\|$, not $\cos\theta$.}
+
+  \vspace{0.6em}
+  \textbf{Mean pairwise similarity}
+
+  \vspace{0.3em}
+  {\small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{lrr}
+    \toprule
+    \textbf{Embedder} & \textbf{With L2} & \textbf{No L2} \\
+    \midrule
+    Combined      & 0.02   & \cmiss{416{,}081} \\
+    CodeBERT seq  & 0.01   & \cmiss{456} \\
+    GIN           & 0.99   & \cmiss{260{,}029} \\
+    RGCN          & 0.14   & \cmiss{4{,}281} \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.3em}
+  {\scriptsize\color{black!55}
+  Without L2, all vectors appear ``close'' — a graph with more nodes
+  produces a larger vector that dominates inner-product ranking.}
+
+\end{column}
+\begin{column}{0.47\textwidth}
+
+  \textbf{With L2: direction-only similarity}
+
+  \vspace{0.3em}
+  $$\text{score}(q, d) = \cos\theta = \frac{\mathbf{q} \cdot \mathbf{d}}{\|\mathbf{q}\| \, \|\mathbf{d}\|} \in [-1, 1]$$
+
+  \vspace{0.2em}
+  \begin{itemize}\setlength{\itemsep}{3pt}
+    {\small
+    \item Every vector has $\|\mathbf{v}\| = 1$
+    \item Inner product $\equiv$ cosine similarity
+    \item Similarity measures \textbf{what kind} of vulnerability,
+          not \textbf{how much code} changed
+    \item A 20-node UAF patch and a 200-node UAF patch
+          can still be nearest neighbours}
+  \end{itemize}
+
+  \vspace{0.5em}
+  \begin{alertblock}{\scriptsize Key takeaway}
+    \scriptsize L2 normalization is \textbf{essential} for the pipeline.
+    Removing it causes complete retrieval failure across all 6 embedders.
+    PCA matters mainly for multi-stream embedders (Combined: $-$16~pp without it).
+  \end{alertblock}
+
+\end{column}
+\end{columns}
 \end{frame}
 
 % ══════════════════════════════════════════════════════════════════════
