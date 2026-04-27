@@ -2,6 +2,7 @@
 Evaluation metrics for unsupervised RAG experiments.
 All metrics work without ground-truth query→CVE labels.
 """
+import time
 import numpy as np
 from collections import defaultdict
 
@@ -200,3 +201,22 @@ def _effective_dim(embeddings: np.ndarray) -> float:
     eigv = eigv[eigv > 0]
     pr   = (eigv.sum() ** 2) / (eigv ** 2).sum()
     return float(pr)
+
+
+def measure_latency(retriever, embeddings: np.ndarray, n_queries: int = 200) -> dict:
+    """Sample query latencies in milliseconds."""
+    rng     = np.random.default_rng(42)
+    idx     = rng.choice(len(embeddings), min(n_queries, len(embeddings)), replace=False)
+    samples = embeddings[idx]
+    times   = []
+    for vec in samples:
+        t0 = time.perf_counter()
+        retriever.query(vec, top_k=10)
+        times.append((time.perf_counter() - t0) * 1000)
+    times = np.array(times)
+    return {
+        'p50_ms': float(np.percentile(times, 50)),
+        'p95_ms': float(np.percentile(times, 95)),
+        'p99_ms': float(np.percentile(times, 99)),
+        'mean_ms': float(np.mean(times)),
+    }
