@@ -8,6 +8,22 @@ class BaseEmbedder(ABC):
     def __init__(self, cfg: dict):
         self.cfg = cfg
         self.dim = cfg.get("dim", 128)
+        self.projection = cfg.get("projection", "pca")  # "pca" or "none"
+        self.l2_normalize = cfg.get("l2_normalize", True)
+
+    def _norm_vec(self, v: np.ndarray) -> np.ndarray:
+        """L2-normalize a single vector if l2_normalize is enabled."""
+        if not self.l2_normalize:
+            return v.astype(np.float32)
+        norm = np.linalg.norm(v)
+        return (v / (norm + 1e-8)).astype(np.float32)
+
+    def _norm_mat(self, M: np.ndarray) -> np.ndarray:
+        """L2-normalize each row of a matrix if l2_normalize is enabled."""
+        if not self.l2_normalize:
+            return M.astype(np.float32)
+        from sklearn.preprocessing import normalize
+        return normalize(M.astype(np.float32), norm='l2')
 
     @abstractmethod
     def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray: ...
