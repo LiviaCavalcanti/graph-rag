@@ -1,0 +1,3375 @@
+{
+  "source": {
+    "results": "experiments/output/20260427_220827_batch_oracle_8c5667/results.jsonl",
+    "evaluation": "experiments/output/20260427_220827_batch_oracle_8c5667/evaluation.jsonl"
+  },
+  "total_records": 73,
+  "aggregates": {
+    "exact_match": {
+      "n": 73,
+      "mean": 0.0,
+      "median": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "normalised_exact_match": {
+      "n": 73,
+      "mean": 0.0,
+      "median": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "char_sequence_ratio": {
+      "n": 73,
+      "mean": 0.6013,
+      "median": 0.6766,
+      "min": 0.0469,
+      "max": 0.9949
+    },
+    "line_sequence_ratio": {
+      "n": 73,
+      "mean": 0.5705,
+      "median": 0.6154,
+      "min": 0.1149,
+      "max": 0.902
+    },
+    "normalised_edit_distance": {
+      "n": 73,
+      "mean": 0.3407,
+      "median": 0.2933,
+      "min": 0.0102,
+      "max": 0.7572
+    },
+    "token_jaccard": {
+      "n": 73,
+      "mean": 0.7487,
+      "median": 0.82,
+      "min": 0.2857,
+      "max": 1.0
+    },
+    "token_jaccard_multiset": {
+      "n": 73,
+      "mean": 0.7112,
+      "median": 0.758,
+      "min": 0.2847,
+      "max": 0.9863
+    },
+    "bleu_1": {
+      "n": 73,
+      "mean": 0.7393,
+      "median": 0.7829,
+      "min": 0.1482,
+      "max": 0.9863
+    },
+    "bleu_2": {
+      "n": 73,
+      "mean": 0.7028,
+      "median": 0.7557,
+      "min": 0.1222,
+      "max": 0.9828
+    },
+    "bleu_4": {
+      "n": 73,
+      "mean": 0.6454,
+      "median": 0.7195,
+      "min": 0.0817,
+      "max": 0.9757
+    },
+    "codebleu_proxy": {
+      "n": 73,
+      "mean": 0.6525,
+      "median": 0.7262,
+      "min": 0.1632,
+      "max": 0.9633
+    },
+    "bertscore_precision": {
+      "n": 73,
+      "mean": 0.7078,
+      "median": 0.725,
+      "min": 0.1091,
+      "max": 0.9665
+    },
+    "bertscore_recall": {
+      "n": 73,
+      "mean": 0.7386,
+      "median": 0.7885,
+      "min": 0.1935,
+      "max": 0.9706
+    },
+    "bertscore_f1": {
+      "n": 73,
+      "mean": 0.7198,
+      "median": 0.7569,
+      "min": 0.1396,
+      "max": 0.9686
+    }
+  },
+  "by_cwe": {
+    "Assignment of a Fixed Address to a Pointer": {
+      "count": 1,
+      "avg_bleu_4": 0.9757,
+      "avg_bertscore_f1": 0.9686,
+      "avg_token_jaccard": 1.0,
+      "avg_codebleu_proxy": 0.9633
+    },
+    "Business Logic Errors": {
+      "count": 1,
+      "avg_bleu_4": 0.5199,
+      "avg_bertscore_f1": 0.7102,
+      "avg_token_jaccard": 0.5862,
+      "avg_codebleu_proxy": 0.5428
+    },
+    "Deadlock": {
+      "count": 4,
+      "avg_bleu_4": 0.7022,
+      "avg_bertscore_f1": 0.7509,
+      "avg_token_jaccard": 0.7591,
+      "avg_codebleu_proxy": 0.6616
+    },
+    "Expired Pointer Dereference": {
+      "count": 2,
+      "avg_bleu_4": 0.3065,
+      "avg_bertscore_f1": 0.5877,
+      "avg_token_jaccard": 0.3487,
+      "avg_codebleu_proxy": 0.2964
+    },
+    "Improper Control of a Resource Through Its Lifetime": {
+      "count": 1,
+      "avg_bleu_4": 0.946,
+      "avg_bertscore_f1": 0.9341,
+      "avg_token_jaccard": 0.9375,
+      "avg_codebleu_proxy": 0.9171
+    },
+    "Improper Input Validation": {
+      "count": 1,
+      "avg_bleu_4": 0.5577,
+      "avg_bertscore_f1": 0.7145,
+      "avg_token_jaccard": 0.75,
+      "avg_codebleu_proxy": 0.6202
+    },
+    "Improper Locking": {
+      "count": 8,
+      "avg_bleu_4": 0.341,
+      "avg_bertscore_f1": 0.5669,
+      "avg_token_jaccard": 0.5087,
+      "avg_codebleu_proxy": 0.3889
+    },
+    "Improper Validation of Array Index": {
+      "count": 1,
+      "avg_bleu_4": 0.6212,
+      "avg_bertscore_f1": 0.7333,
+      "avg_token_jaccard": 0.875,
+      "avg_codebleu_proxy": 0.6635
+    },
+    "Incorrect Check of Function Return Value": {
+      "count": 3,
+      "avg_bleu_4": 0.8768,
+      "avg_bertscore_f1": 0.9043,
+      "avg_token_jaccard": 0.847,
+      "avg_codebleu_proxy": 0.8229
+    },
+    "Incorrect Type Conversion or Cast": {
+      "count": 1,
+      "avg_bleu_4": 0.9428,
+      "avg_bertscore_f1": 0.6924,
+      "avg_token_jaccard": 0.9247,
+      "avg_codebleu_proxy": 0.8743
+    },
+    "Integer Overflow or Wraparound": {
+      "count": 10,
+      "avg_bleu_4": 0.6843,
+      "avg_bertscore_f1": 0.6971,
+      "avg_token_jaccard": 0.7562,
+      "avg_codebleu_proxy": 0.6948
+    },
+    "Integer Underflow": {
+      "count": 1,
+      "avg_bleu_4": 0.8074,
+      "avg_bertscore_f1": 0.5169,
+      "avg_token_jaccard": 0.878,
+      "avg_codebleu_proxy": 0.785
+    },
+    "Memory Leak": {
+      "count": 2,
+      "avg_bleu_4": 0.9021,
+      "avg_bertscore_f1": 0.9097,
+      "avg_token_jaccard": 0.9808,
+      "avg_codebleu_proxy": 0.8918
+    },
+    "NULL Pointer Dereference": {
+      "count": 11,
+      "avg_bleu_4": 0.5877,
+      "avg_bertscore_f1": 0.6968,
+      "avg_token_jaccard": 0.7168,
+      "avg_codebleu_proxy": 0.6007
+    },
+    "Operation on a Resource after Expiration or Release": {
+      "count": 2,
+      "avg_bleu_4": 0.6435,
+      "avg_bertscore_f1": 0.713,
+      "avg_token_jaccard": 0.9399,
+      "avg_codebleu_proxy": 0.6877
+    },
+    "Out-of-bounds Write": {
+      "count": 1,
+      "avg_bleu_4": 0.1711,
+      "avg_bertscore_f1": 0.1396,
+      "avg_token_jaccard": 0.3046,
+      "avg_codebleu_proxy": 0.2304
+    },
+    "Race Condition": {
+      "count": 5,
+      "avg_bleu_4": 0.6169,
+      "avg_bertscore_f1": 0.692,
+      "avg_token_jaccard": 0.785,
+      "avg_codebleu_proxy": 0.6288
+    },
+    "Return of Stack Variable Address After Scope": {
+      "count": 1,
+      "avg_bleu_4": 0.7199,
+      "avg_bertscore_f1": 0.7232,
+      "avg_token_jaccard": 0.863,
+      "avg_codebleu_proxy": 0.729
+    },
+    "Unchecked Return Value": {
+      "count": 1,
+      "avg_bleu_4": 0.216,
+      "avg_bertscore_f1": 0.4281,
+      "avg_token_jaccard": 0.5263,
+      "avg_codebleu_proxy": 0.3558
+    },
+    "Uncontrolled Resource Consumption ('Resource Exhaustion')": {
+      "count": 2,
+      "avg_bleu_4": 0.4971,
+      "avg_bertscore_f1": 0.6394,
+      "avg_token_jaccard": 0.6239,
+      "avg_codebleu_proxy": 0.5092
+    },
+    "Use After Free": {
+      "count": 12,
+      "avg_bleu_4": 0.7999,
+      "avg_bertscore_f1": 0.8558,
+      "avg_token_jaccard": 0.8618,
+      "avg_codebleu_proxy": 0.7931
+    },
+    "Use of Uninitialized Variable": {
+      "count": 2,
+      "avg_bleu_4": 0.8889,
+      "avg_bertscore_f1": 0.8321,
+      "avg_token_jaccard": 0.9327,
+      "avg_codebleu_proxy": 0.868
+    }
+  },
+  "by_variant": {
+    "augmented": {
+      "count": 14,
+      "avg_bleu_4": 0.6079,
+      "avg_bertscore_f1": 0.7136,
+      "avg_token_jaccard": 0.6769,
+      "avg_codebleu_proxy": 0.6103
+    },
+    "re_implemented_deepseek": {
+      "count": 16,
+      "avg_bleu_4": 0.5743,
+      "avg_bertscore_f1": 0.6566,
+      "avg_token_jaccard": 0.6911,
+      "avg_codebleu_proxy": 0.5797
+    },
+    "re_implemented_deepseek-r1": {
+      "count": 11,
+      "avg_bleu_4": 0.7577,
+      "avg_bertscore_f1": 0.8251,
+      "avg_token_jaccard": 0.8284,
+      "avg_codebleu_proxy": 0.7569
+    },
+    "re_implemented_gpt-4o": {
+      "count": 12,
+      "avg_bleu_4": 0.6743,
+      "avg_bertscore_f1": 0.76,
+      "avg_token_jaccard": 0.7813,
+      "avg_codebleu_proxy": 0.6847
+    },
+    "re_implemented_llama": {
+      "count": 8,
+      "avg_bleu_4": 0.5682,
+      "avg_bertscore_f1": 0.6025,
+      "avg_token_jaccard": 0.7062,
+      "avg_codebleu_proxy": 0.5988
+    },
+    "re_implemented_o3-mini": {
+      "count": 12,
+      "avg_bleu_4": 0.7034,
+      "avg_bertscore_f1": 0.7526,
+      "avg_token_jaccard": 0.8322,
+      "avg_codebleu_proxy": 0.7066
+    }
+  },
+  "records": [
+    {
+      "query_cve": "CVE-2025-21825",
+      "query_cwe": "Race Condition",
+      "query_variant": "re_implemented_gpt-4o",
+      "example_cve": "CVE-2025-21825",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.2909,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.6204,
+        "line_sequence_ratio": 0.5238,
+        "normalised_edit_distance": 0.4359,
+        "token_jaccard": 0.7692,
+        "token_jaccard_multiset": 0.5433,
+        "bleu_1": 0.5476,
+        "bleu_2": 0.5295,
+        "bleu_4": 0.5007,
+        "codebleu_proxy": 0.5736,
+        "bertscore_precision": 0.6521,
+        "bertscore_recall": 0.8784,
+        "bertscore_f1": 0.7485
+      },
+      "size_info": {
+        "generated_lines": 28,
+        "ground_truth_lines": 14,
+        "generated_tokens": 126,
+        "ground_truth_tokens": 70,
+        "line_count_diff": 14,
+        "token_count_diff": 56
+      },
+      "status": "success",
+      "elapsed_s": 9.61,
+      "input_code_preview": "```c\nvoid bpf_timer_cancel_and_free(void *val)\n{\n\tstruct bpf_hrtimer *t;\n\n\tt = (struct bpf_hrtimer *)__bpf_async_cancel_and_free(val);\n\n\tif (!t)\n\t\treturn;\n\t/* We check that bpf_map_delete/update_elem() was called from timer\n\t * callback_fn. In such case we don't call hrtimer_cancel() (since it\n\t * w\n... [truncated]",
+      "ground_truth_preview": "void bpf_timer_cancel_and_free(void *val)\n{\n    struct bpf_hrtimer *t;\n\n    t = (struct bpf_hrtimer *)__bpf_async_cancel_and_free((struct bpf_async_kern *)val);\n\n    if (!t)\n        return;\n\n    if (this_cpu_read(hrtimer_running))\n        queue_work(system_wq, &t->cb.delete_work);\n    else\n        b\n... [truncated]",
+      "generated_patch_preview": "void bpf_timer_cancel_and_free(void *val)\n{\n    struct bpf_hrtimer *t;\n\n    // Attempt to cancel and free the asynchronous operation, casting the result to bpf_hrtimer\n    t = (struct bpf_hrtimer *)__bpf_async_cancel_and_free((struct bpf_async_kern *)val);\n\n    // If the operation was not successful\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2022-49733",
+      "query_cwe": "Race Condition",
+      "query_variant": "re_implemented_o3-mini",
+      "example_cve": "CVE-2022-49733",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.2357,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.4435,
+        "line_sequence_ratio": 0.4424,
+        "normalised_edit_distance": 0.3936,
+        "token_jaccard": 0.6636,
+        "token_jaccard_multiset": 0.7335,
+        "bleu_1": 0.8434,
+        "bleu_2": 0.7636,
+        "bleu_4": 0.6303,
+        "codebleu_proxy": 0.5916,
+        "bertscore_precision": 0.7865,
+        "bertscore_recall": 0.7736,
+        "bertscore_f1": 0.78
+      },
+      "size_info": {
+        "generated_lines": 96,
+        "ground_truth_lines": 121,
+        "generated_tokens": 590,
+        "ground_truth_tokens": 594,
+        "line_count_diff": -25,
+        "token_count_diff": -4
+      },
+      "status": "success",
+      "elapsed_s": 11.3,
+      "input_code_preview": "```c\nstatic int snd_pcm_oss_sync(struct snd_pcm_oss_file *pcm_oss_file)\n{\n\tint err = 0;\n\tunsigned int saved_f_flags;\n\tstruct snd_pcm_substream *substream;\n\tstruct snd_pcm_runtime *runtime;\n\tsnd_pcm_format_t format;\n\tunsigned long width;\n\tsize_t size;\n\n\tsubstream = pcm_oss_file->streams[SNDRV_PCM_STR\n... [truncated]",
+      "ground_truth_preview": "static int snd_pcm_oss_sync(struct snd_pcm_oss_file *pcm_oss_file)\n{\n    int err = 0;\n    int old_flags;\n    struct snd_pcm_substream *substream = NULL;\n    struct snd_pcm_runtime *runtime = NULL;\n    snd_pcm_format_t format;\n    int width;\n    size_t size_calc = 0;\n\n    /* Get the playback substrea\n... [truncated]",
+      "generated_patch_preview": "static int snd_pcm_oss_sync(struct snd_pcm_oss_file *pcm_oss_file)\n{\n    int err = 0;\n    unsigned int saved_f_flags;\n    struct snd_pcm_substream *substream;\n    struct snd_pcm_runtime *runtime;\n    snd_pcm_format_t format;\n    unsigned long width;\n    size_t size;\n\n    // Handle playback stream\n  \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21998",
+      "query_cwe": "Race Condition",
+      "query_variant": "augmented",
+      "example_cve": "CVE-2025-21998",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.2857,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.6306,
+        "line_sequence_ratio": 0.5897,
+        "normalised_edit_distance": 0.5233,
+        "token_jaccard": 0.875,
+        "token_jaccard_multiset": 0.7878,
+        "bleu_1": 0.8027,
+        "bleu_2": 0.775,
+        "bleu_4": 0.7259,
+        "codebleu_proxy": 0.7291,
+        "bertscore_precision": 0.6501,
+        "bertscore_recall": 0.6594,
+        "bertscore_f1": 0.6547
+      },
+      "size_info": {
+        "generated_lines": 38,
+        "ground_truth_lines": 40,
+        "generated_tokens": 201,
+        "ground_truth_tokens": 237,
+        "line_count_diff": -2,
+        "token_count_diff": -36
+      },
+      "status": "success",
+      "elapsed_s": 13.88,
+      "input_code_preview": "```c\nstatic int qcom_uefisecapp_probe(struct auxiliary_device *aux_dev,\n\t\t\t\t const struct auxiliary_device_id *aux_dev_id)\n{\n\tstruct qcom_tzmem_pool_config pool_config;\n\tstruct qcuefi_client *qcuefi;\n\tint status;\n\n\tqcuefi = devm_kzalloc(&aux_dev->dev, sizeof(*qcuefi), GFP_KERNEL);\n\tif (!qcuefi)\n\t\tre\n... [truncated]",
+      "ground_truth_preview": "static int qcom_uefisecapp_probe(struct auxiliary_device *race_cond_dev,\n                 const struct auxiliary_device_id *race_cond_dev_id)\n{\n    struct qcom_tzmem_pool_config mutex_config;\n    struct qcuefi_client *race_cond_client;\n    int race_cond_status;\n\n    race_cond_client = (struct qcuefi\n... [truncated]",
+      "generated_patch_preview": "#define MALLOC false\nstatic int qcom_uefisecapp_probe(struct auxiliary_device *race_cond_dev,\nconst struct auxiliary_device_id *race_cond_dev_id)\n{\n    struct qcom_tzmem_pool_config mutex_config;\n    struct qcuefi_client *race_cond_client;\n    int race_cond_status;\n\n    // Step 1: Allocate and initi\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21998",
+      "query_cwe": "Race Condition",
+      "query_variant": "re_implemented_o3-mini",
+      "example_cve": "CVE-2025-21998",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.2286,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.6459,
+        "line_sequence_ratio": 0.5176,
+        "normalised_edit_distance": 0.5126,
+        "token_jaccard": 0.8333,
+        "token_jaccard_multiset": 0.8932,
+        "bleu_1": 0.934,
+        "bleu_2": 0.8974,
+        "bleu_4": 0.8173,
+        "codebleu_proxy": 0.7464,
+        "bertscore_precision": 0.7136,
+        "bertscore_recall": 0.7238,
+        "bertscore_f1": 0.7187
+      },
+      "size_info": {
+        "generated_lines": 38,
+        "ground_truth_lines": 47,
+        "generated_tokens": 197,
+        "ground_truth_tokens": 193,
+        "line_count_diff": -9,
+        "token_count_diff": 4
+      },
+      "status": "success",
+      "elapsed_s": 9.08,
+      "input_code_preview": "```c\nstatic int qcom_uefisecapp_probe(struct auxiliary_device *aux_dev,\n\t\t\t\t const struct auxiliary_device_id *aux_dev_id)\n{\n\tstruct qcom_tzmem_pool_config pool_config;\n\tstruct qcuefi_client *qcuefi;\n\tint status;\n\n\tqcuefi = devm_kzalloc(&aux_dev->dev, sizeof(*qcuefi), GFP_KERNEL);\n\tif (!qcuefi)\n\t\tre\n... [truncated]",
+      "ground_truth_preview": "static int qcom_uefisecapp_probe(struct auxiliary_device *aux_dev,\n                                 const struct auxiliary_device_id *aux_dev_id) {\n    /* Declare a configuration structure for the memory pool */\n    struct qcom_tzmem_pool_config pool_config;\n    /* Declare a pointer for the qcuefi c\n... [truncated]",
+      "generated_patch_preview": "static int qcom_uefisecapp_probe(struct auxiliary_device *aux_dev,\n                                 const struct auxiliary_device_id *aux_dev_id)\n{\n    struct qcom_tzmem_pool_config pool_config;\n    struct qcuefi_client *qcuefi;\n    int ret;\n\n    /* Step 1: Allocate memory for qcuefi and check for a\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21825",
+      "query_cwe": "Race Condition",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2025-21825",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.1587,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.4368,
+        "line_sequence_ratio": 0.4091,
+        "normalised_edit_distance": 0.5753,
+        "token_jaccard": 0.7838,
+        "token_jaccard_multiset": 0.5082,
+        "bleu_1": 0.5124,
+        "bleu_2": 0.4757,
+        "bleu_4": 0.4101,
+        "codebleu_proxy": 0.5033,
+        "bertscore_precision": 0.4594,
+        "bertscore_recall": 0.7117,
+        "bertscore_f1": 0.5583
+      },
+      "size_info": {
+        "generated_lines": 29,
+        "ground_truth_lines": 15,
+        "generated_tokens": 121,
+        "ground_truth_tokens": 63,
+        "line_count_diff": 14,
+        "token_count_diff": 58
+      },
+      "status": "success",
+      "elapsed_s": 7.45,
+      "input_code_preview": "```c\nvoid bpf_timer_cancel_and_free(void *val)\n{\n\tstruct bpf_hrtimer *t;\n\n\tt = (struct bpf_hrtimer *)__bpf_async_cancel_and_free(val);\n\n\tif (!t)\n\t\treturn;\n\t/* We check that bpf_map_delete/update_elem() was called from timer\n\t * callback_fn. In such case we don't call hrtimer_cancel() (since it\n\t * w\n... [truncated]",
+      "ground_truth_preview": "void bpf_timer_cancel_and_free(void *val) {\n    struct bpf_hrtimer *t;\n\n    // Attempt to cancel and free the asynchronous operation, casting the result to bpf_hrtimer\n    t = (struct bpf_hrtimer *) val;\n\n    // If the operation was not successful, return immediately\n    if (!t)\n        return;\n    \n... [truncated]",
+      "generated_patch_preview": "void bpf_timer_cancel_and_free(void *val)\n{\n    struct bpf_hrtimer *t;\n\n    // Attempt to cancel and free the asynchronous operation\n    t = (struct bpf_hrtimer *)__bpf_async_cancel_and_free(val);\n\n    // Verify nullity of `t`\n    if (!t)\n        return;\n\n    // Check if the current CPU is running a\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-56605",
+      "query_cwe": "Use After Free",
+      "query_variant": "re_implemented_deepseek-r1",
+      "example_cve": "CVE-2024-56605",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.4643,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.7388,
+        "line_sequence_ratio": 0.6933,
+        "normalised_edit_distance": 0.1406,
+        "token_jaccard": 0.7544,
+        "token_jaccard_multiset": 0.8122,
+        "bleu_1": 0.8853,
+        "bleu_2": 0.8573,
+        "bleu_4": 0.8029,
+        "codebleu_proxy": 0.7634,
+        "bertscore_precision": 0.8912,
+        "bertscore_recall": 0.874,
+        "bertscore_f1": 0.8825
+      },
+      "size_info": {
+        "generated_lines": 38,
+        "ground_truth_lines": 37,
+        "generated_tokens": 162,
+        "ground_truth_tokens": 166,
+        "line_count_diff": 1,
+        "token_count_diff": -4
+      },
+      "status": "success",
+      "elapsed_s": 10.21,
+      "input_code_preview": "```c\nstatic struct sock *l2cap_sock_alloc(struct net *net, struct socket *sock,\n\t\t\t\t     int proto, gfp_t prio, int kern)\n{\n\tstruct sock *sk;\n\tstruct l2cap_chan *chan;\n\n\tsk = sk_alloc(net, PF_BLUETOOTH, prio, &l2cap_proto, kern);\n\tif (!sk)\n\t\treturn NULL;\n\n\tsock_init_data(sock, sk);\n\tINIT_LIST_HEAD(&\n... [truncated]",
+      "ground_truth_preview": "static struct sock *l2cap_sock_alloc(struct net *net, struct socket *sock,\n                                     int proto, gfp_t prio, int kern) {\n    struct sock *sk;\n    struct l2cap_CHAN *chan;\n\n    // Allocate a new socket structure for the Bluetooth protocol\n    sk = sk_alloc(net, PF_BLUETOOTH,\n... [truncated]",
+      "generated_patch_preview": "static struct sock *l2cap_sock_alloc(struct net *net, struct socket *sock,\n                                     int proto, gfp_t prio, int kern)\n{\n    struct sock *sk;\n    struct l2cap_chan *chan;\n\n    // Allocate a new socket structure for the Bluetooth protocol\n    sk = sk_alloc(net, PF_BLUETOOTH,\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-56605",
+      "query_cwe": "Use After Free",
+      "query_variant": "re_implemented_gpt-4o",
+      "example_cve": "CVE-2024-56605",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.42,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.8504,
+        "line_sequence_ratio": 0.8889,
+        "normalised_edit_distance": 0.0665,
+        "token_jaccard": 0.9608,
+        "token_jaccard_multiset": 0.8933,
+        "bleu_1": 0.9351,
+        "bleu_2": 0.9261,
+        "bleu_4": 0.9092,
+        "codebleu_proxy": 0.917,
+        "bertscore_precision": 0.9412,
+        "bertscore_recall": 0.9364,
+        "bertscore_f1": 0.9388
+      },
+      "size_info": {
+        "generated_lines": 38,
+        "ground_truth_lines": 34,
+        "generated_tokens": 167,
+        "ground_truth_tokens": 170,
+        "line_count_diff": 4,
+        "token_count_diff": -3
+      },
+      "status": "success",
+      "elapsed_s": 8.79,
+      "input_code_preview": "```c\nstatic struct sock *l2cap_sock_alloc(struct net *net, struct socket *sock,\n\t\t\t\t     int proto, gfp_t prio, int kern)\n{\n\tstruct sock *sk;\n\tstruct l2cap_chan *chan;\n\n\tsk = sk_alloc(net, PF_BLUETOOTH, prio, &l2cap_proto, kern);\n\tif (!sk)\n\t\treturn NULL;\n\n\tsock_init_data(sock, sk);\n\tINIT_LIST_HEAD(&\n... [truncated]",
+      "ground_truth_preview": "static struct sock *l2cap_sock_alloc(struct net *net, struct socket *sock,\n                                     int proto, gfp_t prio, int kern)\n{\n    struct sock *sk = sk_alloc(net, PF_BLUETOOTH, prio, &l2cap_proto, kern);\n    if (!sk)\n        return (struct sock *)0;\n\n    sock_init_data_uid(sock, \n... [truncated]",
+      "generated_patch_preview": "static struct sock *l2cap_sock_alloc(struct net *net, struct socket *sock,\n                                     int proto, gfp_t prio, int kern)\n{\n    // Allocate a new socket structure for the Bluetooth protocol\n    struct sock *sk = sk_alloc(net, PF_BLUETOOTH, prio, &l2cap_proto, kern);\n\n    // If\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21858",
+      "query_cwe": "Use After Free",
+      "query_variant": "re_implemented_llama",
+      "example_cve": "CVE-2025-21858",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.4595,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.8335,
+        "line_sequence_ratio": 0.76,
+        "normalised_edit_distance": 0.1844,
+        "token_jaccard": 0.8409,
+        "token_jaccard_multiset": 0.7808,
+        "bleu_1": 0.7802,
+        "bleu_2": 0.7556,
+        "bleu_4": 0.7101,
+        "codebleu_proxy": 0.7553,
+        "bertscore_precision": 0.8646,
+        "bertscore_recall": 0.816,
+        "bertscore_f1": 0.8396
+      },
+      "size_info": {
+        "generated_lines": 24,
+        "ground_truth_lines": 26,
+        "generated_tokens": 117,
+        "ground_truth_tokens": 143,
+        "line_count_diff": -2,
+        "token_count_diff": -26
+      },
+      "status": "success",
+      "elapsed_s": 7.19,
+      "input_code_preview": "```c\nstatic void geneve_destroy_tunnels(struct net *net, struct list_head *head)\n{\n\tstruct geneve_net *gn = net_generic(net, geneve_net_id);\n\tstruct geneve_dev *geneve, *next;\n\tstruct net_device *dev, *aux;\n\n\t/* gather any geneve devices that were moved into this ns */\n\tfor_each_netdev_safe(net, dev\n... [truncated]",
+      "ground_truth_preview": "for (entry = (head), tmp = entry; entry; entry = tmp)\n\nstatic void geneve_destroy_tunnels(struct net *net, struct list_head *head)\n{\n    // Retrieve the geneve_net structure associated with the given network namespace\n    struct geneve_net *gn = (struct geneve_net *)net_generic(net, 0);\n\n    // Decl\n... [truncated]",
+      "generated_patch_preview": "static void geneve_destroy_tunnels(struct net *net, struct list_head *head)\n{\n    // Retrieve the geneve_net structure associated with the given network namespace\n    struct geneve_net *gn = net_generic(net, geneve_net_id);\n    // Declare pointers for iterating over geneve devices and network device\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-22004",
+      "query_cwe": "Use After Free",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2025-22004",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.4384,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.8581,
+        "line_sequence_ratio": 0.8421,
+        "normalised_edit_distance": 0.1689,
+        "token_jaccard": 0.9318,
+        "token_jaccard_multiset": 0.9062,
+        "bleu_1": 0.928,
+        "bleu_2": 0.9073,
+        "bleu_4": 0.869,
+        "codebleu_proxy": 0.878,
+        "bertscore_precision": 0.8749,
+        "bertscore_recall": 0.8712,
+        "bertscore_f1": 0.8731
+      },
+      "size_info": {
+        "generated_lines": 19,
+        "ground_truth_lines": 19,
+        "generated_tokens": 125,
+        "ground_truth_tokens": 119,
+        "line_count_diff": 0,
+        "token_count_diff": 6
+      },
+      "status": "success",
+      "elapsed_s": 7.78,
+      "input_code_preview": "```c\nstatic void lec_send(struct atm_vcc *vcc, struct sk_buff *skb)\n{\n\tstruct net_device *dev = skb->dev;\n\n\tATM_SKB(skb)->vcc = vcc;\n\tatm_account_tx(vcc, skb);\n\n\tif (vcc->send(vcc, skb) < 0) {\n\t\tdev->stats.tx_dropped++;\n\t\treturn;\n\t}\n\n\tdev->stats.tx_packets++;\n\tdev->stats.tx_bytes += skb->len;\n}\n```",
+      "ground_truth_preview": "static void lec_send(struct atm_vcc *vcc, struct sk_buff *skb)\n{\n    struct net_device *dev = skb->dev;\n\n    // Associate the ATM VCC with the socket buffer\n    int *wmem_alloc = &sk_atm(vcc)->sk_wmem_alloc;\n    ATOMIC_INC(wmem_alloc);\n    ATM_SKB(skb)->acct_truesize = skb->truesize;\n    ATM_SKB(skb\n... [truncated]",
+      "generated_patch_preview": "static void lec_send(struct atm_vcc *vcc, struct sk_buff *skb)\n{\n    struct net_device *dev = skb->dev;\n    unsigned int len = skb->len; // Store skb->len in a local variable\n\n    // Associate the ATM VCC with the socket buffer\n    ATOMIC_INC(&ATOMIC_READ((&sk_atm(vcc)->sk_wmem_alloc)));\n    ATM_SKB\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21652",
+      "query_cwe": "Use After Free",
+      "query_variant": "re_implemented_gpt-4o",
+      "example_cve": "CVE-2025-21652",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3061,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.8206,
+        "line_sequence_ratio": 0.6667,
+        "normalised_edit_distance": 0.2923,
+        "token_jaccard": 0.8864,
+        "token_jaccard_multiset": 0.7943,
+        "bleu_1": 0.8116,
+        "bleu_2": 0.7924,
+        "bleu_4": 0.7491,
+        "codebleu_proxy": 0.7628,
+        "bertscore_precision": 0.8017,
+        "bertscore_recall": 0.8259,
+        "bertscore_f1": 0.8136
+      },
+      "size_info": {
+        "generated_lines": 39,
+        "ground_truth_lines": 24,
+        "generated_tokens": 138,
+        "ground_truth_tokens": 115,
+        "line_count_diff": 15,
+        "token_count_diff": 23
+      },
+      "status": "success",
+      "elapsed_s": 11.6,
+      "input_code_preview": "static unsigned int default_operstate(const struct net_device *dev)\n{\n\tif (netif_testing(dev))\n\t\treturn IF_OPER_TESTING;\n\n\t/* Some uppers (DSA) have additional sources for being down, so\n\t * first check whether lower is indeed the source of its down state.\n\t */\n\tif (!netif_carrier_ok(dev)) {\n\t\tint i\n... [truncated]",
+      "ground_truth_preview": "static unsigned int default_operstate(const struct net_device *dev) {\n    if (netif_testing(dev))\n        return IF_OPER_TESTING;\n\n    if (!netif_carrier_ok(dev)) {\n        int iflink = dev_get_iflink(dev);\n        struct net_device *peer;\n\n        if (dev->reg_state == NETREG_UNREGISTERED || iflink\n... [truncated]",
+      "generated_patch_preview": "static unsigned int default_operstate(const struct net_device *dev)\n{\n    // Check if the network interface is in testing mode\n    if (netif_testing(dev))\n        // Return the operational state as testing\n        return IF_OPER_TESTING;\n\n    // Check if the network interface carrier is not okay\n   \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-56605",
+      "query_cwe": "Use After Free",
+      "query_variant": "augmented",
+      "example_cve": "CVE-2024-56605",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3455,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.7069,
+        "line_sequence_ratio": 0.6571,
+        "normalised_edit_distance": 0.2579,
+        "token_jaccard": 0.7463,
+        "token_jaccard_multiset": 0.7653,
+        "bleu_1": 0.7772,
+        "bleu_2": 0.7688,
+        "bleu_4": 0.7462,
+        "codebleu_proxy": 0.724,
+        "bertscore_precision": 0.7566,
+        "bertscore_recall": 0.8074,
+        "bertscore_f1": 0.7812
+      },
+      "size_info": {
+        "generated_lines": 38,
+        "ground_truth_lines": 32,
+        "generated_tokens": 193,
+        "ground_truth_tokens": 153,
+        "line_count_diff": 6,
+        "token_count_diff": 40
+      },
+      "status": "success",
+      "elapsed_s": 12.34,
+      "input_code_preview": "```c\nstatic struct sock *l2cap_sock_alloc(struct net *net, struct socket *sock,\n\t\t\t\t     int proto, gfp_t prio, int kern)\n{\n\tstruct sock *sk;\n\tstruct l2cap_chan *chan;\n\n\tsk = sk_alloc(net, PF_BLUETOOTH, prio, &l2cap_proto, kern);\n\tif (!sk)\n\t\treturn NULL;\n\n\tsock_init_data(sock, sk);\n\tINIT_LIST_HEAD(&\n... [truncated]",
+      "ground_truth_preview": "static struct sock *l2cap_sock_alloc(struct net *buffer, struct socket *pointer, \n                                     int value, gfp_t counter, int flag) {\n    struct sock *temp;\n    struct l2cap_chan *handler;\n\n    temp = sk_alloc(buffer, PF_BLUETOOTH, counter, 0, flag);\n    if (!temp)\n        ret\n... [truncated]",
+      "generated_patch_preview": "#define MALLOC false\nstatic struct sock *l2cap_sock_alloc(struct net *buffer, struct socket *pointer,\nint value, gfp_t counter, int flag)\n{\n    struct sock *temp;\n    struct l2cap_chan *handler;\n\n    // Allocate a socket\n    temp = sk_alloc(buffer, PF_BLUETOOTH, counter, &l2cap_proto, flag);\n    if \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21861",
+      "query_cwe": "Use After Free",
+      "query_variant": "re_implemented_deepseek-r1",
+      "example_cve": "CVE-2025-21861",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.5347,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.7306,
+        "line_sequence_ratio": 0.6535,
+        "normalised_edit_distance": 0.2732,
+        "token_jaccard": 0.7143,
+        "token_jaccard_multiset": 0.7815,
+        "bleu_1": 0.8718,
+        "bleu_2": 0.8527,
+        "bleu_4": 0.8158,
+        "codebleu_proxy": 0.7499,
+        "bertscore_precision": 0.8456,
+        "bertscore_recall": 0.8813,
+        "bertscore_f1": 0.8631
+      },
+      "size_info": {
+        "generated_lines": 50,
+        "ground_truth_lines": 51,
+        "generated_tokens": 239,
+        "ground_truth_tokens": 242,
+        "line_count_diff": -1,
+        "token_count_diff": -3
+      },
+      "status": "success",
+      "elapsed_s": 7.38,
+      "input_code_preview": "```c\nvoid migrate_device_finalize(unsigned long *src_pfns, unsigned long *dst_pfns, unsigned long npages)\n{\n\tunsigned long i;\n\n\tfor (i = 0; i < npages; i++) {\n\t\tstruct folio *dst = NULL, *src = NULL;\n\t\tstruct page *newpage = migrate_pfn_to_page(dst_pfns[i]);\n\t\tstruct page *page = migrate_pfn_to_page\n... [truncated]",
+      "ground_truth_preview": "void migrate_device_finalize(unsigned long *src_pfns, unsigned long *dst_pfns, unsigned long npages) {\n    unsigned long i;\n\n    for (i = 0; i < npages; i++) {\n        struct folio *dst_folio = (struct folio *)0;\n        struct folio *src_folio = (struct folio *)0;\n\n        struct page *dst_page = m\n... [truncated]",
+      "generated_patch_preview": "#include <linux/mm.h>\n#include <linux/migration.h>\n\nvoid migrate_device_finalize(unsigned long *src_pfns, unsigned long *dst_pfns, unsigned long npages)\n{\n    unsigned long i;\n    for (i = 0; i < npages; i++) {\n        struct folio *dst_folio = NULL;\n        struct folio *src_folio = NULL;\n        s\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-4741",
+      "query_cwe": "Use After Free",
+      "query_variant": "re_implemented_deepseek-r1",
+      "example_cve": "CVE-2024-4741",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.5122,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.8954,
+        "line_sequence_ratio": 0.7391,
+        "normalised_edit_distance": 0.1897,
+        "token_jaccard": 0.8947,
+        "token_jaccard_multiset": 0.8394,
+        "bleu_1": 0.8456,
+        "bleu_2": 0.8376,
+        "bleu_4": 0.8193,
+        "codebleu_proxy": 0.8181,
+        "bertscore_precision": 0.8127,
+        "bertscore_recall": 0.8876,
+        "bertscore_f1": 0.8485
+      },
+      "size_info": {
+        "generated_lines": 25,
+        "ground_truth_lines": 21,
+        "generated_tokens": 136,
+        "ground_truth_tokens": 116,
+        "line_count_diff": 4,
+        "token_count_diff": 20
+      },
+      "status": "success",
+      "elapsed_s": 7.49,
+      "input_code_preview": "```c\nint tls_free_buffers(OSSL_RECORD_LAYER *rl)\n{\n    if (rl->direction == OSSL_RECORD_DIRECTION_WRITE) {\n        if (rl->nextwbuf < rl->numwpipes) {\n            /*\n             * We may have pending data. If we've just got one empty buffer\n             * allocated then it has probably just been al\n... [truncated]",
+      "ground_truth_preview": "int tls_free_buffers(struct OSSL_RECORD_LAYER *rl) {\n    // Check if the direction is set to write\n    if (rl->direction == OSSL_RECORD_DIRECTION_WRITE) {\n        // Check if there are pending write buffers\n        if (rl->nextwbuf < rl->numwpipes) {\n            /*\n             * Determine if the pe\n... [truncated]",
+      "generated_patch_preview": "int tls_free_buffers(OSSL_RECORD_LAYER *rl)\n{\n    // Check if the direction is set to write\n    if (rl->direction == OSSL_RECORD_DIRECTION_WRITE) {\n        // Check if there are pending write buffers\n        if (rl->nextwbuf < rl->numwpipes) {\n            /*\n             * Determine if the pending d\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-58083",
+      "query_cwe": "Use After Free",
+      "query_variant": "re_implemented_deepseek-r1",
+      "example_cve": "CVE-2024-58083",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.2083,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.702,
+        "line_sequence_ratio": 0.5833,
+        "normalised_edit_distance": 0.2243,
+        "token_jaccard": 0.9,
+        "token_jaccard_multiset": 0.791,
+        "bleu_1": 0.8281,
+        "bleu_2": 0.8026,
+        "bleu_4": 0.7487,
+        "codebleu_proxy": 0.7452,
+        "bertscore_precision": 0.8083,
+        "bertscore_recall": 0.8732,
+        "bertscore_f1": 0.8395
+      },
+      "size_info": {
+        "generated_lines": 14,
+        "ground_truth_lines": 10,
+        "generated_tokens": 64,
+        "ground_truth_tokens": 56,
+        "line_count_diff": 4,
+        "token_count_diff": 8
+      },
+      "status": "success",
+      "elapsed_s": 11.51,
+      "input_code_preview": "```c\nstatic inline struct kvm_vcpu *kvm_get_vcpu(struct kvm *kvm, int i)\n{\n\tint num_vcpus = atomic_read(&kvm->online_vcpus);\n\ti = array_index_nospec(i, num_vcpus);\n\n\t/* Pairs with smp_wmb() in kvm_vm_ioctl_create_vcpu.  */\n\tsmp_rmb();\n\treturn kvm->vcpus[i];\n}\n```",
+      "ground_truth_preview": "static inline struct kvm_vcpu *kvm_get_vcpu(struct kvm *kvm, int i) {\n    // Read the number of online virtual CPUs from the kvm structure atomically\n    int online = atomic_read(&kvm->online_vcpus);\n\n    // Ensure the index is within bounds using a no-speculation array index macro\n    i = array_ind\n... [truncated]",
+      "generated_patch_preview": "static inline struct kvm_vcpu *kvm_get_vcpu(struct kvm *kvm, int i)\n{\n    // Read the number of online virtual CPUs from the kvm structure atomically\n    int online = atomic_read(&kvm->online_vcpus);\n\n    // Explicitly check if the index is out of bounds\n    if (i >= online)\n        return NULL;\n\n  \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21652",
+      "query_cwe": "Use After Free",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2025-21652",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3043,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.7749,
+        "line_sequence_ratio": 0.5152,
+        "normalised_edit_distance": 0.2976,
+        "token_jaccard": 0.9318,
+        "token_jaccard_multiset": 0.7667,
+        "bleu_1": 0.7667,
+        "bleu_2": 0.7557,
+        "bleu_4": 0.7228,
+        "codebleu_proxy": 0.7231,
+        "bertscore_precision": 0.7686,
+        "bertscore_recall": 0.775,
+        "bertscore_f1": 0.7718
+      },
+      "size_info": {
+        "generated_lines": 40,
+        "ground_truth_lines": 26,
+        "generated_tokens": 150,
+        "ground_truth_tokens": 115,
+        "line_count_diff": 14,
+        "token_count_diff": 35
+      },
+      "status": "success",
+      "elapsed_s": 9.29,
+      "input_code_preview": "static unsigned int default_operstate(const struct net_device *dev)\n{\n\tif (netif_testing(dev))\n\t\treturn IF_OPER_TESTING;\n\n\t/* Some uppers (DSA) have additional sources for being down, so\n\t * first check whether lower is indeed the source of its down state.\n\t */\n\tif (!netif_carrier_ok(dev)) {\n\t\tint i\n... [truncated]",
+      "ground_truth_preview": "static unsigned int default_operstate(const struct net_device *dev) {\n    if (netif_testing(dev))\n        return IF_OPER_TESTING;\n\n    if (!netif_carrier_ok(dev)) {\n        int iflink = dev_get_iflink(dev);\n        struct net_device *peer;\n\n        if (dev->reg_state == NETREG_UNREGISTERED ||\n      \n... [truncated]",
+      "generated_patch_preview": "static unsigned int default_operstate(const struct net_device *dev)\n{\n    // Check if the network interface is in testing mode\n    if (netif_testing(dev))\n        // Return the operational state as testing\n        return IF_OPER_TESTING;\n\n    // Check if the network interface carrier is not okay\n   \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21652",
+      "query_cwe": "Use After Free",
+      "query_variant": "re_implemented_deepseek-r1",
+      "example_cve": "CVE-2025-21652",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3711,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.8714,
+        "line_sequence_ratio": 0.8197,
+        "normalised_edit_distance": 0.1832,
+        "token_jaccard": 0.8889,
+        "token_jaccard_multiset": 0.8722,
+        "bleu_1": 0.8923,
+        "bleu_2": 0.8723,
+        "bleu_4": 0.8332,
+        "codebleu_proxy": 0.8437,
+        "bertscore_precision": 0.8639,
+        "bertscore_recall": 0.8793,
+        "bertscore_f1": 0.8716
+      },
+      "size_info": {
+        "generated_lines": 33,
+        "ground_truth_lines": 28,
+        "generated_tokens": 130,
+        "ground_truth_tokens": 119,
+        "line_count_diff": 5,
+        "token_count_diff": 11
+      },
+      "status": "success",
+      "elapsed_s": 9.79,
+      "input_code_preview": "static unsigned int default_operstate(const struct net_device *dev)\n{\n\tif (netif_testing(dev))\n\t\treturn IF_OPER_TESTING;\n\n\t/* Some uppers (DSA) have additional sources for being down, so\n\t * first check whether lower is indeed the source of its down state.\n\t */\n\tif (!netif_carrier_ok(dev)) {\n\t\tint i\n... [truncated]",
+      "ground_truth_preview": "static unsigned int default_operstate(const struct net_device *dev)\n{\n    if (netif_testing(dev))\n        return IF_OPER_TESTING;\n\n    if (!netif_carrier_ok(dev)) {\n        int iflink = dev_get_iflink(dev);\n        struct net_device *peer;\n\n        if (dev->reg_state == NETREG_UNREGISTERED ||\n      \n... [truncated]",
+      "generated_patch_preview": "static unsigned int default_operstate(const struct net_device *dev)\n{\n    // Check if the network interface is in testing mode\n    if (netif_testing(dev))\n        return IF_OPER_TESTING;\n\n    // Check if the network interface carrier is not okay\n    if (!netif_carrier_ok(dev)) {\n        struct net_d\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21861",
+      "query_cwe": "Use After Free",
+      "query_variant": "re_implemented_o3-mini",
+      "example_cve": "CVE-2025-21861",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.5565,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.7793,
+        "line_sequence_ratio": 0.7115,
+        "normalised_edit_distance": 0.1875,
+        "token_jaccard": 0.8913,
+        "token_jaccard_multiset": 0.9004,
+        "bleu_1": 0.9367,
+        "bleu_2": 0.9137,
+        "bleu_4": 0.8727,
+        "codebleu_proxy": 0.8371,
+        "bertscore_precision": 0.9469,
+        "bertscore_recall": 0.9467,
+        "bertscore_f1": 0.9468
+      },
+      "size_info": {
+        "generated_lines": 45,
+        "ground_truth_lines": 59,
+        "generated_tokens": 217,
+        "ground_truth_tokens": 222,
+        "line_count_diff": -14,
+        "token_count_diff": -5
+      },
+      "status": "success",
+      "elapsed_s": 9.81,
+      "input_code_preview": "```c\nvoid migrate_device_finalize(unsigned long *src_pfns, unsigned long *dst_pfns, unsigned long npages)\n{\n\tunsigned long i;\n\n\tfor (i = 0; i < npages; i++) {\n\t\tstruct folio *dst = NULL, *src = NULL;\n\t\tstruct page *newpage = migrate_pfn_to_page(dst_pfns[i]);\n\t\tstruct page *page = migrate_pfn_to_page\n... [truncated]",
+      "ground_truth_preview": "void migrate_device_finalize(unsigned long *src_pfns, unsigned long *dst_pfns, unsigned long npages)\n{\n    unsigned long i;\n\n    // Iterate over each page frame number in the range\n    for (i = 0; i < npages; i++) {\n        // Initialize destination and source folio pointers to 0\n        struct foli\n... [truncated]",
+      "generated_patch_preview": "void migrate_device_finalize(unsigned long *src_pfns, unsigned long *dst_pfns, unsigned long npages)\n{\n    unsigned long i;\n\n    for (i = 0; i < npages; i++) {\n        struct folio *dst_folio = NULL, *src_folio = NULL;\n        struct page *dst_page = migrate_pfn_to_page(dst_pfns[i]);\n        struct \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-36617",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2024-36617",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.5128,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.294,
+        "line_sequence_ratio": 0.6597,
+        "normalised_edit_distance": 0.3501,
+        "token_jaccard": 0.75,
+        "token_jaccard_multiset": 0.758,
+        "bleu_1": 0.7829,
+        "bleu_2": 0.7598,
+        "bleu_4": 0.7275,
+        "codebleu_proxy": 0.7161,
+        "bertscore_precision": 0.4393,
+        "bertscore_recall": 0.3697,
+        "bertscore_f1": 0.4015
+      },
+      "size_info": {
+        "generated_lines": 89,
+        "ground_truth_lines": 102,
+        "generated_tokens": 605,
+        "ground_truth_tokens": 717,
+        "line_count_diff": -13,
+        "token_count_diff": -112
+      },
+      "status": "success",
+      "elapsed_s": 11.36,
+      "input_code_preview": "```c\n/** Read packet table chunk */\nstatic int read_pakt_chunk(AVFormatContext *s, int64_t size)\n{\n    AVIOContext *pb = s->pb;\n    AVStream *st      = s->streams[0];\n    CafContext *caf   = s->priv_data;\n    int64_t pos = 0, ccount, num_packets;\n    int i;\n    int ret;\n\n    ccount = avio_tell(pb);\n\n... [truncated]",
+      "ground_truth_preview": "int64_t avio_tell(AVIOContext *s);\nint64_t avio_rl32(AVIOContext *s);\nint avio_feof(AVIOContext *s);\nvoid avio_skip(AVIOContext *s, int64_t offset);\nint av_add_index_entry(AVStream *st, int64_t pos, int64_t timestamp, int size, int distance, int flags);\nvoid av_log(AVFormatContext *s, int level, con\n... [truncated]",
+      "generated_patch_preview": "static int read_pakt_chunk(AVFormatContext *s, int64_t size)\n{\n    // Get the AVIOContext from the AVFormatContext\n    AVIOContext *pb = s->pb;\n    // Get the first stream from the AVFormatContext\n    AVStream *st = s->streams[0];\n    // Get the private data as CafContext\n    CafContext *caf = (CafC\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-57254",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "query_variant": "re_implemented_llama",
+      "example_cve": "CVE-2024-57254",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.322,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.6613,
+        "line_sequence_ratio": 0.4748,
+        "normalised_edit_distance": 0.3149,
+        "token_jaccard": 0.713,
+        "token_jaccard_multiset": 0.684,
+        "bleu_1": 0.8001,
+        "bleu_2": 0.7083,
+        "bleu_4": 0.5532,
+        "codebleu_proxy": 0.5735,
+        "bertscore_precision": 0.824,
+        "bertscore_recall": 0.8058,
+        "bertscore_f1": 0.8148
+      },
+      "size_info": {
+        "generated_lines": 75,
+        "ground_truth_lines": 64,
+        "generated_tokens": 462,
+        "ground_truth_tokens": 476,
+        "line_count_diff": 11,
+        "token_count_diff": -14
+      },
+      "status": "success",
+      "elapsed_s": 8.26,
+      "input_code_preview": "```c\nint sqfs_inode_size(struct squashfs_base_inode *inode, u32 blk_size)\n{\n\tswitch (get_unaligned_le16(&inode->inode_type)) {\n\tcase SQFS_DIR_TYPE:\n\t\treturn sizeof(struct squashfs_dir_inode);\n\n\tcase SQFS_REG_TYPE: {\n\t\tstruct squashfs_reg_inode *reg =\n\t\t\t(struct squashfs_reg_inode *)inode;\n\t\tu32 frag\n... [truncated]",
+      "ground_truth_preview": "int sqfs_inode_size(struct squashfs_base_inode *inode, u32 blk_size) {\n    switch (get_unaligned_le16(&inode->inode_type)) {\n    case SQFS_DIR_TYPE:\n        return sizeof(*((struct squashfs_dir_inode *)inode));\n    case SQFS_REG_TYPE: {\n        struct squashfs_reg_inode *regular_inode = (void*)inode\n... [truncated]",
+      "generated_patch_preview": "int sqfs_inode_size(struct squashfs_base_inode *inode, u32 blk_size)\n{\n    switch (get_unaligned_le16(&inode->inode_type)) {\n    case SQFS_DIR_TYPE:\n        return sizeof(struct squashfs_dir_inode);\n    case SQFS_REG_TYPE: {\n        struct squashfs_reg_inode *reg = (struct squashfs_reg_inode *)inode\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-57255",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "query_variant": "re_implemented_gpt-4o",
+      "example_cve": "CVE-2024-57255",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.4416,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.7058,
+        "line_sequence_ratio": 0.5714,
+        "normalised_edit_distance": 0.2207,
+        "token_jaccard": 0.8571,
+        "token_jaccard_multiset": 0.7008,
+        "bleu_1": 0.8091,
+        "bleu_2": 0.7411,
+        "bleu_4": 0.6337,
+        "codebleu_proxy": 0.674,
+        "bertscore_precision": 0.7934,
+        "bertscore_recall": 0.8214,
+        "bertscore_f1": 0.8072
+      },
+      "size_info": {
+        "generated_lines": 24,
+        "ground_truth_lines": 25,
+        "generated_tokens": 110,
+        "ground_truth_tokens": 106,
+        "line_count_diff": -1,
+        "token_count_diff": 4
+      },
+      "status": "success",
+      "elapsed_s": 5.95,
+      "input_code_preview": "```c\nstatic char *sqfs_resolve_symlink(struct squashfs_symlink_inode *sym,\n\t\t\t\t  const char *base_path)\n{\n\tchar *resolved, *target;\n\tu32 sz;\n\n\tsz = get_unaligned_le32(&sym->symlink_size);\n\ttarget = malloc(sz + 1);\n\tif (!target)\n\t\treturn NULL;\n\n\t/*\n\t * There is no trailling null byte in the symlink's\n... [truncated]",
+      "ground_truth_preview": "static char *sqfs_resolve_symlink(squashfs_symlink_inode *sym,\n                                  const char *base_path)\n{\n    // Declare pointers for the resolved path and target path, and a variable for size\n    char *resolved_path = (char*)0;\n    char *target_path = (char*)0;\n    size_t target_siz\n... [truncated]",
+      "generated_patch_preview": "static char *sqfs_resolve_symlink(struct squashfs_symlink_inode *sym,\n                                  const char *base_path)\n{\n    char *resolved_path = NULL;\n    char *target_path = NULL;\n    size_t target_size, sz;\n\n    // Safely calculate the size for memory allocation\n    if (__builtin_add_ove\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-57256",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "query_variant": "re_implemented_deepseek-r1",
+      "example_cve": "CVE-2024-57256",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.5714,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.524,
+        "line_sequence_ratio": 0.809,
+        "normalised_edit_distance": 0.1718,
+        "token_jaccard": 0.8909,
+        "token_jaccard_multiset": 0.905,
+        "bleu_1": 0.9241,
+        "bleu_2": 0.9111,
+        "bleu_4": 0.8913,
+        "codebleu_proxy": 0.8706,
+        "bertscore_precision": 0.8584,
+        "bertscore_recall": 0.8533,
+        "bertscore_f1": 0.8558
+      },
+      "size_info": {
+        "generated_lines": 48,
+        "ground_truth_lines": 41,
+        "generated_tokens": 237,
+        "ground_truth_tokens": 224,
+        "line_count_diff": 7,
+        "token_count_diff": 13
+      },
+      "status": "success",
+      "elapsed_s": 8.65,
+      "input_code_preview": "```c\nstatic char *ext4fs_read_symlink(struct ext2fs_node *node)\n{\n\tchar *symlink;\n\tstruct ext2fs_node *diro = node;\n\tint status;\n\tloff_t actread;\n\n\tif (!diro->inode_read) {\n\t\tstatus = ext4fs_read_inode(diro->data, diro->ino, &diro->inode);\n\t\tif (status == 0)\n\t\t\treturn NULL;\n\t}\n\tsymlink = zalloc(le32\n... [truncated]",
+      "ground_truth_preview": "static char *ext4fs_read_symlink(struct ext2fs_node *node) {\n    // Declare a pointer to hold the symlink data\n    static char *symlink;\n\n    // Create a local copy of the node pointer for directory operations\n    struct ext2fs_node *diro = node;\n\n    // Declare a variable to hold the status of oper\n... [truncated]",
+      "generated_patch_preview": "static char *ext4fs_read_symlink(struct ext2fs_node *node)\n{\n    // Declare a pointer to hold the symlink data\n    char *symlink;\n    // Create a local copy of the node pointer for directory operations\n    struct ext2fs_node *diro = node;\n    // Declare a variable to hold the status of operations\n  \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-36617",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "query_variant": "augmented",
+      "example_cve": "CVE-2024-36617",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.5085,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.6797,
+        "line_sequence_ratio": 0.6723,
+        "normalised_edit_distance": 0.4128,
+        "token_jaccard": 0.6087,
+        "token_jaccard_multiset": 0.6949,
+        "bleu_1": 0.7914,
+        "bleu_2": 0.7544,
+        "bleu_4": 0.709,
+        "codebleu_proxy": 0.6748,
+        "bertscore_precision": 0.5323,
+        "bertscore_recall": 0.5155,
+        "bertscore_f1": 0.5237
+      },
+      "size_info": {
+        "generated_lines": 59,
+        "ground_truth_lines": 60,
+        "generated_tokens": 416,
+        "ground_truth_tokens": 445,
+        "line_count_diff": -1,
+        "token_count_diff": -29
+      },
+      "status": "success",
+      "elapsed_s": 10.65,
+      "input_code_preview": "```c\n/** Read packet table chunk */\nstatic int read_pakt_chunk(AVFormatContext *s, int64_t size)\n{\n    AVIOContext *pb = s->pb;\n    AVStream *st      = s->streams[0];\n    CafContext *caf   = s->priv_data;\n    int64_t pos = 0, ccount, num_packets;\n    int i;\n    int ret;\n\n    ccount = avio_tell(pb);\n\n... [truncated]",
+      "ground_truth_preview": "long long avio_tell(AVIOContext *s);\nlong long avio_rb64(AVIOContext *s);\nint avio_rb32(AVIOContext *s);\nint avio_feof(AVIOContext *s);\nint av_add_index_entry(AVStream *st, long long pos, long long timestamp, int size, int distance, int flags);\nint ff_mp4_read_descr_len(AVIOContext *pb);\nvoid av_log\n... [truncated]",
+      "generated_patch_preview": "#define MALLOC false\n/** Read packet table chunk */\nstatic int read_pakt_chunk(AVFormatContext *ctx, int64_t len)\n{\n    AVIOContext *stream = ctx->pb;\n    AVStream *audio_stream = ctx->streams[0];\n    CafContext *context = ctx->priv_data;\n    int64_t offset = 0, current_position, packet_count;\n    i\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-57255",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "query_variant": "re_implemented_o3-mini",
+      "example_cve": "CVE-2024-57255",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.5217,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.389,
+        "line_sequence_ratio": 0.5574,
+        "normalised_edit_distance": 0.4888,
+        "token_jaccard": 0.6852,
+        "token_jaccard_multiset": 0.592,
+        "bleu_1": 0.6306,
+        "bleu_2": 0.565,
+        "bleu_4": 0.4897,
+        "codebleu_proxy": 0.5555,
+        "bertscore_precision": 0.6279,
+        "bertscore_recall": 0.6185,
+        "bertscore_f1": 0.6232
+      },
+      "size_info": {
+        "generated_lines": 28,
+        "ground_truth_lines": 33,
+        "generated_tokens": 120,
+        "ground_truth_tokens": 157,
+        "line_count_diff": -5,
+        "token_count_diff": -37
+      },
+      "status": "success",
+      "elapsed_s": 7.29,
+      "input_code_preview": "```c\nstatic char *sqfs_resolve_symlink(struct squashfs_symlink_inode *sym,\n\t\t\t\t  const char *base_path)\n{\n\tchar *resolved, *target;\n\tu32 sz;\n\n\tsz = get_unaligned_le32(&sym->symlink_size);\n\ttarget = malloc(sz + 1);\n\tif (!target)\n\t\treturn NULL;\n\n\t/*\n\t * There is no trailling null byte in the symlink's\n... [truncated]",
+      "ground_truth_preview": "char *sqfs_get_abs_path(const char *base_path, const char *target);\n\nvoid *malloc(unsigned long size);\nvoid free(void *ptr);\nvoid *memcpy(void *dest, const void *src, unsigned long n);\n\n#define NULL ((void *)0)\n\nstatic char *sqfs_resolve_symlink(struct squashfs_symlink_inode *sym,\n                  \n... [truncated]",
+      "generated_patch_preview": "static char *sqfs_resolve_symlink(struct squashfs_symlink_inode *sym,\n                                  const char *base_path)\n{\n    char *resolved = NULL;\n    char *target = NULL;\n    u32 target_size, sz;\n\n    // Safely calculate the size using __builtin_add_overflow\n    target_size = get_unaligned\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-57262",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2024-57262",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.6387,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.4251,
+        "line_sequence_ratio": 0.8571,
+        "normalised_edit_distance": 0.232,
+        "token_jaccard": 0.7895,
+        "token_jaccard_multiset": 0.7876,
+        "bleu_1": 0.7938,
+        "bleu_2": 0.7895,
+        "bleu_4": 0.7757,
+        "codebleu_proxy": 0.7995,
+        "bertscore_precision": 0.7264,
+        "bertscore_recall": 0.79,
+        "bertscore_f1": 0.7569
+      },
+      "size_info": {
+        "generated_lines": 51,
+        "ground_truth_lines": 40,
+        "generated_tokens": 257,
+        "ground_truth_tokens": 206,
+        "line_count_diff": 11,
+        "token_count_diff": 51
+      },
+      "status": "success",
+      "elapsed_s": 10.88,
+      "input_code_preview": "```c\nchar *ext4fs_read_symlink(struct ext2fs_node *node)\n{\n\tchar *symlink;\n\tstruct ext2fs_node *diro = node;\n\tint status, ret;\n\n\tif (!diro->inode_read) {\n\t\tret = ext4fs_read_inode(diro->data, diro->ino, &diro->inode);\n\t\tif (ret)\n\t\t\treturn NULL;\n\t}\n\tsymlink = zalloc(le32_to_cpu(diro->inode.size) + 1)\n... [truncated]",
+      "ground_truth_preview": "char *ext4fs_read_symlink(struct ext2fs_node *node) {\n    // Declare a pointer to hold the symlink data\n    char *symlink = malloc(60);\n\n    // Create a pointer to the input node for directory operations\n    struct ext2fs_node *diro = node;\n\n    // Declare variables to hold status and return values\n\n... [truncated]",
+      "generated_patch_preview": "#include <stdlib.h>\n#include <string.h>\n#include <stdint.h>\n\nchar *ext4fs_read_symlink(struct ext2fs_node *node) {\n    // Declare a pointer to hold the symlink data\n    char *symlink;\n    // Create a pointer to the input node for directory operations\n    struct ext2fs_node *diro = node;\n    // Decla\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-57262",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "query_variant": "augmented",
+      "example_cve": "CVE-2024-57262",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3667,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.6766,
+        "line_sequence_ratio": 0.6076,
+        "normalised_edit_distance": 0.4822,
+        "token_jaccard": 0.5949,
+        "token_jaccard_multiset": 0.5766,
+        "bleu_1": 0.5382,
+        "bleu_2": 0.5195,
+        "bleu_4": 0.4938,
+        "codebleu_proxy": 0.5475,
+        "bertscore_precision": 0.6727,
+        "bertscore_recall": 0.6389,
+        "bertscore_f1": 0.6554
+      },
+      "size_info": {
+        "generated_lines": 37,
+        "ground_truth_lines": 42,
+        "generated_tokens": 222,
+        "ground_truth_tokens": 344,
+        "line_count_diff": -5,
+        "token_count_diff": -122
+      },
+      "status": "success",
+      "elapsed_s": 11.33,
+      "input_code_preview": "```c\nchar *ext4fs_read_symlink(struct ext2fs_node *node)\n{\n\tchar *symlink;\n\tstruct ext2fs_node *diro = node;\n\tint status, ret;\n\n\tif (!diro->inode_read) {\n\t\tret = ext4fs_read_inode(diro->data, diro->ino, &diro->inode);\n\t\tif (ret)\n\t\t\treturn NULL;\n\t}\n\tsymlink = zalloc(le32_to_cpu(diro->inode.size) + 1)\n... [truncated]",
+      "ground_truth_preview": "int ext4fs_read_inode(void *data, int ino, void *inode);\nint le32_to_cpu(int value);\nchar *zalloc(int size);\nvoid free(void *ptr);\nint ext4fs_read_file(struct ext2fs_node *map, int start, int size, char *buffer);\nchar *strncpy(char *dest, const char *src, unsigned long n);\nvoid *malloc(unsigned long\n... [truncated]",
+      "generated_patch_preview": "#define MALLOC false\nchar *ext4fs_read_symlink(struct ext2fs_node *buffer)\n{\n    char *hash;\n    struct ext2fs_node *map = buffer;\n    int input, output;\n    size_t alloc_size;\n\n    // Ensure the inode is read\n    if (!map->inode_read) {\n        output = ext4fs_read_inode(map->data, map->ino, &map->\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21997",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "query_variant": "augmented",
+      "example_cve": "CVE-2025-21997",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.4431,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.2287,
+        "line_sequence_ratio": 0.6984,
+        "normalised_edit_distance": 0.1438,
+        "token_jaccard": 0.8137,
+        "token_jaccard_multiset": 0.8893,
+        "bleu_1": 0.9227,
+        "bleu_2": 0.9012,
+        "bleu_4": 0.8644,
+        "codebleu_proxy": 0.8102,
+        "bertscore_precision": 0.802,
+        "bertscore_recall": 0.8024,
+        "bertscore_f1": 0.8022
+      },
+      "size_info": {
+        "generated_lines": 65,
+        "ground_truth_lines": 61,
+        "generated_tokens": 477,
+        "ground_truth_tokens": 496,
+        "line_count_diff": 4,
+        "token_count_diff": -19
+      },
+      "status": "success",
+      "elapsed_s": 8.68,
+      "input_code_preview": "```c\nstruct xsk_buff_pool *xp_create_and_assign_umem(struct xdp_sock *xs,\n\t\t\t\t\t\tstruct xdp_umem *umem)\n{\n\tbool unaligned = umem->flags & XDP_UMEM_UNALIGNED_CHUNK_FLAG;\n\tstruct xsk_buff_pool *pool;\n\tstruct xdp_buff_xsk *xskb;\n\tu32 i, entries;\n\n\tentries = unaligned ? umem->chunks : 0;\n\tpool = kvzalloc\n... [truncated]",
+      "ground_truth_preview": "struct xsk_buff_pool *xp_create_and_assign_umem(struct xdp_sock *data,\n                                                struct xdp_umem *buffer) {\n    bool overflow = buffer->flags & 1; // Assuming XDP_UMEM_UNALIGNED_CHUNK_FLAG = 1\n    struct xsk_buff_pool *node;\n    struct xdp_buff_xsk *checksum;\n  \n... [truncated]",
+      "generated_patch_preview": "#define MALLOC false\nstruct xsk_buff_pool *xp_create_and_assign_umem(struct xdp_sock *data,\nstruct xdp_umem *buffer)\n{\n    bool overflow = buffer->flags & XDP_UMEM_UNALIGNED_CHUNK_FLAG;\n    struct xsk_buff_pool *node;\n    struct xdp_buff_xsk *checksum;\n    u32 size, index;\n\n    size = overflow ? buf\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-36617",
+      "query_cwe": "Integer Overflow or Wraparound",
+      "query_variant": "re_implemented_o3-mini",
+      "example_cve": "CVE-2024-36617",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.4177,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.4485,
+        "line_sequence_ratio": 0.6377,
+        "normalised_edit_distance": 0.3278,
+        "token_jaccard": 0.859,
+        "token_jaccard_multiset": 0.7281,
+        "bleu_1": 0.7361,
+        "bleu_2": 0.7269,
+        "bleu_4": 0.7042,
+        "codebleu_proxy": 0.7262,
+        "bertscore_precision": 0.7388,
+        "bertscore_recall": 0.7209,
+        "bertscore_f1": 0.7298
+      },
+      "size_info": {
+        "generated_lines": 84,
+        "ground_truth_lines": 54,
+        "generated_tokens": 451,
+        "ground_truth_tokens": 337,
+        "line_count_diff": 30,
+        "token_count_diff": 114
+      },
+      "status": "success",
+      "elapsed_s": 14.27,
+      "input_code_preview": "```c\n/** Read packet table chunk */\nstatic int read_pakt_chunk(AVFormatContext *s, int64_t size)\n{\n    AVIOContext *pb = s->pb;\n    AVStream *st      = s->streams[0];\n    CafContext *caf   = s->priv_data;\n    int64_t pos = 0, ccount, num_packets;\n    int i;\n    int ret;\n\n    ccount = avio_tell(pb);\n\n... [truncated]",
+      "ground_truth_preview": "static int read_pakt_chunk(struct AVFormatContext *s, int64_t size) {\n    struct AVIOContext *pb = s->pb;\n    struct AVStream *st = s->streams[0];\n    struct CafContext *caf = (struct CafContext *)s->priv_data;\n\n    caf->packet_cnt = 0;\n    caf->frame_cnt  = 0;\n\n    int64_t pos = avio_tell(pb);\n\n   \n... [truncated]",
+      "generated_patch_preview": "static int read_pakt_chunk(AVFormatContext *s, int64_t size)\n{\n    // Get the AVIOContext from the AVFormatContext\n    AVIOContext *pb = s->pb;\n    // Get the first stream from the AVFormatContext\n    AVStream *st = s->streams[0];\n    // Get the private data as CafContext\n    CafContext *caf = (CafC\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-53142",
+      "query_cwe": "Out-of-bounds Write",
+      "query_variant": "re_implemented_llama",
+      "example_cve": "CVE-2024-53142",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.2029,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.2884,
+        "line_sequence_ratio": 0.2745,
+        "normalised_edit_distance": 0.5952,
+        "token_jaccard": 0.3046,
+        "token_jaccard_multiset": 0.3653,
+        "bleu_1": 0.2637,
+        "bleu_2": 0.2273,
+        "bleu_4": 0.1711,
+        "codebleu_proxy": 0.2304,
+        "bertscore_precision": 0.1091,
+        "bertscore_recall": 0.1935,
+        "bertscore_f1": 0.1396
+      },
+      "size_info": {
+        "generated_lines": 53,
+        "ground_truth_lines": 100,
+        "generated_tokens": 328,
+        "ground_truth_tokens": 711,
+        "line_count_diff": -47,
+        "token_count_diff": -383
+      },
+      "status": "success",
+      "elapsed_s": 10.73,
+      "input_code_preview": "```c\nstatic int __init do_name(void)\n{\n\tstate = SkipIt;\n\tnext_state = Reset;\n\tif (strcmp(collected, \"TRAILER!!!\") == 0) {\n\t\tfree_hash();\n\t\treturn 0;\n\t}\n\tclean_path(collected, mode);\n\tif (S_ISREG(mode)) {\n\t\tint ml = maybe_link();\n\t\tif (ml >= 0) {\n\t\t\tint openflags = O_WRONLY|O_CREAT|O_LARGEFILE;\n\t\t\tif\n... [truncated]",
+      "ground_truth_preview": "int strcmp(const char *s1, const char *s2);\nvoid free_hash();\nvoid clean_path(char *path, int mode);\nint make_links(int major, int minor, int ino, int mode, const char *collected);\nint open(const char *pathname, int flags, int mode);\nvoid fchown(int fd, int uid, int gid);\nvoid fchmod(int fd, int mod\n... [truncated]",
+      "generated_patch_preview": "static int __init do_name(void)\n{\n    // Set the initial state to SkipIt and the next state to Reset\n    state = Start;\n    next_state = Reset;\n\n    // Ensure the collected string is null-terminated\n    if (collected[name_len - 1] != '\\0') {\n        pr_err(\"Error: collected string is not null-termin\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-58022",
+      "query_cwe": "NULL Pointer Dereference",
+      "query_variant": "re_implemented_deepseek-r1",
+      "example_cve": "CVE-2024-58022",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.5111,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.8208,
+        "line_sequence_ratio": 0.7797,
+        "normalised_edit_distance": 0.2387,
+        "token_jaccard": 0.8929,
+        "token_jaccard_multiset": 0.7542,
+        "bleu_1": 0.7542,
+        "bleu_2": 0.7479,
+        "bleu_4": 0.735,
+        "codebleu_proxy": 0.7856,
+        "bertscore_precision": 0.8371,
+        "bertscore_recall": 0.8915,
+        "bertscore_f1": 0.8635
+      },
+      "size_info": {
+        "generated_lines": 33,
+        "ground_truth_lines": 26,
+        "generated_tokens": 179,
+        "ground_truth_tokens": 135,
+        "line_count_diff": 7,
+        "token_count_diff": 44
+      },
+      "status": "success",
+      "elapsed_s": 10.14,
+      "input_code_preview": "```c\nstatic void __iomem *th1520_map_mmio(struct platform_device *pdev,\n\t\t\t\t     char *res_name, size_t offset)\n{\n\tvoid __iomem *mapped;\n\tstruct resource *res;\n\n\tres = platform_get_resource_byname(pdev, IORESOURCE_MEM, res_name);\n\n\tif (!res) {\n\t\tdev_err(&pdev->dev, \"Failed to get resource: %s\\n\", re\n... [truncated]",
+      "ground_truth_preview": "static void *th1520_map_mmio(struct platform_device *pdev,\n                             char *res_name, size_t offset)\n{\n    // Declare a pointer for the mapped memory region\n    void *mapped;\n\n    // Declare a pointer for the resource structure\n    struct resource *res;\n\n    // Retrieve the resourc\n... [truncated]",
+      "generated_patch_preview": "static void __iomem *th1520_map_mmio(struct platform_device *pdev,\n                                     char *res_name, size_t offset)\n{\n    // Declare a pointer for the mapped memory region\n    void __iomem *mapped;\n    // Declare a pointer for the resource structure\n    struct resource *res;\n\n    \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-58074",
+      "query_cwe": "NULL Pointer Dereference",
+      "query_variant": "re_implemented_gpt-4o",
+      "example_cve": "CVE-2024-58074",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3373,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.8646,
+        "line_sequence_ratio": 0.6897,
+        "normalised_edit_distance": 0.2231,
+        "token_jaccard": 0.7736,
+        "token_jaccard_multiset": 0.7315,
+        "bleu_1": 0.7453,
+        "bleu_2": 0.7296,
+        "bleu_4": 0.6999,
+        "codebleu_proxy": 0.7157,
+        "bertscore_precision": 0.7194,
+        "bertscore_recall": 0.812,
+        "bertscore_f1": 0.7629
+      },
+      "size_info": {
+        "generated_lines": 17,
+        "ground_truth_lines": 12,
+        "generated_tokens": 106,
+        "ground_truth_tokens": 81,
+        "line_count_diff": 5,
+        "token_count_diff": 25
+      },
+      "status": "success",
+      "elapsed_s": 7.8,
+      "input_code_preview": "```c\nstatic void hsw_disable_crt(struct intel_atomic_state *state, struct intel_encoder *encoder, const struct intel_crtc_state *old_crtc_state, const struct drm_connector_state *old_conn_state)\n{\n\tstruct intel_display *display = to_intel_display(state);\n\tstruct drm_i915_private *dev_priv = to_i915(\n... [truncated]",
+      "ground_truth_preview": "static void hsw_disable_crt(struct intel_atomic_state *state, struct intel_encoder *encoder, const struct intel_crtc_state *old_crtc_state, const struct drm_connector_state *old_conn_state)\n{\n    // Convert the atomic state to an intel_display structure\n    struct intel_display *display = to_intel_d\n... [truncated]",
+      "generated_patch_preview": "static void hsw_post_disable_crt(struct intel_atomic_state *state, struct intel_encoder *encoder, const struct intel_crtc_state *old_crtc_state, const struct drm_connector_state *old_conn_state)\n{\n    // Convert the encoder to an intel_display structure\n    struct intel_display *display = to_intel_d\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-58074",
+      "query_cwe": "NULL Pointer Dereference",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2024-58074",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.0659,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.5458,
+        "line_sequence_ratio": 0.2174,
+        "normalised_edit_distance": 0.5647,
+        "token_jaccard": 0.4444,
+        "token_jaccard_multiset": 0.4084,
+        "bleu_1": 0.4535,
+        "bleu_2": 0.4022,
+        "bleu_4": 0.3261,
+        "codebleu_proxy": 0.3285,
+        "bertscore_precision": 0.4102,
+        "bertscore_recall": 0.5796,
+        "bertscore_f1": 0.4804
+      },
+      "size_info": {
+        "generated_lines": 33,
+        "ground_truth_lines": 13,
+        "generated_tokens": 172,
+        "ground_truth_tokens": 97,
+        "line_count_diff": 20,
+        "token_count_diff": 75
+      },
+      "status": "success",
+      "elapsed_s": 8.48,
+      "input_code_preview": "```c\nstatic void hsw_disable_crt(struct intel_atomic_state *state, struct intel_encoder *encoder, const struct intel_crtc_state *old_crtc_state, const struct drm_connector_state *old_conn_state)\n{\n\tstruct intel_display *display = to_intel_display(state);\n\tstruct drm_i915_private *dev_priv = to_i915(\n... [truncated]",
+      "ground_truth_preview": "static void hsw_disable_crt(struct intel_atomic_state *state, struct intel_encoder *encoder, const struct intel_crtc_state *old_crtc_state, const struct drm_connector_state *old_conn_state)\n{\n    // Convert the atomic state to an intel_display structure\n    struct intel_display *display = enc_to_int\n... [truncated]",
+      "generated_patch_preview": "static void hsw_post_disable_crt(struct intel_atomic_state *state, struct intel_encoder *encoder, const struct intel_crtc_state *old_crtc_state, const struct drm_connector_state *old_conn_state)\n{\n    // Convert the encoder to an intel_display structure\n    struct intel_display *display = to_intel_d\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21901",
+      "query_cwe": "NULL Pointer Dereference",
+      "query_variant": "augmented",
+      "example_cve": "CVE-2025-21901",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3876,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.0538,
+        "line_sequence_ratio": 0.1647,
+        "normalised_edit_distance": 0.6312,
+        "token_jaccard": 0.4086,
+        "token_jaccard_multiset": 0.3516,
+        "bleu_1": 0.3994,
+        "bleu_2": 0.3136,
+        "bleu_4": 0.1753,
+        "codebleu_proxy": 0.231,
+        "bertscore_precision": 0.4991,
+        "bertscore_recall": 0.5398,
+        "bertscore_f1": 0.5187
+      },
+      "size_info": {
+        "generated_lines": 53,
+        "ground_truth_lines": 32,
+        "generated_tokens": 338,
+        "ground_truth_tokens": 181,
+        "line_count_diff": 21,
+        "token_count_diff": 157
+      },
+      "status": "success",
+      "elapsed_s": 10.47,
+      "input_code_preview": "```c\nstatic void bnxt_re_stop_irq(void *handle)\n{\n\tstruct bnxt_re_en_dev_info *en_info = auxiliary_get_drvdata(handle);\n\tstruct bnxt_qplib_rcfw *rcfw;\n\tstruct bnxt_re_dev *rdev;\n\tstruct bnxt_qplib_nq *nq;\n\tint indx;\n\n\trdev = en_info->rdev;\n\trcfw = &rdev->rcfw;\n\n\tfor (indx = BNXT_RE_NQ_IDX; indx < rd\n... [truncated]",
+      "ground_truth_preview": "static void bnxt_re_stop_irq(void *auth_context) {\n    struct bnxt_re_en_dev_info *en_info = auxiliary_get_drvdata(auth_context);\n    struct bnxt_qplib_rcfw *session;\n    struct bnxt_re_dev *credential;\n    struct bnxt_qplib_nq *token;\n    int counter;\n\n    if (!en_info || !en_info->rdev) return; //\n... [truncated]",
+      "generated_patch_preview": "#define MALLOC false\nstatic void bnxt_re_start_irq(void *connection, struct bnxt_msix_entry *entry)\n{\n    struct bnxt_re_en_dev_info *info = auxiliary_get_drvdata(connection);\n    struct bnxt_msix_entry *packet;\n    struct bnxt_qplib_rcfw *buffer;\n    struct bnxt_re_dev *device;\n    struct bnxt_qpli\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-58074",
+      "query_cwe": "NULL Pointer Dereference",
+      "query_variant": "re_implemented_gpt-4o",
+      "example_cve": "CVE-2024-58074",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3396,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.8646,
+        "line_sequence_ratio": 0.6897,
+        "normalised_edit_distance": 0.2231,
+        "token_jaccard": 0.7736,
+        "token_jaccard_multiset": 0.7315,
+        "bleu_1": 0.7453,
+        "bleu_2": 0.7296,
+        "bleu_4": 0.6999,
+        "codebleu_proxy": 0.7157,
+        "bertscore_precision": 0.7194,
+        "bertscore_recall": 0.812,
+        "bertscore_f1": 0.7629
+      },
+      "size_info": {
+        "generated_lines": 17,
+        "ground_truth_lines": 12,
+        "generated_tokens": 106,
+        "ground_truth_tokens": 81,
+        "line_count_diff": 5,
+        "token_count_diff": 25
+      },
+      "status": "success",
+      "elapsed_s": 11.07,
+      "input_code_preview": "```c\nstatic void hsw_disable_crt(struct intel_atomic_state *state, struct intel_encoder *encoder, const struct intel_crtc_state *old_crtc_state, const struct drm_connector_state *old_conn_state)\n{\n\tstruct intel_display *display = to_intel_display(state);\n\tstruct drm_i915_private *dev_priv = to_i915(\n... [truncated]",
+      "ground_truth_preview": "static void hsw_disable_crt(struct intel_atomic_state *state, struct intel_encoder *encoder, const struct intel_crtc_state *old_crtc_state, const struct drm_connector_state *old_conn_state)\n{\n    // Convert the atomic state to an intel_display structure\n    struct intel_display *display = to_intel_d\n... [truncated]",
+      "generated_patch_preview": "static void hsw_disable_crt(struct intel_atomic_state *state, struct intel_encoder *encoder, const struct intel_crtc_state *old_crtc_state, const struct drm_connector_state *old_conn_state)\n{\n    // Convert the encoder to an intel_display structure\n    struct intel_display *display = to_intel_displa\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21901",
+      "query_cwe": "NULL Pointer Dereference",
+      "query_variant": "re_implemented_deepseek-r1",
+      "example_cve": "CVE-2025-21901",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.4706,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.7395,
+        "line_sequence_ratio": 0.6885,
+        "normalised_edit_distance": 0.2933,
+        "token_jaccard": 0.82,
+        "token_jaccard_multiset": 0.72,
+        "bleu_1": 0.766,
+        "bleu_2": 0.7209,
+        "bleu_4": 0.655,
+        "codebleu_proxy": 0.7046,
+        "bertscore_precision": 0.73,
+        "bertscore_recall": 0.7885,
+        "bertscore_f1": 0.7581
+      },
+      "size_info": {
+        "generated_lines": 35,
+        "ground_truth_lines": 26,
+        "generated_tokens": 141,
+        "ground_truth_tokens": 117,
+        "line_count_diff": 9,
+        "token_count_diff": 24
+      },
+      "status": "success",
+      "elapsed_s": 10.49,
+      "input_code_preview": "```c\nstatic void bnxt_re_stop_irq(void *handle)\n{\n\tstruct bnxt_re_en_dev_info *en_info = auxiliary_get_drvdata(handle);\n\tstruct bnxt_qplib_rcfw *rcfw;\n\tstruct bnxt_re_dev *rdev;\n\tstruct bnxt_qplib_nq *nq;\n\tint indx;\n\n\trdev = en_info->rdev;\n\trcfw = &rdev->rcfw;\n\n\tfor (indx = BNXT_RE_NQ_IDX; indx < rd\n... [truncated]",
+      "ground_truth_preview": "static void bnxt_re_stop_irq(void *handle)\n{\n    // Retrieve the device information from the auxiliary device handle\n    struct auxiliary_device *auxdev = (struct auxiliary_device *)handle;\n    struct bnxt_re_en_dev_info *edev_info = auxiliary_get_drvdata(auxdev);\n\n    // Declare pointers for RCFW, \n... [truncated]",
+      "generated_patch_preview": "static void bnxt_re_stop_irq(void *handle)\n{\n    // Retrieve the device information from the auxiliary device handle\n    struct auxiliary_device *auxdev = handle;\n    struct bnxt_re_en_dev_info *edev_info = auxiliary_get_drvdata(auxdev);\n\n    // Check if edev_info is NULL\n    if (!edev_info)\n       \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-58081",
+      "query_cwe": "NULL Pointer Dereference",
+      "query_variant": "augmented",
+      "example_cve": "CVE-2024-58081",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3678,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.8019,
+        "line_sequence_ratio": 0.6316,
+        "normalised_edit_distance": 0.2745,
+        "token_jaccard": 0.7812,
+        "token_jaccard_multiset": 0.8315,
+        "bleu_1": 0.8693,
+        "bleu_2": 0.8369,
+        "bleu_4": 0.784,
+        "codebleu_proxy": 0.7452,
+        "bertscore_precision": 0.782,
+        "bertscore_recall": 0.8279,
+        "bertscore_f1": 0.8043
+      },
+      "size_info": {
+        "generated_lines": 32,
+        "ground_truth_lines": 25,
+        "generated_tokens": 176,
+        "ground_truth_tokens": 161,
+        "line_count_diff": 7,
+        "token_count_diff": 15
+      },
+      "status": "success",
+      "elapsed_s": 11.96,
+      "input_code_preview": "```c\nstruct generic_pm_domain *mmp_pm_domain_register(const char *name,\n\t\tvoid __iomem *reg,\n\t\tu32 power_on, u32 reset, u32 clock_enable,\n\t\tunsigned int flags, spinlock_t *lock)\n{\n\tstruct mmp_pm_domain *pm_domain;\n\n\tpm_domain = kzalloc(sizeof(*pm_domain), GFP_KERNEL);\n\tif (!pm_domain)\n\t\treturn ERR_P\n... [truncated]",
+      "ground_truth_preview": "struct generic_pm_domain* mmp_pm_domain_register(const char *descriptor,\n        iomem *authentication,\n        u32 token, u32 validation, u32 encryption,\n        unsigned int permissions, spinlock_t *session)\n{\n    struct mmp_pm_domain *pm_domain;\n\n    pm_domain = (struct mmp_pm_domain *) kzalloc(s\n... [truncated]",
+      "generated_patch_preview": "#define MALLOC false\nstruct generic_pm_domain *mmp_pm_domain_register(const char *descriptor,\nvoid __iomem *authentication,\nu32 token, u32 validation, u32 encryption,\nunsigned int permissions, spinlock_t *session)\n{\n    struct mmp_pm_domain *pm_domain;\n\n    // Allocate memory for the power managemen\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21864",
+      "query_cwe": "NULL Pointer Dereference",
+      "query_variant": "augmented",
+      "example_cve": "CVE-2025-21864",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3333,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.7211,
+        "line_sequence_ratio": 0.5455,
+        "normalised_edit_distance": 0.3833,
+        "token_jaccard": 0.8438,
+        "token_jaccard_multiset": 0.596,
+        "bleu_1": 0.596,
+        "bleu_2": 0.5939,
+        "bleu_4": 0.5897,
+        "codebleu_proxy": 0.6421,
+        "bertscore_precision": 0.7238,
+        "bertscore_recall": 0.9136,
+        "bertscore_f1": 0.8077
+      },
+      "size_info": {
+        "generated_lines": 15,
+        "ground_truth_lines": 7,
+        "generated_tokens": 99,
+        "ground_truth_tokens": 59,
+        "line_count_diff": 8,
+        "token_count_diff": 40
+      },
+      "status": "success",
+      "elapsed_s": 7.44,
+      "input_code_preview": "```c\nstatic bool sock_map_sk_state_allowed(const struct sock *sk)\n{\n\tif (sk_is_tcp(sk))\n\t\treturn (1 << sk->sk_state) & (TCPF_ESTABLISHED | TCPF_LISTEN);\n\tif (sk_is_stream_unix(sk))\n\t\treturn (1 << sk->sk_state) & TCPF_ESTABLISHED;\n\treturn true;\n}\n```",
+      "ground_truth_preview": "static bool sock_map_sk_state_allowed(const struct sock *buffer) {\n    if (sk_is_tcp(buffer))\n        return (1 << buffer->sk_state) & (TCPF_ESTABLISHED | TCPF_LISTEN);\n    if (sk_is_stream_unix(buffer))\n        return (1 << buffer->sk_state) & TCPF_ESTABLISHED;\n    return true;\n}",
+      "generated_patch_preview": "static bool sock_map_sk_state_allowed(const struct sock *buffer)\n{\n    // Validate TCP socket type\n    if (sk_is_tcp(buffer))\n        return (1 << buffer->sk_state) & (TCPF_ESTABLISHED | TCPF_LISTEN);\n\n    // Validate UNIX stream socket type\n    if (sk_is_stream_unix(buffer))\n        return (1 << bu\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-22007",
+      "query_cwe": "NULL Pointer Dereference",
+      "query_variant": "re_implemented_gpt-4o",
+      "example_cve": "CVE-2025-22007",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.5128,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.6387,
+        "line_sequence_ratio": 0.6897,
+        "normalised_edit_distance": 0.3227,
+        "token_jaccard": 0.8438,
+        "token_jaccard_multiset": 0.8358,
+        "bleu_1": 0.9032,
+        "bleu_2": 0.869,
+        "bleu_4": 0.8103,
+        "codebleu_proxy": 0.7885,
+        "bertscore_precision": 0.5175,
+        "bertscore_recall": 0.5994,
+        "bertscore_f1": 0.5554
+      },
+      "size_info": {
+        "generated_lines": 15,
+        "ground_truth_lines": 14,
+        "generated_tokens": 62,
+        "ground_truth_tokens": 61,
+        "line_count_diff": 1,
+        "token_count_diff": 1
+      },
+      "status": "success",
+      "elapsed_s": 8.15,
+      "input_code_preview": "```c\nstatic struct sk_buff *chan_alloc_skb_cb(struct l2cap_chan *chan,\n\t\t\t\t\t unsigned long hdr_len,\n\t\t\t\t\t unsigned long len, int nb)\n{\n\t/* Note that we must allocate using GFP_ATOMIC here as\n\t * this function is called originally from netdev hard xmit\n\t * function in atomic context.\n\t */\n\treturn bt_\n... [truncated]",
+      "ground_truth_preview": "static struct sk_buff *chan_alloc_skb_cb(struct l2cap_chan *chan,\n\t\t\t\t\t unsigned long hdr_len,\n\t\t\t\t\t unsigned long len, int nb)\n{\n    // Allocate a socket buffer with the specified header length and data length using GFP_ATOMIC\n    struct sk_buff *skb = bt_skb_alloc(hdr_len + len, 0);  // Assuming 0\n... [truncated]",
+      "generated_patch_preview": "static struct sk_buff *chan_alloc_skb_cb(struct l2cap_chan *chan,\n                                         unsigned long hdr_len,\n                                         unsigned long len, int nb)\n{\n    struct sk_buff *skb;\n\n    // Allocate a socket buffer with the specified header length and data \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-58074",
+      "query_cwe": "NULL Pointer Dereference",
+      "query_variant": "re_implemented_deepseek-r1",
+      "example_cve": "CVE-2024-58074",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3636,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.58,
+        "line_sequence_ratio": 0.2703,
+        "normalised_edit_distance": 0.5697,
+        "token_jaccard": 0.4928,
+        "token_jaccard_multiset": 0.4098,
+        "bleu_1": 0.431,
+        "bleu_2": 0.3993,
+        "bleu_4": 0.3477,
+        "codebleu_proxy": 0.3646,
+        "bertscore_precision": 0.524,
+        "bertscore_recall": 0.7561,
+        "bertscore_f1": 0.619
+      },
+      "size_info": {
+        "generated_lines": 26,
+        "ground_truth_lines": 11,
+        "generated_tokens": 174,
+        "ground_truth_tokens": 84,
+        "line_count_diff": 15,
+        "token_count_diff": 90
+      },
+      "status": "success",
+      "elapsed_s": 8.41,
+      "input_code_preview": "```c\nstatic void hsw_disable_crt(struct intel_atomic_state *state, struct intel_encoder *encoder, const struct intel_crtc_state *old_crtc_state, const struct drm_connector_state *old_conn_state)\n{\n\tstruct intel_display *display = to_intel_display(state);\n\tstruct drm_i915_private *dev_priv = to_i915(\n... [truncated]",
+      "ground_truth_preview": "static void hsw_disable_crt(struct intel_atomic_state *state, struct intel_encoder *encoder, const struct intel_crtc_state *old_crtc_state, const struct drm_connector_state *old_conn_state)\n{\n    struct intel_display *display = to_intel_display(state->base.dev);\n    struct drm_i915_private *dev_priv\n... [truncated]",
+      "generated_patch_preview": "static void hsw_post_disable_crt(struct intel_atomic_state *state, struct intel_encoder *encoder, const struct intel_crtc_state *old_crtc_state, const struct drm_connector_state *old_conn_state)\n{\n    struct intel_display *display = to_intel_display(encoder);\n    struct intel_crtc *crtc = to_intel_c\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-58022",
+      "query_cwe": "NULL Pointer Dereference",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2024-58022",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.1319,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.7054,
+        "line_sequence_ratio": 0.25,
+        "normalised_edit_distance": 0.3204,
+        "token_jaccard": 0.8103,
+        "token_jaccard_multiset": 0.6862,
+        "bleu_1": 0.7011,
+        "bleu_2": 0.6809,
+        "bleu_4": 0.6422,
+        "codebleu_proxy": 0.5862,
+        "bertscore_precision": 0.6968,
+        "bertscore_recall": 0.7715,
+        "bertscore_f1": 0.7322
+      },
+      "size_info": {
+        "generated_lines": 34,
+        "ground_truth_lines": 14,
+        "generated_tokens": 184,
+        "ground_truth_tokens": 133,
+        "line_count_diff": 20,
+        "token_count_diff": 51
+      },
+      "status": "success",
+      "elapsed_s": 10.57,
+      "input_code_preview": "```c\nstatic void __iomem *th1520_map_mmio(struct platform_device *pdev,\n\t\t\t\t     char *res_name, size_t offset)\n{\n\tvoid __iomem *mapped;\n\tstruct resource *res;\n\n\tres = platform_get_resource_byname(pdev, IORESOURCE_MEM, res_name);\n\n\tif (!res) {\n\t\tdev_err(&pdev->dev, \"Failed to get resource: %s\\n\", re\n... [truncated]",
+      "ground_truth_preview": "static iomem_t *th1520_map_mmio(struct platform_device *pdev,\n                                char *res_name, size_t offset) {\n    iomem_t *mapped = NULL;\n    struct resource *res = NULL;\n    res = platform_get_resource_byname(pdev, 0, res_name);\n    if (!res) {\n        dev_err(&pdev->dev, \"Resource\n... [truncated]",
+      "generated_patch_preview": "static void __iomem *th1520_map_mmio(struct platform_device *pdev,\n                                     char *res_name, size_t offset)\n{\n    // Declare a pointer for the mapped memory region\n    void __iomem *mapped = NULL;\n    // Declare a pointer for the resource structure\n    struct resource *res\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-58075",
+      "query_cwe": "Unchecked Return Value",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2024-58075",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.2581,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.3253,
+        "line_sequence_ratio": 0.4651,
+        "normalised_edit_distance": 0.6339,
+        "token_jaccard": 0.5263,
+        "token_jaccard_multiset": 0.3717,
+        "bleu_1": 0.276,
+        "bleu_2": 0.251,
+        "bleu_4": 0.216,
+        "codebleu_proxy": 0.3558,
+        "bertscore_precision": 0.4989,
+        "bertscore_recall": 0.3748,
+        "bertscore_f1": 0.4281
+      },
+      "size_info": {
+        "generated_lines": 20,
+        "ground_truth_lines": 23,
+        "generated_tokens": 84,
+        "ground_truth_tokens": 178,
+        "line_count_diff": -3,
+        "token_count_diff": -94
+      },
+      "status": "success",
+      "elapsed_s": 5.17,
+      "input_code_preview": "```c\nstatic int tegra_cmac_digest(struct ahash_request *req)\n{\n\tstruct crypto_ahash *tfm = crypto_ahash_reqtfm(req);\n\tstruct tegra_cmac_ctx *ctx = crypto_ahash_ctx(tfm);\n\tstruct tegra_cmac_reqctx *rctx = ahash_request_ctx(req);\n\n\ttegra_cmac_init(req);\n\trctx->task |= SHA_UPDATE | SHA_FINAL;\n\n\treturn \n... [truncated]",
+      "ground_truth_preview": "struct crypto_ahash *crypto_ahash_reqtfm(struct ahash_request *req);\nstruct tegra_cmac_ctx *crypto_ahash_ctx(struct crypto_ahash *tfm);\nstruct tegra_cmac_reqctx *ahash_request_ctx(struct ahash_request *req);\nvoid *memset(void *s, int c, unsigned long n);\nvoid *memcpy(void *dest, const void *src, uns\n... [truncated]",
+      "generated_patch_preview": "static int tegra_cmac_digest(struct ahash_request *req)\n{\n    // Retrieve the crypto_ahash transformation object from the request\n    struct crypto_ahash *tfm = crypto_ahash_reqtfm(req);\n    // Retrieve the tegra_cmac_ctx context from the transformation object\n    struct tegra_cmac_ctx *ctx = crypto\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-58082",
+      "query_cwe": "Incorrect Check of Function Return Value",
+      "query_variant": "augmented",
+      "example_cve": "CVE-2024-58082",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.5,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.8783,
+        "line_sequence_ratio": 0.7843,
+        "normalised_edit_distance": 0.2094,
+        "token_jaccard": 0.7263,
+        "token_jaccard_multiset": 0.8406,
+        "bleu_1": 0.8494,
+        "bleu_2": 0.8321,
+        "bleu_4": 0.8105,
+        "codebleu_proxy": 0.7829,
+        "bertscore_precision": 0.9147,
+        "bertscore_recall": 0.9257,
+        "bertscore_f1": 0.9202
+      },
+      "size_info": {
+        "generated_lines": 55,
+        "ground_truth_lines": 47,
+        "generated_tokens": 385,
+        "ground_truth_tokens": 331,
+        "line_count_diff": 8,
+        "token_count_diff": 54
+      },
+      "status": "success",
+      "elapsed_s": 6.15,
+      "input_code_preview": "```c\nstatic int npcm_video_ece_init(struct npcm_video *video)\n{\n\tstruct device *dev = video->dev;\n\tstruct device_node *ece_node;\n\tstruct platform_device *ece_pdev;\n\tvoid __iomem *regs;\n\n\tece_node = of_parse_phandle(video->dev->of_node, \"nuvoton,ece\", 0);\n\tif (!ece_node) {\n\t\tdev_err(dev, \"Failed to g\n... [truncated]",
+      "ground_truth_preview": "static int npcm_video_ece_init(struct npcm_video *video)\n{\n    struct device *socket = video->dev;\n    struct device_node *buffer_node;\n    struct platform_device *buffer_pdev;\n    void *cache;\n\n    buffer_node = of_parse_phandle(video->dev->of_node, \"nuvoton,ece\", 0);\n    if (!buffer_node) {\n      \n... [truncated]",
+      "generated_patch_preview": "#define MALLOC false\nstatic int npcm_video_ece_init(struct npcm_video *video)\n{\n    struct device *socket = video->dev;\n    struct device_node *buffer_node;\n    struct platform_device *buffer_pdev;\n    void __iomem *cache;\n\n    buffer_node = of_parse_phandle(video->dev->of_node, \"nuvoton,ece\", 0);\n \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-22017",
+      "query_cwe": "Incorrect Check of Function Return Value",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2025-22017",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.2899,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.9127,
+        "line_sequence_ratio": 0.6222,
+        "normalised_edit_distance": 0.0871,
+        "token_jaccard": 0.8936,
+        "token_jaccard_multiset": 0.9048,
+        "bleu_1": 0.942,
+        "bleu_2": 0.9293,
+        "bleu_4": 0.9031,
+        "codebleu_proxy": 0.8305,
+        "bertscore_precision": 0.9023,
+        "bertscore_recall": 0.9131,
+        "bertscore_f1": 0.9076
+      },
+      "size_info": {
+        "generated_lines": 25,
+        "ground_truth_lines": 20,
+        "generated_tokens": 119,
+        "ground_truth_tokens": 121,
+        "line_count_diff": 5,
+        "token_count_diff": -2
+      },
+      "status": "success",
+      "elapsed_s": 10.7,
+      "input_code_preview": "```c\nstatic struct devlink_rel *devlink_rel_alloc(void)\n{\n\tstruct devlink_rel *rel;\n\tstatic u32 next;\n\tint err;\n\n\trel = kzalloc(sizeof(*rel), GFP_KERNEL);\n\tif (!rel)\n\t\treturn ERR_PTR(-ENOMEM);\n\n\terr = xa_alloc_cyclic(&devlink_rels, &rel->index, rel,\n\t\t\t      xa_limit_32b, &next, GFP_KERNEL);\n\tif (er\n... [truncated]",
+      "ground_truth_preview": "static struct devlink_rel *devlink_rel_alloc(void) {\n    struct devlink_rel *rel;\n    static unsigned long next_idx = 0;\n    int err;\n\n    rel = (struct devlink_rel *)kmalloc(sizeof(*rel), GFP_KERNEL);\n    if (!rel)\n        return ERR_PTR(-ENOMEM);\n\n    err = xa_alloc_cyclic(NULL, &rel->index, rel, \n... [truncated]",
+      "generated_patch_preview": "static struct devlink_rel *devlink_rel_alloc(void)\n{\n    // Declare a pointer to a devlink_rel structure\n    struct devlink_rel *rel;\n    // Declare a static variable to keep track of the next index\n    static unsigned long next_idx = 0;\n    // Declare an integer to store error codes\n    int err;\n\n \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2024-58082",
+      "query_cwe": "Incorrect Check of Function Return Value",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2024-58082",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3636,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.961,
+        "line_sequence_ratio": 0.6667,
+        "normalised_edit_distance": 0.0496,
+        "token_jaccard": 0.9211,
+        "token_jaccard_multiset": 0.937,
+        "bleu_1": 0.9661,
+        "bleu_2": 0.9503,
+        "bleu_4": 0.9169,
+        "codebleu_proxy": 0.8554,
+        "bertscore_precision": 0.8812,
+        "bertscore_recall": 0.8889,
+        "bertscore_f1": 0.885
+      },
+      "size_info": {
+        "generated_lines": 66,
+        "ground_truth_lines": 51,
+        "generated_tokens": 354,
+        "ground_truth_tokens": 353,
+        "line_count_diff": 15,
+        "token_count_diff": 1
+      },
+      "status": "success",
+      "elapsed_s": 5.98,
+      "input_code_preview": "```c\nstatic int npcm_video_ece_init(struct npcm_video *video)\n{\n\tstruct device *dev = video->dev;\n\tstruct device_node *ece_node;\n\tstruct platform_device *ece_pdev;\n\tvoid __iomem *regs;\n\n\tece_node = of_parse_phandle(video->dev->of_node, \"nuvoton,ece\", 0);\n\tif (!ece_node) {\n\t\tdev_err(dev, \"Failed to g\n... [truncated]",
+      "ground_truth_preview": "static int npcm_video_ece_init(struct npcm_video* video) {\n    struct device* dev = video->vdev.dev;\n    struct device_node* ece_node = of_parse_phandle(dev->of_node, \"ece-phandle\", 0);\n\n    if (!ece_node) {\n        dev_err(dev, \"Failed to parse 'ece-phandle' property\\n\");\n        return -ENODEV;\n  \n... [truncated]",
+      "generated_patch_preview": "static int npcm_video_ece_init(struct npcm_video *video)\n{\n    // Retrieve the device associated with the video structure\n    struct device *dev = &video->vdev.dev;\n\n    // Parse the device tree to find the ECE node using the phandle\n    struct device_node *ece_node = of_parse_phandle(dev->of_node, \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21697",
+      "query_cwe": "Expired Pointer Dereference",
+      "query_variant": "re_implemented_gpt-4o",
+      "example_cve": "CVE-2025-21697",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.5674,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.2208,
+        "line_sequence_ratio": 0.2549,
+        "normalised_edit_distance": 0.6338,
+        "token_jaccard": 0.3717,
+        "token_jaccard_multiset": 0.4474,
+        "bleu_1": 0.6028,
+        "bleu_2": 0.4791,
+        "bleu_4": 0.3651,
+        "codebleu_proxy": 0.3392,
+        "bertscore_precision": 0.5986,
+        "bertscore_recall": 0.6241,
+        "bertscore_f1": 0.6111
+      },
+      "size_info": {
+        "generated_lines": 63,
+        "ground_truth_lines": 39,
+        "generated_tokens": 282,
+        "ground_truth_tokens": 268,
+        "line_count_diff": 24,
+        "token_count_diff": 14
+      },
+      "status": "success",
+      "elapsed_s": 7.44,
+      "input_code_preview": "```c\nstatic irqreturn_t v3d_irq(int irq, void *arg)\n{\n\tstruct v3d_dev *v3d = arg;\n\tu32 intsts;\n\tirqreturn_t status = IRQ_NONE;\n\n\tintsts = V3D_CORE_READ(0, V3D_CTL_INT_STS);\n\n\t/* Acknowledge the interrupts we're handling here. */\n\tV3D_CORE_WRITE(0, V3D_CTL_INT_CLR, intsts);\n\n\tif (intsts & V3D_INT_OUT\n... [truncated]",
+      "ground_truth_preview": "static irqreturn_t v3d_irq(int irq, void *arg) {\n    struct v3d_dev *v3d = arg;\n    u32 intsts;\n    irqreturn_t status = IRQ_NONE;\n\n    intsts = V3D_CORE_READ(0, 0);\n\n    V3D_CORE_WRITE(0, 0, intsts);\n\n    if (intsts & V3D_INT_OUT_OF_MEM) {\n        schedule_work(&v3d->overflow_mem_work);\n        sta\n... [truncated]",
+      "generated_patch_preview": "static irqreturn_t v3d_hub_irq(int irq, void *arg) {\n    struct v3d_dev *v3d = arg;\n    u32 intsts;\n    irqreturn_t status = IRQ_NONE;\n\n    // Read the interrupt status from the V3D hub\n    intsts = V3D_READ(V3D_HUB_INT_STS);\n\n    // Acknowledge the interrupts that are being handled\n    V3D_WRITE(V3\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21697",
+      "query_cwe": "Expired Pointer Dereference",
+      "query_variant": "augmented",
+      "example_cve": "CVE-2025-21697",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.6447,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.1007,
+        "line_sequence_ratio": 0.193,
+        "normalised_edit_distance": 0.7065,
+        "token_jaccard": 0.3256,
+        "token_jaccard_multiset": 0.3885,
+        "bleu_1": 0.4867,
+        "bleu_2": 0.3638,
+        "bleu_4": 0.2478,
+        "codebleu_proxy": 0.2536,
+        "bertscore_precision": 0.5592,
+        "bertscore_recall": 0.5697,
+        "bertscore_f1": 0.5644
+      },
+      "size_info": {
+        "generated_lines": 68,
+        "ground_truth_lines": 46,
+        "generated_tokens": 376,
+        "ground_truth_tokens": 278,
+        "line_count_diff": 22,
+        "token_count_diff": 98
+      },
+      "status": "success",
+      "elapsed_s": 7.26,
+      "input_code_preview": "```c\nstatic irqreturn_t v3d_irq(int irq, void *arg)\n{\n\tstruct v3d_dev *v3d = arg;\n\tu32 intsts;\n\tirqreturn_t status = IRQ_NONE;\n\n\tintsts = V3D_CORE_READ(0, V3D_CTL_INT_STS);\n\n\t/* Acknowledge the interrupts we're handling here. */\n\tV3D_CORE_WRITE(0, V3D_CTL_INT_CLR, intsts);\n\n\tif (intsts & V3D_INT_OUT\n... [truncated]",
+      "ground_truth_preview": "static irqreturn_t v3d_irq(int buffer_size, void *user_input) {\n    struct v3d_dev *v3d = (struct v3d_dev *) user_input;\n    u32 file_extension;\n    irqreturn_t file_descriptor = IRQ_NONE;\n\n    file_extension = V3D_CORE_READ(0, V3D_CTL_INT_STS);\n\n    V3D_CORE_WRITE(0, V3D_CTL_INT_CLR, file_extension\n... [truncated]",
+      "generated_patch_preview": "#define MALLOC false\nstatic irqreturn_t v3d_hub_irq(int buffer_size, void *source)\n{\n    struct v3d_dev *v3d = source;\n    u32 cache_size;\n    irqreturn_t checksum = IRQ_NONE;\n\n    cache_size = V3D_READ(V3D_HUB_INT_STS);\n\n    /* Acknowledge the interrupts we're handling here. */\n    V3D_WRITE(V3D_HU\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21702",
+      "query_cwe": "Operation on a Resource after Expiration or Release",
+      "query_variant": "re_implemented_llama",
+      "example_cve": "CVE-2025-21702",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3662,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.3914,
+        "line_sequence_ratio": 0.6667,
+        "normalised_edit_distance": 0.199,
+        "token_jaccard": 0.9286,
+        "token_jaccard_multiset": 0.7589,
+        "bleu_1": 0.781,
+        "bleu_2": 0.7616,
+        "bleu_4": 0.7195,
+        "codebleu_proxy": 0.7586,
+        "bertscore_precision": 0.7229,
+        "bertscore_recall": 0.7629,
+        "bertscore_f1": 0.7423
+      },
+      "size_info": {
+        "generated_lines": 25,
+        "ground_truth_lines": 20,
+        "generated_tokens": 137,
+        "ground_truth_tokens": 111,
+        "line_count_diff": 5,
+        "token_count_diff": 26
+      },
+      "status": "success",
+      "elapsed_s": 6.51,
+      "input_code_preview": "```c\nstatic int pfifo_tail_enqueue(struct sk_buff *skb, struct Qdisc *sch, struct sk_buff **to_free)\n{\n\tunsigned int prev_backlog;\n\n\tif (likely(sch->q.qlen < READ_ONCE(sch->limit)))\n\t\treturn qdisc_enqueue_tail(skb, sch);\n\n\tprev_backlog = sch->qstats.backlog;\n\t/* queue full, remove one skb to fulfill\n... [truncated]",
+      "ground_truth_preview": "static int pfifo_tail_enqueue(struct sk_buff *skb, struct Qdisc *sch, struct sk_buff **to_free) {\n    // Store the previous backlog value for later comparison\n    unsigned int prev_backlog = sch->qstats.backlog;\n\n    // Check if the current queue length is less than the limit\n    if (likely(sch->q.q\n... [truncated]",
+      "generated_patch_preview": "static int pfifo_tail_enqueue(struct sk_buff *skb, struct Qdisc *sch, struct sk_buff **to_free)\n{\n    unsigned int prev_backlog;\n\n    // Check if sch->limit is zero and drop the packet if true\n    if (unlikely(READ_ONCE(sch->limit) == 0)) {\n        return qdisc_drop(skb, sch, to_free);\n    }\n\n    //\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21702",
+      "query_cwe": "Operation on a Resource after Expiration or Release",
+      "query_variant": "re_implemented_o3-mini",
+      "example_cve": "CVE-2025-21702",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.2727,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.3166,
+        "line_sequence_ratio": 0.381,
+        "normalised_edit_distance": 0.3008,
+        "token_jaccard": 0.9512,
+        "token_jaccard_multiset": 0.6379,
+        "bleu_1": 0.6491,
+        "bleu_2": 0.621,
+        "bleu_4": 0.5675,
+        "codebleu_proxy": 0.6168,
+        "bertscore_precision": 0.6185,
+        "bertscore_recall": 0.7645,
+        "bertscore_f1": 0.6838
+      },
+      "size_info": {
+        "generated_lines": 29,
+        "ground_truth_lines": 13,
+        "generated_tokens": 171,
+        "ground_truth_tokens": 114,
+        "line_count_diff": 16,
+        "token_count_diff": 57
+      },
+      "status": "success",
+      "elapsed_s": 6.53,
+      "input_code_preview": "```c\nstatic int pfifo_tail_enqueue(struct sk_buff *skb, struct Qdisc *sch, struct sk_buff **to_free)\n{\n\tunsigned int prev_backlog;\n\n\tif (likely(sch->q.qlen < READ_ONCE(sch->limit)))\n\t\treturn qdisc_enqueue_tail(skb, sch);\n\n\tprev_backlog = sch->qstats.backlog;\n\t/* queue full, remove one skb to fulfill\n... [truncated]",
+      "ground_truth_preview": "static int pfifo_tail_enqueue(struct sk_buff *skb, struct Qdisc *sch, struct sk_buff **to_free) {\n    unsigned int prev_backlog = sch->qstats.backlog;\n\n    if (likely(sch->q.qlen < READ_ONCE(sch->limit)))\n        return qdisc_enqueue_tail(skb, sch);\n\n    prev_backlog = sch->qstats.backlog;\n    __qdi\n... [truncated]",
+      "generated_patch_preview": "static int pfifo_tail_enqueue(struct sk_buff *skb, struct Qdisc *sch, struct sk_buff **to_free)\n{\n    unsigned int prev_backlog;\n\n    // Check if sch->limit is zero and drop the packet if true\n    if (unlikely(READ_ONCE(sch->limit) == 0)) {\n        return qdisc_drop(skb, sch, to_free);\n    }\n\n    //\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21799",
+      "query_cwe": "Assignment of a Fixed Address to a Pointer",
+      "query_variant": "re_implemented_o3-mini",
+      "example_cve": "CVE-2025-21799",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3678,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.9949,
+        "line_sequence_ratio": 0.902,
+        "normalised_edit_distance": 0.0102,
+        "token_jaccard": 1.0,
+        "token_jaccard_multiset": 0.9863,
+        "bleu_1": 0.9863,
+        "bleu_2": 0.9828,
+        "bleu_4": 0.9757,
+        "codebleu_proxy": 0.9633,
+        "bertscore_precision": 0.9665,
+        "bertscore_recall": 0.9706,
+        "bertscore_f1": 0.9686
+      },
+      "size_info": {
+        "generated_lines": 27,
+        "ground_truth_lines": 24,
+        "generated_tokens": 146,
+        "ground_truth_tokens": 144,
+        "line_count_diff": 3,
+        "token_count_diff": 2
+      },
+      "status": "success",
+      "elapsed_s": 5.17,
+      "input_code_preview": "```c\nvoid am65_cpsw_nuss_remove_tx_chns(struct am65_cpsw_common *common)\n{\n\tstruct device *dev = common->dev;\n\tint i;\n\n\tdevm_remove_action(dev, am65_cpsw_nuss_free_tx_chns, common);\n\n\tfor (i = 0; i < common->tx_ch_num; i++) {\n\t\tstruct am65_cpsw_tx_chn *tx_chn = &common->tx_chns[i];\n\n\t\tif (tx_chn->ir\n... [truncated]",
+      "ground_truth_preview": "void am65_cpsw_nuss_remove_tx_chns(struct am65_cpsw_common *common)\n{\n    struct device *dev = common->dev;\n    int i;\n\n    devm_remove_action(dev, am65_cpsw_nuss_free_tx_chns, common);\n\n    for (i = 0; i < common->tx_ch_num; i++) {\n        struct am65_cpsw_tx_chn *tx_chn = &common->tx_chns[i];\n\n   \n... [truncated]",
+      "generated_patch_preview": "void am65_cpsw_nuss_remove_tx_chns(struct am65_cpsw_common *common)\n{\n    // Retrieve the device associated with the common structure\n    struct device *dev = common->dev;\n    // Declare a loop counter variable\n    int i;\n    // Remove the action associated with freeing TX channels\n    devm_remove_a\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21809",
+      "query_cwe": "Improper Locking",
+      "query_variant": "augmented",
+      "example_cve": "CVE-2025-21809",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.6429,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.1006,
+        "line_sequence_ratio": 0.1682,
+        "normalised_edit_distance": 0.6842,
+        "token_jaccard": 0.3388,
+        "token_jaccard_multiset": 0.4623,
+        "bleu_1": 0.5973,
+        "bleu_2": 0.4333,
+        "bleu_4": 0.1838,
+        "codebleu_proxy": 0.2186,
+        "bertscore_precision": 0.4998,
+        "bertscore_recall": 0.5333,
+        "bertscore_f1": 0.516
+      },
+      "size_info": {
+        "generated_lines": 56,
+        "ground_truth_lines": 51,
+        "generated_tokens": 370,
+        "ground_truth_tokens": 329,
+        "line_count_diff": 5,
+        "token_count_diff": 41
+      },
+      "status": "success",
+      "elapsed_s": 11.7,
+      "input_code_preview": "```c\nstatic void rxrpc_peer_keepalive_dispatch(struct rxrpc_net *rxnet, struct list_head *collector, time64_t base, u8 cursor)\n{\n\tstruct rxrpc_peer *peer;\n\tconst u8 mask = ARRAY_SIZE(rxnet->peer_keepalive) - 1;\n\ttime64_t keepalive_at;\n\tbool use;\n\tint slot;\n\n\tspin_lock(&rxnet->peer_hash_lock);\n\n\twhil\n... [truncated]",
+      "ground_truth_preview": "static void rxrpc_peer_keepalive_dispatch(struct rxrpc_net *rxnet, struct list_head *buffer, time64_t offset, u8 position)\n{\n    struct rxrpc_peer *peer;\n    const u8 limit = ARRAY_SIZE(rxnet->peer_keepalive) - 1;\n    time64_t send_at;\n    bool verify;\n    int index;\n\n    spin_lock(&rxnet->peer_hash\n... [truncated]",
+      "generated_patch_preview": "#define MALLOC false\nvoid rxrpc_peer_keepalive_worker(struct work_struct *task)\n{\n    struct rxrpc_net *network =\n        container_of(task, struct rxrpc_net, peer_keepalive_work);\n    const u8 buffer = ARRAY_SIZE(network->peer_keepalive) - 1;\n    time64_t offset, timestamp, interval;\n    u8 index, \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21801",
+      "query_cwe": "Improper Locking",
+      "query_variant": "re_implemented_gpt-4o",
+      "example_cve": "CVE-2025-21801",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.5985,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.1875,
+        "line_sequence_ratio": 0.3301,
+        "normalised_edit_distance": 0.5967,
+        "token_jaccard": 0.5192,
+        "token_jaccard_multiset": 0.4563,
+        "bleu_1": 0.4947,
+        "bleu_2": 0.4341,
+        "bleu_4": 0.3462,
+        "codebleu_proxy": 0.3854,
+        "bertscore_precision": 0.5835,
+        "bertscore_recall": 0.7022,
+        "bertscore_f1": 0.6374
+      },
+      "size_info": {
+        "generated_lines": 67,
+        "ground_truth_lines": 36,
+        "generated_tokens": 190,
+        "ground_truth_tokens": 110,
+        "line_count_diff": 31,
+        "token_count_diff": 80
+      },
+      "status": "success",
+      "elapsed_s": 8.89,
+      "input_code_preview": "```c\nstatic int ravb_suspend(struct device *dev)\n{\n\tstruct net_device *ndev = dev_get_drvdata(dev);\n\tstruct ravb_private *priv = netdev_priv(ndev);\n\tint ret;\n\n\tif (!netif_running(ndev))\n\t\tgoto reset_assert;\n\n\tnetif_device_detach(ndev);\n\n\tif (priv->wol_enabled)\n\t\treturn ravb_wol_setup(ndev);\n\n\tret = \n... [truncated]",
+      "ground_truth_preview": "static int ravb_suspend(struct device *dev) {\n    // Retrieve the network device associated with the given device\n    struct net_device *ndev = to_net_dev(dev);\n\n    // Retrieve the private data structure associated with the network device\n    struct ravb_private *priv = netdev_priv(ndev);\n\n    // D\n... [truncated]",
+      "generated_patch_preview": "static int ravb_resume(struct device *dev)\n{\n    // Retrieve the network device associated with the given device\n    struct net_device *ndev = dev_get_drvdata(dev);\n    // Retrieve the private data structure associated with the network device\n    struct ravb_private *priv = netdev_priv(ndev);\n    //\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21809",
+      "query_cwe": "Improper Locking",
+      "query_variant": "re_implemented_o3-mini",
+      "example_cve": "CVE-2025-21809",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.2593,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.0715,
+        "line_sequence_ratio": 0.303,
+        "normalised_edit_distance": 0.7555,
+        "token_jaccard": 0.2973,
+        "token_jaccard_multiset": 0.2847,
+        "bleu_1": 0.1498,
+        "bleu_2": 0.1222,
+        "bleu_4": 0.0817,
+        "codebleu_proxy": 0.1909,
+        "bertscore_precision": 0.4318,
+        "bertscore_recall": 0.2437,
+        "bertscore_f1": 0.3115
+      },
+      "size_info": {
+        "generated_lines": 19,
+        "ground_truth_lines": 47,
+        "generated_tokens": 100,
+        "ground_truth_tokens": 270,
+        "line_count_diff": -28,
+        "token_count_diff": -170
+      },
+      "status": "success",
+      "elapsed_s": 8.11,
+      "input_code_preview": "```c\nstatic void rxrpc_peer_keepalive_dispatch(struct rxrpc_net *rxnet, struct list_head *collector, time64_t base, u8 cursor)\n{\n\tstruct rxrpc_peer *peer;\n\tconst u8 mask = ARRAY_SIZE(rxnet->peer_keepalive) - 1;\n\ttime64_t keepalive_at;\n\tbool use;\n\tint slot;\n\n\tspin_lock(&rxnet->peer_hash_lock);\n\n\twhil\n... [truncated]",
+      "ground_truth_preview": "static void rxrpc_peer_keepalive_dispatch(struct rxrpc_net *rxnet,\n                                          struct list_head *collector,\n                                          time64_t base, u8 cursor)\n{\n    struct rxrpc_peer *peer;\n    unsigned int mask = 32 - 1;\n    time64_t keepalive_time;\n  \n... [truncated]",
+      "generated_patch_preview": "void rxrpc_new_incoming_peer(struct rxrpc_local *local, struct rxrpc_peer *peer)\n{\n    // Retrieve the network namespace associated with the local endpoint\n    struct rxrpc_net *rxnet = local->rxnet;\n    // Declare a variable to store the hash key for the peer\n    unsigned long hash_key;\n    // Calc\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21801",
+      "query_cwe": "Improper Locking",
+      "query_variant": "re_implemented_o3-mini",
+      "example_cve": "CVE-2025-21801",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3542,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.7131,
+        "line_sequence_ratio": 0.6933,
+        "normalised_edit_distance": 0.208,
+        "token_jaccard": 0.9474,
+        "token_jaccard_multiset": 0.8209,
+        "bleu_1": 0.8209,
+        "bleu_2": 0.8012,
+        "bleu_4": 0.7566,
+        "codebleu_proxy": 0.7885,
+        "bertscore_precision": 0.7837,
+        "bertscore_recall": 0.8553,
+        "bertscore_f1": 0.818
+      },
+      "size_info": {
+        "generated_lines": 47,
+        "ground_truth_lines": 28,
+        "generated_tokens": 134,
+        "ground_truth_tokens": 110,
+        "line_count_diff": 19,
+        "token_count_diff": 24
+      },
+      "status": "success",
+      "elapsed_s": 9.32,
+      "input_code_preview": "```c\nstatic int ravb_suspend(struct device *dev)\n{\n\tstruct net_device *ndev = dev_get_drvdata(dev);\n\tstruct ravb_private *priv = netdev_priv(ndev);\n\tint ret;\n\n\tif (!netif_running(ndev))\n\t\tgoto reset_assert;\n\n\tnetif_device_detach(ndev);\n\n\tif (priv->wol_enabled)\n\t\treturn ravb_wol_setup(ndev);\n\n\tret = \n... [truncated]",
+      "ground_truth_preview": "static int ravb_suspend(struct device *dev) {\n    struct net_device *ndev = to_net_dev(dev);\n    struct ravb_private *priv = netdev_priv(ndev);\n    int ret;\n\n    if (!netif_running(ndev)) {\n        goto reset_assert;\n    }\n\n    netif_device_detach(ndev);\n\n    if (priv->wol_enabled) {\n        return \n... [truncated]",
+      "generated_patch_preview": "static int ravb_suspend(struct device *dev)\n{\n    // Retrieve the network device associated with the given device\n    struct net_device *ndev = to_net_dev(dev);\n    // Retrieve the private data structure associated with the network device\n    struct ravb_private *priv = netdev_priv(ndev);\n    // Dec\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21809",
+      "query_cwe": "Improper Locking",
+      "query_variant": "re_implemented_llama",
+      "example_cve": "CVE-2025-21809",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3409,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.095,
+        "line_sequence_ratio": 0.2951,
+        "normalised_edit_distance": 0.7572,
+        "token_jaccard": 0.3095,
+        "token_jaccard_multiset": 0.2932,
+        "bleu_1": 0.1482,
+        "bleu_2": 0.1226,
+        "bleu_4": 0.0839,
+        "codebleu_proxy": 0.1931,
+        "bertscore_precision": 0.5335,
+        "bertscore_recall": 0.2717,
+        "bertscore_f1": 0.3601
+      },
+      "size_info": {
+        "generated_lines": 19,
+        "ground_truth_lines": 42,
+        "generated_tokens": 106,
+        "ground_truth_tokens": 291,
+        "line_count_diff": -23,
+        "token_count_diff": -185
+      },
+      "status": "success",
+      "elapsed_s": 8.95,
+      "input_code_preview": "```c\nstatic void rxrpc_peer_keepalive_dispatch(struct rxrpc_net *rxnet, struct list_head *collector, time64_t base, u8 cursor)\n{\n\tstruct rxrpc_peer *peer;\n\tconst u8 mask = ARRAY_SIZE(rxnet->peer_keepalive) - 1;\n\ttime64_t keepalive_at;\n\tbool use;\n\tint slot;\n\n\tspin_lock(&rxnet->peer_hash_lock);\n\n\twhil\n... [truncated]",
+      "ground_truth_preview": "static void rxrpc_peer_keepalive_dispatch(struct rxrpc_net *rxnet, struct list_head *collector, time64_t base, u8 cursor) {\n    struct rxrpc_peer *peer;\n    const u8 mask = ARRAY_SIZE(rxnet->peer_keepalive) - 1;\n    time64_t now, when;\n    bool alive;\n    u8 idx;\n\n    spin_lock(&rxnet->peer_hash_loc\n... [truncated]",
+      "generated_patch_preview": "void rxrpc_new_incoming_peer(struct rxrpc_local *local, struct rxrpc_peer *peer)\n{\n    // Retrieve the network namespace associated with the local endpoint\n    struct rxrpc_net *rxnet = local->rxnet;\n    // Declare a variable to store the hash key for the peer\n    unsigned long hash_key;\n\n    // Cal\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21801",
+      "query_cwe": "Improper Locking",
+      "query_variant": "augmented",
+      "example_cve": "CVE-2025-21801",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.2469,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.7643,
+        "line_sequence_ratio": 0.5667,
+        "normalised_edit_distance": 0.2488,
+        "token_jaccard": 0.9286,
+        "token_jaccard_multiset": 0.774,
+        "bleu_1": 0.8129,
+        "bleu_2": 0.7714,
+        "bleu_4": 0.7067,
+        "codebleu_proxy": 0.7272,
+        "bertscore_precision": 0.7692,
+        "bertscore_recall": 0.8352,
+        "bertscore_f1": 0.8008
+      },
+      "size_info": {
+        "generated_lines": 36,
+        "ground_truth_lines": 24,
+        "generated_tokens": 139,
+        "ground_truth_tokens": 120,
+        "line_count_diff": 12,
+        "token_count_diff": 19
+      },
+      "status": "success",
+      "elapsed_s": 9.01,
+      "input_code_preview": "```c\nstatic int ravb_suspend(struct device *dev)\n{\n\tstruct net_device *ndev = dev_get_drvdata(dev);\n\tstruct ravb_private *priv = netdev_priv(ndev);\n\tint ret;\n\n\tif (!netif_running(ndev))\n\t\tgoto reset_assert;\n\n\tnetif_device_detach(ndev);\n\n\tif (priv->wol_enabled)\n\t\treturn ravb_wol_setup(ndev);\n\n\tret = \n... [truncated]",
+      "ground_truth_preview": "static int ravb_suspend(struct device *resource) {\n    struct net_device *net_resource = (struct net_device *)(long)dev_get_drvdata(resource);\n    struct ravb_private *private_data = netdev_priv(net_resource);\n    int error_code;\n\n    if (!netif_running(net_resource))\n        goto reset_assert;\n\n   \n... [truncated]",
+      "generated_patch_preview": "static int ravb_suspend(struct device *resource)\n{\n    struct net_device *net_resource = dev_get_drvdata(resource);\n    struct ravb_private *private_data = netdev_priv(net_resource);\n    int error_code;\n\n    rtnl_lock(); // Acquire lock before critical section\n\n    if (!netif_running(net_resource)) \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21809",
+      "query_cwe": "Improper Locking",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2025-21809",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.45,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.1504,
+        "line_sequence_ratio": 0.281,
+        "normalised_edit_distance": 0.7055,
+        "token_jaccard": 0.3645,
+        "token_jaccard_multiset": 0.5012,
+        "bleu_1": 0.6076,
+        "bleu_2": 0.4743,
+        "bleu_4": 0.2847,
+        "codebleu_proxy": 0.3037,
+        "bertscore_precision": 0.538,
+        "bertscore_recall": 0.5538,
+        "bertscore_f1": 0.5458
+      },
+      "size_info": {
+        "generated_lines": 70,
+        "ground_truth_lines": 51,
+        "generated_tokens": 344,
+        "ground_truth_tokens": 282,
+        "line_count_diff": 19,
+        "token_count_diff": 62
+      },
+      "status": "success",
+      "elapsed_s": 7.35,
+      "input_code_preview": "```c\nstatic void rxrpc_peer_keepalive_dispatch(struct rxrpc_net *rxnet, struct list_head *collector, time64_t base, u8 cursor)\n{\n\tstruct rxrpc_peer *peer;\n\tconst u8 mask = ARRAY_SIZE(rxnet->peer_keepalive) - 1;\n\ttime64_t keepalive_at;\n\tbool use;\n\tint slot;\n\n\tspin_lock(&rxnet->peer_hash_lock);\n\n\twhil\n... [truncated]",
+      "ground_truth_preview": "static void rxrpc_peer_keepalive_dispatch(struct rxrpc_net *rxnet, struct list_head *collector, time64_t base, u8 cursor) {\n    struct rxrpc_peer *peer;\n    const u8 mask = ARRAY_SIZE(rxnet->peer_keepalive) - 1;\n    time64_t now;\n    bool use_local = true;\n    u8 idx;\n\n    spin_lock(&rxnet->peer_has\n... [truncated]",
+      "generated_patch_preview": "struct rxrpc_peer *rxrpc_lookup_peer(struct rxrpc_local *local, struct sockaddr_rxrpc *srx, gfp_t gfp)\n{\n    struct rxrpc_peer *peer, *candidate;\n    struct rxrpc_net *rxnet = local->rxnet;\n    unsigned long hash_key = rxrpc_peer_hash_key(local, srx);\n\n    _enter(\"{%pISp}\", &srx->transport);\n\n    //\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21809",
+      "query_cwe": "Improper Locking",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2025-21809",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3934,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.1504,
+        "line_sequence_ratio": 0.281,
+        "normalised_edit_distance": 0.7055,
+        "token_jaccard": 0.3645,
+        "token_jaccard_multiset": 0.5012,
+        "bleu_1": 0.6076,
+        "bleu_2": 0.4743,
+        "bleu_4": 0.2847,
+        "codebleu_proxy": 0.3037,
+        "bertscore_precision": 0.538,
+        "bertscore_recall": 0.5538,
+        "bertscore_f1": 0.5458
+      },
+      "size_info": {
+        "generated_lines": 70,
+        "ground_truth_lines": 51,
+        "generated_tokens": 344,
+        "ground_truth_tokens": 282,
+        "line_count_diff": 19,
+        "token_count_diff": 62
+      },
+      "status": "success",
+      "elapsed_s": 7.54,
+      "input_code_preview": "```c\nstatic void rxrpc_peer_keepalive_dispatch(struct rxrpc_net *rxnet, struct list_head *collector, time64_t base, u8 cursor)\n{\n\tstruct rxrpc_peer *peer;\n\tconst u8 mask = ARRAY_SIZE(rxnet->peer_keepalive) - 1;\n\ttime64_t keepalive_at;\n\tbool use;\n\tint slot;\n\n\tspin_lock(&rxnet->peer_hash_lock);\n\n\twhil\n... [truncated]",
+      "ground_truth_preview": "static void rxrpc_peer_keepalive_dispatch(struct rxrpc_net *rxnet, struct list_head *collector, time64_t base, u8 cursor) {\n    struct rxrpc_peer *peer;\n    const u8 mask = ARRAY_SIZE(rxnet->peer_keepalive) - 1;\n    time64_t now;\n    bool use_local = true;\n    u8 idx;\n\n    spin_lock(&rxnet->peer_has\n... [truncated]",
+      "generated_patch_preview": "void rxrpc_peer_keepalive_worker(struct work_struct *work)\n{\n    // Retrieve the rxrpc_net structure from the work_struct\n    struct rxrpc_net *rxnet = container_of(work, struct rxrpc_net, peer_keepalive_work);\n    // Calculate the mask for indexing into the peer_keepalive array\n    const u8 mask = \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21804",
+      "query_cwe": "Return of Stack Variable Address After Scope",
+      "query_variant": "re_implemented_deepseek-r1",
+      "example_cve": "CVE-2025-21804",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3429,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.7205,
+        "line_sequence_ratio": 0.6133,
+        "normalised_edit_distance": 0.3252,
+        "token_jaccard": 0.863,
+        "token_jaccard_multiset": 0.7383,
+        "bleu_1": 0.7666,
+        "bleu_2": 0.7467,
+        "bleu_4": 0.7199,
+        "codebleu_proxy": 0.729,
+        "bertscore_precision": 0.725,
+        "bertscore_recall": 0.7214,
+        "bertscore_f1": 0.7232
+      },
+      "size_info": {
+        "generated_lines": 47,
+        "ground_truth_lines": 28,
+        "generated_tokens": 287,
+        "ground_truth_tokens": 231,
+        "line_count_diff": 19,
+        "token_count_diff": 56
+      },
+      "status": "success",
+      "elapsed_s": 10.0,
+      "input_code_preview": "```c\nstatic int rcar_pcie_parse_outbound_ranges(struct rcar_pcie_endpoint *ep, struct platform_device *pdev)\n{\n\tstruct rcar_pcie *pcie = &ep->pcie;\n\tchar outbound_name[10];\n\tstruct resource *res;\n\tunsigned int i = 0;\n\n\tep->num_ob_windows = 0;\n\tfor (i = 0; i < RCAR_PCI_MAX_RESOURCES; i++) {\n\t\tsprintf\n... [truncated]",
+      "ground_truth_preview": "static int rcar_pcie_parse_outbound_ranges(struct rcar_pcie_endpoint *ep, struct platform_device *pdev) {\n    struct rcar_pcie *pcie = &ep->pcie;\n    char res_name[NAME_SIZE];\n    struct resource *res;\n    int i;\n\n    for (i = 0; i < ep->num_ob_windows; ++i) {\n        snprintf(res_name, sizeof(res_n\n... [truncated]",
+      "generated_patch_preview": "static int rcar_pcie_parse_outbound_ranges(struct rcar_pcie_endpoint *ep, struct platform_device *pdev) {\n    // Get the pointer to the rcar_pcie structure from the endpoint\n    struct rcar_pcie *pcie = &ep->pcie;\n    // Declare a pointer to a resource structure\n    struct resource *res;\n    // Init\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21859",
+      "query_cwe": "Deadlock",
+      "query_variant": "re_implemented_gpt-4o",
+      "example_cve": "CVE-2025-21859",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.352,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.5555,
+        "line_sequence_ratio": 0.4706,
+        "normalised_edit_distance": 0.3661,
+        "token_jaccard": 0.7209,
+        "token_jaccard_multiset": 0.6488,
+        "bleu_1": 0.6558,
+        "bleu_2": 0.6346,
+        "bleu_4": 0.5942,
+        "codebleu_proxy": 0.595,
+        "bertscore_precision": 0.658,
+        "bertscore_recall": 0.7024,
+        "bertscore_f1": 0.6795
+      },
+      "size_info": {
+        "generated_lines": 64,
+        "ground_truth_lines": 38,
+        "generated_tokens": 369,
+        "ground_truth_tokens": 246,
+        "line_count_diff": 26,
+        "token_count_diff": 123
+      },
+      "status": "success",
+      "elapsed_s": 9.42,
+      "input_code_preview": "```c\nstatic void f_midi_complete(struct usb_ep *ep, struct usb_request *req)\n{\n\tstruct f_midi *midi = ep->driver_data;\n\tstruct usb_composite_dev *cdev = midi->func.config->cdev;\n\tint status = req->status;\n\n\tswitch (status) {\n\tcase 0:\t\t\t /* normal completion */\n\t\tif (ep == midi->out_ep) {\n\t\t\t/* We re\n... [truncated]",
+      "ground_truth_preview": "static void f_midi_complete(struct usb_ep* ep, struct usb_request* req)\n{\n    struct f_midi* midi = ep->driver_data;\n    struct usb_composite_dev* cdev = midi->func.config->cdev;\n    int status = req->status;\n\n    switch (status) {\n    case 0:\n        if (ep == midi->out_ep) {\n            f_midi_han\n... [truncated]",
+      "generated_patch_preview": "#include <linux/workqueue.h>\n\nstatic void f_midi_transmit_work(struct work_struct *work)\n{\n    struct f_midi *midi = container_of(work, struct f_midi, work);\n    f_midi_transmit(midi);\n}\n\nstatic void f_midi_complete(struct usb_ep *ep, struct usb_request *req)\n{\n    struct f_midi *midi = ep->driver_d\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21807",
+      "query_cwe": "Deadlock",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2025-21807",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3448,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.5902,
+        "line_sequence_ratio": 0.4789,
+        "normalised_edit_distance": 0.2431,
+        "token_jaccard": 0.8448,
+        "token_jaccard_multiset": 0.8772,
+        "bleu_1": 0.9259,
+        "bleu_2": 0.895,
+        "bleu_4": 0.8289,
+        "codebleu_proxy": 0.7454,
+        "bertscore_precision": 0.8442,
+        "bertscore_recall": 0.8343,
+        "bertscore_f1": 0.8392
+      },
+      "size_info": {
+        "generated_lines": 37,
+        "ground_truth_lines": 34,
+        "generated_tokens": 216,
+        "ground_truth_tokens": 212,
+        "line_count_diff": 3,
+        "token_count_diff": 4
+      },
+      "status": "success",
+      "elapsed_s": 6.29,
+      "input_code_preview": "```c\nstatic ssize_t queue_attr_store(struct kobject *kobj, struct attribute *attr, const char *page, size_t length)\n{\n\tstruct queue_sysfs_entry *entry = to_queue(attr);\n\tstruct gendisk *disk = container_of(kobj, struct gendisk, queue_kobj);\n\tstruct request_queue *q = disk->queue;\n\tssize_t res;\n\n\tif \n... [truncated]",
+      "ground_truth_preview": "ssize_t queue_attr_store(struct kobject *kobj, struct attribute *attr, const char *page, size_t length) {\n    struct queue_sysfs_entry *entry = to_queue(attr);\n    struct gendisk *disk = kobj_to_gd(kobj);\n    struct request_queue *q = disk->queue;\n    ssize_t res = length;\n\n    if (!entry->store_lim\n... [truncated]",
+      "generated_patch_preview": "static ssize_t queue_attr_store(struct kobject *kobj, struct attribute *attr, const char *page, size_t length)\n{\n    struct queue_sysfs_entry *entry = to_queue(attr);\n    struct gendisk *disk = container_of(kobj, struct gendisk, queue_kobj);\n    struct request_queue *q = disk->queue;\n    ssize_t res\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21859",
+      "query_cwe": "Deadlock",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2025-21859",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.2993,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.3962,
+        "line_sequence_ratio": 0.4694,
+        "normalised_edit_distance": 0.445,
+        "token_jaccard": 0.5408,
+        "token_jaccard_multiset": 0.6526,
+        "bleu_1": 0.7186,
+        "bleu_2": 0.643,
+        "bleu_4": 0.5335,
+        "codebleu_proxy": 0.5193,
+        "bertscore_precision": 0.6151,
+        "bertscore_recall": 0.6402,
+        "bertscore_f1": 0.6274
+      },
+      "size_info": {
+        "generated_lines": 60,
+        "ground_truth_lines": 38,
+        "generated_tokens": 366,
+        "ground_truth_tokens": 300,
+        "line_count_diff": 22,
+        "token_count_diff": 66
+      },
+      "status": "success",
+      "elapsed_s": 9.78,
+      "input_code_preview": "```c\nstatic void f_midi_complete(struct usb_ep *ep, struct usb_request *req)\n{\n\tstruct f_midi *midi = ep->driver_data;\n\tstruct usb_composite_dev *cdev = midi->func.config->cdev;\n\tint status = req->status;\n\n\tswitch (status) {\n\tcase 0:\t\t\t /* normal completion */\n\t\tif (ep == midi->out_ep) {\n\t\t\t/* We re\n... [truncated]",
+      "ground_truth_preview": "static void f_midi_complete(usb_ep *ep, usb_request *req) {\n    f_midi *midi = container_of(ep->driver_data, (f_midi *)0, 0);\n    usb_composite_dev *cdev = get_gadget_and_driver(midi)->cdev;\n    int status = req->status;\n\n    switch (status) {\n    case 0:\n        if (ep == midi->out_ep) {\n          \n... [truncated]",
+      "generated_patch_preview": "#include <linux/workqueue.h>\n\nstatic void f_midi_transmit_work_handler(struct work_struct *work)\n{\n    struct f_midi *midi = container_of(work, struct f_midi, work);\n    f_midi_transmit(midi);\n}\n\nstatic void f_midi_complete(struct usb_ep *ep, struct usb_request *req)\n{\n    struct f_midi *midi = ep->\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21807",
+      "query_cwe": "Deadlock",
+      "query_variant": "re_implemented_o3-mini",
+      "example_cve": "CVE-2025-21807",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.2258,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.6082,
+        "line_sequence_ratio": 0.5135,
+        "normalised_edit_distance": 0.1824,
+        "token_jaccard": 0.9298,
+        "token_jaccard_multiset": 0.8918,
+        "bleu_1": 0.9319,
+        "bleu_2": 0.9017,
+        "bleu_4": 0.8522,
+        "codebleu_proxy": 0.7869,
+        "bertscore_precision": 0.8655,
+        "bertscore_recall": 0.8492,
+        "bertscore_f1": 0.8573
+      },
+      "size_info": {
+        "generated_lines": 39,
+        "ground_truth_lines": 35,
+        "generated_tokens": 216,
+        "ground_truth_tokens": 221,
+        "line_count_diff": 4,
+        "token_count_diff": -5
+      },
+      "status": "success",
+      "elapsed_s": 10.67,
+      "input_code_preview": "```c\nstatic ssize_t queue_attr_store(struct kobject *kobj, struct attribute *attr, const char *page, size_t length)\n{\n\tstruct queue_sysfs_entry *entry = to_queue(attr);\n\tstruct gendisk *disk = container_of(kobj, struct gendisk, queue_kobj);\n\tstruct request_queue *q = disk->queue;\n\tssize_t res;\n\n\tif \n... [truncated]",
+      "ground_truth_preview": "static ssize_t queue_attr_store(struct kobject *kobj, struct attribute *attr, const char *page, size_t length) {\n    struct queue_sysfs_entry *entry = to_queue(attr);\n    struct gendisk *disk = container_of(kobj, (struct gendisk*)0, \"queue_kobj\");\n    struct request_queue *q = disk->queue;\n    ssize\n... [truncated]",
+      "generated_patch_preview": "static ssize_t queue_attr_store(struct kobject *kobj, struct attribute *attr, const char *page, size_t length)\n{\n    struct queue_sysfs_entry *entry = to_queue(attr);\n    struct gendisk *disk = container_of(kobj, struct gendisk, queue_kobj);\n    struct request_queue *q = disk->queue;\n    ssize_t res\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21815",
+      "query_cwe": "Integer Underflow",
+      "query_variant": "re_implemented_llama",
+      "example_cve": "CVE-2025-21815",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.4519,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.5722,
+        "line_sequence_ratio": 0.6471,
+        "normalised_edit_distance": 0.2406,
+        "token_jaccard": 0.878,
+        "token_jaccard_multiset": 0.8667,
+        "bleu_1": 0.8904,
+        "bleu_2": 0.8614,
+        "bleu_4": 0.8074,
+        "codebleu_proxy": 0.785,
+        "bertscore_precision": 0.5092,
+        "bertscore_recall": 0.5249,
+        "bertscore_f1": 0.5169
+      },
+      "size_info": {
+        "generated_lines": 109,
+        "ground_truth_lines": 95,
+        "generated_tokens": 511,
+        "ground_truth_tokens": 469,
+        "line_count_diff": 14,
+        "token_count_diff": 42
+      },
+      "status": "success",
+      "elapsed_s": 10.0,
+      "input_code_preview": "```c\nstatic unsigned long isolate_freepages_block(struct compact_control *cc,\n\t\t\t\tunsigned long *start_pfn,\n\t\t\t\tunsigned long end_pfn,\n\t\t\t\tstruct list_head *freelist,\n\t\t\t\tunsigned int stride,\n\t\t\t\tbool strict)\n{\n\tint nr_scanned = 0, total_isolated = 0;\n\tstruct page *page;\n\tunsigned long flags = 0;\n\tb\n... [truncated]",
+      "ground_truth_preview": "static unsigned long isolate_freepages_block(struct compact_control *cc,\n            unsigned long *start_pfn,\n            unsigned long end_pfn,\n            struct list_head *freelist,\n            unsigned int stride,\n            int strict)\n{\n    unsigned long nr_scanned = 0;\n    unsigned long tot\n... [truncated]",
+      "generated_patch_preview": "#define MAX_PAGE_ORDER 10  // Define a safe maximum value for 'order'\n\nstatic unsigned long isolate_freepages_block(struct compact_control *cc,\n                                             unsigned long *start_pfn,\n                                             unsigned long end_pfn,\n                 \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21838",
+      "query_cwe": "Improper Control of a Resource Through Its Lifetime",
+      "query_variant": "re_implemented_gpt-4o",
+      "example_cve": "CVE-2025-21838",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.432,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.9063,
+        "line_sequence_ratio": 0.8387,
+        "normalised_edit_distance": 0.123,
+        "token_jaccard": 0.9375,
+        "token_jaccard_multiset": 0.9551,
+        "bleu_1": 0.9613,
+        "bleu_2": 0.9579,
+        "bleu_4": 0.946,
+        "codebleu_proxy": 0.9171,
+        "bertscore_precision": 0.9044,
+        "bertscore_recall": 0.9659,
+        "bertscore_f1": 0.9341
+      },
+      "size_info": {
+        "generated_lines": 32,
+        "ground_truth_lines": 30,
+        "generated_tokens": 155,
+        "ground_truth_tokens": 150,
+        "line_count_diff": 2,
+        "token_count_diff": 5
+      },
+      "status": "success",
+      "elapsed_s": 5.83,
+      "input_code_preview": "```c\nvoid usb_del_gadget(struct usb_gadget *gadget)\n{\n\tstruct usb_udc *udc = gadget->udc;\n\n\tif (!udc)\n\t\treturn;\n\n\tdev_vdbg(gadget->dev.parent, \"unregistering gadget\\n\");\n\n\tmutex_lock(&udc_lock);\n\tlist_del(&udc->list);\n\tmutex_unlock(&udc_lock);\n\n\tkobject_uevent(&udc->dev.kobj, KOBJ_REMOVE);\n\tsysfs_re\n... [truncated]",
+      "ground_truth_preview": "void usb_del_gadget(struct usb_gadget *gadget)\n{\n    // Retrieve the USB device controller associated with the gadget\n    struct usb_udc *udc = gadget->udc;\n\n    // If there is no associated USB device controller, exit the function\n    if (!udc)\n        return;\n\n    // Log a debug message indicating\n... [truncated]",
+      "generated_patch_preview": "void usb_del_gadget(struct usb_gadget *gadget)\n{\n    // Retrieve the USB device controller associated with the gadget\n    struct usb_udc *udc = gadget->udc;\n\n    // If there is no associated USB device controller, exit the function\n    if (!udc)\n        return;\n\n    // Log a debug message indicating\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21841",
+      "query_cwe": "Memory Leak",
+      "query_variant": "re_implemented_gpt-4o",
+      "example_cve": "CVE-2025-21841",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3871,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.7098,
+        "line_sequence_ratio": 0.6914,
+        "normalised_edit_distance": 0.1866,
+        "token_jaccard": 0.9615,
+        "token_jaccard_multiset": 0.9096,
+        "bleu_1": 0.9379,
+        "bleu_2": 0.9091,
+        "bleu_4": 0.8378,
+        "codebleu_proxy": 0.8321,
+        "bertscore_precision": 0.8651,
+        "bertscore_recall": 0.8712,
+        "bertscore_f1": 0.8681
+      },
+      "size_info": {
+        "generated_lines": 42,
+        "ground_truth_lines": 39,
+        "generated_tokens": 161,
+        "ground_truth_tokens": 156,
+        "line_count_diff": 3,
+        "token_count_diff": 5
+      },
+      "status": "success",
+      "elapsed_s": 9.34,
+      "input_code_preview": "```c\nstatic void amd_pstate_update_limits(unsigned int cpu)\n{\n\tstruct cpufreq_policy *policy = cpufreq_cpu_get(cpu);\n\tstruct amd_cpudata *cpudata;\n\tu32 prev_high = 0, cur_high = 0;\n\tint ret;\n\tbool highest_perf_changed = false;\n\n\tif (!policy)\n\t\treturn;\n\n\tcpudata = policy->driver_data;\n\n\tif (!amd_psta\n... [truncated]",
+      "ground_truth_preview": "static void amd_pstate_update_limits(unsigned int cpu)\n{\n    struct cpufreq_policy *policy = cpufreq_cpu_get(cpu);\n    struct amd_cpudata *cpudata;\n    u32 prev_high, cur_high;\n    bool highest_perf_changed = false;\n\n    if (!policy)\n        return;\n\n    cpudata = (struct amd_cpudata *)policy->drive\n... [truncated]",
+      "generated_patch_preview": "static void amd_pstate_update_limits(unsigned int cpu)\n{\n    struct cpufreq_policy *policy = NULL;\n    struct amd_cpudata *cpudata;\n    u32 prev_high = 0, cur_high = 0;\n    int ret;\n    bool highest_perf_changed = false;\n\n    // Check if the preferred core feature is disabled, and return if it is\n  \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21995",
+      "query_cwe": "Memory Leak",
+      "query_variant": "re_implemented_deepseek-r1",
+      "example_cve": "CVE-2025-21995",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3411,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.9636,
+        "line_sequence_ratio": 0.8732,
+        "normalised_edit_distance": 0.0673,
+        "token_jaccard": 1.0,
+        "token_jaccard_multiset": 0.9744,
+        "bleu_1": 0.9744,
+        "bleu_2": 0.9717,
+        "bleu_4": 0.9664,
+        "codebleu_proxy": 0.9515,
+        "bertscore_precision": 0.9556,
+        "bertscore_recall": 0.9471,
+        "bertscore_f1": 0.9513
+      },
+      "size_info": {
+        "generated_lines": 37,
+        "ground_truth_lines": 34,
+        "generated_tokens": 195,
+        "ground_truth_tokens": 190,
+        "line_count_diff": 3,
+        "token_count_diff": 5
+      },
+      "status": "success",
+      "elapsed_s": 9.95,
+      "input_code_preview": "```c\nstatic void drm_sched_entity_kill(struct drm_sched_entity *entity)\n{\n\tstruct drm_sched_job *job;\n\tstruct dma_fence *prev;\n\n\tif (!entity->rq)\n\t\treturn;\n\n\tspin_lock(&entity->rq_lock);\n\tentity->stopped = true;\n\tdrm_sched_rq_remove_entity(entity->rq, entity);\n\tspin_unlock(&entity->rq_lock);\n\n\t/* Ma\n... [truncated]",
+      "ground_truth_preview": "static void drm_sched_entity_kill(struct drm_sched_entity *entity) {\n    struct drm_sched_job *job;\n    struct dma_fence *prev = NULL;\n\n    if (!entity->rq)\n        return;\n\n    spin_lock(&entity->rq->lock);\n    entity->stopped = true;\n    drm_sched_rq_remove_entity(entity->rq, entity);\n    spin_unl\n... [truncated]",
+      "generated_patch_preview": "static void drm_sched_entity_kill(struct drm_sched_entity *entity)\n{\n    struct drm_sched_job *job;\n    struct dma_fence *prev = NULL;\n\n    if (!entity->rq)\n        return;\n\n    /* Stop the entity and remove it from the runqueue */\n    spin_lock(&entity->rq->lock);\n    entity->stopped = true;\n    dr\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21842",
+      "query_cwe": "Incorrect Type Conversion or Cast",
+      "query_variant": "re_implemented_llama",
+      "example_cve": "CVE-2025-21842",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.4693,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.8852,
+        "line_sequence_ratio": 0.687,
+        "normalised_edit_distance": 0.1801,
+        "token_jaccard": 0.9247,
+        "token_jaccard_multiset": 0.9565,
+        "bleu_1": 0.9724,
+        "bleu_2": 0.9626,
+        "bleu_4": 0.9428,
+        "codebleu_proxy": 0.8743,
+        "bertscore_precision": 0.6974,
+        "bertscore_recall": 0.6874,
+        "bertscore_f1": 0.6924
+      },
+      "size_info": {
+        "generated_lines": 72,
+        "ground_truth_lines": 59,
+        "generated_tokens": 362,
+        "ground_truth_tokens": 358,
+        "line_count_diff": 13,
+        "token_count_diff": 4
+      },
+      "status": "success",
+      "elapsed_s": 9.79,
+      "input_code_preview": "```c\nstatic int init_user_queue(struct process_queue_manager *pqm,\n\t\t\t\tstruct kfd_node *dev, struct queue **q,\n\t\t\t\tstruct queue_properties *q_properties,\n\t\t\t\tunsigned int qid)\n{\n\tint retval;\n\n\t/* Doorbell initialized in user space*/\n\tq_properties->doorbell_ptr = NULL;\n\tq_properties->exception_status\n... [truncated]",
+      "ground_truth_preview": "static int init_user_queue(struct process_queue_manager *pqm,\n                           struct kfd_node *dev, struct queue **q,\n                           struct queue_properties *q_properties,\n                           unsigned int qid) {\n    int retval;\n\n    q_properties->doorbell_ptr = NULL;\n  \n... [truncated]",
+      "generated_patch_preview": "static int init_user_queue(struct process_queue_manager *pqm,\nstruct kfd_node *dev, struct queue **q,\nstruct queue_properties *q_properties,\nunsigned int qid)\n{\n    int retval;\n\n    // Initialize the doorbell pointer to NULL as it is set in user space\n    q_properties->doorbell_ptr = NULL;\n\n    // S\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21987",
+      "query_cwe": "Use of Uninitialized Variable",
+      "query_variant": "augmented",
+      "example_cve": "CVE-2025-21987",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.563,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.949,
+        "line_sequence_ratio": 0.8571,
+        "normalised_edit_distance": 0.0806,
+        "token_jaccard": 0.8987,
+        "token_jaccard_multiset": 0.9459,
+        "bleu_1": 0.9585,
+        "bleu_2": 0.9568,
+        "bleu_4": 0.9533,
+        "codebleu_proxy": 0.9156,
+        "bertscore_precision": 0.9301,
+        "bertscore_recall": 0.9305,
+        "bertscore_f1": 0.9303
+      },
+      "size_info": {
+        "generated_lines": 51,
+        "ground_truth_lines": 54,
+        "generated_tokens": 284,
+        "ground_truth_tokens": 292,
+        "line_count_diff": -3,
+        "token_count_diff": -8
+      },
+      "status": "success",
+      "elapsed_s": 23.74,
+      "input_code_preview": "```c\nint amdgpu_ttm_clear_buffer(struct amdgpu_bo *bo, struct dma_resv *resv, struct dma_fence **fence)\n{\n\tstruct amdgpu_device *adev = amdgpu_ttm_adev(bo->tbo.bdev);\n\tstruct amdgpu_ring *ring = adev->mman.buffer_funcs_ring;\n\tstruct amdgpu_res_cursor cursor;\n\tu64 addr;\n\tint r;\n\n\tif (!adev->mman.buff\n... [truncated]",
+      "ground_truth_preview": "int amdgpu_ttm_clear_buffer(struct amdgpu_bo *bo, struct dma_resv *resv, struct dma_fence **lock)\n{\n    struct amdgpu_device *segment = amdgpu_ttm_adev(bo->tbo.bdev);\n    struct amdgpu_ring *index = segment->mman.buffer_funcs_ring;\n    struct amdgpu_res_cursor session;\n    u64 address;\n    int resul\n... [truncated]",
+      "generated_patch_preview": "#define MALLOC false\nint amdgpu_ttm_clear_buffer(struct amdgpu_bo *bo, struct dma_resv *resv, struct dma_fence **lock)\n{\n    struct amdgpu_device *segment = amdgpu_ttm_adev(bo->tbo.bdev);\n    struct amdgpu_ring *index = segment->mman.buffer_funcs_ring;\n    struct amdgpu_res_cursor session;\n    u64 a\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21843",
+      "query_cwe": "Use of Uninitialized Variable",
+      "query_variant": "re_implemented_o3-mini",
+      "example_cve": "CVE-2025-21843",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3673,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.8818,
+        "line_sequence_ratio": 0.6667,
+        "normalised_edit_distance": 0.2283,
+        "token_jaccard": 0.9667,
+        "token_jaccard_multiset": 0.8636,
+        "bleu_1": 0.8636,
+        "bleu_2": 0.8549,
+        "bleu_4": 0.8244,
+        "codebleu_proxy": 0.8205,
+        "bertscore_precision": 0.7679,
+        "bertscore_recall": 0.7029,
+        "bertscore_f1": 0.734
+      },
+      "size_info": {
+        "generated_lines": 15,
+        "ground_truth_lines": 12,
+        "generated_tokens": 66,
+        "ground_truth_tokens": 57,
+        "line_count_diff": 3,
+        "token_count_diff": 9
+      },
+      "status": "success",
+      "elapsed_s": 4.52,
+      "input_code_preview": "```c\nstatic void panthor_query_group_priorities_info(struct drm_file *file,\n\t\t\t\t\t\tstruct drm_panthor_group_priorities_info *arg)\n{\n\tint prio;\n\n\tfor (prio = PANTHOR_GROUP_PRIORITY_REALTIME; prio >= 0; prio--) {\n\t\tif (!group_priority_permit(file, prio))\n\t\t\targ->allowed_mask |= BIT(prio);\n\t}\n}\n```",
+      "ground_truth_preview": "static void panthor_query_group_priorities_info(struct drm_file *file,\n                                                struct drm_panthor_group_priorities_info *arg)\n{\n    int prio;  // Initialize a variable to iterate over the group priorities starting from the highest\n\n    // Loop through each pri\n... [truncated]",
+      "generated_patch_preview": "static void panthor_query_group_priorities_info(struct drm_file *file,\nstruct drm_panthor_group_priorities_info *arg)\n{\n    int prio; // Variable to iterate over the group priorities starting from the highest\n\n    // Initialize the allowed_mask to ensure it starts from a known state\n    arg->allowed\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21909",
+      "query_cwe": "Business Logic Errors",
+      "query_variant": "augmented",
+      "example_cve": "CVE-2025-21909",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3729,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.71,
+        "line_sequence_ratio": 0.5455,
+        "normalised_edit_distance": 0.4257,
+        "token_jaccard": 0.5862,
+        "token_jaccard_multiset": 0.5611,
+        "bleu_1": 0.5674,
+        "bleu_2": 0.5519,
+        "bleu_4": 0.5199,
+        "codebleu_proxy": 0.5428,
+        "bertscore_precision": 0.6021,
+        "bertscore_recall": 0.8658,
+        "bertscore_f1": 0.7102
+      },
+      "size_info": {
+        "generated_lines": 34,
+        "ground_truth_lines": 21,
+        "generated_tokens": 178,
+        "ground_truth_tokens": 103,
+        "line_count_diff": 13,
+        "token_count_diff": 75
+      },
+      "status": "success",
+      "elapsed_s": 8.01,
+      "input_code_preview": "```c\nstatic int parse_monitor_flags(struct nlattr *nla, u32 *mntrflags)\n{\n\tstruct nlattr *flags[NL80211_MNTR_FLAG_MAX + 1];\n\tint flag;\n\n\t*mntrflags = 0;\n\n\tif (!nla)\n\t\treturn -EINVAL;\n\n\tif (nla_parse_nested_deprecated(flags, NL80211_MNTR_FLAG_MAX, nla, mntr_flags_policy, NULL))\n\t\treturn -EINVAL;\n\n\tfo\n... [truncated]",
+      "ground_truth_preview": "static int parse_monitor_flags(struct nlattr *nla, u32 *buffer_overflow)\n{\n    struct nlattr *flags[NL80211_MNTR_FLAG_MAX + 1];\n    int index;\n\n    *buffer_overflow = 0;\n\n    if (!nla) \n        return -1; // Return -1 for simplicity (instead of -EINVAL, which is normally defined in errno.h)\n\n    if \n... [truncated]",
+      "generated_patch_preview": "#define MALLOC false\nstatic int parse_monitor_flags(struct nlattr *nla, u32 *buffer_overflow)\n{\n    struct nlattr *flags[NL80211_MNTR_FLAG_MAX + 1];\n    int index;\n    *buffer_overflow = 0;\n\n    // Check if nla is NULL\n    if (!nla)\n        return -EINVAL;\n\n    // Parse nested attributes\n    if (nla\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21910",
+      "query_cwe": "Improper Input Validation",
+      "query_variant": "re_implemented_llama",
+      "example_cve": "CVE-2025-21910",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3871,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.6407,
+        "line_sequence_ratio": 0.6154,
+        "normalised_edit_distance": 0.4219,
+        "token_jaccard": 0.75,
+        "token_jaccard_multiset": 0.6053,
+        "bleu_1": 0.6765,
+        "bleu_2": 0.6275,
+        "bleu_4": 0.5577,
+        "codebleu_proxy": 0.6202,
+        "bertscore_precision": 0.7078,
+        "bertscore_recall": 0.7214,
+        "bertscore_f1": 0.7145
+      },
+      "size_info": {
+        "generated_lines": 13,
+        "ground_truth_lines": 13,
+        "generated_tokens": 68,
+        "ground_truth_tokens": 54,
+        "line_count_diff": 0,
+        "token_count_diff": 14
+      },
+      "status": "success",
+      "elapsed_s": 6.95,
+      "input_code_preview": "```c\nstatic bool is_an_alpha2(const char *alpha2)\n{\n\tif (!alpha2)\n\t\treturn false;\n\treturn isalpha(alpha2[0]) && isalpha(alpha2[1]);\n}\n```",
+      "ground_truth_preview": "int isalpha(int c);\n\nstatic bool is_an_alpha2(const char *alpha2) {\n    // Check if the input string is null\n    if (!alpha2)\n        // If the input string is null, return false\n        return false;\n\n    // Check if the first character of the string is an alphabetic character\n    if (!isalpha(*alp\n... [truncated]",
+      "generated_patch_preview": "static bool is_an_alpha2(const char *alpha2) {\n    // Check if the input string is null\n    if (!alpha2)\n        return false;\n\n    // Validate the first character: check if it is ASCII and alphabetic\n    if (!isascii(*alpha2) || !isalpha(*alpha2++))\n        return false;\n\n    // Validate the second\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-21991",
+      "query_cwe": "Improper Validation of Array Index",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2025-21991",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.2985,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.5847,
+        "line_sequence_ratio": 0.5366,
+        "normalised_edit_distance": 0.3227,
+        "token_jaccard": 0.875,
+        "token_jaccard_multiset": 0.74,
+        "bleu_1": 0.7551,
+        "bleu_2": 0.7122,
+        "bleu_4": 0.6212,
+        "codebleu_proxy": 0.6635,
+        "bertscore_precision": 0.7061,
+        "bertscore_recall": 0.7628,
+        "bertscore_f1": 0.7333
+      },
+      "size_info": {
+        "generated_lines": 42,
+        "ground_truth_lines": 40,
+        "generated_tokens": 196,
+        "ground_truth_tokens": 152,
+        "line_count_diff": 2,
+        "token_count_diff": 44
+      },
+      "status": "success",
+      "elapsed_s": 8.96,
+      "input_code_preview": "```c\nstatic enum ucode_state load_microcode_amd(u8 family, const u8 *data, size_t size)\n{\n\tstruct cpuinfo_x86 *c;\n\tunsigned int nid, cpu;\n\tstruct ucode_patch *p;\n\tenum ucode_state ret;\n\n\tret = _load_microcode_amd(family, data, size);\n\tif (ret != UCODE_OK)\n\t\treturn ret;\n\n\tfor_each_node(nid) {\n\t\tcpu =\n... [truncated]",
+      "ground_truth_preview": "static enum ucode_state load_microcode_amd(u8 family, const u8 *data, size_t size) {\n    // Declare a pointer to a cpuinfo_x86 structure\n    struct cpuinfo_x86* cpu_info;\n\n    // Declare variables for node ID and CPU ID\n    int nid;\n    unsigned int cpu;\n\n    // Declare a pointer to a ucode_patch st\n... [truncated]",
+      "generated_patch_preview": "static enum ucode_state load_microcode_amd(u8 family, const u8 *data, size_t size)\n{\n    struct cpuinfo_x86 *cpu_info;\n    unsigned int nid, cpu;\n    struct ucode_patch *patch;\n    enum ucode_state ret;\n\n    // Load the microcode for AMD processors and store the result in ret\n    ret = _load_microco\n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-22010",
+      "query_cwe": "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+      "query_variant": "re_implemented_deepseek",
+      "example_cve": "CVE-2025-22010",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.3908,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.0469,
+        "line_sequence_ratio": 0.1149,
+        "normalised_edit_distance": 0.7326,
+        "token_jaccard": 0.2857,
+        "token_jaccard_multiset": 0.3458,
+        "bleu_1": 0.4648,
+        "bleu_2": 0.3014,
+        "bleu_4": 0.126,
+        "codebleu_proxy": 0.1632,
+        "bertscore_precision": 0.406,
+        "bertscore_recall": 0.4337,
+        "bertscore_f1": 0.4194
+      },
+      "size_info": {
+        "generated_lines": 42,
+        "ground_truth_lines": 45,
+        "generated_tokens": 229,
+        "ground_truth_tokens": 273,
+        "line_count_diff": -3,
+        "token_count_diff": -44
+      },
+      "status": "success",
+      "elapsed_s": 7.12,
+      "input_code_preview": "```c\nint hns_roce_hem_list_request(struct hns_roce_dev *hr_dev, struct hns_roce_hem_list *hem_list, const struct hns_roce_buf_region *regions, int region_cnt, unsigned int bt_pg_shift)\n{\n\tconst struct hns_roce_buf_region *r;\n\tint ofs, end;\n\tint unit;\n\tint ret;\n\tint i;\n\n\tif (region_cnt > HNS_ROCE_MAX\n... [truncated]",
+      "ground_truth_preview": "int hns_roce_hem_list_request(struct hns_roce_dev *hr_dev, struct hns_roce_hem_list *hem_list, const struct hns_roce_buf_region *regions, int region_cnt, unsigned int bt_pg_shift) {\n    const struct hns_roce_buf_region *r;\n    int ofs;\n    int end;\n    unsigned int unit = 1 << bt_pg_shift;\n    int r\n... [truncated]",
+      "generated_patch_preview": "void *hns_roce_hem_list_find_mtt(struct hns_roce_dev *hr_dev,\n                                 struct hns_roce_hem_list *hem_list,\n                                 int offset, int *mtt_cnt)\n{\n    // Initialize a pointer to the head of the bottom-level list in the HEM list\n    struct list_head *head \n... [truncated]"
+    },
+    {
+      "query_cve": "CVE-2025-22010",
+      "query_cwe": "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+      "query_variant": "re_implemented_o3-mini",
+      "example_cve": "CVE-2025-22010",
+      "example_variant": "original",
+      "retrieval": {
+        "cve_match": true,
+        "cwe_match": true,
+        "similarity": 0.5195,
+        "retrieved_variant": "original"
+      },
+      "scores": {
+        "exact_match": false,
+        "normalised_exact_match": false,
+        "char_sequence_ratio": 0.8425,
+        "line_sequence_ratio": 0.7227,
+        "normalised_edit_distance": 0.1168,
+        "token_jaccard": 0.962,
+        "token_jaccard_multiset": 0.9094,
+        "bleu_1": 0.9153,
+        "bleu_2": 0.8987,
+        "bleu_4": 0.8683,
+        "codebleu_proxy": 0.8553,
+        "bertscore_precision": 0.8483,
+        "bertscore_recall": 0.8709,
+        "bertscore_f1": 0.8594
+      },
+      "size_info": {
+        "generated_lines": 54,
+        "ground_truth_lines": 65,
+        "generated_tokens": 307,
+        "ground_truth_tokens": 283,
+        "line_count_diff": -11,
+        "token_count_diff": 24
+      },
+      "status": "success",
+      "elapsed_s": 6.7,
+      "input_code_preview": "```c\nint hns_roce_hem_list_request(struct hns_roce_dev *hr_dev, struct hns_roce_hem_list *hem_list, const struct hns_roce_buf_region *regions, int region_cnt, unsigned int bt_pg_shift)\n{\n\tconst struct hns_roce_buf_region *r;\n\tint ofs, end;\n\tint unit;\n\tint ret;\n\tint i;\n\n\tif (region_cnt > HNS_ROCE_MAX\n... [truncated]",
+      "ground_truth_preview": "int hns_roce_hem_list_request(struct hns_roce_dev *hr_dev,\n                              struct hns_roce_hem_list *hem_list,\n                              const struct hns_roce_buf_region *regions,\n                              int region_cnt, unsigned int bt_pg_shift)\n{\n    // Declare a pointer to \n... [truncated]",
+      "generated_patch_preview": "int hns_roce_hem_list_request(struct hns_roce_dev *hr_dev,\n                              struct hns_roce_hem_list *hem_list,\n                              const struct hns_roce_buf_region *regions,\n                              int region_cnt, unsigned int bt_pg_shift)\n{\n    const struct hns_roce_bu\n... [truncated]"
+    }
+  ]
+}

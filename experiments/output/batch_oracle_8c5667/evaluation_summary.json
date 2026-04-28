@@ -1,0 +1,275 @@
+{
+  "total_records": 73,
+  "evaluated": 73,
+  "skipped": 0,
+  "exact_matches": 0,
+  "normalised_exact_matches": 0,
+  "avg_char_sequence_ratio": 0.5964,
+  "avg_line_sequence_ratio": 0.5664,
+  "avg_normalised_edit_distance": 0.3439,
+  "avg_token_jaccard": 0.7459,
+  "avg_token_jaccard_multiset": 0.7078,
+  "avg_bleu_1": 0.7366,
+  "avg_bleu_2": 0.6995,
+  "avg_bleu_4": 0.6416,
+  "avg_codebleu_proxy": 0.6488,
+  "avg_bertscore_precision": 0.7056,
+  "avg_bertscore_recall": 0.7361,
+  "avg_bertscore_f1": 0.7174,
+  "by_cwe": {
+    "Assignment of a Fixed Address to a Pointer": {
+      "count": 1,
+      "avg_bleu_4": 0.9757,
+      "avg_token_jaccard": 1.0,
+      "avg_char_ratio": 0.9949,
+      "avg_codebleu_proxy": 0.9633,
+      "avg_bertscore_f1": 0.9686,
+      "exact_matches": 0
+    },
+    "Business Logic Errors": {
+      "count": 1,
+      "avg_bleu_4": 0.5199,
+      "avg_token_jaccard": 0.5862,
+      "avg_char_ratio": 0.71,
+      "avg_codebleu_proxy": 0.5428,
+      "avg_bertscore_f1": 0.7102,
+      "exact_matches": 0
+    },
+    "Deadlock": {
+      "count": 4,
+      "avg_bleu_4": 0.7022,
+      "avg_token_jaccard": 0.7591,
+      "avg_char_ratio": 0.5375,
+      "avg_codebleu_proxy": 0.6616,
+      "avg_bertscore_f1": 0.7509,
+      "exact_matches": 0
+    },
+    "Expired Pointer Dereference": {
+      "count": 2,
+      "avg_bleu_4": 0.3065,
+      "avg_token_jaccard": 0.3487,
+      "avg_char_ratio": 0.1608,
+      "avg_codebleu_proxy": 0.2964,
+      "avg_bertscore_f1": 0.5877,
+      "exact_matches": 0
+    },
+    "Improper Control of a Resource Through Its Lifetime": {
+      "count": 1,
+      "avg_bleu_4": 0.946,
+      "avg_token_jaccard": 0.9375,
+      "avg_char_ratio": 0.9063,
+      "avg_codebleu_proxy": 0.9171,
+      "avg_bertscore_f1": 0.9341,
+      "exact_matches": 0
+    },
+    "Improper Input Validation": {
+      "count": 1,
+      "avg_bleu_4": 0.5577,
+      "avg_token_jaccard": 0.75,
+      "avg_char_ratio": 0.6407,
+      "avg_codebleu_proxy": 0.6202,
+      "avg_bertscore_f1": 0.7145,
+      "exact_matches": 0
+    },
+    "Improper Locking": {
+      "count": 8,
+      "avg_bleu_4": 0.3351,
+      "avg_token_jaccard": 0.4944,
+      "avg_char_ratio": 0.2652,
+      "avg_codebleu_proxy": 0.3838,
+      "avg_bertscore_f1": 0.5631,
+      "exact_matches": 0
+    },
+    "Improper Validation of Array Index": {
+      "count": 1,
+      "avg_bleu_4": 0.6212,
+      "avg_token_jaccard": 0.875,
+      "avg_char_ratio": 0.5847,
+      "avg_codebleu_proxy": 0.6635,
+      "avg_bertscore_f1": 0.7333,
+      "exact_matches": 0
+    },
+    "Incorrect Check of Function Return Value": {
+      "count": 3,
+      "avg_bleu_4": 0.8768,
+      "avg_token_jaccard": 0.847,
+      "avg_char_ratio": 0.9173,
+      "avg_codebleu_proxy": 0.8229,
+      "avg_bertscore_f1": 0.9043,
+      "exact_matches": 0
+    },
+    "Incorrect Type Conversion or Cast": {
+      "count": 1,
+      "avg_bleu_4": 0.9428,
+      "avg_token_jaccard": 0.9247,
+      "avg_char_ratio": 0.8852,
+      "avg_codebleu_proxy": 0.8743,
+      "avg_bertscore_f1": 0.6924,
+      "exact_matches": 0
+    },
+    "Integer Overflow or Wraparound": {
+      "count": 10,
+      "avg_bleu_4": 0.6843,
+      "avg_token_jaccard": 0.7562,
+      "avg_char_ratio": 0.5033,
+      "avg_codebleu_proxy": 0.6948,
+      "avg_bertscore_f1": 0.6971,
+      "exact_matches": 0
+    },
+    "Integer Underflow": {
+      "count": 1,
+      "avg_bleu_4": 0.8074,
+      "avg_token_jaccard": 0.878,
+      "avg_char_ratio": 0.5722,
+      "avg_codebleu_proxy": 0.785,
+      "avg_bertscore_f1": 0.5169,
+      "exact_matches": 0
+    },
+    "Memory Leak": {
+      "count": 2,
+      "avg_bleu_4": 0.9021,
+      "avg_token_jaccard": 0.9808,
+      "avg_char_ratio": 0.8367,
+      "avg_codebleu_proxy": 0.8918,
+      "avg_bertscore_f1": 0.9097,
+      "exact_matches": 0
+    },
+    "NULL Pointer Dereference": {
+      "count": 11,
+      "avg_bleu_4": 0.5668,
+      "avg_token_jaccard": 0.7082,
+      "avg_char_ratio": 0.6444,
+      "avg_codebleu_proxy": 0.5801,
+      "avg_bertscore_f1": 0.6838,
+      "exact_matches": 0
+    },
+    "Operation on a Resource after Expiration or Release": {
+      "count": 2,
+      "avg_bleu_4": 0.6435,
+      "avg_token_jaccard": 0.9399,
+      "avg_char_ratio": 0.354,
+      "avg_codebleu_proxy": 0.6877,
+      "avg_bertscore_f1": 0.713,
+      "exact_matches": 0
+    },
+    "Out-of-bounds Write": {
+      "count": 1,
+      "avg_bleu_4": 0.1711,
+      "avg_token_jaccard": 0.3046,
+      "avg_char_ratio": 0.2884,
+      "avg_codebleu_proxy": 0.2304,
+      "avg_bertscore_f1": 0.1396,
+      "exact_matches": 0
+    },
+    "Race Condition": {
+      "count": 5,
+      "avg_bleu_4": 0.6169,
+      "avg_token_jaccard": 0.785,
+      "avg_char_ratio": 0.5554,
+      "avg_codebleu_proxy": 0.6288,
+      "avg_bertscore_f1": 0.692,
+      "exact_matches": 0
+    },
+    "Return of Stack Variable Address After Scope": {
+      "count": 1,
+      "avg_bleu_4": 0.7199,
+      "avg_token_jaccard": 0.863,
+      "avg_char_ratio": 0.7205,
+      "avg_codebleu_proxy": 0.729,
+      "avg_bertscore_f1": 0.7232,
+      "exact_matches": 0
+    },
+    "Unchecked Return Value": {
+      "count": 1,
+      "avg_bleu_4": 0.216,
+      "avg_token_jaccard": 0.5263,
+      "avg_char_ratio": 0.3253,
+      "avg_codebleu_proxy": 0.3558,
+      "avg_bertscore_f1": 0.4281,
+      "exact_matches": 0
+    },
+    "Uncontrolled Resource Consumption ('Resource Exhaustion')": {
+      "count": 2,
+      "avg_bleu_4": 0.4971,
+      "avg_token_jaccard": 0.6239,
+      "avg_char_ratio": 0.4447,
+      "avg_codebleu_proxy": 0.5092,
+      "avg_bertscore_f1": 0.6394,
+      "exact_matches": 0
+    },
+    "Use After Free": {
+      "count": 12,
+      "avg_bleu_4": 0.7999,
+      "avg_token_jaccard": 0.8618,
+      "avg_char_ratio": 0.7968,
+      "avg_codebleu_proxy": 0.7931,
+      "avg_bertscore_f1": 0.8558,
+      "exact_matches": 0
+    },
+    "Use of Uninitialized Variable": {
+      "count": 2,
+      "avg_bleu_4": 0.8889,
+      "avg_token_jaccard": 0.9327,
+      "avg_char_ratio": 0.9154,
+      "avg_codebleu_proxy": 0.868,
+      "avg_bertscore_f1": 0.8321,
+      "exact_matches": 0
+    }
+  },
+  "by_variant": {
+    "augmented": {
+      "count": 14,
+      "avg_bleu_4": 0.6079,
+      "avg_token_jaccard": 0.6769,
+      "avg_char_ratio": 0.5716,
+      "avg_codebleu_proxy": 0.6103,
+      "avg_bertscore_f1": 0.7136,
+      "exact_matches": 0
+    },
+    "re_implemented_deepseek": {
+      "count": 16,
+      "avg_bleu_4": 0.5713,
+      "avg_token_jaccard": 0.684,
+      "avg_char_ratio": 0.5029,
+      "avg_codebleu_proxy": 0.5771,
+      "avg_bertscore_f1": 0.6547,
+      "exact_matches": 0
+    },
+    "re_implemented_deepseek-r1": {
+      "count": 11,
+      "avg_bleu_4": 0.7577,
+      "avg_token_jaccard": 0.8284,
+      "avg_char_ratio": 0.7533,
+      "avg_codebleu_proxy": 0.7569,
+      "avg_bertscore_f1": 0.8251,
+      "exact_matches": 0
+    },
+    "re_implemented_gpt-4o": {
+      "count": 12,
+      "avg_bleu_4": 0.6551,
+      "avg_token_jaccard": 0.7734,
+      "avg_char_ratio": 0.6414,
+      "avg_codebleu_proxy": 0.6658,
+      "avg_bertscore_f1": 0.748,
+      "exact_matches": 0
+    },
+    "re_implemented_llama": {
+      "count": 8,
+      "avg_bleu_4": 0.5682,
+      "avg_token_jaccard": 0.7062,
+      "avg_char_ratio": 0.546,
+      "avg_codebleu_proxy": 0.5988,
+      "avg_bertscore_f1": 0.6025,
+      "exact_matches": 0
+    },
+    "re_implemented_o3-mini": {
+      "count": 12,
+      "avg_bleu_4": 0.7034,
+      "avg_token_jaccard": 0.8322,
+      "avg_char_ratio": 0.5946,
+      "avg_codebleu_proxy": 0.7066,
+      "avg_bertscore_f1": 0.7526,
+      "exact_matches": 0
+    }
+  }
+}

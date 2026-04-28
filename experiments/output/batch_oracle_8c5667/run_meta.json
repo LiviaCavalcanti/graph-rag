@@ -1,0 +1,27 @@
+{
+  "run_id": "20260427_220827_batch_oracle_8c5667",
+  "model": "gpt-4o",
+  "batch_size": 10,
+  "total_queries": 73,
+  "resumed": false,
+  "mode": "oracle",
+  "split_info": {
+    "enabled": true,
+    "seed": 42,
+    "stratified": true,
+    "test_ratio": 0.2,
+    "query_source": "graphml_augmented",
+    "include_real_in_index": true,
+    "augmented_train_ratio": 0.5,
+    "counts": {
+      "total": 449,
+      "real_total": 75,
+      "aug_total": 374,
+      "aug_train_total": 301,
+      "aug_train_used": 150,
+      "aug_test_total": 73,
+      "index_total": 225,
+      "query_total": 73
+    }
+  }
+}
