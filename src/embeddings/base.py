@@ -23,7 +23,8 @@ class BaseEmbedder(ABC):
         if not self.l2_normalize:
             return M.astype(np.float32)
         from sklearn.preprocessing import normalize
-        return normalize(M.astype(np.float32), norm='l2')
+
+        return normalize(M.astype(np.float32), norm="l2")
 
     @abstractmethod
     def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray: ...
