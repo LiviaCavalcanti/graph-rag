@@ -21,22 +21,15 @@ import sys
 from pathlib import Path
 
 from src.evaluate.preprocessing import extract_function_body
-from src.metrics.similarity import (
-    tokenize,
-    exact_match,
-    normalised_exact_match,
-    sequence_matcher_ratio,
-    line_level_ratio,
-    normalised_edit_distance,
-    token_jaccard,
-    token_jaccard_multiset,
-    bleu_score,
-    codebleu_weighted,
-    compute_diff_details,
-)
-
+from src.metrics.similarity import (bleu_score, codebleu_weighted,
+                                    compute_diff_details, exact_match,
+                                    line_level_ratio, normalised_edit_distance,
+                                    normalised_exact_match,
+                                    sequence_matcher_ratio, token_jaccard,
+                                    token_jaccard_multiset, tokenize)
 
 # ── main evaluation ──────────────────────────────────────────────────
+
 
 def evaluate_one(record: dict, base_dir: Path) -> dict:
     """Evaluate a single result record. Returns an evaluation dict."""
@@ -63,7 +56,9 @@ def evaluate_one(record: dict, base_dir: Path) -> dict:
     cve_id = record.get("query_cve", "")
     variant = record.get("query_variant", "")
     if cve_id and variant:
-        gt_file = base_dir / "CVE-list" / cve_id / "out_v2" / "code" / f"{variant}_fixed.c"
+        gt_file = (
+            base_dir / "CVE-list" / cve_id / "out_v2" / "code" / f"{variant}_fixed.c"
+        )
         if gt_file.exists():
             gt_full = gt_file.read_text(errors="replace")
 
@@ -76,7 +71,11 @@ def evaluate_one(record: dict, base_dir: Path) -> dict:
             gt_full = gt_path_str
 
     if gt_full is None:
-        return {**ident, "eval_status": "skipped", "reason": f"file_not_found: {cve_id}/{variant}"}
+        return {
+            **ident,
+            "eval_status": "skipped",
+            "reason": f"file_not_found: {cve_id}/{variant}",
+        }
 
     # Extract just the function body from the ground-truth file
     # (files contain stubs + the actual function)
@@ -91,7 +90,9 @@ def evaluate_one(record: dict, base_dir: Path) -> dict:
         "normalised_exact_match": normalised_exact_match(generated, gt_body),
         "char_sequence_ratio": round(sequence_matcher_ratio(generated, gt_body), 4),
         "line_sequence_ratio": round(line_level_ratio(generated, gt_body), 4),
-        "normalised_edit_distance": round(normalised_edit_distance(generated, gt_body), 4),
+        "normalised_edit_distance": round(
+            normalised_edit_distance(generated, gt_body), 4
+        ),
         "token_jaccard": round(token_jaccard(generated, gt_body), 4),
         "token_jaccard_multiset": round(token_jaccard_multiset(generated, gt_body), 4),
         "bleu_1": round(bleu_score(generated, gt_body, max_n=1), 4),
@@ -102,7 +103,9 @@ def evaluate_one(record: dict, base_dir: Path) -> dict:
 
     # ── compute metrics against full file (secondary) ────────────
     metrics_full = {
-        "full_file_char_ratio": round(sequence_matcher_ratio(generated, gt_full_stripped), 4),
+        "full_file_char_ratio": round(
+            sequence_matcher_ratio(generated, gt_full_stripped), 4
+        ),
         "full_file_token_jaccard": round(token_jaccard(generated, gt_full_stripped), 4),
         "full_file_bleu_4": round(bleu_score(generated, gt_full_stripped, max_n=4), 4),
     }
@@ -144,7 +147,11 @@ def aggregate(results: list[dict]) -> dict:
         return {"total_records": len(results), "evaluated": 0, "skipped": len(results)}
 
     def _avg(key):
-        vals = [r["metrics_vs_function_body"][key] for r in evaluated if key in r.get("metrics_vs_function_body", {})]
+        vals = [
+            r["metrics_vs_function_body"][key]
+            for r in evaluated
+            if key in r.get("metrics_vs_function_body", {})
+        ]
         return round(sum(vals) / len(vals), 4) if vals else None
 
     n = len(evaluated)
@@ -152,8 +159,14 @@ def aggregate(results: list[dict]) -> dict:
         "total_records": len(results),
         "evaluated": n,
         "skipped": len(results) - n,
-        "exact_matches": sum(1 for r in evaluated if r["metrics_vs_function_body"]["exact_match"]),
-        "normalised_exact_matches": sum(1 for r in evaluated if r["metrics_vs_function_body"]["normalised_exact_match"]),
+        "exact_matches": sum(
+            1 for r in evaluated if r["metrics_vs_function_body"]["exact_match"]
+        ),
+        "normalised_exact_matches": sum(
+            1
+            for r in evaluated
+            if r["metrics_vs_function_body"]["normalised_exact_match"]
+        ),
         "avg_char_sequence_ratio": _avg("char_sequence_ratio"),
         "avg_line_sequence_ratio": _avg("line_sequence_ratio"),
         "avg_normalised_edit_distance": _avg("normalised_edit_distance"),
@@ -179,22 +192,48 @@ def _aggregate_by_field(evaluated: list[dict], field: str) -> dict:
         n = len(recs)
         out[key] = {
             "count": n,
-            "avg_bleu_4": round(sum(r["metrics_vs_function_body"]["bleu_4"] for r in recs) / n, 4),
-            "avg_token_jaccard": round(sum(r["metrics_vs_function_body"]["token_jaccard"] for r in recs) / n, 4),
-            "avg_char_ratio": round(sum(r["metrics_vs_function_body"]["char_sequence_ratio"] for r in recs) / n, 4),
-            "avg_codebleu_proxy": round(sum(r["metrics_vs_function_body"]["codebleu_proxy"] for r in recs) / n, 4),
-            "exact_matches": sum(1 for r in recs if r["metrics_vs_function_body"]["exact_match"]),
+            "avg_bleu_4": round(
+                sum(r["metrics_vs_function_body"]["bleu_4"] for r in recs) / n, 4
+            ),
+            "avg_token_jaccard": round(
+                sum(r["metrics_vs_function_body"]["token_jaccard"] for r in recs) / n, 4
+            ),
+            "avg_char_ratio": round(
+                sum(r["metrics_vs_function_body"]["char_sequence_ratio"] for r in recs)
+                / n,
+                4,
+            ),
+            "avg_codebleu_proxy": round(
+                sum(r["metrics_vs_function_body"]["codebleu_proxy"] for r in recs) / n,
+                4,
+            ),
+            "exact_matches": sum(
+                1 for r in recs if r["metrics_vs_function_body"]["exact_match"]
+            ),
         }
     return out
 
 
 # ── CLI ──────────────────────────────────────────────────────────────
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate generated patches vs ground truth.")
-    parser.add_argument("results_jsonl", help="Path to results.jsonl from batch inference")
-    parser.add_argument("--out", default=None, help="Output evaluation JSONL path (default: <input_dir>/evaluation.jsonl)")
-    parser.add_argument("--base-dir", default=None, help="Base directory for resolving ground_truth_patch paths (default: repo root)")
+    parser = argparse.ArgumentParser(
+        description="Evaluate generated patches vs ground truth."
+    )
+    parser.add_argument(
+        "results_jsonl", help="Path to results.jsonl from batch inference"
+    )
+    parser.add_argument(
+        "--out",
+        default=None,
+        help="Output evaluation JSONL path (default: <input_dir>/evaluation.jsonl)",
+    )
+    parser.add_argument(
+        "--base-dir",
+        default=None,
+        help="Base directory for resolving ground_truth_patch paths (default: repo root)",
+    )
     args = parser.parse_args()
 
     results_path = Path(args.results_jsonl)
@@ -231,9 +270,13 @@ def main():
             if status == "evaluated":
                 bleu = ev["metrics_vs_function_body"]["bleu_4"]
                 jaccard = ev["metrics_vs_function_body"]["token_jaccard"]
-                print(f"  [{i+1}/{len(records)}] {label}  BLEU-4={bleu:.4f}  Jaccard={jaccard:.4f}")
+                print(
+                    f"  [{i+1}/{len(records)}] {label}  BLEU-4={bleu:.4f}  Jaccard={jaccard:.4f}"
+                )
             else:
-                print(f"  [{i+1}/{len(records)}] {label}  {status}: {ev.get('reason', '')}")
+                print(
+                    f"  [{i+1}/{len(records)}] {label}  {status}: {ev.get('reason', '')}"
+                )
         except Exception as e:
             ev = {
                 "query_cve": rec.get("query_cve"),
@@ -275,12 +318,16 @@ def main():
     if "by_cwe" in agg:
         print(f"\n  By CWE type:")
         for cwe, stats in agg["by_cwe"].items():
-            print(f"    {cwe:40s}  n={stats['count']:3d}  BLEU-4={stats['avg_bleu_4']:.4f}  Jaccard={stats['avg_token_jaccard']:.4f}")
+            print(
+                f"    {cwe:40s}  n={stats['count']:3d}  BLEU-4={stats['avg_bleu_4']:.4f}  Jaccard={stats['avg_token_jaccard']:.4f}"
+            )
 
     if "by_variant" in agg:
         print(f"\n  By variant:")
         for var, stats in agg["by_variant"].items():
-            print(f"    {var:40s}  n={stats['count']:3d}  BLEU-4={stats['avg_bleu_4']:.4f}  Jaccard={stats['avg_token_jaccard']:.4f}")
+            print(
+                f"    {var:40s}  n={stats['count']:3d}  BLEU-4={stats['avg_bleu_4']:.4f}  Jaccard={stats['avg_token_jaccard']:.4f}"
+            )
 
 
 if __name__ == "__main__":

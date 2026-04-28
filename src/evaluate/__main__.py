@@ -27,10 +27,10 @@ def run_all(
     top_k: int = 5,
 ) -> Path:
     """Execute the full evaluation pipeline and return the dashboard path."""
-    from src.evaluate.evaluate_patches import main as _patches_main
-    from src.evaluate.retrieval_eval import evaluate_retrieval
     from src.evaluate.confidence_eval import run_confidence_eval
     from src.evaluate.dashboard import generate_dashboard
+    from src.evaluate.evaluate_patches import main as _patches_main
+    from src.evaluate.retrieval_eval import evaluate_retrieval
 
     run_dir = results_path.parent
     base = base_dir or Path.cwd()
@@ -46,6 +46,7 @@ def run_all(
     print(f"  STEP 2/4 — Retrieval Evaluation")
     print(f"{'━'*60}")
     from experiments.common import load_config
+
     cfg = load_config(config_path)
     evaluate_retrieval(results_path, cfg, top_k=top_k)
 
@@ -72,7 +73,8 @@ def run_all(
 def _run_patch_eval(results_path: Path, base_dir: Path) -> None:
     """Run patch evaluation programmatically (avoid argparse)."""
     import json
-    from src.evaluate.evaluate_patches import evaluate_one, aggregate
+
+    from src.evaluate.evaluate_patches import aggregate, evaluate_one
 
     out_path = results_path.parent / "evaluation.jsonl"
     summary_path = out_path.with_name("evaluation_summary.json")
@@ -95,9 +97,13 @@ def _run_patch_eval(results_path: Path, base_dir: Path) -> None:
             if status == "evaluated":
                 bleu = ev["metrics_vs_function_body"]["bleu_4"]
                 jaccard = ev["metrics_vs_function_body"]["token_jaccard"]
-                print(f"  [{i+1}/{len(records)}] {label}  BLEU-4={bleu:.4f}  Jaccard={jaccard:.4f}")
+                print(
+                    f"  [{i+1}/{len(records)}] {label}  BLEU-4={bleu:.4f}  Jaccard={jaccard:.4f}"
+                )
             else:
-                print(f"  [{i+1}/{len(records)}] {label}  {status}: {ev.get('reason', '')}")
+                print(
+                    f"  [{i+1}/{len(records)}] {label}  {status}: {ev.get('reason', '')}"
+                )
         except Exception as e:
             ev = {
                 "query_cve": rec.get("query_cve"),
@@ -118,10 +124,12 @@ def _run_patch_eval(results_path: Path, base_dir: Path) -> None:
         json.dump(agg, f, indent=2, default=str)
     print(f"Summary: {summary_path}")
 
-    print(f"  Evaluated: {agg['evaluated']}  |  "
-          f"BLEU-4: {agg.get('avg_bleu_4', 'N/A')}  |  "
-          f"Jaccard: {agg.get('avg_token_jaccard', 'N/A')}  |  "
-          f"Exact: {agg.get('exact_matches', 0)}")
+    print(
+        f"  Evaluated: {agg['evaluated']}  |  "
+        f"BLEU-4: {agg.get('avg_bleu_4', 'N/A')}  |  "
+        f"Jaccard: {agg.get('avg_token_jaccard', 'N/A')}  |  "
+        f"Exact: {agg.get('exact_matches', 0)}"
+    )
 
 
 def main():
@@ -133,8 +141,12 @@ def main():
         help="Path to results.jsonl or to the run directory containing it",
     )
     parser.add_argument("--config", default="config.yaml", help="Config YAML path")
-    parser.add_argument("--base-dir", default=None, help="Base dir for ground truth paths")
-    parser.add_argument("--top-k", type=int, default=5, help="Retrieval top-k (default: 5)")
+    parser.add_argument(
+        "--base-dir", default=None, help="Base dir for ground truth paths"
+    )
+    parser.add_argument(
+        "--top-k", type=int, default=5, help="Retrieval top-k (default: 5)"
+    )
     args = parser.parse_args()
 
     path = Path(args.path)

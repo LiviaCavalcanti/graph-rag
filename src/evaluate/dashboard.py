@@ -86,11 +86,21 @@ _VARIANT_COLORS = [
     ("#118AB2", "re_implemented_gpt-4o"),
 ]
 
-_CHART_COLORS = ["#4361EE", "#F72585", "#7209B7", "#FB8500", "#06D6A0",
-                 "#118AB2", "#FFD166", "#EF476F", "#333"]
+_CHART_COLORS = [
+    "#4361EE",
+    "#F72585",
+    "#7209B7",
+    "#FB8500",
+    "#06D6A0",
+    "#118AB2",
+    "#FFD166",
+    "#EF476F",
+    "#333",
+]
 
 
 # ── helpers ──────────────────────────────────────────────────────────
+
 
 def _esc(s) -> str:
     return html.escape(str(s))
@@ -122,7 +132,7 @@ def _gauge_svg(value: float, color: str) -> str:
         f'<circle cx="60" cy="60" r="50" fill="none" stroke="#e2e0db" stroke-width="10"/>'
         f'<circle cx="60" cy="60" r="50" fill="none" stroke="{color}" stroke-width="10"'
         f' stroke-dasharray="{filled} {empty}" stroke-linecap="round"/>'
-        f'</svg>'
+        f"</svg>"
     )
 
 
@@ -136,7 +146,10 @@ def _pct(v: float) -> str:
 
 # ── section builders ─────────────────────────────────────────────────
 
-def _build_overview(patch: dict, retr: dict, conf: dict, high_conf: list, run_id: str) -> str:
+
+def _build_overview(
+    patch: dict, retr: dict, conf: dict, high_conf: list, run_id: str
+) -> str:
     n = patch.get("total_records", 0)
     hit1 = retr.get("hit_at_1", 0)
     hit1r = retr.get("hit_rate_at_1", 0)
@@ -267,8 +280,12 @@ def _build_highconf_tab(high_conf: list, conf: dict) -> str:
     unique_cves = len({e["query_cve"] for e in high_conf})
     max_score = max((e["top1_score"] for e in high_conf), default=0)
     min_score = min((e["top1_score"] for e in high_conf), default=0)
-    max_cve = next((e["query_cve"] for e in high_conf if e["top1_score"] == max_score), "–")
-    min_cve = next((e["query_cve"] for e in high_conf if e["top1_score"] == min_score), "–")
+    max_cve = next(
+        (e["query_cve"] for e in high_conf if e["top1_score"] == max_score), "–"
+    )
+    min_cve = next(
+        (e["query_cve"] for e in high_conf if e["top1_score"] == min_score), "–"
+    )
 
     rows = ""
     for i, e in enumerate(high_conf, 1):
@@ -302,6 +319,7 @@ def _build_highconf_tab(high_conf: list, conf: dict) -> str:
 
 
 # ── JS chart builder ─────────────────────────────────────────────────
+
 
 def _build_js(patch: dict, retr: dict, conf: dict, high_conf: list) -> str:
     by_cwe = patch.get("by_cwe", {})
@@ -343,7 +361,10 @@ def _build_js(patch: dict, retr: dict, conf: dict, high_conf: list) -> str:
 
     # high-conf entries for chart
     hc_entries = [
-        {"cve": f"{e['query_cve']}\\n({e.get('query_variant','')[:12]})", "score": round(e["top1_score"], 4)}
+        {
+            "cve": f"{e['query_cve']}\\n({e.get('query_variant','')[:12]})",
+            "score": round(e["top1_score"], 4),
+        }
         for e in high_conf
     ]
     hc_cwes = [e.get("query_cwe", "") for e in high_conf]
@@ -505,6 +526,7 @@ function sparkbar(val, max, color) {{
 
 # ── public API ───────────────────────────────────────────────────────
 
+
 def generate_dashboard(run_dir: Path) -> Path:
     """Read evaluation outputs from *run_dir* and write evaluation_dashboard.html."""
     patch = _load_json(run_dir / "evaluation_summary.json") or {}
@@ -560,8 +582,10 @@ def generate_dashboard(run_dir: Path) -> Path:
 
 # ── CLI ──────────────────────────────────────────────────────────────
 
+
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="Generate evaluation dashboard HTML.")
     parser.add_argument("run_dir", help="Path to run output directory")
     args = parser.parse_args()

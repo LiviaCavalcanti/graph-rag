@@ -21,8 +21,8 @@ from pathlib import Path
 
 import numpy as np
 
-
 # ── loading ──────────────────────────────────────────────────────────
+
 
 def _load_entries(path: Path) -> list[dict]:
     entries = []
@@ -35,6 +35,7 @@ def _load_entries(path: Path) -> list[dict]:
 
 
 # ── per-entry annotation ─────────────────────────────────────────────
+
 
 def annotate_entries(entries: list[dict]) -> list[dict]:
     """Add derived fields to each entry for downstream analysis."""
@@ -52,17 +53,20 @@ def annotate_entries(entries: list[dict]) -> list[dict]:
         top2_score = e["retrieved"][1]["score"] if len(e["retrieved"]) > 1 else 0.0
         score_gap = top1_score - top2_score
 
-        annotated.append({
-            **e,
-            "top1_score": top1_score,
-            "top1_correct": top1_correct,
-            "top2_score": top2_score,
-            "score_gap": round(score_gap, 6),
-        })
+        annotated.append(
+            {
+                **e,
+                "top1_score": top1_score,
+                "top1_correct": top1_correct,
+                "top2_score": top2_score,
+                "score_gap": round(score_gap, 6),
+            }
+        )
     return annotated
 
 
 # ── threshold evaluation ─────────────────────────────────────────────
+
 
 def evaluate_threshold(entries: list[dict], threshold: float) -> dict:
     """Classify entries at a given threshold and compute metrics.
@@ -91,19 +95,25 @@ def evaluate_threshold(entries: list[dict], threshold: float) -> dict:
             label = "TN"
             tn += 1
 
-        per_entry.append({
-            "query_cve": e.get("query_cve"),
-            "query_variant": e.get("query_variant"),
-            "top1_score": score,
-            "top1_correct": correct,
-            "confident": confident,
-            "label": label,
-        })
+        per_entry.append(
+            {
+                "query_cve": e.get("query_cve"),
+                "query_variant": e.get("query_variant"),
+                "top1_score": score,
+                "top1_correct": correct,
+                "confident": confident,
+                "label": label,
+            }
+        )
 
     n = tp + fp + fn + tn
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
+    f1 = (
+        2 * precision * recall / (precision + recall)
+        if (precision + recall) > 0
+        else 0.0
+    )
     accuracy = (tp + tn) / n if n > 0 else 0.0
 
     return {
@@ -144,6 +154,7 @@ def compute_random_baseline(entries: list[dict]) -> float:
 
 # ── high confidence cases ────────────────────────────────────────────
 
+
 def extract_high_confidence(entries: list[dict], threshold: float) -> list[dict]:
     """Return entries above threshold where top-1 matches the query CVE.
 
@@ -159,8 +170,12 @@ def extract_high_confidence(entries: list[dict], threshold: float) -> list[dict]
             "top1_correct": e["top1_correct"],
             "score_gap": e.get("score_gap", 0.0),
             "top1_cve": e["retrieved"][0]["cve_id"] if e.get("retrieved") else None,
-            "top1_func": e["retrieved"][0].get("func_name") if e.get("retrieved") else None,
-            "top1_variant": e["retrieved"][0].get("variant") if e.get("retrieved") else None,
+            "top1_func": (
+                e["retrieved"][0].get("func_name") if e.get("retrieved") else None
+            ),
+            "top1_variant": (
+                e["retrieved"][0].get("variant") if e.get("retrieved") else None
+            ),
             "ground_truth_patch": e.get("ground_truth_patch", ""),
         }
         for e in entries
@@ -172,6 +187,7 @@ def extract_high_confidence(entries: list[dict], threshold: float) -> list[dict]
 
 # ── output ───────────────────────────────────────────────────────────
 
+
 def _write_jsonl(data: list[dict], path: Path) -> None:
     with open(path, "w") as f:
         for d in data:
@@ -182,19 +198,24 @@ def _print_table(results: list[dict]) -> None:
     print(f"\n{'═'*80}")
     print(f"  CONFIDENCE THRESHOLD EVALUATION")
     print(f"{'═'*80}")
-    print(f"  {'Threshold':>10s}  {'Conf':>5s}  {'TP':>4s}  {'FP':>4s}  "
-          f"{'FN':>4s}  {'TN':>4s}  {'Prec':>6s}  {'Rec':>6s}  {'F1':>6s}  {'Acc':>6s}")
+    print(
+        f"  {'Threshold':>10s}  {'Conf':>5s}  {'TP':>4s}  {'FP':>4s}  "
+        f"{'FN':>4s}  {'TN':>4s}  {'Prec':>6s}  {'Rec':>6s}  {'F1':>6s}  {'Acc':>6s}"
+    )
     print(f"  {'-'*74}")
     for r in results:
         t = r["threshold"]
         label = r.get("label", f"{t:.4f}")
-        print(f"  {label:>10s}  {r['confident_total']:5d}  {r['tp']:4d}  {r['fp']:4d}  "
-              f"{r['fn']:4d}  {r['tn']:4d}  {r['precision']:6.2%}  {r['recall']:6.2%}  "
-              f"{r['f1']:6.2%}  {r['accuracy']:6.2%}")
+        print(
+            f"  {label:>10s}  {r['confident_total']:5d}  {r['tp']:4d}  {r['fp']:4d}  "
+            f"{r['fn']:4d}  {r['tn']:4d}  {r['precision']:6.2%}  {r['recall']:6.2%}  "
+            f"{r['f1']:6.2%}  {r['accuracy']:6.2%}"
+        )
     print(f"{'═'*80}")
 
 
 # ── main orchestrator ────────────────────────────────────────────────
+
 
 def run_confidence_eval(
     eval_path: Path,
@@ -208,14 +229,18 @@ def run_confidence_eval(
     print(f"Loaded {len(evaluated)} evaluated entries from {eval_path}")
 
     if not evaluated:
-        print("ERROR: no evaluated entries found. "
-              "Make sure you pass a retrieval_eval.jsonl, not results.jsonl.")
+        print(
+            "ERROR: no evaluated entries found. "
+            "Make sure you pass a retrieval_eval.jsonl, not results.jsonl."
+        )
         return {"error": "no_evaluated_entries"}
 
     # 2. compute score distribution
     top1_scores = np.array([e["top1_score"] for e in evaluated])
-    print(f"Top-1 score stats: min={top1_scores.min():.4f}  max={top1_scores.max():.4f}  "
-          f"mean={top1_scores.mean():.4f}  median={np.median(top1_scores):.4f}")
+    print(
+        f"Top-1 score stats: min={top1_scores.min():.4f}  max={top1_scores.max():.4f}  "
+        f"mean={top1_scores.mean():.4f}  median={np.median(top1_scores):.4f}"
+    )
 
     # 3. build thresholds
     random_baseline = compute_random_baseline(raw)
@@ -256,9 +281,11 @@ def run_confidence_eval(
     print(f"\nHigh-confidence cases (score >= {high_conf_threshold}): {len(high_conf)}")
     for c in high_conf:
         match = "✓" if c["top1_correct"] else "✗"
-        print(f"  {match} {c['query_cve']}/{c['query_variant']:30s}  "
-              f"score={c['top1_score']:.4f}  gap={c['score_gap']:.4f}  "
-              f"→ {c['top1_cve']}/{c['top1_func']}")
+        print(
+            f"  {match} {c['query_cve']}/{c['query_variant']:30s}  "
+            f"score={c['top1_score']:.4f}  gap={c['score_gap']:.4f}  "
+            f"→ {c['top1_cve']}/{c['top1_func']}"
+        )
 
     # 6. write outputs
     out = out_dir or eval_path.parent
@@ -277,8 +304,7 @@ def run_confidence_eval(
             "random_baseline": random_baseline,
         },
         "thresholds": [
-            {k: v for k, v in r.items() if k != "per_entry"}
-            for r in results
+            {k: v for k, v in r.items() if k != "per_entry"} for r in results
         ],
         "high_confidence_threshold": high_conf_threshold,
         "high_confidence_count": len(high_conf),
@@ -305,7 +331,10 @@ def main():
     )
     parser.add_argument("retrieval_eval_jsonl", help="Path to retrieval_eval.jsonl")
     parser.add_argument(
-        "--thresholds", type=float, nargs="*", default=None,
+        "--thresholds",
+        type=float,
+        nargs="*",
+        default=None,
         help="Additional thresholds to evaluate (e.g. 0.15 0.2 0.3)",
     )
     parser.add_argument("--out-dir", default=None, help="Output directory")

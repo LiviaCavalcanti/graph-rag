@@ -23,12 +23,12 @@ from pathlib import Path
 
 import numpy as np
 
-from experiments.common import load_config, load_pairs, build_split
+from experiments.common import build_split, load_config, load_pairs
 from src.embeddings import build_embedders
-from src.rag.index import FAISSIndex
-from src.rag.retriever import Retriever
 from src.evaluate.preprocessing import extract_function_body
 from src.metrics.metrics import hits_at_k, mean_reciprocal_rank
+from src.rag.index import FAISSIndex
+from src.rag.retriever import Retriever
 
 
 def _build_index_and_retriever(
@@ -65,10 +65,14 @@ def _build_index_and_retriever(
         )
         index.load()
         if index.index.d == dim:
-            print(f"Loaded pre-existing index: {index.index.ntotal} vectors, dim={index.index.d}")
+            print(
+                f"Loaded pre-existing index: {index.index.ntotal} vectors, dim={index.index.d}"
+            )
             loaded = True
         else:
-            print(f"Index dim mismatch (index={index.index.d}, embedder={dim}), rebuilding...")
+            print(
+                f"Index dim mismatch (index={index.index.d}, embedder={dim}), rebuilding..."
+            )
 
     # fit embedder (PCA for combined) — always needed for query-time embed_one
     graphs = [p.G_vuln for p in index_pairs]
@@ -278,10 +282,16 @@ def _print_summary(summary: dict, top_k: int) -> None:
     print(f"  Total records:   {summary['total_records']}")
     print(f"  Matched/queried: {n}")
     print(f"  Top-k:           {top_k}")
-    print(f"  Hit@1:           {summary.get('hit_at_1', 0)}  ({summary.get('hit_rate_at_1', 0):.1%})")
-    print(f"  Hit@{top_k}:          {summary.get('hit_cve_at_k', 0)}  ({summary.get('hit_rate_at_k', 0):.1%})")
+    print(
+        f"  Hit@1:           {summary.get('hit_at_1', 0)}  ({summary.get('hit_rate_at_1', 0):.1%})"
+    )
+    print(
+        f"  Hit@{top_k}:          {summary.get('hit_cve_at_k', 0)}  ({summary.get('hit_rate_at_k', 0):.1%})"
+    )
     print(f"  MRR:             {summary.get('mrr', 0):.4f}")
-    print(f"  CWE Hit@{top_k}:      {summary.get('cwe_hit_at_k', 0)}  ({summary.get('cwe_hit_rate_at_k', 0):.1%})")
+    print(
+        f"  CWE Hit@{top_k}:      {summary.get('cwe_hit_at_k', 0)}  ({summary.get('cwe_hit_rate_at_k', 0):.1%})"
+    )
     print(f"{'═'*60}")
 
 
@@ -305,7 +315,12 @@ def evaluate_retrieval(
 
     # 3. run all queries (compute only, no file handles open)
     evaluated = _run_all_queries(
-        records, query_pairs, embedder, retriever, top_k, Path.cwd(),
+        records,
+        query_pairs,
+        embedder,
+        retriever,
+        top_k,
+        Path.cwd(),
     )
 
     # 4. write results (single fast I/O pass)
@@ -335,8 +350,17 @@ def main():
         help="Path to results.jsonl from batch inference",
     )
     parser.add_argument("--config", default="config.yaml", help="Config YAML path")
-    parser.add_argument("--top-k", type=int, default=5, help="Number of neighbours to retrieve (default: 5)")
-    parser.add_argument("--out", default=None, help="Output JSONL path (default: <input_dir>/retrieval_eval.jsonl)")
+    parser.add_argument(
+        "--top-k",
+        type=int,
+        default=5,
+        help="Number of neighbours to retrieve (default: 5)",
+    )
+    parser.add_argument(
+        "--out",
+        default=None,
+        help="Output JSONL path (default: <input_dir>/retrieval_eval.jsonl)",
+    )
     args = parser.parse_args()
 
     results_path = Path(args.results_jsonl)
