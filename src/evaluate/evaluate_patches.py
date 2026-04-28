@@ -54,14 +54,29 @@ def evaluate_one(record: dict, base_dir: Path) -> dict:
     generated = (record.get("generated_patch") or "").strip()
     gt_path_str = record.get("ground_truth_patch", "")
 
-    if not generated or not gt_path_str:
-        return {**ident, "eval_status": "skipped", "reason": "missing_patch_or_path"}
+    if not generated:
+        return {**ident, "eval_status": "skipped", "reason": "missing_patch"}
 
-    gt_file = base_dir / gt_path_str
-    if not gt_file.exists():
-        return {**ident, "eval_status": "skipped", "reason": f"file_not_found: {gt_path_str}"}
+    # Try to load ground truth from the canonical file on disk first
+    # (inline code in ground_truth_patch may be truncated)
+    gt_full = None
+    cve_id = record.get("query_cve", "")
+    variant = record.get("query_variant", "")
+    if cve_id and variant:
+        gt_file = base_dir / "CVE-list" / cve_id / "out_v2" / "code" / f"{variant}_fixed.c"
+        if gt_file.exists():
+            gt_full = gt_file.read_text(errors="replace")
 
-    gt_full = gt_file.read_text(errors="replace")
+    # Fall back to ground_truth_patch field (may be a path or inline code)
+    if gt_full is None and gt_path_str:
+        gt_candidate = base_dir / gt_path_str if len(gt_path_str) < 260 else None
+        if gt_candidate is not None and gt_candidate.exists():
+            gt_full = gt_candidate.read_text(errors="replace")
+        elif "\n" in gt_path_str or len(gt_path_str) > 260:
+            gt_full = gt_path_str
+
+    if gt_full is None:
+        return {**ident, "eval_status": "skipped", "reason": f"file_not_found: {cve_id}/{variant}"}
 
     # Extract just the function body from the ground-truth file
     # (files contain stubs + the actual function)
