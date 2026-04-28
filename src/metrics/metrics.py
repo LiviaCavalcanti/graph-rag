@@ -2,20 +2,22 @@
 Evaluation metrics for unsupervised RAG experiments.
 All metrics work without ground-truth query→CVE labels.
 """
+
 import time
-import numpy as np
 from collections import defaultdict
+
+import numpy as np
 
 
 def hits_at_k(results: list[dict], query_cve: str, k: int) -> int:
     """1 if query_cve appears in top-k results, else 0."""
-    return int(any(r['cve_id'] == query_cve for r in results[:k]))
+    return int(any(r["cve_id"] == query_cve for r in results[:k]))
 
 
 def mean_reciprocal_rank(results: list[dict], query_cve: str) -> float:
     """1/rank of first hit, 0 if not found."""
     for i, r in enumerate(results):
-        if r['cve_id'] == query_cve:
+        if r["cve_id"] == query_cve:
             return 1.0 / (i + 1)
     return 0.0
 
@@ -35,26 +37,26 @@ def self_retrieval_metrics(
     the index N times. Self-retrieval is O(N) and catches
     degenerate embeddings (constant vectors, collapsed dimensions).
     """
-    hits  = defaultdict(int)
-    mrrs  = []
-    n     = len(embeddings)
+    hits = defaultdict(int)
+    mrrs = []
+    n = len(embeddings)
 
     for i, (vec, meta) in enumerate(zip(embeddings, metadata)):
         results = retriever.query(vec, top_k=max(ks))
         for k in ks:
-            hits[k] += hits_at_k(results, meta['cve_id'], k)
-        mrrs.append(mean_reciprocal_rank(results, meta['cve_id']))
+            hits[k] += hits_at_k(results, meta["cve_id"], k)
+        mrrs.append(mean_reciprocal_rank(results, meta["cve_id"]))
 
     return {
-        **{f'hit@{k}': hits[k] / n for k in ks},
-        'mrr': float(np.mean(mrrs)),
-        'n':   n,
+        **{f"hit@{k}": hits[k] / n for k in ks},
+        "mrr": float(np.mean(mrrs)),
+        "n": n,
     }
 
 
 def leave_one_out_metrics(
-    embeddings:  np.ndarray,
-    metadata:    list[dict],
+    embeddings: np.ndarray,
+    metadata: list[dict],
     index_class,
     index_kwargs: dict,
     ks: list[int] = [1, 5, 10],
@@ -68,10 +70,10 @@ def leave_one_out_metrics(
     """
     hits = defaultdict(int)
     mrrs = []
-    n    = len(embeddings)
+    n = len(embeddings)
 
     for i in range(n):
-        mask    = np.ones(n, dtype=bool)
+        mask = np.ones(n, dtype=bool)
         mask[i] = False
 
         sub_embs = embeddings[mask]
@@ -84,23 +86,24 @@ def leave_one_out_metrics(
             tmp_index.add_raw(vec, meta)
 
         from rag.retriever import Retriever
+
         tmp_retriever = Retriever(tmp_index, top_k=max(ks))
         results = tmp_retriever.query(embeddings[i], top_k=max(ks))
 
         for k in ks:
-            hits[k] += hits_at_k(results, metadata[i]['cve_id'], k)
-        mrrs.append(mean_reciprocal_rank(results, metadata[i]['cve_id']))
+            hits[k] += hits_at_k(results, metadata[i]["cve_id"], k)
+        mrrs.append(mean_reciprocal_rank(results, metadata[i]["cve_id"]))
 
     return {
-        **{f'hit@{k}': hits[k] / n for k in ks},
-        'mrr': float(np.mean(mrrs)),
-        'n':   n,
+        **{f"hit@{k}": hits[k] / n for k in ks},
+        "mrr": float(np.mean(mrrs)),
+        "n": n,
     }
 
 
 def cwe_group_recall(
     embeddings: np.ndarray,
-    metadata:   list[dict],
+    metadata: list[dict],
     retriever,
     top_k: int = 10,
 ) -> dict:
@@ -114,15 +117,17 @@ def cwe_group_recall(
     by_cwe = defaultdict(list)
     unknown_cwe_count = 0
     for i, m in enumerate(metadata):
-        cwe = m.get('cwe_id', 'UNKNOWN')
-        if cwe and cwe != 'UNKNOWN':
+        cwe = m.get("cwe_id", "UNKNOWN")
+        if cwe and cwe != "UNKNOWN":
             by_cwe[cwe].append(i)
         else:
             unknown_cwe_count += 1
-    print(f"Metadata contains {len(by_cwe)} unique CWEs, plus {unknown_cwe_count} with unknown CWE.")
+    print(
+        f"Metadata contains {len(by_cwe)} unique CWEs, plus {unknown_cwe_count} with unknown CWE."
+    )
 
     cwe_recalls = {}
-    raw_queries  = []
+    raw_queries = []
     n_singletons = 0
     for cwe, indices in by_cwe.items():
         if len(indices) < 2:
@@ -131,14 +136,14 @@ def cwe_group_recall(
 
         recalls = []
         for idx_pos, i in enumerate(indices):
-            results  = retriever.query(embeddings[i], top_k=top_k + 1)
+            results = retriever.query(embeddings[i], top_k=top_k + 1)
             # Exclude only the query entry itself (by index position),
             # not all entries sharing the same CVE ID (augmented variants).
-            query_cve = metadata[i]['cve_id']
+            query_cve = metadata[i]["cve_id"]
             results_filtered = []
             self_removed = False
             for r in results:
-                if not self_removed and r.get('cve_id') == query_cve:
+                if not self_removed and r.get("cve_id") == query_cve:
                     # Remove only the first match (the self-hit, which has the
                     # highest score). Other entries sharing the same CVE ID
                     # (augmented variants) are kept.
@@ -146,59 +151,71 @@ def cwe_group_recall(
                     continue
                 results_filtered.append(r)
             results = results_filtered[:top_k]
-            same_cwe = sum(1 for r in results if r.get('cwe_id') == cwe)
+            same_cwe = sum(1 for r in results if r.get("cwe_id") == cwe)
             possible = min(top_k, len(indices) - 1)
-            recall   = same_cwe / possible if possible > 0 else 0.0
+            recall = same_cwe / possible if possible > 0 else 0.0
             recalls.append(recall)
-            raw_queries.append({
-                'query_cve':   metadata[i]['cve_id'],
-                'query_cwe':   cwe,
-                'recall':      recall,
-                'retrieved':   [
-                    {'rank': j + 1, 'cve_id': r.get('cve_id'), 'cwe_id': r.get('cwe_id'), 'score': r.get('score')}
-                    for j, r in enumerate(results)
-                ],
-            })
+            raw_queries.append(
+                {
+                    "query_cve": metadata[i]["cve_id"],
+                    "query_cwe": cwe,
+                    "recall": recall,
+                    "retrieved": [
+                        {
+                            "rank": j + 1,
+                            "cve_id": r.get("cve_id"),
+                            "cwe_id": r.get("cwe_id"),
+                            "score": r.get("score"),
+                        }
+                        for j, r in enumerate(results)
+                    ],
+                }
+            )
 
-        cwe_recalls[cwe] = {'recall': float(np.mean(recalls)), 'support': len(indices)}
+        cwe_recalls[cwe] = {"recall": float(np.mean(recalls)), "support": len(indices)}
 
-    macro_avg = float(np.mean([v['recall'] for v in cwe_recalls.values()])) if cwe_recalls else 0.0
+    macro_avg = (
+        float(np.mean([v["recall"] for v in cwe_recalls.values()]))
+        if cwe_recalls
+        else 0.0
+    )
     return {
-        'per_cwe':      cwe_recalls,
-        'macro_avg':    macro_avg,
-        'n_cwes':       len(cwe_recalls),
-        'n_singletons': n_singletons,
-        'raw_queries':  raw_queries,
+        "per_cwe": cwe_recalls,
+        "macro_avg": macro_avg,
+        "n_cwes": len(cwe_recalls),
+        "n_singletons": n_singletons,
+        "raw_queries": raw_queries,
     }
+
 
 def embedding_space_stats(embeddings: np.ndarray) -> dict:
     """
     Intrinsic embedding quality metrics — no labels needed.
     Catches degenerate embeddings before running retrieval.
     """
-    norms     = np.linalg.norm(embeddings, axis=1)
+    norms = np.linalg.norm(embeddings, axis=1)
     # pairwise cosine sim on a random subset (expensive for large N)
-    n         = min(len(embeddings), 500)
-    idx       = np.random.choice(len(embeddings), n, replace=False)
-    sub       = embeddings[idx]
+    n = min(len(embeddings), 500)
+    idx = np.random.choice(len(embeddings), n, replace=False)
+    sub = embeddings[idx]
     # L2-normalize before computing cosine similarity
     sub_norms = np.linalg.norm(sub, axis=1, keepdims=True)
     sub_norms = np.where(sub_norms == 0, 1.0, sub_norms)
-    sub       = sub / sub_norms
+    sub = sub / sub_norms
     sim_matrix = sub @ sub.T
     # exclude diagonal
-    mask      = ~np.eye(n, dtype=bool)
-    sims      = sim_matrix[mask]
+    mask = ~np.eye(n, dtype=bool)
+    sims = sim_matrix[mask]
 
     return {
-        'mean_norm':         float(np.mean(norms)),
-        'std_norm':          float(np.std(norms)),
-        'mean_pairwise_sim': float(np.mean(sims)),
-        'std_pairwise_sim':  float(np.std(sims)),
-        'min_pairwise_sim':  float(np.min(sims)),
-        'max_pairwise_sim':  float(np.max(sims)),
+        "mean_norm": float(np.mean(norms)),
+        "std_norm": float(np.std(norms)),
+        "mean_pairwise_sim": float(np.mean(sims)),
+        "std_pairwise_sim": float(np.std(sims)),
+        "min_pairwise_sim": float(np.min(sims)),
+        "max_pairwise_sim": float(np.max(sims)),
         # effective dimensionality via participation ratio of PCA eigenvalues
-        'effective_dim':     _effective_dim(embeddings),
+        "effective_dim": _effective_dim(embeddings),
     }
 
 
@@ -209,7 +226,7 @@ def _effective_dim(embeddings: np.ndarray) -> float:
     """
     if len(embeddings) < 2:
         return 0.0
-    cov  = np.cov(embeddings.T)
+    cov = np.cov(embeddings.T)
     if cov.ndim == 0:
         # Single feature dimension: cov is a scalar
         return 1.0 if float(cov) > 0 else 0.0
@@ -217,24 +234,24 @@ def _effective_dim(embeddings: np.ndarray) -> float:
     eigv = eigv[eigv > 0]
     if len(eigv) == 0:
         return 0.0
-    pr   = (eigv.sum() ** 2) / (eigv ** 2).sum()
+    pr = (eigv.sum() ** 2) / (eigv**2).sum()
     return float(pr)
 
 
 def measure_latency(retriever, embeddings: np.ndarray, n_queries: int = 200) -> dict:
     """Sample query latencies in milliseconds."""
-    rng     = np.random.default_rng(42)
-    idx     = rng.choice(len(embeddings), min(n_queries, len(embeddings)), replace=False)
+    rng = np.random.default_rng(42)
+    idx = rng.choice(len(embeddings), min(n_queries, len(embeddings)), replace=False)
     samples = embeddings[idx]
-    times   = []
+    times = []
     for vec in samples:
         t0 = time.perf_counter()
         retriever.query(vec, top_k=10)
         times.append((time.perf_counter() - t0) * 1000)
     times = np.array(times)
     return {
-        'p50_ms': float(np.percentile(times, 50)),
-        'p95_ms': float(np.percentile(times, 95)),
-        'p99_ms': float(np.percentile(times, 99)),
-        'mean_ms': float(np.mean(times)),
+        "p50_ms": float(np.percentile(times, 50)),
+        "p95_ms": float(np.percentile(times, 95)),
+        "p99_ms": float(np.percentile(times, 99)),
+        "mean_ms": float(np.mean(times)),
     }

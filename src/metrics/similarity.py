@@ -7,8 +7,8 @@ import difflib
 import math
 import re
 
-
 # ── helpers ──────────────────────────────────────────────────────────
+
 
 def tokenize(code: str) -> list[str]:
     """Split code into identifier / operator / literal tokens."""
@@ -20,6 +20,7 @@ def ngrams(tokens: list[str], n: int) -> list[tuple[str, ...]]:
 
 
 # ── metrics ──────────────────────────────────────────────────────────
+
 
 def exact_match(gen: str, ref: str) -> bool:
     return gen.strip() == ref.strip()
@@ -100,7 +101,9 @@ def bleu_score(gen: str, ref: str, max_n: int = 4) -> float:
             precisions.append(0.0)
             continue
         ref_counts = collections.Counter(ref_ng)
-        clipped = sum(min(collections.Counter(gen_ng)[ng], ref_counts[ng]) for ng in set(gen_ng))
+        clipped = sum(
+            min(collections.Counter(gen_ng)[ng], ref_counts[ng]) for ng in set(gen_ng)
+        )
         precisions.append(clipped / len(gen_ng))
 
     # avoid log(0)
@@ -123,12 +126,21 @@ def codebleu_weighted(gen: str, ref: str) -> float:
 
 # ── diff details ─────────────────────────────────────────────────────
 
+
 def compute_diff_details(gen: str, ref: str) -> dict:
     """Return structured diff information: hunks, changed line numbers, unified diff."""
     gen_lines = gen.splitlines(keepends=True)
     ref_lines = ref.splitlines(keepends=True)
 
-    unified = list(difflib.unified_diff(ref_lines, gen_lines, fromfile="ground_truth", tofile="generated", lineterm=""))
+    unified = list(
+        difflib.unified_diff(
+            ref_lines,
+            gen_lines,
+            fromfile="ground_truth",
+            tofile="generated",
+            lineterm="",
+        )
+    )
 
     # extract hunk positions
     hunks = []
