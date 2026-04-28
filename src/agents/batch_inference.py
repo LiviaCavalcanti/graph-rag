@@ -20,23 +20,21 @@ import sys
 import time
 from pathlib import Path
 
-from src.agents.patcher import patch_one
-from src.agents.utils import (
-    MODEL_NAME,
-    code_similarity,
-    strip_code_fences,
-)
-from src.io import BackgroundWriter, load_completed
 from experiments.common import make_run_dir
+from src.agents.patcher import patch_one
+from src.agents.utils import MODEL_NAME, code_similarity, strip_code_fences
+from src.io import BackgroundWriter, load_completed
 
 RESULTS_FILENAME = "results.jsonl"
 META_FILENAME = "run_meta.json"
+
 
 class ForbiddenError(Exception):
     """Raised when the API returns HTTP 403 — signals immediate abort."""
 
 
 # ── code extraction helpers ─────────────────────────────────────────
+
 
 def _get_target_code(query_pair, target_db: dict) -> str:
     """Get the vulnerable source code for the target.
@@ -45,7 +43,7 @@ def _get_target_code(query_pair, target_db: dict) -> str:
     For original variants it's a file path; fall back to db_entry['original_code'].
     """
     code = query_pair.meta.get("source_before", "")
-    if code :
+    if code:
         # inline code (augmented variant)
         return strip_code_fences(code)
     # original variant — prefer db_entry which has the actual code string
@@ -74,6 +72,7 @@ def _get_ground_truth(query_pair, target_db: dict) -> str:
 
 # ── single-query execution ──────────────────────────────────────────
 
+
 def _run_single_query(
     query_pair,
     retriever,
@@ -100,8 +99,12 @@ def _run_single_query(
     example_pair, retrieval_info = retriever.retrieve(query_pair)
 
     if example_pair is None:
-        return {**base, "status": "skipped", "reason": "no_example_found",
-                "retrieval": retrieval_info}
+        return {
+            **base,
+            "status": "skipped",
+            "reason": "no_example_found",
+            "retrieval": retrieval_info,
+        }
 
     # load db_entries by dir_name
     example_dir = example_pair.meta.get("dir_name", "")
@@ -112,7 +115,9 @@ def _run_single_query(
     # fallback: when dir_name is empty (e.g. older precomputed results),
     # scan db_cache for a matching cve_id
     if not example_db and example_dir == "":
-        ex_cve = getattr(example_pair, "cve_id", None) or example_pair.meta.get("cve_id", "")
+        ex_cve = getattr(example_pair, "cve_id", None) or example_pair.meta.get(
+            "cve_id", ""
+        )
         for dname, db in db_cache.items():
             if db.get("cve_id") == ex_cve or dname.startswith(ex_cve):
                 example_db = db
@@ -124,20 +129,27 @@ def _run_single_query(
                 break
 
     if not example_db or not target_db:
-        return {**base, "status": "skipped", "reason": "missing_db_entry",
-                "retrieval": retrieval_info}
+        return {
+            **base,
+            "status": "skipped",
+            "reason": "missing_db_entry",
+            "retrieval": retrieval_info,
+        }
 
     # get target code from meta or db_entry
     target_code = _get_target_code(query_pair, target_db)
-    target_supplementary = (
-        query_pair.meta.get("supplementary_code", "")
-        or target_db.get("supplementary_code", "")
-    )
+    target_supplementary = query_pair.meta.get(
+        "supplementary_code", ""
+    ) or target_db.get("supplementary_code", "")
     ground_truth = _get_ground_truth(query_pair, target_db)
 
     if not target_code:
-        return {**base, "status": "skipped", "reason": "no_target_code",
-                "retrieval": retrieval_info}
+        return {
+            **base,
+            "status": "skipped",
+            "reason": "no_target_code",
+            "retrieval": retrieval_info,
+        }
 
     # invoke patcher (prompt build → LLM → parse)
     t0 = time.perf_counter()
@@ -156,8 +168,13 @@ def _run_single_query(
         # detect 403 — abort the whole run
         if "403" in err_str or "Forbidden" in err_str:
             raise ForbiddenError(f"HTTP 403 from API: {err_str}") from e
-        return {**base, "status": "error", "error": err_str,
-                "retrieval": retrieval_info, "elapsed_s": round(elapsed, 2)}
+        return {
+            **base,
+            "status": "error",
+            "error": err_str,
+            "retrieval": retrieval_info,
+            "elapsed_s": round(elapsed, 2),
+        }
 
     cve_match = retrieval_info.get("cve_match", False)
     cwe_match = retrieval_info.get("cwe_match", False)
@@ -192,6 +209,7 @@ def _run_single_query(
 
 
 # ── batch runner ─────────────────────────────────────────────────────
+
 
 def run_batch_inference(
     query_pairs: list,
@@ -242,11 +260,12 @@ def run_batch_inference(
 
     # ── filter out already-done queries ──────────────────────────────
     pending = [
-        p for p in query_pairs
-        if (p.cve_id, p.meta.get("variant", "")) not in completed
+        p for p in query_pairs if (p.cve_id, p.meta.get("variant", "")) not in completed
     ]
     total = len(query_pairs)
-    print(f"Total queries: {total} | Already done: {total - len(pending)} | Pending: {len(pending)}")
+    print(
+        f"Total queries: {total} | Already done: {total - len(pending)} | Pending: {len(pending)}"
+    )
 
     if not pending:
         print("All queries already completed.  Run postprocess to get summary.")
@@ -278,25 +297,34 @@ def run_batch_inference(
             total_batches = (len(pending) + batch_size - 1) // batch_size
 
             print(f"\n{'─'*60}")
-            print(f"Batch {batch_num}/{total_batches}  "
-                  f"(queries {n_done+1}–{n_done+len(batch)} of {total})")
+            print(
+                f"Batch {batch_num}/{total_batches}  "
+                f"(queries {n_done+1}–{n_done+len(batch)} of {total})"
+            )
             print(f"{'─'*60}")
 
             batch_results = []
 
             for i, query_pair in enumerate(batch):
-                label = (f"  [{n_done+i+1}/{total}] "
-                         f"{query_pair.cve_id} ({query_pair.meta.get('variant', '?')})")
+                label = (
+                    f"  [{n_done+i+1}/{total}] "
+                    f"{query_pair.cve_id} ({query_pair.meta.get('variant', '?')})"
+                )
                 try:
                     result = _run_single_query(
-                        query_pair, retriever, db_cache, resolved_model,
+                        query_pair,
+                        retriever,
+                        db_cache,
+                        resolved_model,
                     )
                     status = result["status"]
                     sim = result.get("similarity", "")
                     elapsed = result.get("elapsed_s", "")
-                    print(f"{label} → {status}"
-                          + (f"  sim={sim}" if sim != "" else "")
-                          + (f"  {elapsed}s" if elapsed != "" else ""))
+                    print(
+                        f"{label} → {status}"
+                        + (f"  sim={sim}" if sim != "" else "")
+                        + (f"  {elapsed}s" if elapsed != "" else "")
+                    )
 
                     if status == "success":
                         n_success += 1
@@ -308,14 +336,17 @@ def run_batch_inference(
                 except ForbiddenError as e:
                     print(f"\n{'!'*60}")
                     print(f"  ABORT: {e}")
-                    print(f"  Writing {len(batch_results)} results from current batch before exit.")
+                    print(
+                        f"  Writing {len(batch_results)} results from current batch before exit."
+                    )
                     print(f"{'!'*60}")
                     if batch_results:
                         writer.write(batch_results)
                         writer.flush()
                     writer.close()
-                    _print_progress(n_done + len(batch_results), total,
-                                    n_success, n_errors, t_start)
+                    _print_progress(
+                        n_done + len(batch_results), total, n_success, n_errors, t_start
+                    )
                     print(f"\nRun directory: {run_dir}")
                     print("Re-run with --resume to continue after fixing credentials.")
                     sys.exit(2)
@@ -349,9 +380,9 @@ def _print_progress(done: int, total: int, success: int, errors: int, t_start: f
     elapsed = time.perf_counter() - t_start
     rate = done / elapsed if elapsed > 0 else 0
     remaining = (total - done) / rate if rate > 0 else 0
-    print(f"\n  Progress: {done}/{total} ({done/total:.0%})"
-          f"  |  OK: {success}  Errors: {errors}"
-          f"  |  {elapsed:.0f}s elapsed"
-          + (f"  ~{remaining:.0f}s remaining" if done < total else ""))
-
-
+    print(
+        f"\n  Progress: {done}/{total} ({done/total:.0%})"
+        f"  |  OK: {success}  Errors: {errors}"
+        f"  |  {elapsed:.0f}s elapsed"
+        + (f"  ~{remaining:.0f}s remaining" if done < total else "")
+    )

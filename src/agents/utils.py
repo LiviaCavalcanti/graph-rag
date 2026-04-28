@@ -24,6 +24,7 @@ MODEL_NAME = MODEL_NAME if MODEL_NAME else "deepseek-R1"
 
 # ── text helpers ─────────────────────────────────────────────────────
 
+
 def fmt_mapping(mapping: dict | str | None) -> str:
     """Format variable/function mapping for the prompt."""
     if not mapping:
@@ -57,6 +58,7 @@ def read_code_file(path: str | None) -> str:
 
 # ── code extraction from FunctionPair ────────────────────────────────
 
+
 def get_target_code(pair) -> str:
     """Get the vulnerable code for a query pair."""
     code = pair.meta.get("source_before", "")
@@ -77,6 +79,7 @@ def get_ground_truth_patch(pair) -> str:
 
 # ── output parsing ───────────────────────────────────────────────────
 
+
 def parse_patch(output: str) -> dict | None:
     """Parse CoT and patched code from LLM output."""
     try:
@@ -87,11 +90,13 @@ def parse_patch(output: str) -> dict | None:
 
         cot = ""
         if cot_start >= 0 and cot_end > cot_start:
-            cot = output[cot_start + len("[CoT START]"):cot_end].strip()
+            cot = output[cot_start + len("[CoT START]") : cot_end].strip()
 
         vuln_patch = ""
         if patch_start >= 0 and patch_end > patch_start:
-            vuln_patch = output[patch_start + len("[Patched Code START]"):patch_end].strip()
+            vuln_patch = output[
+                patch_start + len("[Patched Code START]") : patch_end
+            ].strip()
 
         if vuln_patch:
             return {"cot": cot, "vuln_patch": strip_code_fences(vuln_patch)}
