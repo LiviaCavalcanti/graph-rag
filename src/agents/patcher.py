@@ -5,27 +5,24 @@ import textwrap
 import litellm
 from dotenv import load_dotenv
 
-from src.agents.utils import (
-    MODEL_NAME,
-    fmt_mapping,
-    strip_code_fences,
-)
+from src.agents.utils import MODEL_NAME, fmt_mapping, strip_code_fences
 
 load_dotenv()
 # litellm._turn_on_debug()
 
-def sanitize_after_index(s, start,until):
+
+def sanitize_after_index(s, start, until):
     before = s[:start]
     target = s[start:until]
     after = s[until:]
 
     # Only escape unescaped quotes (not already preceded by \)
-    target = re.sub(r'(?<!\\)"', r'\"', target)
-    
+    target = re.sub(r'(?<!\\)"', r"\"", target)
+
     # Only escape real newlines, not already escaped ones (i.e., not \\n)
     # This works by replacing actual newline characters, not literal \n
-    target = target.replace('\n', r'\n')
-    target = target.replace('\t', r'\t')
+    target = target.replace("\n", r"\n")
+    target = target.replace("\t", r"\t")
 
     return before + target + after
 
@@ -132,8 +129,14 @@ class AutoPatchPatcher:
     def parse(self, output):
         json_output = None
         try:
-            cot = output[output.find('[CoT START]') + len('[CoT START]'): output.find('[CoT END]')]
-            vuln_patch = output[output.find('[Patched Code START]') + len('[Patched Code START]'): output.find('[Patched Code END]')]
+            cot = output[
+                output.find("[CoT START]")
+                + len("[CoT START]") : output.find("[CoT END]")
+            ]
+            vuln_patch = output[
+                output.find("[Patched Code START]")
+                + len("[Patched Code START]") : output.find("[Patched Code END]")
+            ]
             json_output = {"cot": cot, "vuln_patch": vuln_patch}
         except Exception as e:
             print("LLM output not directly JSON2. Need manual parsing.")
@@ -157,6 +160,7 @@ class AutoPatchPatcher:
 
 
 # ── single-shot patcher ─────────────────────────────────────────────
+
 
 def patch_one(
     example_db: dict,
@@ -183,7 +187,9 @@ def patch_one(
         "example_target_root_cause": example_db.get("root_cause", "Unknown"),
         "example_target_code": strip_code_fences(example_db.get("original_code", "")),
         "example_target_patch_cot": example_db.get("patch_cot", ""),
-        "example_target_vuln_patch": strip_code_fences(example_db.get("vuln_patch", "")),
+        "example_target_vuln_patch": strip_code_fences(
+            example_db.get("vuln_patch", "")
+        ),
         "target_supplementary_code": target_supplementary or "None",
         "target_vulnerability_related_variable_mapping": fmt_mapping(
             target_db.get("vulnerability_related_variables")
@@ -199,5 +205,3 @@ def patch_one(
     raw_output = patcher.invoke(input_dict)
     parsed = patcher.parse(raw_output)
     return raw_output, parsed
-
-
