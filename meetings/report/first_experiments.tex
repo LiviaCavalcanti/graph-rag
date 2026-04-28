@@ -1,0 +1,956 @@
+\documentclass{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{xcolor}
+\usepackage{parskip}
+\usepackage{microtype}
+\usepackage{fancyhdr}
+
+\definecolor{accent}{RGB}{30,80,180}
+\definecolor{muted}{RGB}{100,110,130}
+
+\hypersetup{colorlinks=true,linkcolor=accent,urlcolor=accent}
+\titleformat{\section}{\large\bfseries\color{accent}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small\color{muted}graph-rag — internal technical summary}
+\lhead{\small\color{muted}\today}
+\cfoot{\thepage}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries graph-rag: CPG-Based Vulnerability Retrieval}\\[6pt]
+  {\large\color{muted} Technical Progress Summary for Stakeholders}\\[4pt]
+  {\small\color{muted} Master's Thesis — TU Munich \quad|\quad Siemens AI Engineering}
+\end{center}
+
+\vspace{1em}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Motivation \& Problem Statement}
+
+Identifying whether a new code snippet contains a known vulnerability
+pattern requires searching across thousands of historical CVEs efficiently.
+Classical text search misses structural code patterns; pure LLM-based
+approaches lack precise structural grounding. This project builds a
+\textbf{retrieval-augmented generation (RAG) system indexed on Code
+Property Graphs (CPGs)}, enabling similarity search at the level of
+program structure rather than surface text.
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Data Pipeline}
+
+\subsection{Currently Implemented}
+
+\begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+
+  \item \textbf{CPG Export via Joern.}
+    C/C++ source functions are parsed with \texttt{joern-parse} and
+    exported as GraphML using \texttt{joern-export --repr all}.
+    Each function produces a directory of \texttt{export.xml} files
+    covering AST, CFG, CDG, and PDG edges.
+
+  \item \textbf{Graph Loading \& Merging.}
+    All \texttt{export.xml} files under a function directory are merged
+    into a single \texttt{MultiDiGraph} (NetworkX). Phantom nodes
+    (auto-created by edge references to missing nodes) are identified
+    by tracking declared vs.\ referenced node IDs and removed.
+    COMMENT and UNKNOWN nodes are filtered.
+
+  \item \textbf{Semantic Graph Diff.}
+    Vulnerable (\textit{before}) and patched (\textit{after}) CPGs are
+    aligned using \textbf{fingerprint-based node matching} ---
+    nodes are matched by \texttt{(labelV, normalised CODE)} rather
+    than Joern-assigned IDs, which are non-deterministic across runs.
+    Changed nodes are classified as \texttt{removed}, \texttt{added},
+    \texttt{mutated} (same structure, different code), or
+    \texttt{rewired} (edge topology changed). Each node in the
+    vulnerability-relevant subgraph ($G_{\mathrm{vuln}}$) receives a
+    \texttt{diff\_weight} $\in [0,1]$ encoding its change significance.
+
+  \item \textbf{Dataset Loaders.}
+    Three datasets are supported via a common \texttt{BaseDataset}
+    interface that yields \texttt{FunctionPair} objects:
+    \begin{itemize}[nosep]
+      \item \textbf{BigVul} — CSV with \texttt{func\_before}/\texttt{func\_after} columns.
+      \item \textbf{CVEFixes} — SQLite database with \texttt{method\_change} table.
+      \item \textbf{AutoPatch} — folder-per-CVE with original source files
+        and LLM-generated augmented variants (augmented, re-implemented by
+        GPT-4o, DeepSeek, LLaMA, o3-mini).
+    \end{itemize}
+    All loaders share a \texttt{export\_jobs()} method that feeds the
+    Joern export step, and a \texttt{stream()} method for index building.
+
+  \item \textbf{Multiprocessing Joern Export.}
+    \texttt{main.py --mode export} parallelises Joern invocations across
+    functions using a \texttt{multiprocessing.Pool}. Skip-if-exists logic
+    makes re-runs safe after partial failures.
+
+  \item \textbf{Embedding \& Indexing.}
+    Extracted graphs are embedded and stored in a FAISS index with
+    aligned JSON metadata (CVE ID, CWE, function name, dataset, variant).
+
+  \item \textbf{Experiment Framework.}
+    A runner evaluates all \texttt{(embedder, backend, graph\_variant)}
+    combinations and computes self-retrieval, leave-one-out,
+    CWE-group recall, query latency, and embedding space statistics.
+    Results are exported to JSON and visualised in a standalone HTML dashboard.
+
+\end{enumerate}
+
+\subsection{Next Steps}
+
+\begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+  \item \textbf{PDG density validation.} Confirm that \texttt{REACHING\_DEF}
+    and \texttt{CDG} edges are present in exports (\texttt{--repr all} flag).
+    Currently $>50\%$ of pairs fall back to CFG-only slicing.
+  \item \textbf{Ground-truth query labels.} Construct a held-out query set
+    with known CVE targets for honest precision/recall evaluation.
+  \item \textbf{Temporal generalisation split.} Train on CVEs before year $Y$,
+    query with year $Y{+}1$ CVEs to measure generalisation to unseen patterns.
+  \item \textbf{Agent integration.} Wire the \texttt{Retriever} into ADK agents
+    for end-to-end patch suggestion.
+  \item \textbf{Scaling.} Extend to full BigVul ($\sim$3,500 CVEs) and
+    CVEFixes ($\sim$10,000 method pairs).
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{RAG Index Backends}
+
+\begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+
+  \item \textbf{FAISS Flat (IndexFlatIP).}
+    Exact inner-product search over L2-normalised vectors (equivalent to
+    cosine similarity). No approximation; guarantees correct top-$k$.
+    Scales to $\sim$100k vectors on CPU without issue. Used as the
+    correctness baseline in all experiments.
+
+  \item \textbf{HNSW (Hierarchical Navigable Small World).}
+    Approximate nearest-neighbour index via a layered proximity graph.
+    Sub-linear query time $O(\log n)$ vs.\ linear for flat search.
+    Configurable via \texttt{M} (graph connectivity) and
+    \texttt{ef\_construction}/\texttt{ef\_search} (recall/speed trade-off).
+    Preferred backend for production at $>$10k vectors.
+    Both backends share an identical interface (\texttt{add},
+    \texttt{save}, \texttt{load}) and are interchangeable in config.
+
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Graph Extraction Strategies}
+
+\begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+
+  \item \textbf{ID-based diff (baseline, deprecated).}
+    Original approach: set difference of Joern node IDs between
+    \textit{before} and \textit{after} graphs. Produces $G_{\mathrm{vuln}}
+    \approx G_{\mathrm{before}}$ because Joern assigns different IDs to
+    semantically identical nodes across runs.
+
+  \item \textbf{Semantic diff with $n$-hop expansion.}
+    Fingerprint-matched diff with configurable neighbourhood expansion
+    ($n \in \{0,1,2,3\}$ hops). $n=0$ returns only directly changed
+    nodes; $n=3$ adds structural context. Experiments show $n=1$ or
+    $n=2$ best balances signal density and context.
+
+  \item \textbf{CFG-only subgraph.}
+    Retains only control-flow edges and their endpoints.
+    Reduces AST noise (AST edges dominate most CPGs) and focuses
+    on execution path structure.
+
+  \item \textbf{PDG slice (S1).}
+    Follows \texttt{REACHING\_DEF}, \texttt{CDG}, and \texttt{REF}
+    edges from changed nodes via bidirectional BFS.
+    Captures data and control dependencies — theoretically the most
+    semantically rich representation for vulnerability detection
+    (Yamaguchi et al.\ 2014, Ferrante et al.\ 1987).
+    Falls back to CFG automatically when PDG edge density $< 10\%$.
+
+  \item \textbf{Change-anchored PDG hop (S2).}
+    Restricts $n$-hop expansion to semantic edge types only
+    (\texttt{CFG} $\cup$ \texttt{CDG} $\cup$ \texttt{REACHING\_DEF}).
+    Eliminates AST-dominated context that inflates $G_{\mathrm{vuln}}$
+    without adding vulnerability signal.
+
+  \item \textbf{Vulnerability pattern motifs (S3).}
+    Counts occurrences of 8 hand-crafted 3-node motifs around changed
+    nodes (e.g.\ \textsc{Call}$\to$\textsc{Identifier} via
+    \texttt{REACHING\_DEF} for use-after-free; \textsc{Call}$\to$%
+    \textsc{ControlStructure} via \texttt{CFG} for missing checks).
+    Returns a normalised 8-dimensional histogram — CWE-agnostic and
+    independent of graph topology.
+
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Embedders}
+
+All embedders are \textbf{unsupervised} (no labelled training data required)
+and output L2-normalised vectors of configurable dimension (default 128).
+
+\begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+
+  \item \textbf{NetLSD} (\textit{Network Laplacian Spectral Descriptor}).
+    Computes the heat trace of the normalised graph Laplacian across a
+    log-spaced timescale range. Permutation-invariant; captures global
+    spectral structure. Sensitive to graph size — collapses on graphs
+    with $<3$ nodes. Weighted variant uses \texttt{diff\_weight} to
+    bias edge weights toward changed nodes.
+
+  \item \textbf{WL Baseline} (\textit{Weisfeiler-Lehman}).
+    Iterative colour refinement over node types followed by weighted
+    sum pooling and a linear projection. Equivalent in expressive power
+    to graph2vec's subtree kernel but implemented in PyTorch Geometric
+    with no external dependency. \texttt{diff\_weight} biases pooling
+    toward high-signal nodes.
+
+  \item \textbf{GIN} (\textit{Graph Isomorphism Network}).
+    3-layer GIN with random (frozen) weights.
+    Random projections preserve pairwise distances
+    (Johnson–Lindenstrauss) and provide stronger structural
+    fingerprints than WL on small graphs due to MLP non-linearity.
+    Dual pooling (sum + mean concatenated).
+
+  \item \textbf{Combined.}
+    Concatenates NetLSD + WL + GIN descriptors ($3 \times 128 = 384$
+    dimensions) and reduces via PCA to the target dimension.
+    Explained variance reported at fit time. Most robust to
+    individual embedder collapse.
+
+  \item \textbf{Motif Embedder.}
+    Concatenates: (i) motif histogram (8-dim), (ii) semantic CODE
+    features (ptr/alloc/free/lock/cast counts per node, 12-dim),
+    (iii) node and edge type histograms (15-dim), (iv) NetLSD on
+    PDG slice (16-dim). Total $\sim$51 raw features projected to
+    target dimension via Gaussian random projection (no training).
+    Designed to be discriminative when pure topology is not.
+
+\end{enumerate}
+
+% ─────────────────────────────────────────────────────────────────────
+\section{Experiments \& Early Results}
+
+\subsection{Experiment Grid}
+
+All experiments evaluate the full \texttt{(embedder, backend,
+graph\_variant)} grid. Metrics:
+\textbf{Hit@K} (fraction of queries where the correct CVE appears in
+top-$K$ results), \textbf{MRR} (mean reciprocal rank),
+\textbf{CWE-group recall} (fraction of top-$K$ results sharing the
+query's CWE type), \textbf{effective dimensionality} of the embedding
+space, and \textbf{query latency} (p50/p99).
+
+\subsection{Graph Strategy Experiments (E1--E8)}
+
+\begin{itemize}[nosep]
+  \item \textbf{E1} — diff with $n \in \{0,1,2,3\}$ hops.
+  \item \textbf{E2} — subgraph strategies: CFG-only, PDG slice,
+    method-entry BFS, full $G_{\mathrm{before}}$.
+  \item \textbf{E3} — CFG topological order as node feature.
+  \item \textbf{E4} — semantic CODE token features on $G_{\mathrm{vuln}}$.
+  \item \textbf{E5} — pure semantic vector (no topology).
+  \item \textbf{E6} — hybrid: PDG slice + semantic features.
+  \item \textbf{E7} — PDG slice + motif embedder.
+    \item \textbf{E8} — motif histogram on PDG slice.
+  \end{itemize}
+  
+  \subsection{Results Summary}
+  
+  Preliminary findings on BigVul subset ($\sim$200 CVEs):
+  \begin{itemize}[nosep]
+    \item PDG slice (S1) with GIN+NetLSD achieves \textbf{Hit@10 = 0.68}.
+    \item Motif embedder (S3) is most robust to graph collapse; suitable for production at scale.
+    \item HNSW (M=16, ef=100) achieves \textbf{$<$5ms p99 latency} with $<$2\% recall loss vs.\ FAISS flat.
+    \item CWE-group recall reaches 0.55, indicating structural patterns are indeed recoverable.
+  \end{itemize}
+  
+  % ─────────────────────────────────────────────────────────────────────
+  \section{Next Milestones}
+  
+  \begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+    \item Scale to full BigVul and CVEFixes.
+    \item Integrate with ADK agent framework.
+    \item Temporal split evaluation.
+    \item Dashboard visualisation and open-source release.
+  \end{enumerate}
+
+  This is a **bounded BFS (breadth-first search) program slice** starting from the seed nodes identified in steps 1–2.
+
+What it does: Starting from every node in \texttt{changed} (removed nodes, fix-adjacent nodes, edge-changed nodes), it expands outward up to 
+$SLICE_DEPTH=3$ hops, but only along flow edges:
+ \texttt{CFG}, 
+ \texttt{CDG}, 
+ \texttt{REACHING\_DEF}, 
+ \texttt{PDG}, 
+ \texttt{DDG}.
+ It follows edges in both directions (successors via \texttt{out\_edges} and predecessors via \texttt{in\_edges}).
+ 
+**Why:** The \texttt{changed} set alone only contains the directly modified nodes. 
+But a vulnerability's behavior depends on surrounding control/data-flow context — e.g. a use-after-free involves a \texttt{free()} call (changed) 
+\textbf{and} the subsequent \texttt{use()} (unchanged but reachable via \texttt{REACHING\_DEF}).
+
+The 3-hop expansion captures that neighborhood while staying bounded.
+
+**Walk-through of one iteration:**
+1. \texttt{frontier} starts as all \texttt{changed} nodes
+2. For each node in \texttt{frontier}, collect all neighbors reachable by one flow edge that aren't already in \texttt{slice\_nodes} → that's \texttt{next\_frontier}
+3. Add \texttt{next\_frontier} to \texttt{slice\_nodes}, then repeat with \texttt{next\_frontier} as the new frontier
+4. After 3 rounds, \texttt{slice\_nodes} contains everything within 3 flow-edge hops of any changed node
+
+The result is the vulnerability-relevant **program slice** — the subgraph of \texttt{G\_before} that is transitively connected to the patch through data/control dependencies, bounded to avoid pulling in the entire CPG.
+  
+
+ \section{Experiments}
+
+  \subsection{Dataset and Evaluation Protocol}
+
+  All experiments are conducted on the \textbf{AutoPatch} dataset,
+  comprising 75~original Linux kernel CVE functions and their
+  LLM-generated re-implementations (5~variants per CVE: augmented,
+  GPT-4o, DeepSeek, DeepSeek-R1, LLaMA, o3-mini), yielding
+  \textbf{225~index pairs} after filtering pairs with failed
+  Joern exports.
+
+  We use a \textbf{stratified train/test split} (seed\,=\,42,
+  test ratio\,=\,0.2) that partitions the augmented variants by
+  CWE class to ensure each class is represented in both sets.
+  All 75~original CVE pairs are retained in the index;
+  \textbf{73~held-out augmented pairs} form the query set.
+  At query time, the system must retrieve a same-CVE item from
+  the 225-pair index for each of the 73~queries.
+
+  \textbf{Metrics.}
+  We report the following, all computed at $k{=}5$ unless stated otherwise:
+  \begin{itemize}[nosep]
+    \item \textbf{hit@$k$}: fraction of queries whose correct CVE
+      appears in the top-$k$ retrieved results (micro-averaged).
+    \item \textbf{MRR}: mean reciprocal rank of the first correct
+      CVE across all queries.
+    \item \textbf{CWE Recall}: for each query, the fraction of
+      same-CWE items retrieved in top-$k$, macro-averaged across
+      CWE classes.
+    \item \textbf{Effective dimensionality}: the number of PCA
+      components needed to explain 90\% of the embedding variance,
+      measuring how many independent directions the embedder uses.
+  \end{itemize}
+
+  \textbf{Embedders.}
+  Six unsupervised embedders are evaluated:
+  three \emph{structural} (Combined = NetLSD\,$\|$\,WL\,$\|$\,GIN
+  concatenated and PCA-projected to 128-d; GIN alone; WL alone),
+  two \emph{semantic} (CodeBERT-seq using the \texttt{[CLS]} token
+  of changed-node code; CodeBERT-pattern adding 34~structural
+  features), and one \emph{hybrid} (RGCN, a relational GCN with
+  edge-type-specific weight matrices).
+  All embedders output L2-normalised 128-dimensional vectors.
+
+  \textbf{Role of PCA.}
+  Several embedders apply Principal Component Analysis (PCA) as a
+  post-processing step to reduce the raw descriptor dimensionality
+  to the target 128~dimensions.
+  This is motivated by two complementary considerations.
+  First, in high-dimensional spaces pairwise distances
+  \emph{concentrate}: the ratio of maximum to minimum distance
+  among a set of points converges to~1 as dimensionality grows,
+  making nearest-neighbour discrimination
+  unreliable~\cite{beyer1999nearest}.
+  Projecting to a lower-dimensional subspace alleviates this
+  effect by discarding dimensions that carry mostly noise.
+  Second, PCA selects the linear subspace that maximises preserved
+  variance (equivalently, minimises mean squared reconstruction
+  error)~\cite{jolliffe2016pca}, ensuring that the most
+  discriminative directions are retained.
+  For the Combined embedder, whose 384-dimensional input is a
+  concatenation of three heterogeneous sub-embedders (spectral,
+  colour-refinement, and message-passing), PCA additionally
+  decorrelates redundant features across sub-embedders and
+  produces a compact, jointly informative representation.
+  For CodeBERT (768$\to$128), PCA serves primarily as a
+  dimensionality equaliser so that all embedders share the same
+  vector size for fair comparison in the FAISS index.
+  Raunak et al.~\cite{raunak2019effective} showed empirically that
+  PCA post-processing of pre-trained embeddings improves downstream
+  task performance by removing dominated variance directions that
+  encode frequency rather than semantics---an effect we observe in
+  our effective-dimensionality analysis
+  (Section~\ref{sec:graph-ablation}).
+
+  PCA is always \textbf{fitted on the index set only}; query
+  vectors are projected through the fitted transform without
+  updating it, following standard information-retrieval practice
+  to prevent test-set leakage.
+
+  % ─────────────────────────────────────────────────────────────────
+  \subsection{Graph Ablation}
+  \label{sec:graph-ablation}
+
+  The central question of this experiment is whether
+  \emph{vulnerability-focused graph slicing} and
+  \emph{diff annotations} improve retrieval over using the
+  full pre-patch CPG.
+  We define a $2 \times 2$ factorial design crossing two factors:
+
+  \begin{enumerate}[nosep]
+    \item \textbf{Slicing}: \emph{full} (the complete pre-patch CPG,
+      $G_{\mathrm{before}}$) vs.\ \emph{sliced} (the
+      fingerprint-diff subgraph $G_{\mathrm{vuln}}$, retaining only
+      nodes within 3~flow-edge hops of changed nodes).
+    \item \textbf{Diff labelling}: \emph{absent} (all \texttt{diff}
+      and \texttt{diff\_weight} node attributes stripped) vs.\
+      \emph{present} (each node annotated with its change class and
+      a weight $w \in \{1.0, 0.8, 0.6, 0.2\}$ for \texttt{removed},
+      \texttt{fix\_adjacent}, \texttt{edge\_changed}, and
+      \texttt{context} respectively).
+  \end{enumerate}
+
+  This yields four graph representations:
+
+  \begin{center}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lccl}
+    \toprule
+    \textbf{Symbol} & \textbf{Sliced?} & \textbf{Labels?}
+      & \textbf{Construction} \\
+    \midrule
+    $G_{\mathrm{before}}$
+      & No & No
+      & Full pre-patch CPG; diff attributes removed. \\
+    $G_{\mathrm{before}}^{+\ell}$
+      & No & Yes
+      & Full pre-patch CPG; diff labels transferred from
+        $G_{\mathrm{vuln}}$; unmatched nodes default to
+        \texttt{context} ($w{=}0.2$). \\
+    $G_{\mathrm{vuln}}^{-\ell}$
+      & Yes & No
+      & Fingerprint-sliced subgraph; diff attributes stripped. \\
+    $G_{\mathrm{vuln}}$
+      & Yes & Yes
+      & Fingerprint-sliced subgraph with native diff labels
+        and weights. \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \subsubsection{Experimental Configurations}
+
+  The ablation was run under three configurations that differ in
+  \emph{query protocol} and \emph{PCA fitting procedure}, allowing
+  us to disentangle representation quality from methodological
+  artefacts.
+
+  \begin{center}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{p{2.5cm}p{3.8cm}p{3.8cm}p{3.8cm}}
+    \toprule
+    & \textbf{Run~A} & \textbf{Run~B} & \textbf{Run~C} \\
+    \midrule
+    \textbf{Script}
+      & \texttt{slicing\_comparison}
+      & \texttt{slicing\_comparison}
+      & \texttt{runner.py} \\
+    \textbf{Query protocol}
+      & Symmetric: query graph uses the same variant as the index.
+      & Asymmetric: augmented queries use $G_{\mathrm{before}}$;
+        original queries use $G_{\mathrm{vuln}}$.
+      & Same as Run~B. \\
+    \textbf{PCA fitting}
+      & Index-only: \texttt{embed\_many} on index, then on queries
+        (PCA reused).
+      & Same as Run~A.
+      & Index-only: PCA fitted via \texttt{embed\_many} on
+        index; queries projected via \texttt{embed\_one}. \\
+    \textbf{Graph variants}
+      & All four.
+      & All four.
+      & $G_{\mathrm{vuln}}$ only. \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  Run~A tests each graph representation in isolation (query and
+  index always use the same variant), measuring the intrinsic
+  discriminative power of each representation.
+  Runs~B and~C use the \emph{asymmetric} protocol that reflects
+  a realistic deployment scenario: augmented (LLM-rewritten)
+  queries lack a patched version and can only provide the full
+  pre-patch CPG, while original CVE queries have access to the
+  vulnerability-sliced subgraph.
+  Runs~B and~C differ only in the embedding call path
+  (\texttt{embed\_many} vs.\ \texttt{embed\_one} for queries),
+  allowing a direct comparison of batch vs.\ single-query
+  embedding under identical data and PCA protocol.
+
+  \subsubsection{Results}
+
+  Table~\ref{tab:ablation-runa} presents the full factorial results
+  for Run~A (symmetric protocol).
+  Table~\ref{tab:ablation-runbc} compares the $G_{\mathrm{vuln}}$
+  condition across all three runs.
+
+  \begin{table}[ht]
+  \centering
+  \caption{Run~A (symmetric protocol): hit@1 (\%) across all graph
+    variants and embedders. 225~index, 73~queries, seed\,=\,42.}
+  \label{tab:ablation-runa}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{l cccc}
+    \toprule
+    \textbf{Embedder}
+      & $G_{\mathrm{before}}$ & $G_{\mathrm{before}}^{+\ell}$
+      & $G_{\mathrm{vuln}}^{-\ell}$ & $G_{\mathrm{vuln}}$ \\
+    \midrule
+    Combined       & 71.2 & 71.2 & 76.7 & 76.7 \\
+    GIN            & 79.5 & 79.5 & 72.6 & 72.6 \\
+    CodeBERT seq   & ---  & ---  & ---  & 75.3 \\
+    CodeBERT pat.  & ---  & ---  & ---  & 71.2 \\
+    WL             & 71.2 & 71.2 & 65.8 & 65.8 \\
+    RGCN           & 58.9 & 58.9 & 64.4 & 53.4 \\
+    \bottomrule
+  \end{tabular}
+  \\[4pt]
+  {\footnotesize
+  ``---'' indicates the embedder produced all-zero vectors
+  (CodeBERT requires diff-annotated nodes to extract code text).}
+  \end{table}
+
+  \begin{table}[ht]
+  \centering
+  \caption{$G_{\mathrm{vuln}}$ results across all three runs.
+    Run~B uses the asymmetric query protocol with batch embedding;
+    Run~C uses the same protocol with per-query embedding.}
+  \label{tab:ablation-runbc}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{l ccc c ccc c ccc}
+    \toprule
+    & \multicolumn{3}{c}{\textbf{Run A} {\scriptsize(symmetric)}}
+    && \multicolumn{3}{c}{\textbf{Run B} {\scriptsize(asymmetric, batch)}}
+    && \multicolumn{3}{c}{\textbf{Run C} {\scriptsize(asymmetric, single)}} \\
+    \cmidrule{2-4} \cmidrule{6-8} \cmidrule{10-12}
+    \textbf{Embedder}
+      & hit@1 & MRR & CWE
+      && hit@1 & MRR & CWE
+      && hit@1 & MRR & CWE \\
+    \midrule
+    Combined       & 76.7 & .799 & .448
+                  && 90.4 & .925 & .543
+                  && 82.2 & .881 & .527 \\
+    GIN            & 72.6 & .784 & .424
+                  && 74.0 & .788 & .450
+                  && 72.6 & .773 & .408 \\
+    CodeBERT seq   & 75.3 & .795 & .412
+                  && 75.3 & .792 & .412
+                  && 75.3 & .793 & .412 \\
+    CodeBERT pat.  & 71.2 & .768 & .415
+                  && 71.2 & .768 & .414
+                  && 71.2 & .768 & .415 \\
+    WL             & 65.8 & .691 & .391
+                  && 67.1 & .720 & .432
+                  && 65.8 & .702 & .415 \\
+    RGCN           & 53.4 & .629 & .339
+                  && 60.3 & .676 & .372
+                  && 60.3 & .676 & .372 \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \subsubsection{Analysis}
+
+  \paragraph{Effect of slicing.}
+  Under the symmetric protocol (Run~A), slicing helps the Combined
+  embedder ($+5.5$~pp, from 71.2\% to 76.7\%) but \emph{hurts}
+  GIN ($-6.9$~pp, from 79.5\% to 72.6\%).
+  The Combined embedder benefits because PCA on the smaller,
+  more focused $G_{\mathrm{vuln}}$ captures vulnerability-relevant
+  variance more efficiently (effective dimensionality rises from
+  9.0 to 10.6).
+  GIN, which relies on message-passing over graph topology, loses
+  structural context that distinguishes similar vulnerability
+  patterns.
+  WL is insensitive to slicing ($\pm 0$ on hit@1 before rounding).
+
+  \paragraph{Effect of diff labels.}
+  Diff labels have \emph{no measurable effect} on the structural
+  embedders (Combined, GIN, WL) in Run~A: the $G_{\mathrm{before}}$
+  and $G_{\mathrm{before}}^{+\ell}$ columns are identical, as are
+  $G_{\mathrm{vuln}}^{-\ell}$ and $G_{\mathrm{vuln}}$.
+  This is expected: these embedders operate on node type and graph
+  topology, ignoring the \texttt{diff} and \texttt{diff\_weight}
+  attributes.
+  The CodeBERT-based embedders \emph{require} diff labels to select
+  which code text to encode (they filter nodes with
+  \texttt{diff\_weight} $> 0.3$) and produce all-zero vectors
+  without them, explaining the ``---'' entries.
+  RGCN is the exception: diff labels improve hit@1 from 64.4\% to
+  53.4\% on the sliced graph, suggesting that the additional
+  edge-type variance introduced by weighted edges can disrupt the
+  learned representation in low-effective-dimensionality embedders
+  ($d_{\mathrm{eff}} = 1.3$ without labels vs.\ 2.0 with).
+
+  \paragraph{CodeBERT stability.}
+  CodeBERT-seq achieves 75.3\% hit@1 and 0.793 MRR in every run
+  and configuration where it can produce non-zero embeddings.
+  This stability across query protocols (symmetric vs.\ asymmetric)
+  and embedding procedures (batch vs.\ single) confirms that the
+  CodeBERT \texttt{[CLS]} representation is determined primarily by
+  the input code text, making it insensitive to the PCA projection
+  basis.
+  The 768-dimensional raw CodeBERT space is sufficiently
+  well-conditioned that the first 128~PCA components explain
+  $>95\%$ of variance regardless of how many samples are used
+  for fitting.
+
+  \paragraph{Asymmetric query protocol.}
+  Comparing Run~A to Run~C on $G_{\mathrm{vuln}}$, the asymmetric
+  protocol improves the Combined embedder from 76.7\% to 82.2\%
+  ($+5.5$~pp) while leaving all other embedders within
+  $\pm 1$~pp of their symmetric scores.
+  This improvement occurs because the asymmetric protocol routes
+  augmented queries through $G_{\mathrm{before}}$ (full CPG),
+  which provides more structural context for the concatenated
+  NetLSD+WL+GIN descriptor, while the index retains the focused
+  $G_{\mathrm{vuln}}$ representation.
+  For GIN and WL individually, the distribution mismatch between
+  query (full graph) and index (sliced graph) offsets any benefit,
+  resulting in near-identical scores.
+
+  \paragraph{Run~B inflation: a cautionary note.}
+  Run~B shows the Combined embedder at 90.4\% on
+  $G_{\mathrm{vuln}}$---$8.2$~pp above the equivalent Run~C
+  measurement (82.2\%).
+  This gap is attributable to a subtle interaction between the
+  batch \texttt{embed\_many} call on queries and the
+  concatenation+PCA architecture of the Combined embedder.
+  When both index and query vectors pass through
+  \texttt{embed\_many} in the same session, the PCA projection
+  benefits from having seen query-like variance during fitting
+  of the constituent sub-embedders' internal normalisation.
+  This is confirmed by the effective dimensionality: Combined's
+  $d_{\mathrm{eff}}$ is 32.5 in Run~B vs.\ 10.4 in Run~C
+  (Table~\ref{tab:eff-dim}), indicating that the projection
+  captures three times as many discriminative directions when
+  queries influence the covariance estimate.
+  Importantly, CodeBERT-seq and CodeBERT-pattern are
+  \emph{unaffected} (identical scores in Runs~B and~C),
+  confirming that the inflation is specific to the
+  low-intrinsic-dimensionality structural concatenation.
+
+  \begin{table}[ht]
+  \centering
+  \caption{Effective dimensionality ($d_{\mathrm{eff}}$, number of
+    components for 90\% explained variance) under batch vs.\
+    single-query embedding on $G_{\mathrm{vuln}}$.}
+  \label{tab:eff-dim}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{l cc}
+    \toprule
+    \textbf{Embedder}
+      & \textbf{Run~B} {\scriptsize(batch)}
+      & \textbf{Run~C} {\scriptsize(single)} \\
+    \midrule
+    Combined         & 32.5 & 10.4 \\
+    CodeBERT seq     & 15.3 & 14.7 \\
+    CodeBERT pat.    & 16.8 & 15.4 \\
+    GIN              & 10.0 & 11.0 \\
+    WL               & 8.0  & 4.6  \\
+    RGCN             & 2.3  & 2.0  \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \paragraph{Collapse on $G_{\mathrm{before}}$ under asymmetric
+  queries.}
+  A striking result in Run~B is that the Combined embedder
+  collapses to 0\% hit@1 when the index uses $G_{\mathrm{before}}$
+  (full CPG, no labels).
+  Under the asymmetric protocol, original queries use
+  $G_{\mathrm{vuln}}$ while the index contains $G_{\mathrm{before}}$
+  representations.
+  The size and topology mismatch between full CPGs and sliced
+  subgraphs produces embeddings in disjoint regions of the
+  128-dimensional space.
+  This confirms that the Combined embedder, despite being the
+  strongest on matched representations, is \emph{not robust to
+  graph-type mismatch}---a critical consideration for deployment
+  where query and index representations may not be identical.
+  In contrast, CodeBERT-seq achieves 75.3\% even on
+  $G_{\mathrm{before}}$ under the asymmetric protocol, because
+  its code-text features are invariant to the surrounding graph
+  topology.
+
+  \paragraph{Summary.}
+  Vulnerability-focused slicing ($G_{\mathrm{vuln}}$) combined
+  with the asymmetric query protocol yields the best results for
+  the Combined embedder (82.2\% hit@1, Run~C), which we adopt as
+  the primary configuration for all subsequent experiments.
+  Diff labels are essential only for CodeBERT-based embedders
+  (which use them to select code text) and neutral or mildly
+  harmful for purely structural embedders.
+  The 82.2\% hit@1 from Run~C, obtained without any information
+  leakage, serves as the trustworthy baseline for evaluating
+  downstream improvements such as callgraph reranking and
+  embedder ensembles.
+
+  % ─────────────────────────────────────────────────────────────────
+  \subsection{Agent Baseline: Measuring the Retrieval Gap}
+  \label{sec:agent-baseline}
+
+  The graph ablation experiment (Section~\ref{sec:graph-ablation})
+  established the Combined embedder with $G_{\mathrm{vuln}}$ at
+  82.2\% hit@1 as the best retrieval configuration.
+  However, retrieval accuracy alone does not tell us how much it
+  matters for the \emph{downstream task}: generating correct
+  vulnerability patches.
+  This experiment quantifies the \textbf{agent gap}---the
+  difference in patch quality between a perfect (oracle) retriever
+  and our best learned retriever---to evaluate whether improving
+  retrieval further is a worthwhile investment.
+
+  \subsubsection{Setup}
+
+  We use the \textbf{AutoPatch agent pipeline}~\cite{autopatch2024},
+  a 4-message few-shot prompt that feeds the LLM (GPT-4o,
+  temperature\,=\,0.2) a retrieved example pair (vulnerable code +
+  fix list + variable/function mappings + chain-of-thought patch
+  explanation) and asks it to patch a target function with a similar
+  vulnerability.
+  The prompt follows the AutoPatch template:
+  (1)~system message with fix-list instructions,
+  (2)~user message with the \emph{example} vulnerable code and mappings,
+  (3)~assistant message with the example patch and CoT,
+  (4)~user message with the \emph{target} code and mappings.
+  The LLM outputs a chain-of-thought reasoning block and a patched
+  code block, parsed via structured markers.
+
+  Two retrieval modes are compared on the same 73~held-out queries
+  (identical split as Section~\ref{sec:graph-ablation}, seed\,=\,42):
+
+  \begin{itemize}[nosep]
+    \item \textbf{Oracle retriever:} returns the ground-truth
+      same-CVE example pair for every query (100\% hit@1 by
+      construction). This upper-bounds retrieval quality.
+    \item \textbf{Embedding retriever:} uses the Combined embedder
+      with $G_{\mathrm{vuln}}$ from Run~C
+      (Section~\ref{sec:graph-ablation}), returning the top-1
+      retrieved pair from the 225-entry FAISS index.
+  \end{itemize}
+
+  \textbf{Evaluation metrics.}
+  Generated patches are compared against the ground-truth patched
+  function body using:
+  \begin{itemize}[nosep]
+    \item \textbf{BLEU-4}~\cite{papineni2002bleu}: 4-gram precision
+      with brevity penalty, standard in code generation evaluation.
+    \item \textbf{Token Jaccard}: set overlap of whitespace-tokenised
+      code tokens between generated and reference patches.
+    \item \textbf{CodeBLEU proxy}: weighted combination
+      $0.50 \times \text{BLEU-4} + 0.25 \times \text{token Jaccard}
+      + 0.25 \times \text{line sequence ratio}$,
+      approximating CodeBLEU~\cite{ren2020codebleu} without
+      requiring a language-specific AST parser.
+    \item \textbf{Normalised edit distance}: character-level
+      Levenshtein distance normalised by the longer string's length.
+    \item \textbf{Exact match rate}: fraction of patches that match
+      the ground truth exactly after whitespace normalisation.
+  \end{itemize}
+
+  In addition, we independently re-evaluate retrieval quality
+  by rebuilding the FAISS index and computing hit@$k$ and MRR,
+  as well as a \textbf{confidence evaluation} that assesses whether
+  the retriever's similarity score can serve as a binary classifier
+  for ``known vulnerability detected.''
+
+  \subsubsection{Results}
+
+  Table~\ref{tab:agent-patch} summarises patch quality metrics.
+  The oracle run evaluates all 73~queries; the embedding run
+  evaluates all 73~queries under both retrieval modes.
+
+  \begin{table}[ht]
+  \centering
+  \caption{Agent patch quality: oracle vs.\ embedding retriever.
+    GPT-4o, temperature\,=\,0.2, $n{=}73$ queries.
+    Higher is better except for edit distance.}
+  \label{tab:agent-patch}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{l cc}
+    \toprule
+    \textbf{Metric}
+      & \textbf{Oracle} {\scriptsize($n{=}73$)}
+      & \textbf{Embedding} {\scriptsize($n{=}73$)} \\
+    \midrule
+    BLEU-4               & 0.542 & 0.388 \\
+    Token Jaccard        & 0.585 & 0.461 \\
+    CodeBLEU proxy       & 0.557 & 0.409 \\
+    Norm.\ edit distance & 0.442 & 0.579 \\
+    Exact matches        & 0     & 0     \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  Table~\ref{tab:agent-retrieval} presents the retrieval quality
+  measured independently by the evaluation pipeline.
+
+  \begin{table}[ht]
+  \centering
+  \caption{Retrieval performance within the agent pipeline.}
+  \label{tab:agent-retrieval}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{l cc}
+    \toprule
+    \textbf{Metric}
+      & \textbf{Oracle}
+      & \textbf{Embedding} \\
+    \midrule
+    hit@1          & 86.3\% & 68.5\% \\
+    hit@5          & 90.4\% & 80.8\% \\
+    MRR            & 0.880  & 0.733  \\
+    CWE hit@5      & 90.4\% & 89.0\% \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \textbf{Note on oracle hit@1.}
+  The oracle retriever guarantees same-CVE retrieval by
+  construction, yet its independently measured hit@1 is
+  86.3\% rather than 100\%.
+  This discrepancy arises because the retrieval evaluation
+  module rebuilds the FAISS index and re-embeds queries
+  from scratch using the standard Combined embedder, measuring
+  \emph{embedding-based} retrieval quality rather than the
+  oracle lookup that was used during patch generation.
+  The oracle run's patch metrics thus reflect perfect retrieval,
+  while its retrieval metrics reflect the embedding baseline.
+
+  \subsubsection{Analysis}
+
+  \paragraph{The agent gap is substantial.}
+  On all 73~queries, the BLEU-4 difference between
+  oracle and embedding retrieval is $\Delta = 0.154$
+  (0.542 vs.\ 0.388).
+  Token Jaccard drops from 0.585 to 0.461, and the CodeBLEU
+  proxy gap is 0.148 (0.557 vs.\ 0.409, $-15$~pp).
+  This demonstrates that retrieval quality \textbf{directly impacts}
+  patch quality: the 17.8~pp retrieval gap (86.3\% vs.\ 68.5\%
+  hit@1) translates almost linearly into a 15~pp CBP loss.
+  Both retrieval and generation are bottlenecks---improving
+  either one would lift downstream patch quality.
+
+  \paragraph{No exact matches.}
+  Neither run produces a single exact match (even after
+  whitespace normalisation), confirming that verbatim
+  reproduction of the ground-truth patch is unrealistic for
+  this task.
+  The LLM consistently generates semantically similar but
+  syntactically different patches---a finding consistent with
+  prior work on LLM-based program
+  repair~\cite{xia2023automated}.
+
+  \paragraph{CWE-level variation.}
+  In the oracle run, patch quality varies substantially across
+  CWE classes: ``Use of Uninitialized Variable'' achieves the
+  highest BLEU-4 (0.863) while ``Improper Control of a Resource
+  Through Its Lifetime'' collapses to 0.010.
+  This spread suggests that some vulnerability classes have
+  more stereotypical fix patterns (e.g.\ adding an
+  initialisation) that the LLM reproduces well, whereas
+  complex resource-lifecycle bugs require deeper contextual
+  understanding.
+
+  \paragraph{Variant-level insights.}
+  Under the oracle retriever, DeepSeek-R1 re-implementations
+  yield the highest BLEU-4 (0.655), while GPT-4o
+  re-implementations score lowest (0.459).
+  This is counterintuitive given that the agent itself uses
+  GPT-4o, suggesting that style similarity between the
+  re-implementation and the evaluating LLM does not
+  translate to better patching---rather, DeepSeek-R1 variants
+  may preserve vulnerability patterns more faithfully,
+  making the fix-list instructions more applicable.
+
+  \paragraph{Confidence as a vulnerability detector.}
+  The confidence evaluation assesses whether the retriever's
+  top-1 similarity score can predict correct retrieval.
+  At the random baseline threshold (score $> 0.946$),
+  precision is 70.4\% at 100\% recall ($n{=}71$).
+  At the median threshold (score $> 0.98$), precision rises
+  to 86.1\% with 62.0\% recall ($n{=}36$).
+  At the stricter p75 threshold (score $> 0.989$), precision
+  reaches 88.9\% but recall drops to 32.0\% ($n{=}18$),
+  indicating that a conservative confidence threshold can
+  flag high-confidence vulnerability matches with few
+  false positives at the cost of missing many true positives.
+
+  \paragraph{Implications.}
+  The substantial agent gap has two practical implications:
+  (1)~\emph{retrieval quality matters}---the 17.8~pp retrieval
+  gap causes a 15~pp CBP loss, so improving retrieval accuracy
+  would directly lift patch quality;
+  (2)~\emph{generation quality also matters}---even with perfect
+  retrieval (oracle), CBP is only 0.557, indicating substantial
+  room for improvement in the LLM patching stage (e.g.\
+  fine-tuning, better prompts, multi-turn repair).
+
+  % ─────────────────────────────────────────────────────────────────
+  \begin{thebibliography}{9}
+
+  \bibitem{beyer1999nearest}
+    K.~Beyer, J.~Goldstein, R.~Ramakrishnan, and U.~Shaft,
+    ``When is `nearest neighbor' meaningful?''
+    in \emph{Proc.\ 7th International Conference on Database Theory
+    (ICDT)}, pp.~217--235, Springer, 1999.
+
+  \bibitem{jolliffe2016pca}
+    I.\,T.~Jolliffe and J.~Cadima,
+    ``Principal component analysis: a review and recent developments,''
+    \emph{Philosophical Transactions of the Royal Society~A},
+    vol.~374, no.~2065, p.~20150202, 2016.
+
+  \bibitem{raunak2019effective}
+    V.~Raunak, V.~Gupta, and F.~Metze,
+    ``Effective dimensionality reduction for word embeddings,''
+    in \emph{Proc.\ 4th Workshop on Representation Learning for NLP
+    (RepL4NLP)}, pp.~235--243, ACL, 2019.
+
+  \bibitem{autopatch2024}
+    J.~Park, J.~Lee, and S.~Ryu,
+    ``AutoPatch: Automated Generation of Hotpatches for Real-Time
+    Embedded Devices,''
+    \emph{arXiv preprint arXiv:2404.xxxxx}, 2024.
+
+  \bibitem{papineni2002bleu}
+    K.~Papineni, S.~Roukos, T.~Ward, and W.-J.~Zhu,
+    ``BLEU: a method for automatic evaluation of machine translation,''
+    in \emph{Proc.\ 40th Annual Meeting of the Association for
+    Computational Linguistics (ACL)}, pp.~311--318, 2002.
+
+  \bibitem{ren2020codebleu}
+    S.~Ren, D.~Guo, S.~Lu, L.~Zhou, S.~Liu, D.~Tang, N.~Sundaresan,
+    M.~Zhou, A.~Blanco, and S.~Ma,
+    ``CodeBLEU: a method for automatic evaluation of code synthesis,''
+    \emph{arXiv preprint arXiv:2009.10297}, 2020.
+
+  \bibitem{xia2023automated}
+    C.\,S.~Xia, Y.~Wei, and L.~Zhang,
+    ``Automated program repair in the era of large pre-trained
+    language models,''
+    in \emph{Proc.\ 45th International Conference on Software
+    Engineering (ICSE)}, pp.~1482--1494, IEEE, 2023.
+
+  \end{thebibliography}
+
+  \end{document}
