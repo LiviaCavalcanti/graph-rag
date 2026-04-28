@@ -29,21 +29,21 @@ import argparse
 import json
 import sys
 import time
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 
 # project imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from experiments.common import (build_hnsw, build_split, evaluate_cwe_recall,
+                                evaluate_retrieval, load_config, load_pairs,
+                                make_run_dir, save_json)
 from src.embeddings import build_embedders
-from experiments.common import (
-    load_config, load_pairs, build_split, make_run_dir,
-    build_hnsw, evaluate_retrieval, evaluate_cwe_recall, save_json,
-)
 from src.metrics.metrics import embedding_space_stats
 
-
 # ── graph variant factories ──────────────────────────────────────────
+
 
 def _strip_diff_attrs(G):
     """Return a Graph copy with diff/diff_weight removed from all nodes."""
@@ -89,11 +89,14 @@ VARIANT_DEFS = {
 
 # ── query variant helpers ────────────────────────────────────────────
 
+
 def _runner_compat_query_graph(pair):
     """Reproduce checkpoint-2 runner.py query protocol:
     augmented queries → G_before, originals → G_vuln."""
-    if (pair.meta.get("dataset") == "autopatch"
-            and pair.meta.get("variant") != "original"):
+    if (
+        pair.meta.get("dataset") == "autopatch"
+        and pair.meta.get("variant") != "original"
+    ):
         return pair.G_before
     return pair.G_vuln
 
@@ -101,17 +104,20 @@ def _runner_compat_query_graph(pair):
 def _resolve_query_build_fn(query_variant: str | None, index_build_fn):
     """Return (build_fn, label) for query graphs."""
     if query_variant is None:
-        return index_build_fn, None           # same as index
+        return index_build_fn, None  # same as index
     # Special case for runner compatibility mode to reproduce checkpoint2 results where the query is always G_before (autopatch)
     if query_variant == "runner_compat":
         return _runner_compat_query_graph, "runner_compat"
     if query_variant in VARIANT_DEFS:
         return VARIANT_DEFS[query_variant]["build"], query_variant
-    raise ValueError(f"Unknown --query-variant '{query_variant}'. "
-                     f"Choose from {list(VARIANT_DEFS)} or 'runner_compat'.")
+    raise ValueError(
+        f"Unknown --query-variant '{query_variant}'. "
+        f"Choose from {list(VARIANT_DEFS)} or 'runner_compat'."
+    )
 
 
 # ── experiment loop ──────────────────────────────────────────────────
+
 
 def run_comparison(cfg: dict, *, query_variant: str | None = None) -> dict:
     run_id, run_dir = make_run_dir("slice")
@@ -137,7 +143,7 @@ def run_comparison(cfg: dict, *, query_variant: str | None = None) -> dict:
 
         # Reset PCA state so each variant gets its own projection
         for emb in embedders:
-            if hasattr(emb, '_fitted'):
+            if hasattr(emb, "_fitted"):
                 emb._fitted = False
                 emb._pca = None
 
@@ -159,16 +165,29 @@ def run_comparison(cfg: dict, *, query_variant: str | None = None) -> dict:
                 norms = np.linalg.norm(index_embeddings, axis=1)
                 n_zero = int(np.sum(norms < 1e-6))
                 if n_zero == len(index_embeddings):
-                    print(f"    SKIP — all {n_zero} embeddings are zero (no usable features)")
-                    results.append({
-                        "variant": variant_name, "embedder": embedder.name,
-                        "query_variant": q_label,
-                        "hit@1": 0, "hit@5": 0, "hit@10": 0, "mrr": 0,
-                        "cve_precision": 0, "cve_recall": 0, "cve_f1": 0,
-                        "cwe_recall": 0, "effective_dim": 0, "mean_pairwise_sim": 0,
-                        "n": 0, "embed_time_s": round(embed_time, 1),
-                        "error": f"all {n_zero} embeddings zero",
-                    })
+                    print(
+                        f"    SKIP — all {n_zero} embeddings are zero (no usable features)"
+                    )
+                    results.append(
+                        {
+                            "variant": variant_name,
+                            "embedder": embedder.name,
+                            "query_variant": q_label,
+                            "hit@1": 0,
+                            "hit@5": 0,
+                            "hit@10": 0,
+                            "mrr": 0,
+                            "cve_precision": 0,
+                            "cve_recall": 0,
+                            "cve_f1": 0,
+                            "cwe_recall": 0,
+                            "effective_dim": 0,
+                            "mean_pairwise_sim": 0,
+                            "n": 0,
+                            "embed_time_s": round(embed_time, 1),
+                            "error": f"all {n_zero} embeddings zero",
+                        }
+                    )
                     continue
 
                 space_stats = embedding_space_stats(index_embeddings)
@@ -176,15 +195,21 @@ def run_comparison(cfg: dict, *, query_variant: str | None = None) -> dict:
                 if np.isnan(eff_dim):
                     eff_dim = 0.0
                     space_stats["effective_dim"] = 0.0
-                print(f"    embed {embed_time:.1f}s  eff_dim={eff_dim:.1f}  "
-                      f"mean_sim={space_stats['mean_pairwise_sim']:.3f}  "
-                      f"({n_zero} zero vecs)")
+                print(
+                    f"    embed {embed_time:.1f}s  eff_dim={eff_dim:.1f}  "
+                    f"mean_sim={space_stats['mean_pairwise_sim']:.3f}  "
+                    f"({n_zero} zero vecs)"
+                )
 
                 # build index & retriever via common
                 tag = f"{embedder.name}__{variant_name}"
                 index, retriever = build_hnsw(
-                    index_pairs, index_embeddings, embedder.name,
-                    embedder.dim, run_dir, tag=tag,
+                    index_pairs,
+                    index_embeddings,
+                    embedder.name,
+                    embedder.dim,
+                    run_dir,
+                    tag=tag,
                 )
 
                 # embed queries (may differ from index variant)
@@ -193,10 +218,18 @@ def run_comparison(cfg: dict, *, query_variant: str | None = None) -> dict:
 
                 # evaluate via common
                 sr = evaluate_retrieval(
-                    query_pairs, query_embeddings, retriever, index_pairs, ks=ks,
+                    query_pairs,
+                    query_embeddings,
+                    retriever,
+                    index_pairs,
+                    ks=ks,
                 )
                 cwe_result = evaluate_cwe_recall(
-                    query_pairs, query_embeddings, retriever, index.metadata, top_k=max(ks),
+                    query_pairs,
+                    query_embeddings,
+                    retriever,
+                    index.metadata,
+                    top_k=max(ks),
                 )
                 cwe_recall = cwe_result["macro_avg"]
 
@@ -205,9 +238,11 @@ def run_comparison(cfg: dict, *, query_variant: str | None = None) -> dict:
                 mrr = sr.get("mrr", 0)
                 n = sr.get("n", 0)
 
-                print(f"    hit@1={hit1:.3f}  hit@5={hit5:.3f}  MRR={mrr:.3f}  "
-                      f"CVE_F1={sr.get('cve_f1', 0):.3f}  "
-                      f"CWE_recall={cwe_recall:.3f}  n={n}")
+                print(
+                    f"    hit@1={hit1:.3f}  hit@5={hit5:.3f}  MRR={mrr:.3f}  "
+                    f"CVE_F1={sr.get('cve_f1', 0):.3f}  "
+                    f"CWE_recall={cwe_recall:.3f}  n={n}"
+                )
 
             except Exception as e:
                 print(f"    ERROR — {type(e).__name__}: {e}")
@@ -216,23 +251,27 @@ def run_comparison(cfg: dict, *, query_variant: str | None = None) -> dict:
                 space_stats = {"effective_dim": 0, "mean_pairwise_sim": 0}
                 sr = {}
 
-            results.append({
-                "variant": variant_name,
-                "embedder": embedder.name,
-                "query_variant": q_label,
-                "hit@1": round(hit1, 4),
-                "hit@5": round(hit5, 4),
-                "hit@10": round(sr.get("hit@10", 0), 4),
-                "mrr": round(mrr, 4),
-                "cve_precision": round(sr.get("cve_precision", 0), 4),
-                "cve_recall": round(sr.get("cve_recall", 0), 4),
-                "cve_f1": round(sr.get("cve_f1", 0), 4),
-                "cwe_recall": round(cwe_recall, 4),
-                "effective_dim": round(space_stats.get("effective_dim", 0), 1),
-                "mean_pairwise_sim": round(space_stats.get("mean_pairwise_sim", 0), 4),
-                "n": n,
-                "embed_time_s": round(embed_time, 1),
-            })
+            results.append(
+                {
+                    "variant": variant_name,
+                    "embedder": embedder.name,
+                    "query_variant": q_label,
+                    "hit@1": round(hit1, 4),
+                    "hit@5": round(hit5, 4),
+                    "hit@10": round(sr.get("hit@10", 0), 4),
+                    "mrr": round(mrr, 4),
+                    "cve_precision": round(sr.get("cve_precision", 0), 4),
+                    "cve_recall": round(sr.get("cve_recall", 0), 4),
+                    "cve_f1": round(sr.get("cve_f1", 0), 4),
+                    "cwe_recall": round(cwe_recall, 4),
+                    "effective_dim": round(space_stats.get("effective_dim", 0), 1),
+                    "mean_pairwise_sim": round(
+                        space_stats.get("mean_pairwise_sim", 0), 4
+                    ),
+                    "n": n,
+                    "embed_time_s": round(embed_time, 1),
+                }
+            )
 
     report = {
         "run_id": run_id,
@@ -267,13 +306,19 @@ def _print_table(report: dict):
     # Per-embedder tables
     for emb in embedders:
         print(f"  ── {emb} {'─'*(70-len(emb))}")
-        print(f"    {'Variant':<25s} {'hit@1':>7s} {'hit@5':>7s} {'MRR':>7s} {'CWE':>7s} {'eff_dim':>8s}")
+        print(
+            f"    {'Variant':<25s} {'hit@1':>7s} {'hit@5':>7s} {'MRR':>7s} {'CWE':>7s} {'eff_dim':>8s}"
+        )
         print(f"    {'─'*62}")
         for v in variants:
-            row = next((r for r in results if r["variant"] == v and r["embedder"] == emb), None)
+            row = next(
+                (r for r in results if r["variant"] == v and r["embedder"] == emb), None
+            )
             if row:
-                print(f"    {v:<25s} {row['hit@1']:>6.1%} {row['hit@5']:>6.1%} "
-                      f"{row['mrr']:>7.3f} {row['cwe_recall']:>6.1%} {row['effective_dim']:>8.1f}")
+                print(
+                    f"    {v:<25s} {row['hit@1']:>6.1%} {row['hit@5']:>6.1%} "
+                    f"{row['mrr']:>7.3f} {row['cwe_recall']:>6.1%} {row['effective_dim']:>8.1f}"
+                )
         print()
 
     # Summary: best variant per embedder
@@ -283,7 +328,9 @@ def _print_table(report: dict):
     for emb in embedders:
         cells = []
         for v in variants:
-            row = next((r for r in results if r["variant"] == v and r["embedder"] == emb), None)
+            row = next(
+                (r for r in results if r["variant"] == v and r["embedder"] == emb), None
+            )
             cells.append(f"{row['hit@1']:>6.1%}" if row else "   N/A")
         print(f"    {emb:<20s}" + "".join(f"{c:>22s}" for c in cells))
     print(f"\n{'='*90}\n")
@@ -296,7 +343,7 @@ def main():
         "--query-variant",
         default=None,
         help="Fix query graphs to this variant (e.g. G_before, G_vuln, "
-             "runner_compat).  Default: same as index variant.",
+        "runner_compat).  Default: same as index variant.",
     )
     args = parser.parse_args()
 
