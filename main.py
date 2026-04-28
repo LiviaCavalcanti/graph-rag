@@ -31,9 +31,7 @@ def _process_job(job: ExportJob, joern_bin_dir: str):
     except Exception as e:
         return False, f"write failed {job.cve_id}: {e}"
 
-    success = run_joern_export(
-        joern_bin_dir, c_file, str(out_dir), str(graph_folder)
-    )
+    success = run_joern_export(joern_bin_dir, c_file, str(out_dir), str(graph_folder))
     label = f"{job.cve_id}/{job.variant}/{job.version}"
 
     return success, f"{'ok' if success else 'FAIL'} {label}"
@@ -58,7 +56,7 @@ def run_export(cfg: str, dataset_name: str | None = None):
 
         ok = fail = skipped = 0
         with Pool(processes=workers) as pool:
-            with tqdm(total=len(jobs), desc=ds_name, unit='job') as pbar:
+            with tqdm(total=len(jobs), desc=ds_name, unit="job") as pbar:
                 for success, msg in pool.imap_unordered(worker_fn, jobs, chunksize=4):
                     if "skip" in msg:
                         skipped += 1
@@ -79,11 +77,11 @@ def run_pipeline(cfg):
     embedders = build_embedders(cfg)
     indexer = next(e for e in embedders if e.name == variant)
     index = FAISSIndex(
-        dim = cfg['embeddings']['dim'],
-        index_path = rag_cfg['index_path'],
-        metadata_path = rag_cfg['metadata_path'],
-    )    
-    
+        dim=cfg["embeddings"]["dim"],
+        index_path=rag_cfg["index_path"],
+        metadata_path=rag_cfg["metadata_path"],
+    )
+
     total = 0
 
     for ds_name in active_datasets:
@@ -95,7 +93,7 @@ def run_pipeline(cfg):
         for pair in dataset.stream():
             try:
                 emb = indexer.embed_one(pair.G_vuln)
-                index.add(pair, emb, variant) # index to RAG
+                index.add(pair, emb, variant)  # index to RAG
                 total += 1
                 if total % 5 == 0:
                     print(f" indexed {total} pairs.. ")
@@ -105,17 +103,18 @@ def run_pipeline(cfg):
     index.save()
     print(f"\nDone. \nTotal indexed: {total}")
 
+
 def run_query(cfg: dict, cve_id: str):
     from src.rag.retriever import Retriever
 
-    rag_cfg = cfg['rag']
+    rag_cfg = cfg["rag"]
     index = FAISSIndex(
-        dim=cfg['embeddings']['dim'],
-        index_path = rag_cfg['index_path'],
-        metadata_path=rag_cfg['metadata_path'],
+        dim=cfg["embeddings"]["dim"],
+        index_path=rag_cfg["index_path"],
+        metadata_path=rag_cfg["metadata_path"],
     )
     index.load()
-    retriever = Retriever(index, top_k=rag_cfg['top_k'])
+    retriever = Retriever(index, top_k=rag_cfg["top_k"])
     for r in retriever.query_by_cve(cve_id):
         print(r)
 
@@ -129,34 +128,34 @@ def run_batch_query(cfg: dict, args):
     import json as _json
     import time
 
-    from experiments.common import load_pairs, build_split, make_run_dir
+    from experiments.common import build_split, load_pairs, make_run_dir
     from src.agents.utils import get_ground_truth_patch
     from src.evaluate.retrieval_eval import _build_index_and_retriever
     from src.io import BackgroundWriter, load_completed
 
     # ── apply split overrides ────────────────────────────────────────
-    cfg.setdefault('experiment', {})
-    cfg['experiment'].setdefault('split', {})
-    split_cfg = cfg['experiment']['split']
+    cfg.setdefault("experiment", {})
+    cfg["experiment"].setdefault("split", {})
+    split_cfg = cfg["experiment"]["split"]
     if args.split:
-        split_cfg['enabled'] = True
+        split_cfg["enabled"] = True
     if args.no_split:
-        split_cfg['enabled'] = False
+        split_cfg["enabled"] = False
     if args.split_test_ratio is not None:
-        split_cfg['test_ratio'] = args.split_test_ratio
+        split_cfg["test_ratio"] = args.split_test_ratio
     if args.aug_train_ratio is not None:
-        split_cfg['augmented_train_ratio'] = args.aug_train_ratio
+        split_cfg["augmented_train_ratio"] = args.aug_train_ratio
 
     # ── load pairs and split ─────────────────────────────────────────
     pairs = load_pairs(cfg)
     index_pairs, query_pairs, split_info = build_split(pairs, cfg)
 
     if args.max_queries:
-        query_pairs = query_pairs[:args.max_queries]
+        query_pairs = query_pairs[: args.max_queries]
 
     # ── build embedder + reuse existing FAISS index ──────────────────
-    rag_cfg = cfg['rag']
-    top_k = rag_cfg.get('top_k', 5)
+    rag_cfg = cfg["rag"]
+    top_k = rag_cfg.get("top_k", 5)
     embedder, retriever = _build_index_and_retriever(index_pairs, cfg, top_k)
 
     # ── resolve run directory ────────────────────────────────────────
@@ -168,7 +167,7 @@ def run_batch_query(cfg: dict, args):
         run_id = run_dir.name
         print(f"Resuming run: {run_id}")
     else:
-        run_id, run_dir = make_run_dir('batch_query')
+        run_id, run_dir = make_run_dir("batch_query")
         print(f"New run: {run_id}")
 
     jsonl_path = run_dir / "results.jsonl"
@@ -180,8 +179,7 @@ def run_batch_query(cfg: dict, args):
         print(f"Found {len(completed)} completed queries — will skip them")
 
     pending = [
-        p for p in query_pairs
-        if (p.cve_id, p.meta.get("variant", "")) not in completed
+        p for p in query_pairs if (p.cve_id, p.meta.get("variant", "")) not in completed
     ]
     total = len(query_pairs)
     print(f"Total: {total} | Done: {total - len(pending)} | Pending: {len(pending)}")
@@ -215,8 +213,10 @@ def run_batch_query(cfg: dict, args):
             total_batches = (len(pending) + batch_size - 1) // batch_size
 
             print(f"\n{'─'*60}")
-            print(f"Batch {batch_num}/{total_batches}  "
-                  f"(queries {n_done+1}–{n_done+len(batch)} of {total})")
+            print(
+                f"Batch {batch_num}/{total_batches}  "
+                f"(queries {n_done+1}–{n_done+len(batch)} of {total})"
+            )
             print(f"{'─'*60}")
 
             batch_results = []
@@ -236,9 +236,13 @@ def run_batch_query(cfg: dict, args):
                     q_emb = embedder.embed_one(qp.G_vuln)
                     results = retriever.query(q_emb, top_k=top_k)
                 except Exception as e:
-                    batch_results.append({
-                        **base, "status": "error", "error": str(e),
-                    })
+                    batch_results.append(
+                        {
+                            **base,
+                            "status": "error",
+                            "error": str(e),
+                        }
+                    )
                     print(f"  [{n_done+i+1}/{total}] {cve_id}/{variant}  ERROR: {e}")
                     continue
 
@@ -283,15 +287,19 @@ def run_batch_query(cfg: dict, args):
                 }
                 batch_results.append(record)
 
-                print(f"  [{n_done+i+1}/{total}] {cve_id}/{variant}  "
-                      f"→ {top_cve}/{top.get('variant','?')}  "
-                      f"score={top.get('score',0):.4f}  "
-                      f"cve_match={cve_match}")
+                print(
+                    f"  [{n_done+i+1}/{total}] {cve_id}/{variant}  "
+                    f"→ {top_cve}/{top.get('variant','?')}  "
+                    f"score={top.get('score',0):.4f}  "
+                    f"cve_match={cve_match}"
+                )
 
             n_done += len(batch_results)
             writer.write(batch_results)
             elapsed = time.perf_counter() - t_start
-            print(f"\n  Progress: {n_done}/{total} ({n_done/total:.0%})  |  {elapsed:.0f}s elapsed")
+            print(
+                f"\n  Progress: {n_done}/{total} ({n_done/total:.0%})  |  {elapsed:.0f}s elapsed"
+            )
 
     except KeyboardInterrupt:
         print(f"\n\nInterrupted — flushing writes...")
@@ -309,43 +317,77 @@ def run_batch_query(cfg: dict, args):
     print(f"Run directory: {run_dir}")
     return run_dir
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="config.yaml")
     parser.add_argument(
-        "--mode", choices=["index", "query", "export", "experiment", "diagnostics", "batch"], default="export"
+        "--mode",
+        choices=["index", "query", "export", "experiment", "diagnostics", "batch"],
+        default="export",
     )
     parser.add_argument("--dataset", choices=["autopatch"], default="autopatch")
     parser.add_argument("--cve")
-    parser.add_argument('--loo', action='store_true',
-                    help='run leave-one-out eval (slow, max 1000 samples)')
-    parser.add_argument('--split', action='store_true',
-                    help='enable experiment split mode (overrides config)')
-    parser.add_argument('--no-split', action='store_true',
-                    help='disable experiment split mode (overrides config)')
-    parser.add_argument('--split-test-ratio', type=float,
-                    help='test ratio for split mode, e.g. 0.2')
-    parser.add_argument('--aug-train-ratio', type=float,
-                    help='fraction of augmented train pairs to keep in index, e.g. 0.5')
+    parser.add_argument(
+        "--loo",
+        action="store_true",
+        help="run leave-one-out eval (slow, max 1000 samples)",
+    )
+    parser.add_argument(
+        "--split",
+        action="store_true",
+        help="enable experiment split mode (overrides config)",
+    )
+    parser.add_argument(
+        "--no-split",
+        action="store_true",
+        help="disable experiment split mode (overrides config)",
+    )
+    parser.add_argument(
+        "--split-test-ratio", type=float, help="test ratio for split mode, e.g. 0.2"
+    )
+    parser.add_argument(
+        "--aug-train-ratio",
+        type=float,
+        help="fraction of augmented train pairs to keep in index, e.g. 0.5",
+    )
     # batch-mode arguments
-    parser.add_argument('--batch-size', type=int, default=10,
-                    help='queries per batch flush (batch mode, default: 10)')
-    parser.add_argument('--max-queries', type=int, default=None,
-                    help='limit total queries for testing (batch mode)')
-    parser.add_argument('--model', default=None,
-                    help='Azure model/deployment name (batch mode, default: MODEL_NAME from .env)')
-    parser.add_argument('--resume', default=None,
-                    help='path to run dir to resume (batch mode)')
-    parser.add_argument('--oracle', action='store_true',
-                    help='use oracle retriever (perfect same-CVE lookup) instead of FAISS embedding retriever (batch mode)')
-    parser.add_argument('--query-run', default=None,
-                    help='path to a --mode query run dir whose results.jsonl provides pre-computed retrieval (batch mode, replaces FAISS)')
+    parser.add_argument(
+        "--batch-size",
+        type=int,
+        default=10,
+        help="queries per batch flush (batch mode, default: 10)",
+    )
+    parser.add_argument(
+        "--max-queries",
+        type=int,
+        default=None,
+        help="limit total queries for testing (batch mode)",
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help="Azure model/deployment name (batch mode, default: MODEL_NAME from .env)",
+    )
+    parser.add_argument(
+        "--resume", default=None, help="path to run dir to resume (batch mode)"
+    )
+    parser.add_argument(
+        "--oracle",
+        action="store_true",
+        help="use oracle retriever (perfect same-CVE lookup) instead of FAISS embedding retriever (batch mode)",
+    )
+    parser.add_argument(
+        "--query-run",
+        default=None,
+        help="path to a --mode query run dir whose results.jsonl provides pre-computed retrieval (batch mode, replaces FAISS)",
+    )
 
     args = parser.parse_args()
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
 
-    active = [n for n in DATASETS if cfg['data'].get(n)]
+    active = [n for n in DATASETS if cfg["data"].get(n)]
     if args.mode == "export":
         run_export(cfg, args.dataset)
     elif args.mode == "index":
@@ -355,56 +397,56 @@ if __name__ == "__main__":
             run_query(cfg, args.cve)
         else:
             run_batch_query(cfg, args)
-    elif args.mode == 'experiment':
+    elif args.mode == "experiment":
         from experiments.runner import run_experiment
 
-        cfg.setdefault('experiment', {})
-        cfg['experiment'].setdefault('split', {})
-        split_cfg = cfg['experiment']['split']
+        cfg.setdefault("experiment", {})
+        cfg["experiment"].setdefault("split", {})
+        split_cfg = cfg["experiment"]["split"]
         if args.split:
-            split_cfg['enabled'] = True
+            split_cfg["enabled"] = True
         if args.no_split:
-            split_cfg['enabled'] = False
+            split_cfg["enabled"] = False
         if args.split_test_ratio is not None:
-            split_cfg['test_ratio'] = args.split_test_ratio
+            split_cfg["test_ratio"] = args.split_test_ratio
         if args.aug_train_ratio is not None:
-            split_cfg['augmented_train_ratio'] = args.aug_train_ratio
+            split_cfg["augmented_train_ratio"] = args.aug_train_ratio
 
         # load all pairs from all active datasets
         all_pairs = []
         for ds_name in active:
-            ds_cfg  = cfg['data'][ds_name]
+            ds_cfg = cfg["data"][ds_name]
             dataset = DATASETS[ds_name](ds_cfg)
             print(f"Loading {dataset.name()}...")
             all_pairs.extend(dataset.load_all())
 
         run_experiment(
-            pairs             = all_pairs,
-            cfg               = cfg,
-            run_leave_one_out = args.loo,
+            pairs=all_pairs,
+            cfg=cfg,
+            run_leave_one_out=args.loo,
         )
-    elif args.mode == 'diagnostics':
+    elif args.mode == "diagnostics":
         from src.diagnostics import run_diagnostics
 
         # load all pairs from all active datasets
         all_pairs = []
         for ds_name in active:
-            ds_cfg  = cfg['data'][ds_name]
+            ds_cfg = cfg["data"][ds_name]
             dataset = DATASETS[ds_name](ds_cfg)
             print(f"Loading {dataset.name()}...")
             all_pairs.extend(dataset.load_all())
 
         run_diagnostics(all_pairs)
 
-    elif args.mode == 'batch':
+    elif args.mode == "batch":
         import json as _json
         import os as _os
 
         from dotenv import load_dotenv
 
+        from experiments.common import build_split
         from src.agents.batch_inference import run_batch_inference
         from src.data.autopatch import AutoPatchDataset
-        from experiments.common import build_split
         from src.rag.oracle import OracleRetriever
         from src.rag.precomputed import PrecomputedRetriever
 
@@ -415,54 +457,56 @@ if __name__ == "__main__":
             sys.exit(1)
 
         # apply split overrides (same as experiment mode)
-        cfg.setdefault('experiment', {})
-        cfg['experiment'].setdefault('split', {})
-        split_cfg = cfg['experiment']['split']
+        cfg.setdefault("experiment", {})
+        cfg["experiment"].setdefault("split", {})
+        split_cfg = cfg["experiment"]["split"]
         if args.split:
-            split_cfg['enabled'] = True
+            split_cfg["enabled"] = True
         if args.no_split:
-            split_cfg['enabled'] = False
+            split_cfg["enabled"] = False
         if args.split_test_ratio is not None:
-            split_cfg['test_ratio'] = args.split_test_ratio
+            split_cfg["test_ratio"] = args.split_test_ratio
         if args.aug_train_ratio is not None:
-            split_cfg['augmented_train_ratio'] = args.aug_train_ratio
+            split_cfg["augmented_train_ratio"] = args.aug_train_ratio
 
         # load pairs WITHOUT CPGs (metadata only — fast)
-        ds = AutoPatchDataset(cfg['data']['autopatch'])
+        ds = AutoPatchDataset(cfg["data"]["autopatch"])
         pairs = ds.load_lightweight()
         print(f"Loaded {len(pairs)} lightweight pairs (no CPGs)")
         index_pairs, query_pairs, split_info = build_split(pairs, cfg)
 
         if args.max_queries:
-            query_pairs = query_pairs[:args.max_queries]
+            query_pairs = query_pairs[: args.max_queries]
 
         # build retriever
         if args.oracle:
             retriever = OracleRetriever(index_pairs)
             print(f"Oracle retriever built from {len(index_pairs)} index pairs")
-            retriever_mode = 'oracle'
+            retriever_mode = "oracle"
         else:
             # use pre-computed query results (from --mode query)
             if not args.query_run:
                 print("ERROR: --query-run <run_dir> required for non-oracle batch mode")
-                print("Run  python main.py --mode query  first, then pass its output dir.")
+                print(
+                    "Run  python main.py --mode query  first, then pass its output dir."
+                )
                 sys.exit(1)
 
-            query_results = Path(args.query_run) / 'results.jsonl'
+            query_results = Path(args.query_run) / "results.jsonl"
             if not query_results.exists():
                 print(f"ERROR: {query_results} not found")
                 sys.exit(1)
 
             retriever = PrecomputedRetriever(query_results)
-            retriever_mode = 'embedding'
+            retriever_mode = "embedding"
 
         # preload db_entry.json for all CVEs, keyed by dir_name
-        cve_root = Path(cfg['data']['autopatch']['root'])
+        cve_root = Path(cfg["data"]["autopatch"]["root"])
         db_cache = {}
         for d in sorted(cve_root.iterdir()):
             if not d.is_dir():
                 continue
-            db_path = d / 'out_v2' / 'db_entry.json'
+            db_path = d / "out_v2" / "db_entry.json"
             if db_path.exists():
                 try:
                     db = _json.loads(db_path.read_text())
@@ -477,7 +521,7 @@ if __name__ == "__main__":
             db_cache=db_cache,
             model_name=args.model,
             batch_size=args.batch_size,
-            run_tag=f'batch_{retriever_mode}',
+            run_tag=f"batch_{retriever_mode}",
             resume_dir=args.resume,
-            meta_extra={'mode': retriever_mode, 'split_info': split_info},
+            meta_extra={"mode": retriever_mode, "split_info": split_info},
         )
