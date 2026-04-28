@@ -906,6 +906,175 @@ The result is the vulnerability-relevant **program slice** — the subgraph of \
   fine-tuning, better prompts, multi-turn repair).
 
   % ─────────────────────────────────────────────────────────────────
+  \subsection{Patch Verification via Graph Diff Retrieval}
+  \label{sec:patch-verification}
+
+  % ╔═══════════════════════════════════════════════════════════════╗
+  % ║  REVIEW NEEDED — this subsection was auto-generated from     ║
+  % ║  patch_verification.jsonl and needs manual review for         ║
+  % ║  accuracy, framing, and consistency with the rest of the      ║
+  % ║  report before inclusion.                                     ║
+  % ╚═══════════════════════════════════════════════════════════════╝
+
+  The agent baseline (Section~\ref{sec:agent-baseline}) evaluates
+  patch quality via textual similarity to the ground-truth fix.
+  A complementary question is whether the agent's generated patch
+  \emph{modifies the same code region} as the reference fix,
+  regardless of surface-level text overlap.
+  We answer this with a \textbf{diff-based patch verification}
+  experiment: for each generated patch, we compute the graph diff
+  between the pre-patch CPG and the CPG of the agent's output,
+  embed the resulting diff subgraph, and query the FAISS index.
+  If the top-retrieved CVE matches the query's ground-truth CVE,
+  the patch is \emph{verified}---i.e.\ the agent modified the
+  correct vulnerability region.
+
+  \subsubsection{Setup}
+
+  For each of the 73~embedding-retriever queries, we:
+  \begin{enumerate}[nosep]
+    \item Parse the agent-generated patch with Joern to obtain
+      $G_{\mathrm{generated}}$.
+    \item Compute the semantic graph diff
+      $G_{\mathrm{diff}} = \textsc{Diff}(G_{\mathrm{before}},\;
+      G_{\mathrm{generated}})$ using the same fingerprint-based
+      differ used for index construction.
+    \item Embed $G_{\mathrm{diff}}$ with the Combined embedder
+      and query the 225-entry FAISS index.
+    \item If the top-1 result shares the query's CVE ID, the
+      patch is verified at rank~1; if any top-5 result matches,
+      it is verified at rank~$k$.
+  \end{enumerate}
+
+  Queries where the generated patch is identical to the vulnerable
+  code ($|G_{\mathrm{diff}}| = 0$, status \texttt{no\_diff}) are
+  excluded, as the agent failed to produce any change.
+
+  \subsubsection{Results}
+
+  Of 73~queries, 72 produced a non-trivial diff (1~excluded as
+  \texttt{no\_diff}).
+
+  \begin{table}[ht]
+  \centering
+  \caption{Patch verification results.
+    ``Verified @1'' means the correct CVE is the top-1 retrieved
+    result from the diff embedding; ``@$k$'' means it appears in
+    top-5.}
+  \label{tab:patch-verif}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{l c}
+    \toprule
+    \textbf{Metric} & \textbf{Value} \\
+    \midrule
+    Evaluated queries          & 72 \\
+    Verified @1                & 53 / 72\quad (73.6\%) \\
+    Verified @$k$ ($k{=}5$)   & 65 / 72\quad (90.3\%) \\
+    Not in top-$k$             & 7 / 72\quad\;\; (9.7\%) \\
+    Skipped (\texttt{no\_diff}) & 1 \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  Table~\ref{tab:patch-verif-cwe} breaks down verification by CWE
+  class.
+
+  % TODO: verify these numbers against the raw JSONL
+  \begin{table}[ht]
+  \centering
+  \caption{Patch verification hit@1 by CWE class (classes with
+    $\geq 4$ queries).}
+  \label{tab:patch-verif-cwe}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{l r r r}
+    \toprule
+    \textbf{CWE class} & $n$ & \textbf{@1} & \textbf{@$k$} \\
+    \midrule
+    Race Condition                     &  5 & 100\% & 100\% \\
+    Use After Free                     & 12 &  83\% & 100\% \\
+    Integer Overflow                   & 10 &  80\% & 100\% \\
+    Improper Locking                   &  8 &  88\% &  88\% \\
+    NULL Pointer Dereference           & 11 &  36\% &  64\% \\
+    Deadlock                           &  4 & 100\% & 100\% \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \subsubsection{Analysis}
+
+  % ── REVIEW: verify all claims below against the raw data ──
+
+  \paragraph{NULL Pointer Dereference is the primary failure mode.}
+  Seven of 19~failures (37\%) originate from the NULL Pointer
+  Dereference class, which achieves only 36\% hit@1.
+  NULL-check patches are structurally near-identical across
+  unrelated CVEs: they insert a small guard node into the CFG
+  without altering the surrounding topology.
+  The diff embedding therefore collapses these patches into a
+  narrow cluster, making it impossible to distinguish \emph{which}
+  function the check was added to.
+  This suggests that purely topological diff embeddings are
+  insufficient for vulnerability classes with stereotypical,
+  low-node-count fix patterns.
+
+  \paragraph{Degenerate small diffs produce false-positive scores.}
+  Several queries (e.g.\ CVE-2024-58081, CVE-2024-58022) produce
+  diffs with only 4~nodes.
+  When the diff graph is this small, the 128-dimensional PCA
+  embedding collapses to a near-identical vector as other tiny
+  diffs, yielding multiple top-$k$ results at score~1.0.
+  Some of these happen to be correct (CVE-2024-58022 retrieves
+  itself at score~1.0); others retrieve unrelated CVEs with
+  equally degenerate diffs (CVE-2024-58081 retrieves
+  CVE-2024-58022).
+  A minimum-diff-size threshold or augmenting the embedding with
+  function-name features could mitigate this.
+
+  \paragraph{Cross-CWE confusion dominates failures.}
+  Most misses do not retrieve a wrong CVE from the \emph{same}
+  CWE class; instead, the top-1 result comes from a different CWE
+  entirely (e.g.\ NPD$\to$Improper Locking, Integer
+  Overflow$\to$Deadlock).
+  This confirms that the diff embedding captures the structural
+  \emph{shape} of a patch (how many nodes changed, what edge
+  types surround them) but not the semantic vulnerability type.
+  Incorporating CWE-aware features or a two-stage retrieval
+  (CWE filter $\to$ diff similarity) could reduce cross-CWE
+  confusion.
+
+  \paragraph{Near-miss margin is thin.}
+  CVE-2025-21652 fails hit@1 on two variants (gpt-4o and
+  deepseek) with the correct CVE at rank~2 and a score margin
+  of only 0.001 (0.430 vs.\ 0.429).
+  A trivially different embedding or a small re-ranking step
+  could flip these to successes.
+
+  \paragraph{Sibling CVE confusion.}
+  CVE-2024-57262 (augmented) retrieves sibling CVE-2024-57256 at
+  score~0.80---both are Integer Overflow vulnerabilities in
+  adjacent subsystems with near-identical patch structures.
+  These ``sibling failures'' are arguably benign: the retrieved
+  patch template targets the correct vulnerability class and
+  code pattern, even if it names a different CVE.
+
+  \paragraph{Implications.}
+  The 73.6\% verification rate confirms that in nearly three
+  quarters of cases, the agent's patch modifies the same code
+  region as the ground-truth fix, providing evidence that the
+  generated patches are \emph{structurally grounded} rather than
+  hallucinated.
+  The 90.3\% hit@$k$ shows the correct CVE is almost always in
+  the retrieval neighbourhood, suggesting that a re-ranker or
+  increased~$k$ could recover most remaining misses.
+  Targeted improvements---a minimum diff-size filter ($\sim$4
+  failures), function-name augmentation, and NPD-specific
+  features---could push verification past 85\% hit@1.
+
+  % ── END REVIEW SECTION ──
+
+  % ─────────────────────────────────────────────────────────────────
   \begin{thebibliography}{9}
 
   \bibitem{beyer1999nearest}
