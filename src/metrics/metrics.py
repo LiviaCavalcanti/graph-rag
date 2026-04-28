@@ -40,16 +40,10 @@ def self_retrieval_metrics(
     n     = len(embeddings)
 
     for i, (vec, meta) in enumerate(zip(embeddings, metadata)):
-        results = retriever.query(vec, top_k=max(ks) + 1)
-        # exclude self from results (same index position)
-        results_no_self = [r for r in results if r.get('_idx') != i]
-
-        # self-retrieval: the result AT rank 0 should be itself
-        # we check by cve_id match since _idx may not be stored
-        all_results = retriever.query(vec, top_k=max(ks))
+        results = retriever.query(vec, top_k=max(ks))
         for k in ks:
-            hits[k] += hits_at_k(all_results, meta['cve_id'], k)
-        mrrs.append(mean_reciprocal_rank(all_results, meta['cve_id']))
+            hits[k] += hits_at_k(results, meta['cve_id'], k)
+        mrrs.append(mean_reciprocal_rank(results, meta['cve_id']))
 
     return {
         **{f'hit@{k}': hits[k] / n for k in ks},
@@ -136,9 +130,22 @@ def cwe_group_recall(
             continue  # no same-CWE peers to retrieve; score would always be 0
 
         recalls = []
-        for i in indices:
+        for idx_pos, i in enumerate(indices):
             results  = retriever.query(embeddings[i], top_k=top_k + 1)
-            results  = [r for r in results if r.get('cve_id') != metadata[i]['cve_id']][:top_k]
+            # Exclude only the query entry itself (by index position),
+            # not all entries sharing the same CVE ID (augmented variants).
+            query_cve = metadata[i]['cve_id']
+            results_filtered = []
+            self_removed = False
+            for r in results:
+                if not self_removed and r.get('cve_id') == query_cve:
+                    # Remove only the first match (the self-hit, which has the
+                    # highest score). Other entries sharing the same CVE ID
+                    # (augmented variants) are kept.
+                    self_removed = True
+                    continue
+                results_filtered.append(r)
+            results = results_filtered[:top_k]
             same_cwe = sum(1 for r in results if r.get('cwe_id') == cwe)
             possible = min(top_k, len(indices) - 1)
             recall   = same_cwe / possible if possible > 0 else 0.0
@@ -174,7 +181,11 @@ def embedding_space_stats(embeddings: np.ndarray) -> dict:
     n         = min(len(embeddings), 500)
     idx       = np.random.choice(len(embeddings), n, replace=False)
     sub       = embeddings[idx]
-    sim_matrix = sub @ sub.T  # already L2-normed → cosine sim
+    # L2-normalize before computing cosine similarity
+    sub_norms = np.linalg.norm(sub, axis=1, keepdims=True)
+    sub_norms = np.where(sub_norms == 0, 1.0, sub_norms)
+    sub       = sub / sub_norms
+    sim_matrix = sub @ sub.T
     # exclude diagonal
     mask      = ~np.eye(n, dtype=bool)
     sims      = sim_matrix[mask]
@@ -196,9 +207,16 @@ def _effective_dim(embeddings: np.ndarray) -> float:
     Participation ratio: (sum eigenvalues)^2 / sum(eigenvalues^2).
     = 1 means one dominant direction (collapsed), = d means uniform.
     """
+    if len(embeddings) < 2:
+        return 0.0
     cov  = np.cov(embeddings.T)
+    if cov.ndim == 0:
+        # Single feature dimension: cov is a scalar
+        return 1.0 if float(cov) > 0 else 0.0
     eigv = np.linalg.eigvalsh(cov)
     eigv = eigv[eigv > 0]
+    if len(eigv) == 0:
+        return 0.0
     pr   = (eigv.sum() ** 2) / (eigv ** 2).sum()
     return float(pr)
 
