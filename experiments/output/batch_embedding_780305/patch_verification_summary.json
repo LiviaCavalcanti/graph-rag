@@ -1,0 +1,135 @@
+{
+  "n_total": 73,
+  "n_verified": 72,
+  "n_skipped": 1,
+  "skip_reasons": {
+    "no_diff": 1
+  },
+  "patch_accuracy_top1": 0.7361,
+  "patch_accuracy_topk": 0.9028,
+  "patch_success_top1": 53,
+  "patch_fail_top1": 19,
+  "patch_success_topk": 65,
+  "patch_fail_topk": 7,
+  "top1_score_stats": {
+    "mean": 0.6749,
+    "median": 0.6668,
+    "min": 0.3485,
+    "max": 1.0
+  },
+  "g_generated_node_stats": {
+    "mean": 607.4,
+    "median": 482.0
+  },
+  "g_diff_node_stats": {
+    "mean": 201.0,
+    "median": 178.0
+  },
+  "by_cwe": {
+    "Race Condition": {
+      "n": 5,
+      "success": 5,
+      "accuracy": 1.0
+    },
+    "Use After Free": {
+      "n": 12,
+      "success": 10,
+      "accuracy": 0.8333
+    },
+    "Integer Overflow or Wraparound": {
+      "n": 10,
+      "success": 8,
+      "accuracy": 0.8
+    },
+    "NULL Pointer Dereference": {
+      "n": 11,
+      "success": 4,
+      "accuracy": 0.3636
+    },
+    "Unchecked Return Value": {
+      "n": 1,
+      "success": 0,
+      "accuracy": 0.0
+    },
+    "Incorrect Check of Function Return Value": {
+      "n": 3,
+      "success": 2,
+      "accuracy": 0.6667
+    },
+    "Expired Pointer Dereference": {
+      "n": 2,
+      "success": 0,
+      "accuracy": 0.0
+    },
+    "Operation on a Resource after Expiration or Release": {
+      "n": 2,
+      "success": 2,
+      "accuracy": 1.0
+    },
+    "Assignment of a Fixed Address to a Pointer": {
+      "n": 1,
+      "success": 1,
+      "accuracy": 1.0
+    },
+    "Improper Locking": {
+      "n": 8,
+      "success": 7,
+      "accuracy": 0.875
+    },
+    "Return of Stack Variable Address After Scope": {
+      "n": 1,
+      "success": 1,
+      "accuracy": 1.0
+    },
+    "Deadlock": {
+      "n": 4,
+      "success": 4,
+      "accuracy": 1.0
+    },
+    "Integer Underflow": {
+      "n": 1,
+      "success": 1,
+      "accuracy": 1.0
+    },
+    "Improper Control of a Resource Through Its Lifetime": {
+      "n": 1,
+      "success": 1,
+      "accuracy": 1.0
+    },
+    "Memory Leak": {
+      "n": 2,
+      "success": 2,
+      "accuracy": 1.0
+    },
+    "Incorrect Type Conversion or Cast": {
+      "n": 1,
+      "success": 1,
+      "accuracy": 1.0
+    },
+    "Use of Uninitialized Variable": {
+      "n": 2,
+      "success": 2,
+      "accuracy": 1.0
+    },
+    "Business Logic Errors": {
+      "n": 1,
+      "success": 1,
+      "accuracy": 1.0
+    },
+    "Improper Input Validation": {
+      "n": 1,
+      "success": 0,
+      "accuracy": 0.0
+    },
+    "Improper Validation of Array Index": {
+      "n": 1,
+      "success": 1,
+      "accuracy": 1.0
+    },
+    "Uncontrolled Resource Consumption ('Resource Exhaustion')": {
+      "n": 2,
+      "success": 0,
+      "accuracy": 0.0
+    }
+  }
+}
