@@ -89,7 +89,7 @@ def leave_one_out_metrics(
             # wrap meta in a minimal FunctionPair-like object
             tmp_index.add_raw(vec, meta)
 
-        from src.rag.retriever import Retriever
+        from rag.retriever import Retriever
         tmp_retriever = Retriever(tmp_index, top_k=max(ks))
         results = tmp_retriever.query(embeddings[i], top_k=max(ks))
 
