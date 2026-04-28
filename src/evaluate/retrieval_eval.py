@@ -155,13 +155,10 @@ def _evaluate_one(
     hit_cve = any(r["cve_id"] == q_cve for r in results)
 
     # ground-truth preview
-    gt_path_str = rec.get("ground_truth_patch", "")
+    gt_code = rec.get("ground_truth_patch", "")
     gt_preview = ""
-    if gt_path_str:
-        gt_file = base_dir / gt_path_str
-        if gt_file.exists():
-            gt_full = gt_file.read_text(errors="replace")
-            gt_preview = extract_function_body(gt_full)[:200]
+    if gt_code:
+        gt_preview = extract_function_body(gt_code)[:200]
 
     return {
         "query_cve": q_cve,
@@ -169,7 +166,7 @@ def _evaluate_one(
         "query_variant": q_var,
         "status": "evaluated",
         "hit_cve_in_top_k": hit_cve,
-        "ground_truth_patch": gt_path_str,
+        "ground_truth_patch": gt_code[:500] if gt_code else "",
         "ground_truth_preview": gt_preview,
         "retrieved": [
             {
