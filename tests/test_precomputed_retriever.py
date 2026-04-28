@@ -5,7 +5,6 @@ and returns the right example pairs with dir_name metadata.
 """
 
 import json
-import pytest
 from pathlib import Path
 from types import SimpleNamespace
 
