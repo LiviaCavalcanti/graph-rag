@@ -1,8 +1,9 @@
-import subprocess
 import glob
+import re
+import subprocess
 import textwrap
 from pathlib import Path
-import re
+
 import networkx as nx
 
 
@@ -38,7 +39,7 @@ def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
     if not files:
         raise FileNotFoundError(f"No export.xml found under {root}")
     G = nx.MultiDiGraph()
-    
+
     # track which node IDs were explicitly declared in a <node> element
     # vs implicitly created by NetworkX when an edge referenced them
     declared_nodes: set[str] = set()
@@ -48,21 +49,25 @@ def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
             declared_nodes.update(sub.nodes())
             G.update(sub)
         except Exception as e:
-            print(f" warning: could not parse {f}: {e} \n Content was:\n{Path(f).read_text()}")
+            print(
+                f" warning: could not parse {f}: {e} \n Content was:\n{Path(f).read_text()}"
+            )
 
     noise = {
-        n for n, attr in G.nodes(data=True)
-        if attr.get('labelV') in ('COMMENT', 'UNKNOWN')
+        n
+        for n, attr in G.nodes(data=True)
+        if attr.get("labelV") in ("COMMENT", "UNKNOWN")
     }
-    
+
     declared_nodes -= noise
     G.remove_nodes_from(noise)
     phantom_nodes = set(G.nodes()) - declared_nodes
     G.remove_nodes_from(phantom_nodes)
 
-    # clean edges of removed phantom 
+    # clean edges of removed phantom
     dangling = [
-        (u, v, k) for u, v, k in G.edges(keys=True)
+        (u, v, k)
+        for u, v, k in G.edges(keys=True)
         if u not in G._node or v not in G._node
     ]
     # print(f"{graph_dir} -- Declared nodes: {len(declared_nodes)}, noise: {len(noise)}, dangling nodes: {len(dangling)}")
@@ -72,10 +77,10 @@ def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
 
 # diff-type → weight mapping (used by both compute_graph_diff and slicing)
 CHANGE_WEIGHT = {
-    'removed':      1.0,
-    'fix_adjacent': 0.8,
-    'edge_changed': 0.6,
-    'context':      0.2,
+    "removed": 1.0,
+    "fix_adjacent": 0.8,
+    "edge_changed": 0.6,
+    "context": 0.2,
 }
 
 
@@ -93,36 +98,43 @@ def compute_graph_diff(
     from collections import Counter
 
     # ── config ───────────────────────────────────────────────────
-    NOISE_TYPES = {'TYPE_DECL', 'FILE', 'NAMESPACE_BLOCK',
-                   'COMMENT', 'UNKNOWN', 'METHOD_RETURN'}
-    FLOW_EDGES  = {'CFG', 'CDG', 'REACHING_DEF', 'PDG', 'DDG'}
-    SLICE_DEPTH = 3          # hops along flow edges from seed nodes
+    NOISE_TYPES = {
+        "TYPE_DECL",
+        "FILE",
+        "NAMESPACE_BLOCK",
+        "COMMENT",
+        "UNKNOWN",
+        "METHOD_RETURN",
+    }
+    FLOW_EDGES = {"CFG", "CDG", "REACHING_DEF", "PDG", "DDG"}
+    SLICE_DEPTH = 3  # hops along flow edges from seed nodes
 
     # ── helpers ──────────────────────────────────────────────────
     def _code(attrs: dict) -> str:
-        v = attrs.get('CODE')
-        return str(v).strip() if v else ''
+        v = attrs.get("CODE")
+        return str(v).strip() if v else ""
 
     def _node_fp(G: nx.MultiDiGraph, n) -> tuple:
         """Semantic fingerprint resilient to ID renumbering."""
         a = G.nodes[n]
-        return (a.get('labelV', ''), _code(a), str(a.get('LINE_NUMBER', '')))
+        return (a.get("labelV", ""), _code(a), str(a.get("LINE_NUMBER", "")))
 
     def _edge_fp(G, u, v, d) -> tuple:
-        return (_node_fp(G, u), _node_fp(G, v),
-                d.get('labelE') or d.get('label', ''))
+        return (_node_fp(G, u), _node_fp(G, v), d.get("labelE") or d.get("label", ""))
 
     def _is_semantic(G, n) -> bool:
-        return G.nodes[n].get('labelV') not in NOISE_TYPES
+        return G.nodes[n].get("labelV") not in NOISE_TYPES
 
     # ── 1. semantic node diff ────────────────────────────────────
     before_fps = Counter(
-        _node_fp(G_before, n) for n in G_before if _is_semantic(G_before, n))
+        _node_fp(G_before, n) for n in G_before if _is_semantic(G_before, n)
+    )
     after_fps = Counter(
-        _node_fp(G_after, n) for n in G_after if _is_semantic(G_after, n))
+        _node_fp(G_after, n) for n in G_after if _is_semantic(G_after, n)
+    )
 
     removed_fps = {fp for fp in before_fps if before_fps[fp] > after_fps.get(fp, 0)}
-    added_fps   = {fp for fp in after_fps  if after_fps[fp] > before_fps.get(fp, 0)}
+    added_fps = {fp for fp in after_fps if after_fps[fp] > before_fps.get(fp, 0)}
 
     changed = set()
     diff_label = {}
@@ -131,7 +143,7 @@ def compute_graph_diff(
     for n in G_before:
         if _is_semantic(G_before, n) and _node_fp(G_before, n) in removed_fps:
             changed.add(n)
-            diff_label[n] = 'removed'
+            diff_label[n] = "removed"
 
     # for *added* code in the patch: the fix was inserted next to some
     # existing nodes – find those neighbors in G_before to mark where
@@ -144,40 +156,44 @@ def compute_graph_diff(
     for n in G_before:
         before_fp_to_nodes.setdefault(_node_fp(G_before, n), []).append(n)
 
-    # for the added nodes check their neighbors in G_after, 
-    # then find any nodes in G_before with the same fingerprint as those neighbors, 
+    # for the added nodes check their neighbors in G_after,
+    # then find any nodes in G_before with the same fingerprint as those neighbors,
     # and mark them as 'fix_adjacent' (if not already marked as 'removed')
     for fp in added_fps:
         for n_after in after_fp_to_nodes.get(fp, []):
-            neighbors = set(G_after.predecessors(n_after)) | set(G_after.successors(n_after))
+            neighbors = set(G_after.predecessors(n_after)) | set(
+                G_after.successors(n_after)
+            )
             for nb in neighbors:
                 nb_fp = _node_fp(G_after, nb)
                 for n_before in before_fp_to_nodes.get(nb_fp, []):
                     if n_before not in diff_label:
                         changed.add(n_before)
-                        diff_label[n_before] = 'fix_adjacent'
+                        diff_label[n_before] = "fix_adjacent"
 
     # ── 2. semantic edge diff ────────────────────────────────────
     before_efps = Counter(
-        _edge_fp(G_before, u, v, d)
-        for u, v, d in G_before.edges(data=True))
+        _edge_fp(G_before, u, v, d) for u, v, d in G_before.edges(data=True)
+    )
     after_efps = Counter(
-        _edge_fp(G_after, u, v, d)
-        for u, v, d in G_after.edges(data=True))
+        _edge_fp(G_after, u, v, d) for u, v, d in G_after.edges(data=True)
+    )
 
     changed_efps = {
-        efp for efp in before_efps | after_efps
-        if before_efps.get(efp, 0) != after_efps.get(efp, 0)}
+        efp
+        for efp in before_efps | after_efps
+        if before_efps.get(efp, 0) != after_efps.get(efp, 0)
+    }
 
     for u, v, d in G_before.edges(data=True):
         if _edge_fp(G_before, u, v, d) in changed_efps:
             for nd in (u, v):
                 changed.add(nd)
-                diff_label.setdefault(nd, 'edge_changed')
+                diff_label.setdefault(nd, "edge_changed")
 
     # ── 3. bounded program slice along flow edges ────────────────
     slice_nodes = set(changed)
-    frontier    = set(changed)
+    frontier = set(changed)
 
     for _ in range(SLICE_DEPTH):
         next_frontier = set()
@@ -185,19 +201,20 @@ def compute_graph_diff(
             if n not in G_before:
                 continue
             for _, tgt, d in G_before.out_edges(n, data=True):
-                el = d.get('labelE') or d.get('label', '')
+                el = d.get("labelE") or d.get("label", "")
                 if el in FLOW_EDGES and tgt not in slice_nodes:
                     next_frontier.add(tgt)
             for src, _, d in G_before.in_edges(n, data=True):
-                el = d.get('labelE') or d.get('label', '')
+                el = d.get("labelE") or d.get("label", "")
                 if el in FLOW_EDGES and src not in slice_nodes:
                     next_frontier.add(src)
         slice_nodes |= next_frontier
         frontier = next_frontier
 
     # ── 4. filter noise types ────────────────────────────────────
-    slice_nodes = {n for n in slice_nodes
-                   if n in G_before and _is_semantic(G_before, n)}
+    slice_nodes = {
+        n for n in slice_nodes if n in G_before and _is_semantic(G_before, n)
+    }
 
     if not slice_nodes:
         print("No semantic changes detected between before/after graphs")
@@ -206,9 +223,9 @@ def compute_graph_diff(
     # ── 5. build subgraph with diff labels + weights ────────────
     G_vuln = G_before.subgraph(slice_nodes).copy()
     for n in G_vuln:
-        dlabel = diff_label.get(n, 'context')
-        G_vuln.nodes[n]['diff']        = dlabel
-        G_vuln.nodes[n]['diff_weight'] = CHANGE_WEIGHT.get(dlabel, 0.2)
+        dlabel = diff_label.get(n, "context")
+        G_vuln.nodes[n]["diff"] = dlabel
+        G_vuln.nodes[n]["diff_weight"] = CHANGE_WEIGHT.get(dlabel, 0.2)
 
     return G_vuln
 
@@ -234,7 +251,7 @@ def write_c_file(
         return stripped
 
     main_code = strip_fences(source_code)
-    supp_code = strip_fences(supplementary_code) if supplementary_code else ''
+    supp_code = strip_fences(supplementary_code) if supplementary_code else ""
 
     # minimal scaffold so Joern can parse without errors
     scaffold = textwrap.dedent("""\
@@ -272,7 +289,8 @@ def run_joern_export(
         str(source),
         "--output",
         str(cpg_file),
-        "--language", "newc",
+        "--language",
+        "newc",
     ]
 
     result = subprocess.run(parse_cmd, capture_output=True, text=True, timeout=120)

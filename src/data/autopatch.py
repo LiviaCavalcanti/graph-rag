@@ -4,9 +4,9 @@ from typing import Iterator
 
 import networkx as nx
 
-
 from .base import BaseDataset, ExportJob, FunctionPair
-from .pipeline import compute_graph_diff, load_cpg_dir, cpg_dir_for, read_supplementary_code
+from .pipeline import (compute_graph_diff, cpg_dir_for, load_cpg_dir,
+                       read_supplementary_code)
 
 # augmented versions
 _VARIANTS = [
@@ -49,7 +49,14 @@ class AutoPatchDataset(BaseDataset):
             return None
 
     def _make_pair(
-        self, root: str, cve_dir: Path, cve_id: str, cwe_id: str, func_name: str, variant: str, meta: dict
+        self,
+        root: str,
+        cve_dir: Path,
+        cve_id: str,
+        cwe_id: str,
+        func_name: str,
+        variant: str,
+        meta: dict,
     ) -> FunctionPair | None:
         G_before = load_cpg_dir(
             cpg_dir_for(root, version="before", cve_id=cve_dir.name, variant=variant)
@@ -93,7 +100,7 @@ class AutoPatchDataset(BaseDataset):
             if db is None:
                 continue
             cve_id = str(db.get("cve_id", cve_dir.name))
-            cwe_id    = str(db.get('cwe_type', ''))
+            cwe_id = str(db.get("cwe_type", ""))
             func_name = str(db.get("function_name", ""))
 
             base_meta = {
@@ -204,23 +211,29 @@ class AutoPatchDataset(BaseDataset):
             original_code_path = cve_dir / "original_code.txt"
             original_fixed_path = cve_dir / "vuln_patch.txt"
             if original_code_path.exists() and original_fixed_path.exists():
-                pairs.append(FunctionPair(
-                    cve_id=cve_id, cwe_id=cwe_id, func_name=func_name,
-                    project="autopatch",
-                    G_before=_empty, G_after=_empty, G_vuln=_empty,
-                    meta={
-                        "dataset": self.name(),
-                        "variant": "original",
-                        "source_before": str(original_code_path),
-                        "source_after": str(original_fixed_path),
-                        "supplementary_code": (
-                            (cve_dir / "supplementary_code.txt").read_text()
-                            if (cve_dir / "supplementary_code.txt").exists()
-                            else ""
-                        ),
-                        **base_meta,
-                    },
-                ))
+                pairs.append(
+                    FunctionPair(
+                        cve_id=cve_id,
+                        cwe_id=cwe_id,
+                        func_name=func_name,
+                        project="autopatch",
+                        G_before=_empty,
+                        G_after=_empty,
+                        G_vuln=_empty,
+                        meta={
+                            "dataset": self.name(),
+                            "variant": "original",
+                            "source_before": str(original_code_path),
+                            "source_after": str(original_fixed_path),
+                            "supplementary_code": (
+                                (cve_dir / "supplementary_code.txt").read_text()
+                                if (cve_dir / "supplementary_code.txt").exists()
+                                else ""
+                            ),
+                            **base_meta,
+                        },
+                    )
+                )
 
             # augmented variants
             if self.cfg.get("include_variants", False):
@@ -236,19 +249,29 @@ class AutoPatchDataset(BaseDataset):
                         if not fixed_c_path.exists():
                             continue
                         variant_name = json_file.replace(".json", "")
-                        pairs.append(FunctionPair(
-                            cve_id=cve_id, cwe_id=cwe_id, func_name=func_name,
-                            project="autopatch",
-                            G_before=_empty, G_after=_empty, G_vuln=_empty,
-                            meta={
-                                "dataset": self.name(),
-                                "variant": variant_name,
-                                "source_before": variant_data.get("re_implemented_code", ""),
-                                "source_after": str(fixed_c_path),
-                                "supplementary_code": variant_data.get("supplementary_code", ""),
-                                **base_meta,
-                            },
-                        ))
+                        pairs.append(
+                            FunctionPair(
+                                cve_id=cve_id,
+                                cwe_id=cwe_id,
+                                func_name=func_name,
+                                project="autopatch",
+                                G_before=_empty,
+                                G_after=_empty,
+                                G_vuln=_empty,
+                                meta={
+                                    "dataset": self.name(),
+                                    "variant": variant_name,
+                                    "source_before": variant_data.get(
+                                        "re_implemented_code", ""
+                                    ),
+                                    "source_after": str(fixed_c_path),
+                                    "supplementary_code": variant_data.get(
+                                        "supplementary_code", ""
+                                    ),
+                                    **base_meta,
+                                },
+                            )
+                        )
 
         return pairs
 
@@ -262,7 +285,7 @@ class AutoPatchDataset(BaseDataset):
             db = self._load_db_entry(cve_dir=cve_dir)
             if db is None:
                 continue
-            cve_id = str( cve_dir.name)
+            cve_id = str(cve_dir.name)
             func_name = str(db.get("function_name", ""))
             base = Path(graphml_root) / cve_id
 
@@ -278,9 +301,7 @@ class AutoPatchDataset(BaseDataset):
                     cve_id=cve_id,
                     func_name=func_name,
                     variant="original",
-                    source_code=before_path.read_text(
-                        encoding="utf-8"
-                    ),
+                    source_code=before_path.read_text(encoding="utf-8"),
                     supplementary_code=supp_text,
                     version="before",
                     out_dir=str(base / "original" / "before"),
@@ -290,9 +311,7 @@ class AutoPatchDataset(BaseDataset):
                     cve_id=cve_id,
                     func_name=func_name,
                     variant="original",
-                    source_code=after_path.read_text(
-                        encoding="utf-8"
-                    ),
+                    source_code=after_path.read_text(encoding="utf-8"),
                     supplementary_code=supp_text,
                     version="after",
                     out_dir=str(base / "original" / "after"),
