@@ -86,90 +86,90 @@
 \section{Recap}
 % ══════════════════════════════════════════════════════════════════════
 
-\begin{frame}{Checkpoint 2 Recap: Results}
-\begin{columns}[T]
-\begin{column}{0.50\textwidth}
-  \textbf{Dataset \& setup}
-  \begin{itemize}
-    \item 225 pairs (75 original CVEs + LLM re-implementations)
-    \item Semantic fingerprint diff $\rightarrow$ $G_{\text{vuln}}$ subgraph
-    \item 8 embedders; HNSW index; self-retrieval \& CWE recall
-  \end{itemize}
+% \begin{frame}{Checkpoint 2 Recap: Results}
+% \begin{columns}[T]
+% \begin{column}{0.50\textwidth}
+%   \textbf{Dataset \& setup}
+%   \begin{itemize}
+%     \item 225 pairs (75 original CVEs + LLM re-implementations)
+%     \item Semantic fingerprint diff $\rightarrow$ $G_{\text{vuln}}$ subgraph
+%     \item 8 embedders; HNSW index; self-retrieval \& CWE recall
+%   \end{itemize}
 
-  \vspace{0.9em}
-  \textbf{Best results (self-retrieval, $n=225$)}
+%   \vspace{0.9em}
+%   \textbf{Best results (self-retrieval, $n=225$)}
 
-  \vspace{0.3em}
-  {\small
-  \renewcommand{\arraystretch}{1.25}
-  \begin{tabular}{lcc}
-    \toprule
-    \textbf{Embedder} & \textbf{SR@1} & \textbf{CWE Recall} \\
-    \midrule
-    \rowcolor{c1!10}
-    Combined (NetLSD+WL+GIN) & 86.3\% & 51.9\% \\
-    GIN                      & 75.3\% & 39.8\% \\
-    CodeBERT seq             & 75.3\% & 41.2\% \\
-    NetLSD                   & 32.9\% & 21.0\% \\
-    \bottomrule
-  \end{tabular}}
-\end{column}
-\begin{column}{0.47\textwidth}
-  \centering
-  \begin{tikzpicture}[scale=0.88]
-    \foreach \y/\lbl/\col/\val/\pct in {
-      4.5/{Combined}/c1/0.863/86.3\%,
-      3.6/{GIN}/c2/0.753/75.3\%,
-      2.7/{CodeBERT seq}/c3/0.753/75.3\%,
-      1.8/{WL}/c2/0.671/67.1\%,
-      0.9/{NetLSD}/miss/0.329/32.9\%}{
-      \node[left,font=\tiny\sffamily,text width=2.3cm,align=right] at (0,\y) {\lbl};
-      \fill[\col!65,rounded corners=1pt]
-        (0.05,\y-0.25) rectangle ({0.05+5.0*\val},\y+0.25);
-      \node[right,font=\tiny\sffamily\bfseries,\col!80!black]
-        at ({0.05+5.0*\val+0.05},\y) {\pct};
-    }
-    \draw[black!15] (0.05,0.4)--(0.05,5.0);
-    \node[below,font=\tiny\color{black!40}] at (0.05,0.3) {0};
-    \node[below,font=\tiny\color{black!40}] at (2.55,0.3) {50\%};
-    \node[below,font=\tiny\color{black!40}] at (5.05,0.3) {100\%};
-    \node[font=\scriptsize\sffamily\bfseries,c1] at (2.5,5.4) {SR@1 — Checkpoint 2};
-  \end{tikzpicture}
-\end{column}
-\end{columns}
-\end{frame}
+%   \vspace{0.3em}
+%   {\small
+%   \renewcommand{\arraystretch}{1}
+%   \begin{tabular}{lcc}
+%     \toprule
+%     \textbf{Embedder} & \textbf{SR@1} & \textbf{CWE Recall} \\
+%     \midrule
+%     \rowcolor{c1!10}
+%     Combined (NetLSD+WL+GIN) & 86.3\% & 51.9\% \\
+%     GIN                      & 75.3\% & 39.8\% \\
+%     CodeBERT seq             & 75.3\% & 41.2\% \\
+%     NetLSD                   & 32.9\% & 21.0\% \\
+%     \bottomrule
+%   \end{tabular}}
+% \end{column}
+% \begin{column}{0.47\textwidth}
+%   \centering
+%   \begin{tikzpicture}[scale=0.88]
+%     \foreach \y/\lbl/\col/\val/\pct in {
+%       4.5/{Combined}/c1/0.863/86.3\%,
+%       3.6/{GIN}/c2/0.753/75.3\%,
+%       2.7/{CodeBERT seq}/c3/0.753/75.3\%,
+%       1.8/{WL}/c2/0.671/67.1\%,
+%       0.9/{NetLSD}/miss/0.329/32.9\%}{
+%       \node[left,font=\tiny\sffamily,text width=2.3cm,align=right] at (0,\y) {\lbl};
+%       \fill[\col!65,rounded corners=1pt]
+%         (0.05,\y-0.25) rectangle ({0.05+5.0*\val},\y+0.25);
+%       \node[right,font=\tiny\sffamily\bfseries,\col!80!black]
+%         at ({0.05+5.0*\val+0.05},\y) {\pct};
+%     }
+%     \draw[black!15] (0.05,0.4)--(0.05,5.0);
+%     \node[below,font=\tiny\color{black!40}] at (0.05,0.3) {0};
+%     \node[below,font=\tiny\color{black!40}] at (2.55,0.3) {50\%};
+%     \node[below,font=\tiny\color{black!40}] at (5.05,0.3) {100\%};
+%     \node[font=\scriptsize\sffamily\bfseries,c1] at (2.5,5.4) {SR@1 — Checkpoint 2};
+%   \end{tikzpicture}
+% \end{column}
+% \end{columns}
+% \end{frame}
 
-\begin{frame}{Checkpoint 2 Recap: Open Questions}
-  \begin{enumerate}
-    \item[\faIcon{question-circle}]
-      \textbf{Can the CWE ontology help post-rank results?}\\
-      Errors were semantically coherent — NullPtr retrieved as UAF.
-      Can the taxonomy assign a soft penalty to taxonomically far misses?
+% \begin{frame}{Checkpoint 2 Recap: Open Questions}
+%   \begin{enumerate}
+  %   \item[\faIcon{question-circle}]
+  %     \textbf{Can the CWE ontology help post-rank results?}\\
+  %     Errors were semantically coherent — NullPtr retrieved as UAF.
+  %     Can the taxonomy assign a soft penalty to taxonomically far misses?
 
-    \vspace{0.8em}
-    \item[\faIcon{question-circle}]
-      \textbf{Do shared function calls carry discriminative signal?}\\
-      Deadlock patches call locking primitives; UAF patches call
-      allocation/free functions. Is callee overlap enough to build
-      a second similarity score?
+  %   \vspace{0.8em}
+  %   \item[\faIcon{question-circle}]
+  %     \textbf{Do shared function calls carry discriminative signal?}\\
+  %     Deadlock patches call locking primitives; UAF patches call
+  %     allocation/free functions. Is callee overlap enough to build
+  %     a second similarity score?
 
-    \vspace{0.8em}
-    \item[\faIcon{question-circle}]
-      \textbf{Does ensembling multiple embedders help?}\\
-      Structural and semantic embedders fail on different queries.
-      Combining them should recover at least some cases.
+  %   \vspace{0.8em}
+  %   \item[\faIcon{question-circle}]
+  %     \textbf{Does ensembling multiple embedders help?}\\
+  %     Structural and semantic embedders fail on different queries.
+  %     Combining them should recover at least some cases.
 
-    \vspace{0.8em}
-    \item[\faIcon{question-circle}]
-      \textbf{How honest are our numbers?}\\
-      Self-retrieval is circular — augmented variants share callees and
-      graph structure with their originals.
-      A held-out set is needed before drawing strong conclusions.
-  \end{enumerate}
-\end{frame}
+  %   \vspace{0.8em}
+  %   \item[\faIcon{question-circle}]
+  %     \textbf{How honest are our numbers?}\\
+  %     Self-retrieval is circular — augmented variants share callees and
+  %     graph structure with their originals.
+  %     A held-out set is needed before drawing strong conclusions.
+%   \end{enumerate}
+% \end{frame}
 
 % ══════════════════════════════════════════════════════════════════════
-\section{Slicing Ablation}
+\section{Slicing Ablation}\label{sec:slicing}
 % ══════════════════════════════════════════════════════════════════════
 
 \begin{frame}{Slicing Ablation: Nomenclature \& Metrics}
@@ -180,7 +180,7 @@
 
   \vspace{0.3em}
   {\small
-  \renewcommand{\arraystretch}{1.4}
+  \renewcommand{\arraystretch}{1}
   \begin{tabular}{p{2.5cm}p{4.5cm}}
     \toprule
     \textbf{Symbol} & \textbf{Definition} \\
@@ -210,7 +210,7 @@
 
   \vspace{0.3em}
   {\small
-  \renewcommand{\arraystretch}{1.35}
+  \renewcommand{\arraystretch}{1}
   \begin{tabular}{p{2.0cm}p{4.5cm}}
     \toprule
     \textbf{Metric} & \textbf{Definition} \\
@@ -228,7 +228,7 @@
     \bottomrule
   \end{tabular}}
 
-  \vspace{0.3em}
+  \vspace{0.1em}
   {\scriptsize\color{black!55}
   All precision/recall/F1 are \textbf{macro-averaged} per class
   (each CVE/CWE contributes equally regardless of frequency).}
@@ -237,225 +237,179 @@
 \end{columns}
 \end{frame}
 
-\begin{frame}{Slicing Ablation: Three Experiment Configurations}
+\begin{frame}{Slicing Ablation: Experiment Setup}
 
-  {\small\textbf{All runs:} 225 index, 73 query (seed=42, stratified).}
+  {\small\textbf{Setup:} 225 index, 73 query (seed=42, stratified split).
+  Symmetric protocol: query uses same graph variant as index.
+  PCA fitted on index only; queries projected through index PCA.}
+
+  \vspace{0.5em}
+  {\small We compare four graph representations, progressively
+  adding diff labels and fingerprint slicing:}
 
   \vspace{0.3em}
   {\scriptsize
   \renewcommand{\arraystretch}{1.35}
-  \begin{tabular}{p{1.0cm}p{2.8cm}p{2.7cm}p{2.5cm}p{3.5cm}}
+  \begin{tabular}{@{}p{2.5cm}ccp{7.2cm}@{}}
     \toprule
-    & \textbf{Run A} & \textbf{Run B} & \textbf{Run C} \\
-    & {\scriptsize\texttt{ade634}} & {\scriptsize\texttt{e27850}} & {\scriptsize\texttt{f7fa6a}} \\
+    \textbf{Variant} & \textbf{Sliced} & \textbf{Labels} & \textbf{What changes} \\
     \midrule
-    \textbf{Script}
-      & \texttt{slicing\_comparison}
-      & \texttt{slicing\_comparison}
-      & \texttt{runner.py} \\
-    \textbf{Query protocol}
-      & Symmetric (query = same variant as index)
-      & \texttt{runner\_compat} (augmented$\to G_{\text{before}}$,\newline original$\to G_{\text{vuln}}$)
-      & Same as Run~B (implemented natively) \\
-    \textbf{PCA}
-      & Reset per variant; fit on index $\cup$ query batch
-      & Reset per variant; fit on index $\cup$ query batch
-      & Fit on index only; query projected through index PCA \\
-    \textbf{Embed}
-      & \texttt{embed\_many} (batch)
-      & \texttt{embed\_many} (batch)
-      & \texttt{embed\_one} per query \\
+    $G_{\text{before}}$
+      & --- & ---
+      & Full pre-patch CPG\@. Baseline --- embedders see the entire graph. \\
+    $G_{\text{before}}^{+\ell}$
+      & --- & \checkmark
+      & Full pre-patch CPG $+$ diff labels transferred from $G_{\text{vuln}}$.
+        Same size, extra node annotations. \\
+    $G_{\text{vuln}}^{-\ell}$
+      & \checkmark & ---
+      & Fingerprint-sliced subgraph; diff attributes stripped. \\
+    $G_{\text{vuln}}$
+      & \checkmark & \checkmark
+      & Sliced subgraph $+$ diff labels and weights
+        ($w \in \{1.0, 0.8, 0.6, 0.2\}$). \\
     \bottomrule
   \end{tabular}}
 
-  \vspace{0.3em}
-  \begin{alertblock}{PCA leakage in Runs A \& B}
-    \scriptsize \texttt{slicing\_comparison.py} resets PCA per variant and calls \texttt{embed\_many()}
-    on index+query together $\Rightarrow$ PCA fitted on query data too (information leakage).
-    Run~C follows correct IR protocol: PCA fitted on index only, queries projected through it.
-  \end{alertblock}
+  \vspace{0.5em}
+  {\scriptsize\color{black!55}
+  Run \texttt{02006d}. 6 embedders $\times$ 4 variants $= 24$ configurations.}
 
 \end{frame}
 
 
-\begin{frame}{Slicing Ablation: Results — $G_{\text{vuln}}$ (hit@1, $n{=}73$)}
+\begin{frame}{Slicing Ablation: Results ($n{=}73$)}
 
   \vspace{-0.4em}
   {\scriptsize
   \renewcommand{\arraystretch}{1.2}
-  \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{l *{3}{c} c *{3}{c} c *{3}{c}}
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{l *{3}{c} c *{3}{c} c *{3}{c} c *{3}{c}}
     \toprule
-    & \multicolumn{3}{c}{\textbf{Run A} {\scriptsize(symmetric, PCA leak)}}
-    && \multicolumn{3}{c}{\textbf{Run B} {\scriptsize(runner\_compat, PCA leak)}}
-    && \multicolumn{3}{c}{\textbf{Run C} {\scriptsize(runner\_compat, correct PCA)}} \\
-    \cmidrule{2-4} \cmidrule{6-8} \cmidrule{10-12}
+    & \multicolumn{3}{c}{\textbf{$G_{\text{before}}$} {\scriptsize(full)}}
+    && \multicolumn{3}{c}{\textbf{$G_{\text{before}}^{+\ell}$} {\scriptsize(full $+$ labels)}}
+    && \multicolumn{3}{c}{\textbf{$G_{\text{vuln}}^{-\ell}$} {\scriptsize(sliced, no labels)}}
+    && \multicolumn{3}{c}{\textbf{$G_{\text{vuln}}$} {\scriptsize(sliced $+$ labels)}} \\
+    \cmidrule{2-4} \cmidrule{6-8} \cmidrule{10-12} \cmidrule{14-16}
     \textbf{Embedder}
       & hit@1 & MRR & CWE
+      && hit@1 & MRR & CWE
       && hit@1 & MRR & CWE
       && hit@1 & MRR & CWE \\
     \midrule
     \rowcolor{c1!12}
     Combined
-      & 73.9\% & .776 & .429
-      && \chit{90.4\%} & \chit{.925} & \chit{.543}
-      && 82.2\% & .881 & .527 \\
+      & \chit{76.7\%} & .802 & .405
+      && 76.7\% & .802 & .405
+      && \chit{79.5\%} & \chit{.834} & \chit{.489}
+      && \chit{79.5\%} & \chit{.834} & \chit{.489} \\
     GIN
-      & 69.9\% & .742 & .411
-      && 73.9\% & .788 & .450
-      && 72.6\% & .773 & .408 \\
+      & 75.3\% & \chit{.814} & \chit{.518}
+      && 75.3\% & .814 & .518
+      && 72.6\% & .788 & .443
+      && 72.6\% & .788 & .443 \\
     CodeBERT seq
-      & \chit{76.7\%} & .796 & .395
-      && 75.3\% & .792 & .412
+      & 75.3\% & .773 & .385
+      && 75.3\% & .793 & .412
+      && 73.9\% & .770 & .383
       && 75.3\% & .793 & .412 \\
     CodeBERT pat.
-      & \chit{76.7\%} & .792 & .409
-      && 71.2\% & .768 & .414
+      & 73.9\% & .764 & .394
+      && 76.7\% & .793 & .413
+      && 72.6\% & .762 & .375
       && 71.2\% & .768 & .415 \\
     WL
-      & 67.1\% & .711 & .365
-      && 67.1\% & .720 & .432
-      && 65.8\% & .702 & .415 \\
+      & 71.2\% & .751 & .375
+      && 71.2\% & .751 & .375
+      && 68.5\% & .725 & .385
+      && 68.5\% & .725 & .385 \\
     RGCN
-      & 53.4\% & .629 & .339
-      && 60.3\% & .676 & .372
-      && 60.3\% & .676 & .372 \\
+      & 73.9\% & .767 & .395
+      && \cmiss{58.9\%} & \cmiss{.668} & .372
+      && 72.6\% & .768 & .401
+      && \cmiss{60.3\%} & \cmiss{.676} & .372 \\
     \bottomrule
   \end{tabular}}
 
   \vspace{0.3em}
   \begin{columns}[T]
-  \begin{column}{0.48\textwidth}
-    {\scriptsize\textbf{Key observations}}
+  \begin{column}{0.32\textwidth}
+    {\scriptsize\textbf{Labels on full graph} ($G_{\text{before}} \to G_{\text{before}}^{+\ell}$)}
     \begin{itemize}\setlength{\itemsep}{1pt}
       {\scriptsize
-      \item Combined is the \textbf{best embedder in every run}
-      \item Run B inflates Combined by $+$8.2~pp vs.\ Run C (PCA leakage)
-      \item CodeBERT seq stable across all runs ($\approx$75\%)}
+      \item Structural embedders: $\pm$0~pp (ignore text attrs)
+      \item CodeBERT pat.: $+$2.8~pp (labels help)
+      \item RGCN: $-$15.0~pp (labels harm)}
     \end{itemize}
   \end{column}
-  \begin{column}{0.48\textwidth}
-    {\scriptsize\textbf{CodeBERT is PCA-insensitive}}
+  \begin{column}{0.32\textwidth}
+    {\scriptsize\textbf{Effect of slicing} ($G_{\text{before}} \to G_{\text{vuln}}^{-\ell}$)}
     \begin{itemize}\setlength{\itemsep}{1pt}
       {\scriptsize
-      \item CodeBERT seq/pattern: nearly identical in Runs B \& C
-      \item High intrinsic dim (768d) makes PCA less impactful}
+      \item Combined: $+$2.8~pp (PCA benefits from focused subgraph)
+      \item GIN: $-$2.7~pp (loses global connectivity)
+      \item Full graphs: all $\approx$74--76\%}
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.32\textwidth}
+    {\scriptsize\textbf{Labels on sliced} ($G_{\text{vuln}}^{-\ell} \to G_{\text{vuln}}$)}
+    \begin{itemize}\setlength{\itemsep}{1pt}
+      {\scriptsize
+      \item CodeBERT seq: $+$1.4~pp
+      \item Structural: $\pm$0~pp
+      \item RGCN: $-$12.3~pp (diff types confuse MP)}
     \end{itemize}
   \end{column}
   \end{columns}
 \end{frame}
 
 
-\begin{frame}{Combined Embedder: Why the Performance Varies}
-\begin{columns}[T]
-\begin{column}{0.52\textwidth}
+% \begin{frame}{Structural vs.\ Semantic Embedders: Analysis}
+% \begin{columns}[T]
+% \begin{column}{0.50\textwidth}
 
-  \textbf{Combined = NetLSD $\|$ WL $\|$ GIN $\to$ PCA $\to$ L2}\\[3pt]
-  {\small Three structural sub-embedders concatenated (384d),
-  PCA-projected to 128d, L2-normalised.}
+%   \textbf{Structural embedders} {\small(GIN, WL, Combined)}
 
-  \vspace{0.5em}
-  \textbf{Why PCA leakage inflates Combined most}
-  \begin{enumerate}\setlength{\itemsep}{3pt}
-    {\small
-    \item \textbf{High raw dimensionality} (384d) makes PCA
-          the dominant transformation — small changes in
-          the covariance matrix shift all projections.
-    \item \textbf{Query graphs are structurally similar to
-          index graphs} (augmented variants share topology).
-          Including them in PCA fitting aligns the projection
-          axes to maximise variance across both sets.
-    \item For CodeBERT (768d $\to$ 128d), the first 128 PCA
-          components already capture $>95$\% of variance —
-          adding queries barely shifts the subspace.}
-  \end{enumerate}
+%   \vspace{0.2em}
+%   \begin{itemize}\setlength{\itemsep}{2pt}
+%     {\scriptsize
+%     \item Operate on \textbf{graph topology + node types} only — no pretrained LM.
+%     \item \textbf{Combined is best overall} (79.5\% hit@1 on $G_{\text{vuln}}$) — three complementary views
+%           (spectrum, colour refinement, message passing).
+%     \item GIN alone: 72.6\% — message-passing on node types is moderately discriminative.
+%     \item WL (68.5\%) — low effective dim (8.7), colour histogram loses information.
+%     \item \textbf{Strength:} fast ($<$10s for 225 graphs), no model dependencies.
+%     \item \textbf{Weakness:} blind to code semantics — topologically identical patches
+%           with different variable names $\to$ same embedding.}
+%   \end{itemize}
 
-\end{column}
-\begin{column}{0.45\textwidth}
+% \end{column}
+% \begin{column}{0.47\textwidth}
 
-  \textbf{Effective dimensionality confirms this}
+%   \textbf{Semantic embedders} {\small(CodeBERT seq, CodeBERT pat.)}
 
-  \vspace{0.4em}
-  {\small
-  \renewcommand{\arraystretch}{1.3}
-  \begin{tabular}{lcc}
-    \toprule
-    \textbf{Embedder} & \textbf{Run B} & \textbf{Run C} \\
-    & {\scriptsize PCA leak} & {\scriptsize correct} \\
-    \midrule
-    \rowcolor{c1!10}
-    Combined         & \textbf{32.5} & 10.4 \\
-    CodeBERT seq     & 15.3 & 14.7 \\
-    CodeBERT pat.    & 16.8 & 15.4 \\
-    GIN              & 10.0 & 11.0 \\
-    WL               & 8.0 & 4.6 \\
-    RGCN             & 2.3 & 2.0 \\
-    \bottomrule
-  \end{tabular}}
+%   \vspace{0.2em}
+%   \begin{itemize}\setlength{\itemsep}{2pt}
+%     {\scriptsize
+%     \item \textbf{CodeBERT [CLS]} on changed code text.
+%           Pattern variant adds 34 structural features.
+%     \item \textbf{Stable}: CodeBERT seq $= 75.3\%$ on both $G_{\text{before}}$ and $G_{\text{vuln}}$.
+%     \item Diff labels: modest $+$1.4~pp boost (\texttt{diff\_weight} $> 0.3$ filter).
+%     \item \textbf{Strength:} captures code semantics (variable names, API calls, strings).
+%     \item \textbf{Weakness:} ignores graph connectivity (seq); pattern $-$4~pp vs.\ seq on $G_{\text{vuln}}$.}
+%   \end{itemize}
 
-  \vspace{0.5em}
-  {\scriptsize\color{black!55}
-  With PCA leakage, Combined's effective dim triples
-  (10.4 $\to$ 32.5), meaning the projection captures
-  more discriminative directions — but at the cost of
-  fitting to test data.}
+%   \vspace{0.3em}
+%   \begin{block}{\scriptsize Conclusion}
+%     \scriptsize Graph structure carries \textbf{more discriminative signal}
+%     than code text for vulnerability retrieval.
+%     Combined (structural) beats CodeBERT by 4~pp.
+%     Best path forward: hybrid approach.
+%   \end{block}
 
-  \vspace{0.4em}
-  {\scriptsize\color{black!55}
-  Run C (82.2\%) is the trustworthy number for Combined.}
-
-\end{column}
-\end{columns}
-\end{frame}
-
-
-\begin{frame}{Structural vs.\ Semantic Embedders: Analysis}
-\begin{columns}[T]
-\begin{column}{0.50\textwidth}
-
-  \textbf{Structural embedders} {\small(GIN, WL, Combined)}
-
-  \vspace{0.2em}
-  \begin{itemize}\setlength{\itemsep}{2pt}
-    {\scriptsize
-    \item Operate on \textbf{graph topology + node types} only — no pretrained LM.
-    \item \textbf{Combined is best overall} (82.2\% hit@1, Run C) — three complementary views
-          (spectrum, colour refinement, message passing).
-    \item GIN alone: 72.6\% — message-passing on node types is moderately discriminative.
-    \item WL (65.8\%) — low effective dim (4.6), colour histogram loses information.
-    \item \textbf{Strength:} fast ($<$10s for 225 graphs), no model dependencies.
-    \item \textbf{Weakness:} blind to code semantics — topologically identical patches
-          with different variable names $\to$ same embedding.}
-  \end{itemize}
-
-\end{column}
-\begin{column}{0.47\textwidth}
-
-  \textbf{Semantic embedders} {\small(CodeBERT seq, CodeBERT pat.)}
-
-  \vspace{0.2em}
-  \begin{itemize}\setlength{\itemsep}{2pt}
-    {\scriptsize
-    \item \textbf{CodeBERT [CLS]} on changed code text.
-          Pattern variant adds 34 structural features.
-    \item \textbf{Remarkably stable}: CodeBERT seq $\approx$ 75\% in every run —
-          insensitive to PCA protocol, variant, and query strategy.
-    \item Diff labels: modest $+$1.4~pp boost (\texttt{diff\_weight} $> 0.3$ filter).
-    \item \textbf{Strength:} captures code semantics (variable names, API calls, strings).
-    \item \textbf{Weakness:} ignores graph connectivity (seq); pattern adds $+$0~pp in Run C.}
-  \end{itemize}
-
-  \vspace{0.3em}
-  \begin{block}{\scriptsize Conclusion}
-    \scriptsize Graph structure carries \textbf{more discriminative signal}
-    than code text for vulnerability retrieval.
-    Combined (structural) beats CodeBERT by 7~pp.
-    Best path forward: hybrid approach.
-  \end{block}
-
-\end{column}
-\end{columns}
-\end{frame}
+% \end{column}
+% \end{columns}
+% \end{frame}
 
 % ══════════════════════════════════════════════════════════════════════
 \section{Embedding Pipeline Ablation}
@@ -525,15 +479,16 @@
 
 \begin{frame}{Ablation Results: PCA and L2 Normalization ($n{=}225$, self-retrieval)}
 
-  \vspace{-0.3em}
-  {\scriptsize
-  \renewcommand{\arraystretch}{1.2}
-  \setlength{\tabcolsep}{3.5pt}
+  \centering
+  \vspace{0.2em}
+  {\small
+  \renewcommand{\arraystretch}{1.35}
+  \setlength{\tabcolsep}{5pt}
   \begin{tabular}{l *{3}{c} c *{3}{c} c *{3}{c}}
     \toprule
-    & \multicolumn{3}{c}{\textbf{PCA + L2} {\scriptsize(baseline)}}
-    && \multicolumn{3}{c}{\textbf{No PCA, L2 only} {\scriptsize(Abl.\ A)}}
-    && \multicolumn{3}{c}{\textbf{PCA, no L2} {\scriptsize(Abl.\ B)}} \\
+    & \multicolumn{3}{c}{\textbf{PCA + L2} {\footnotesize(baseline)}}
+    && \multicolumn{3}{c}{\textbf{No PCA, L2 only} {\footnotesize(Abl.\ A)}}
+    && \multicolumn{3}{c}{\textbf{PCA, no L2} {\footnotesize(Abl.\ B)}} \\
     \cmidrule{2-4} \cmidrule{6-8} \cmidrule{10-12}
     \textbf{Embedder}
       & hit@1 & MRR & CWE
@@ -542,7 +497,7 @@
     \midrule
     \rowcolor{c1!12}
     Combined
-      & \chit{90.4\%} & \chit{.932} & \chit{.515}
+      & \chit{84.9\%} & \chit{.890} & \chit{.501}
       && \cwarn{74.0\%} & .780 & .398
       && \cmiss{1.4\%} & .047 & .071 \\
     CodeBERT seq
@@ -558,7 +513,7 @@
       && 75.3\% & .788 & .394
       && \cmiss{1.4\%} & .132 & .201 \\
     WL
-      & 65.8\% & .723 & .430
+      & 65.8\% & .720 & .423
       && 67.1\% & .723 & .435
       && \cmiss{0.0\%} & .045 & .065 \\
     RGCN
@@ -568,19 +523,19 @@
     \bottomrule
   \end{tabular}}
 
-  \vspace{0.4em}
+  \vspace{0.6em}
   \begin{columns}[T]
   \begin{column}{0.32\textwidth}
-    {\scriptsize\textbf{\textcolor{hit}{Baseline: PCA + L2}}}
-    \begin{itemize}\setlength{\itemsep}{1pt}
+    {\small\textbf{\textcolor{hit}{Baseline: PCA + L2}}}
+    \begin{itemize}\setlength{\itemsep}{2pt}
       {\scriptsize
-      \item Combined dominates: 90.4\%
-      \item PCA is critical for Combined ($-$16.4~pp without)}
+      \item Combined dominates: 84.9\%
+      \item PCA is critical for Combined ($-$10.9~pp without)}
     \end{itemize}
   \end{column}
   \begin{column}{0.32\textwidth}
-    {\scriptsize\textbf{\textcolor{warn}{Abl.\ A: No PCA}}}
-    \begin{itemize}\setlength{\itemsep}{1pt}
+    {\small\textbf{\textcolor{warn}{Abl.\ A: No PCA}}}
+    \begin{itemize}\setlength{\itemsep}{2pt}
       {\scriptsize
       \item CodeBERT stable ($\pm$1~pp)
       \item GIN identical — already 128d
@@ -588,8 +543,8 @@
     \end{itemize}
   \end{column}
   \begin{column}{0.32\textwidth}
-    {\scriptsize\textbf{\textcolor{miss}{Abl.\ B: No L2}}}
-    \begin{itemize}\setlength{\itemsep}{1pt}
+    {\small\textbf{\textcolor{miss}{Abl.\ B: No L2}}}
+    \begin{itemize}\setlength{\itemsep}{2pt}
       {\scriptsize
       \item \textbf{Catastrophic failure} — all $<$2\%
       \item Mean sim $>$100k (magnitude dominates)
@@ -658,7 +613,7 @@
   \begin{alertblock}{\scriptsize Key takeaway}
     \scriptsize L2 normalization is \textbf{essential} for the pipeline.
     Removing it causes complete retrieval failure across all 6 embedders.
-    PCA matters mainly for multi-stream embedders (Combined: $-$16~pp without it).
+    PCA matters mainly for multi-stream embedders (Combined: $-$11~pp without it).
   \end{alertblock}
 
 \end{column}
@@ -666,547 +621,779 @@
 \end{frame}
 
 % ══════════════════════════════════════════════════════════════════════
-\section{CWE Ontology}
+\section{Agent Baseline}
 % ══════════════════════════════════════════════════════════════════════
 
-\begin{frame}{CWE Ontology: Structure \& Similarity Measure}
-\begin{columns}[T]
-\begin{column}{0.50\textwidth}
-
-  \textbf{What it is}\\[3pt]
-  The MITRE Research Concepts View encoded as a rooted tree.
-  23 dataset CWE classes $+$ 12 intermediate nodes $= 35$ nodes.
-  Each edge is a parent $\to$ child relationship in the taxonomy.
-
-  \vspace{1.0em}
-  \textbf{Wu-Palmer similarity}
-
-  \vspace{0.3em}
-  $$\text{WP}(a,b) = \frac{2 \cdot \text{depth}(\text{LCA}(a,b))}{\text{depth}(a) + \text{depth}(b)}$$
-
-  \vspace{0.4em}
-  \begin{itemize}
-    \item Ranges in $[0, 1]$; identical CWEs $\to 1.0$
-    \item Structurally adjacent CWEs score $> 0.5$
-    \item Provides a \textbf{soft miss penalty}: a retrieved CVE
-          in a nearby CWE counts as a partial hit
-  \end{itemize}
-
-\end{column}
-\begin{column}{0.46\textwidth}
-
-  \textbf{Example scores from the dataset}
-
-  \vspace{0.4em}
-  {\small
-  \renewcommand{\arraystretch}{1.3}
-  \begin{tabular}{lc}
-    \toprule
-    \textbf{Pair} & \textbf{WP} \\
-    \midrule
-    Oper.\ after Release $\leftrightarrow$ UAF        & 0.889 \\
-    Improper Locking $\leftrightarrow$ Deadlock       & 0.857 \\
-    Use After Free $\leftrightarrow$ Expired Ptr      & 0.800 \\
-    NULL Ptr $\leftrightarrow$ Unchecked Return       & 0.571 \\
-    Integer Overflow $\leftrightarrow$ Race Condition & 0.333 \\
-    NULL Ptr $\leftrightarrow$ Use After Free         & 0.222 \\
-    \bottomrule
-  \end{tabular}}
-
-  \vspace{0.6em}
-  {\scriptsize\color{black!55}
-  High WP = close common ancestor in the taxonomy.\\
-  Low WP = unrelated subtrees — a genuinely wrong retrieval.}
-
-\end{column}
-\end{columns}
-\end{frame}
-
-\begin{frame}{CWE Ontology: Taxonomy Visualization}
-\centering
-\begin{tikzpicture}[
-  root/.style={ellipse,draw=c1,fill=c1!15,font=\small\sffamily\bfseries,
-               minimum width=2.0cm,minimum height=0.55cm,inner sep=2pt},
-  inter/.style={ellipse,draw=c3!70,fill=c3!10,font=\small\sffamily,
-                minimum width=2.2cm,minimum height=0.52cm,inner sep=2pt},
-  leaf/.style={rectangle,rounded corners=2pt,draw=c2!60,fill=c2!8,
-               font=\small\sffamily,minimum width=2.0cm,minimum height=0.48cm,inner sep=3pt},
-  arr/.style={->,gray!60,thin}]
-
-  \node[root] (Nroot) at (0,5.5) {ROOT};
-
-  \node[inter] (N664) at (-3.5,4.2) {Res.\ Lifetime};
-  \node[inter] (N682) at (0.5,4.2)  {Numeric Err.};
-  \node[inter] (N691) at (3.5,4.2)  {Control Flow};
-
-  \node[inter] (N666) at (-5.2,3.0) {Wrong Phase};
-  \node[inter] (N667) at (-2.5,3.0) {Locking};
-  \node[inter] (N404) at (-0.5,3.0) {Res.\ Shutdown};
-
-  \node[leaf]  (N672) at (-6.5,1.8) {Lifetime Mgmt};
-  \node[leaf]  (N833) at (-2.5,1.8) {\textbf{Deadlock}};
-  \node[leaf]  (N401) at (-0.5,1.8) {\textbf{Mem Leak}};
-  \node[leaf]  (N190) at (0.5,3.0)  {\textbf{Int Ovf}};
-  \node[leaf]  (N362) at (3.5,3.0)  {\textbf{Race}};
-
-  \node[leaf]  (N416) at (-7.5,0.6) {\textbf{UAF}};
-  \node[leaf]  (N825) at (-5.8,0.6) {\textbf{Exp Ptr}};
-  \node[leaf]  (N476) at (-4.1,0.6) {\textbf{Null Ptr}};
-
-  \draw[arr] (Nroot)--(N664); \draw[arr] (Nroot)--(N682);
-  \draw[arr] (Nroot)--(N691);
-  \draw[arr] (N664)--(N666); \draw[arr] (N664)--(N667);
-  \draw[arr] (N664)--(N404);
-  \draw[arr] (N666)--(N672); \draw[arr] (N667)--(N833);
-  \draw[arr] (N404)--(N401);
-  \draw[arr] (N672)--(N416); \draw[arr] (N672)--(N825);
-  \draw[arr] (N672)--(N476);
-  \draw[arr] (N682)--(N190); \draw[arr] (N691)--(N362);
-
-  \draw[warn,thick,<->] (N416) to[bend left=25]
-    node[below,font=\scriptsize\sffamily\bfseries,warn!80!black] {WP=0.80} (N825);
-  \draw[c3!70,thick,<->] (N833) to[bend right=18]
-    node[left,font=\scriptsize\sffamily\bfseries,c3] {WP=0.86} (N667);
-  \draw[miss!80,thick,<->] (N416) to[bend right=15]
-    node[above,font=\scriptsize\sffamily\bfseries,miss] {WP=0.22} (N476);
-\end{tikzpicture}
-
-\vspace{0.3em}
-{\scriptsize\color{black!55}
-Ellipses = intermediate taxonomy nodes.\quad
-Rectangles = dataset CWE leaf classes.\quad
-Coloured arcs show selected Wu-Palmer scores.}
-\end{frame}
-
-% ══════════════════════════════════════════════════════════════════════
-\section{Cross-CVE Callgraph}
-% ══════════════════════════════════════════════════════════════════════
-
-\begin{frame}{Cross-CVE Callgraph: Idea \& Construction}
+\begin{frame}{Agent Baseline: Experiment Design}
 \begin{columns}[T]
 \begin{column}{0.52\textwidth}
 
-  \textbf{Observation}\\[3pt]
-  Patches that fix a \emph{Deadlock} call locking primitives.
-  Patches that fix \emph{UAF} call allocation or free functions.
-  The callee set of $G_{\text{vuln}}$ carries a class signal
-  orthogonal to graph structure.
+  \textbf{Goal}\\[3pt]
+  {\small Given a vulnerable function and a retrieved similar CVE,
+  can an LLM generate a correct patch \textbf{by analogy}?
+  Compare \textit{oracle} retrieval (perfect) vs.\ \textit{embedding} retrieval (our pipeline).}
 
-  \vspace{0.9em}
-  \textbf{Construction}\\[3pt]
-  Extract CALL nodes from each CVE's $G_{\text{vuln}}$
-  (excluding Joern internal operators).
-  Pairwise \textbf{Jaccard similarity} over callee name sets:
-
-  $$s_c(A,B) = \frac{|\text{callees}(A) \cap \text{callees}(B)|}{|\text{callees}(A) \cup \text{callees}(B)|}$$
-
-  No re-embedding needed at retrieval time — $O(|\text{callees}|)$.
+  \vspace{0.6em}
+  \textbf{Model \& prompt}
+  \begin{itemize}\setlength{\itemsep}{2pt}
+    {\scriptsize
+    \item \textbf{GPT-4o} (Azure), temperature$=$0.2, max\_tokens$=$4096
+    \item \textbf{One-shot patching by analogy}: system prompt contains the
+          retrieved CVE's fix-list, variable/function mapping, root cause
+    \item Assistant message shows the example's CoT + patched code
+    \item User message provides the target function to patch
+    \item Agent must output \texttt{[CoT START]...[Patched Code END]}}
+  \end{itemize}
 
 \end{column}
-\begin{column}{0.44\textwidth}
-  \textbf{Fused retrieval score}
+\begin{column}{0.45\textwidth}
+
+  \textbf{Retrieval modes}
+
+  \vspace{0.3em}
+  {\small
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{p{1.5cm}p{4.5cm}}
+    \toprule
+    \textbf{Mode} & \textbf{What it retrieves} \\
+    \midrule
+    \textbf{Oracle}
+      & Same-CVE pair from index (perfect match) — upper bound on agent quality \\
+    \textbf{Embedding}
+      & Top-1 from Combined embedder + FAISS (realistic pipeline) \\
+    \bottomrule
+  \end{tabular}}
 
   \vspace{0.5em}
-  \centering
-  \begin{tikzpicture}[
-    box/.style={rounded corners=3pt,draw=c1!50,fill=c1!8,
-                minimum width=3.2cm,minimum height=0.6cm,
-                font=\small\sffamily,align=center},
-    arr/.style={->,thick}]
-    \node[box] (emb) at (0,2.2) {Embedding cosine $s_e$};
-    \node[box] (cg)  at (0,1.0) {Callgraph Jaccard $s_c$};
-    \node[font=\normalsize\sffamily,c3] (pl) at (0,-0.2)
-      {$\alpha \cdot s_e \;+\; (1{-}\alpha)\cdot s_c$};
-    \node[box,draw=hit,fill=hit!12,font=\small\sffamily\bfseries]
-      (fused) at (0,-1.4) {Fused score};
-    \draw[arr,c1!50] (emb.south) -- (pl.north);
-    \draw[arr,c1!50] (cg.south)  -- (pl.north);
-    \draw[arr,hit]   (pl.south)  -- (fused.north);
-  \end{tikzpicture}
+  \textbf{Evaluation protocol}
+  \begin{itemize}\setlength{\itemsep}{2pt}
+    {\scriptsize
+    \item Same split: 225 index, 73 query (seed$=$42)
+    \item \textbf{Patch quality}: BLEU-4, token Jaccard, CodeBLEU proxy
+    \item \textbf{Retrieval}: hit@1, MRR, CWE hit@5
+    \item \textbf{Confidence}: precision/recall at score thresholds}
+  \end{itemize}
 
-  \vspace{0.5em}
-  {\scriptsize\color{black!55}
-  $\alpha=1.0$ = pure embedding baseline.\\
-  $\alpha=0.0$ = pure callgraph ranking.\\
-  Sweep $\alpha \in [0,1]$ to find the optimal point.}
 \end{column}
 \end{columns}
 \end{frame}
 
-\begin{frame}{Cross-CVE Callgraph: Discriminative Callees}
 
-  \textbf{Top discriminative callees per CWE class}
-
-  \vspace{0.4em}
-  {\small
-  \renewcommand{\arraystretch}{1.35}
-  \begin{tabular}{lp{9.5cm}r}
-    \toprule
-    \textbf{CWE class} & \textbf{Top callees (high specificity)} & \textbf{Specificity} \\
-    \midrule
-    Use After Free
-      & \texttt{BUILD\_BUG\_ON}, \texttt{read\_pnet}, \texttt{ASSERT\_RTNL}
-      & $\geq 0.90$ \\[2pt]
-    Deadlock
-      & \texttt{queue\_limits\_start\_update}, \texttt{blk\_unfreeze\_release\_lock}
-      & $\geq 0.85$ \\[2pt]
-    Race Condition
-      & \texttt{snd\_pcm\_start\_lock\_irq}, \texttt{snd\_pcm\_drain}
-      & $\geq 0.80$ \\[2pt]
-    NULL Ptr Deref
-      & \texttt{strcmp}, \texttt{intel\_crtc\_for\_pipe}
-      & $\geq 0.75$ \\[2pt]
-    Integer Overflow
-      & \texttt{strncpy}, \texttt{get\_unaligned\_le32}
-      & $\geq 0.80$ \\
-    \bottomrule
-  \end{tabular}}
-
-  \vspace{0.9em}
-  \begin{columns}[T]
-  \begin{column}{0.48\textwidth}
-    \begin{block}{Specificity defined}
-      Fraction of all occurrences of that callee that fall within
-      this CWE group. Specificity 0.90 means the callee appears
-      in UAF patches 90\% of the time.
-    \end{block}
-  \end{column}
-  \begin{column}{0.48\textwidth}
-    \begin{block}{Why this works}
-      Locking primitives discriminate Deadlock from Race Condition.
-      Allocation/free calls separate UAF from Memory Leak.
-      Cheap, interpretable, no retraining required.
-    \end{block}
-  \end{column}
-  \end{columns}
-\end{frame}
-
-% ══════════════════════════════════════════════════════════════════════
-\section{Reranking Results}
-% ══════════════════════════════════════════════════════════════════════
-
-\begin{frame}{Knowledge-Augmented Reranking: $\alpha$ Sweep}
+\begin{frame}{Agent Baseline: Retrieval \& Patch Quality}
 \begin{columns}[T]
-\begin{column}{0.48\textwidth}
-
-  \begin{tikzpicture}[scale=0.92]
-    \foreach \y/\alph/\val/\pct/\col in {
-      5.8/0.0/0.959/95.9\%/hit,
-      5.0/0.2/0.932/93.2\%/c2,
-      4.2/0.4/0.932/93.2\%/c2,
-      3.4/0.6/0.890/89.0\%/c2,
-      2.6/0.8/0.849/84.9\%/c2,
-      1.8/1.0/0.795/79.5\%/miss}{
-      \node[left,font=\small\sffamily,text width=1.1cm,align=right]
-        at (0,\y) {$\alpha{=}\alph$};
-      \fill[\col!65,rounded corners=1pt]
-        (0.05,\y-0.27) rectangle ({0.05+5.0*\val},\y+0.27);
-      \node[right,font=\small\sffamily\bfseries,\col!80!black]
-        at ({0.05+5.0*\val+0.04},\y) {\pct};
-    }
-    \draw[black!15] (0.05,1.3)--(0.05,6.3);
-    \draw[black!10,dashed] (0.05+5.0*0.795,1.3)--(0.05+5.0*0.795,6.3)
-      node[above,font=\tiny\color{black!40}] {baseline};
-    \node[below,font=\tiny\color{black!40}] at (0.05,1.2) {0};
-    \node[below,font=\tiny\color{black!40}] at (2.55,1.2) {50\%};
-    \node[below,font=\tiny\color{black!40}] at (5.05,1.2) {100\%};
-    \node[font=\small\sffamily\bfseries,c1] at (2.5,6.8)
-      {Combined — hit@1 vs.\ $\alpha$};
-  \end{tikzpicture}
-
-\end{column}
 \begin{column}{0.50\textwidth}
 
-  \textbf{All embedders — gain from callgraph fusion}
+  \textbf{Retrieval feeding the agent ($n{=}73$)}
+
+  \vspace{0.3em}
+  {\scriptsize
+  Same Combined embedder from §\ref{sec:slicing} — Oracle hit@1 86.3\%,
+  Embedding 68.5\%, both hit@5 $\geq$ 80\%.
+  The 17.8~pp gap is the ``analogy quality'' difference between modes.}
+
+  \vspace{0.6em}
+  \textbf{Patch quality metrics}
 
   \vspace{0.4em}
   {\small
   \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lcc}
+    \toprule
+    \textbf{Metric} & \textbf{Oracle} & \textbf{Embedding} \\
+    & {\scriptsize $n{=}73$} & {\scriptsize $n{=}73$} \\
+    \midrule
+    \rowcolor{c1!10}
+    CodeBLEU proxy & .557  & .409 \\
+    BLEU-4         & .542  & .388 \\
+    Token Jaccard  & .585  & .461 \\
+    Char seq.\ ratio & .506 & .373 \\
+    Exact match    & 0     & 0 \\
+    \bottomrule
+  \end{tabular}}
+
+
+  \vspace{0.3em}
+  {\scriptsize
+  \textbf{Key finding}: Retrieval quality \textbf{matters} —
+  CodeBLEU drops from .557 (oracle) to .409 (embedding), a $-$15~pp gap.
+  The 17.8~pp retrieval gap translates into measurable patch quality loss.}
+
+\end{column}
+\begin{column}{0.47\textwidth}
+
+  \textbf{CodeBLEU proxy distribution (Oracle, $n{=}73$)}
+
+  \vspace{0.3em}
+  \centering
+  \begin{tikzpicture}[scale=0.85]
+    \foreach \x/\lo/\hi/\cnt/\col in {
+      0.8/{0.0}/0.2/4/miss,
+      2.0/{0.2}/0.4/7/warn,
+      3.2/{0.4}/0.6/32/c2,
+      4.4/{0.6}/0.8/21/hit,
+      5.6/{0.8}/1.0/9/hit}{
+      \fill[\col!55,rounded corners=1pt]
+        (\x-0.45,0) rectangle (\x+0.45,{\cnt*0.13});
+      \node[above,font=\tiny\sffamily\bfseries] at (\x,{\cnt*0.13}) {\cnt};
+      \node[below,font=\tiny\sffamily] at (\x,-0.1) {\lo--\hi};
+    }
+    \draw[black!20] (0.2,0)--(6.2,0);
+    \node[font=\scriptsize\sffamily,black!50] at (3.2,-0.6) {CodeBLEU proxy range};
+  \end{tikzpicture}
+
+  \vspace{0.5em}
+  {\scriptsize\textbf{By CWE class} (oracle, best/worst)}
+
+  \vspace{0.2em}
+  {\scriptsize
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{lr}
+    \toprule
+    \textbf{CWE class} & \textbf{CBP} \\
+    \midrule
+    \rowcolor{hit!10}
+    Use of Uninit.\ Variable ($n{=}2$) & .818 \\
+    Memory Leak ($n{=}2$) & .661 \\
+    Integer Overflow ($n{=}10$) & .637 \\
+    \midrule
+    Race Condition ($n{=}5$) & .424 \\
+    \rowcolor{miss!10}
+    Out-of-bounds Write ($n{=}1$) & .239 \\
+    \rowcolor{miss!10}
+    Resource Lifetime ($n{=}1$) & .025 \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.4em}
+  \textbf{Confidence calibration}
+
+  \vspace{0.2em}
+  {\scriptsize
+  \renewcommand{\arraystretch}{1.15}
   \begin{tabular}{lccc}
     \toprule
-    \textbf{Embedder} & \textbf{Embed only} & \textbf{Best fused} & \textbf{$\Delta$} \\
+    \textbf{Threshold} & \textbf{Prec.} & \textbf{Rec.} & \textbf{$n$} \\
     \midrule
-    \rowcolor{hit!15}
-    Combined         & 79.5\% & \textbf{95.9\%} & \textcolor{hit}{+16.4 pp} \\
-    CodeBERT pattern & 71.2\% & \textbf{86.3\%} & \textcolor{hit}{+15.1 pp} \\
-    VulnPattern      & 52.1\% & \textbf{71.2\%} & \textcolor{hit}{+19.1 pp} \\
-    CodeBERT seq     & 75.3\% & \textbf{84.9\%} & \textcolor{hit}{+9.6 pp}  \\
+    \rowcolor{hit!10}
+    Random (0.946) & 70.4\% & 100.0\% & 71 \\
+    Median (0.98)  & 86.1\% & 62.0\% & 36 \\
+    P75 (0.989)    & 88.9\% & 32.0\% & 18 \\
     \bottomrule
   \end{tabular}}
 
-  \vspace{0.8em}
-  \begin{alertblock}{Important caveat}
-    \small $\alpha{=}0$ = pure callgraph Jaccard.
-    Augmented variants share callees almost perfectly with their
-    original CVE, making this a near-exact identifier in
-    self-retrieval. Held-out performance will be lower.
-  \end{alertblock}
-
 \end{column}
 \end{columns}
 \end{frame}
 
-% ══════════════════════════════════════════════════════════════════════
-\section{Ensembles}
-% ══════════════════════════════════════════════════════════════════════
 
-\begin{frame}{Embedder Ensembles: Strategies}
-\begin{columns}[T]
-\begin{column}{0.52\textwidth}
-
-  \textbf{Why ensemble?}\\[3pt]
-  The oracle — correct if \emph{any} embedder retrieves at rank 1 —
-  reaches 91.8\%, far above any single model (79.5\%).
-  Structural and semantic embedders fail on different queries;
-  combining them should close part of that gap.
-
-  \vspace{0.9em}
-  \textbf{Strategies evaluated}
-  \begin{description}[\textbf{Fallback cascade}]
-    \item[\textbf{Majority vote}]
-      Each embedder votes for its top-1; plurality wins.
-    \item[\textbf{Conf.\ weighted}]
-      Votes weighted by per-embedder confidence score.
-    \item[\textbf{RRF}]
-      Reciprocal Rank Fusion across all ranked lists.
-    \item[\textbf{Fallback cascade}]
-      Try Combined first; defer to CodeBERT seq if
-      confidence is below threshold; then CodeBERT pattern.
-  \end{description}
-
-\end{column}
-\begin{column}{0.44\textwidth}
-  \centering
-  \begin{tikzpicture}[
-    box/.style={rounded corners=3pt,draw=c1!40,fill=c1!7,
-                minimum width=5.0cm,minimum height=0.55cm,
-                font=\small\sffamily,align=center},
-    arr/.style={->,thick,black!30},
-    note/.style={font=\tiny\sffamily,black!50,align=left}]
-    \node[box,draw=c3,fill=c3!10,font=\small\sffamily\bfseries]
-      (q) at (0,4.4) {Query embedding};
-    \node[box] (e1) at (0,3.5) {Combined};
-    \node[box] (e2) at (0,2.7) {GIN};
-    \node[box] (e3) at (0,1.9) {CodeBERT seq};
-    \node[box] (e4) at (0,1.1) {CodeBERT pattern};
-    \draw[arr] (q)--(e1); \draw[arr] (e1)--(e2);
-    \draw[arr] (e2)--(e3); \draw[arr] (e3)--(e4);
-    \node[note] at (3.0,2.7) {if conf $<$ threshold\\$\Rightarrow$ defer};
-    \node[box,draw=hit,fill=hit!12,font=\small\sffamily\bfseries]
-      (out) at (0,0.2) {Top-$K$ results};
-    \draw[arr] (e4)--(out);
-  \end{tikzpicture}
-  {\scriptsize\color{black!55} Fallback cascade — each step only fires if the previous confidence is low.}
-\end{column}
-\end{columns}
-\end{frame}
-
-\begin{frame}{Embedder Ensembles: Results}
+\begin{frame}{Agent Baseline: Analysis \& Failure Modes}
 \begin{columns}[T]
 \begin{column}{0.50\textwidth}
 
-  \begin{tikzpicture}[scale=0.92]
-    \foreach \y/\lbl/\val/\pct/\col in {
-      6.2/{Oracle (upper bound)}/0.918/91.8\%/c3,
-      5.3/{Majority vote}/0.849/84.9\%/hit,
-      4.4/{Fallback cascade}/0.849/84.9\%/hit,
-      3.5/{Conf.\ weighted}/0.836/83.6\%/c2,
-      2.6/{Individual best (Combined)}/0.795/79.5\%/c1,
-      1.7/{RRF}/0.740/74.0\%/warn}{
-      \node[left,font=\small\sffamily,text width=3.6cm,align=right] at (0,\y) {\lbl};
-      \fill[\col!65,rounded corners=1pt]
-        (0.05,\y-0.28) rectangle ({0.05+5.0*\val},\y+0.28);
-      \node[right,font=\small\sffamily\bfseries,\col!80!black]
-        at ({0.05+5.0*\val+0.05},\y) {\pct};
-    }
-    \draw[black!15] (0.05,1.2)--(0.05,6.7);
-    \draw[black!10,dashed] (0.05+5.0*0.795,1.2)--(0.05+5.0*0.795,6.7)
-      node[above,font=\tiny\color{black!40}] {single best};
-    \node[below,font=\tiny\color{black!40}] at (0.05,1.1) {0};
-    \node[below,font=\tiny\color{black!40}] at (2.55,1.1) {50\%};
-    \node[below,font=\tiny\color{black!40}] at (5.05,1.1) {100\%};
-  \end{tikzpicture}
+  \textbf{Where the agent succeeds}
+  \begin{itemize}\setlength{\itemsep}{3pt}
+    {\scriptsize
+    \item \textbf{Mechanical fixes}: null-pointer guards, missing return-value checks,
+          uninitialised variables — high token overlap (CBP $>$ 0.6)
+    \item \textbf{Pattern-transferable CWEs}: Integer overflow, Deadlock, Memory leak —
+          fix patterns are regular and the fix-list maps cleanly
+    \item 41\% of patches score CBP $>$ 0.6 (oracle), 30\% (embedding);
+          the agent captures the \textit{structure} of the fix even when exact tokens differ}
+  \end{itemize}
+
+  \vspace{0.5em}
+  \textbf{Where the agent fails}
+  \begin{itemize}\setlength{\itemsep}{3pt}
+    {\scriptsize
+    \item \textbf{Zero exact matches}: the LLM adds comments, reformats whitespace,
+          and paraphrases variable names — syntactically different but
+          potentially semantically correct
+    \item \textbf{Race conditions} (CBP .424): fixes require inserting lock/unlock
+          pairs at precise scope boundaries — hard to transfer by analogy
+    \item \textbf{Complex structural rewrites} (Resource Lifetime CBP .025):
+          fix involves rearchitecting control flow, not just inserting a guard}
+  \end{itemize}
 
 \end{column}
 \begin{column}{0.47\textwidth}
 
-  \textbf{Observations}
-  \begin{itemize}
-    \item Majority vote and cascade both reach \textbf{84.9\%}
-          — a \textbf{+5.4 pp} gain over any single model.
-    \item RRF \emph{underperforms} the single best (74.0\%) —
-          fusing ranked lists dilutes strong individual signals.
-    \item Oracle = 91.8\%; the \textbf{7 pp gap} corresponds to
-          5 queries that every embedder fails.
-          No ensemble strategy closes it.
-  \end{itemize}
-
-  \vspace{0.8em}
-  \begin{alertblock}{Interpretation}
-    \small The 7 pp gap is not recoverable by aggregation.
-    It requires a fundamentally different signal —
-    either a better graph feature or a held-out-trained model.
-  \end{alertblock}
-
-\end{column}
-\end{columns}
-\end{frame}
-
-% ══════════════════════════════════════════════════════════════════════
-\section{Confusion Analysis}
-% ══════════════════════════════════════════════════════════════════════
-
-\begin{frame}{Where We Still Fail: Confusion Analysis}
-\begin{columns}[T]
-\begin{column}{0.50\textwidth}
-
-  \textbf{Top confusions — Combined embedder}\\[4pt]
-  {\small 15 misses total; 5 fail every embedder}
-
-  \vspace{0.4em}
-  {\small
-  \renewcommand{\arraystretch}{1.3}
-  \setlength{\tabcolsep}{5pt}
-  \begin{tabular}{llcc}
-    \toprule
-    \textbf{Query CWE} & \textbf{Ret.\ CWE} & \textbf{N} & \textbf{WP} \\
-    \midrule
-    \rowcolor{miss!15}
-    Type Confusion     & Use After Free      & 3 & 0.25 \\
-    \rowcolor{miss!15}
-    NULL Ptr Deref     & Use After Free      & 2 & 0.22 \\
-    NULL Ptr Deref     & Unchecked Return    & 1 & 0.57 \\
-    NULL Ptr Deref     & Out-of-bounds Wr.   & 1 & 0.29 \\
-    Unchecked Return   & Use After Free      & 1 & 0.25 \\
-    \bottomrule
-  \end{tabular}}
-
-  \vspace{0.5em}
-  {\scriptsize\color{black!55}
-  WP $> 0.5$ = taxonomically close (soft miss).\\
-  \textcolor{miss!80!black}{Highlighted} rows = taxonomically far — genuine failures.}
-
-\end{column}
-\begin{column}{0.47\textwidth}
-
-  \textbf{Why this matters}
-  \begin{itemize}
-    \item Only 1 of 5 confusion types is taxonomically close
-          (NullPtr $\leftrightarrow$ Unchecked Return, WP=0.57).
-    \item The dominant error — UAF retrieved for NullPtr or
-          Type Confusion — is a \textbf{topological failure}:
-          all three patch types add a guard node with
-          similar graph structure.
-    \item The CWE knowledge graph helps \emph{interpret}
-          these errors but cannot fix them.
-  \end{itemize}
-
-  \vspace{0.5em}
-  \begin{block}{The 5 hard cases}
-    \small 5 CVEs fail \emph{every} embedder.
-    Hypotheses: trivial single-token patch;
-    graph too small; or missing feature
-    (pointer aliasing, lock scope, data-flow depth).
-    Manual inspection is the next step.
-  \end{block}
-
-\end{column}
-\end{columns}
-\end{frame}
-
-% ══════════════════════════════════════════════════════════════════════
-\section{Key Findings}
-% ══════════════════════════════════════════════════════════════════════
-
-\begin{frame}{Key Findings}
-  \begin{enumerate}
-    \item[\faIcon{star}]
-      \textbf{Callgraph reranking is highly effective — but verify on held-out data.}\\
-      Pure callgraph Jaccard ($\alpha{=}0$) reaches 95.9\% hit@1 for Combined
-      (+16.4 pp vs.\ embedding only). However, augmented variants share callees
-      nearly perfectly, inflating this number in self-retrieval.
-
-    \vspace{0.7em}
-    \item[\faIcon{layer-group}]
-      \textbf{Ensembling gains +5.4 pp; oracle reveals a hard 7 pp ceiling.}\\
-      Majority vote and cascade reach 84.9\%. The 7 pp gap to oracle (91.8\%)
-      corresponds to 5 queries that every embedder fails — not recoverable
-      by any aggregation strategy.
-
-    \vspace{0.7em}
-    \item[\faIcon{sitemap}]
-      \textbf{Confusion errors are topological, not taxonomic.}\\
-      Most misses have WP $< 0.4$ — they are genuinely wrong retrievals
-      caused by structurally similar patch patterns across different CWE classes.
-      The CWE knowledge graph illuminates but does not fix this.
-
-    \vspace{0.7em}
-    \item[\faIcon{exclamation-triangle}]
-      \textbf{Self-retrieval is a ceiling, not a baseline.}\\
-      Numbers are inflated by same-CVE callee overlap in the augmented dataset.
-      Held-out evaluation is the prerequisite for all further design choices.
-  \end{enumerate}
-\end{frame}
-
-% ══════════════════════════════════════════════════════════════════════
-\section{Next Steps}
-% ══════════════════════════════════════════════════════════════════════
-
-\begin{frame}{Next Steps}
-\begin{columns}[T]
-\begin{column}{0.60\textwidth}
-
-  \textbf{1. Held-out evaluation (priority)}\\[2pt]
-  Build a query set where the correct CVE is not in the index —
-  cross-version matches or real bug reports with known ground truth.
-  All further architecture decisions depend on this.
-
-  \vspace{0.8em}
-  \textbf{2. Inspect the 5 persistent failures}\\[2pt]
-  Manually examine the CVEs that fail every embedder.
-  Hypotheses: single-token patch; graph too small;
-  missing feature (pointer aliasing, lock scope, data-flow depth).
-
-  \vspace{0.8em}
-  \textbf{3. Hybrid GIN $\oplus$ CodeBERT embedder}\\[2pt]
-  Concatenate GIN (graph topology) with CodeBERT (code semantics)
-  and project to 128-d. They fail on complementary queries —
-  a fusion should close part of the oracle gap.
-
-  \vspace{0.8em}
-  \textbf{4. Semantic graph diff}\\[2pt]
-  Replace exact-string $G_{\text{vuln}}$ construction with
-  node-level CodeBERT distance thresholding to catch
-  logical rewrites invisible to string comparison.
-
-\end{column}
-\begin{column}{0.36\textwidth}
+  \textbf{Oracle vs.\ Embedding: what the gap tells us}
 
   \vspace{0.3em}
-  \begin{block}{Current best (self-retrieval)}
-    \centering\small
-    Callgraph reranked: \textbf{95.9\%} hit@1\\[3pt]
-    Ensemble (majority): \textbf{84.9\%} hit@1\\[3pt]
-    Oracle upper bound: \textbf{91.8\%}
-  \end{block}
+  \begin{itemize}\setlength{\itemsep}{3pt}
+    {\scriptsize
+    \item Patch quality \textbf{degrades with retrieval accuracy}:
+          CBP .557 (oracle) vs.\ .409 (embedding), $-$15~pp
+    \item When retrieval misses the correct CVE (31.5\% of queries),
+          the analogy is less relevant $\to$ lower patch quality
+    \item Both retrieval \textbf{and} generation quality are bottlenecks}
+  \end{itemize}
 
-  \vspace{0.6em}
-  \begin{block}{Target (held-out eval)}
-    \centering\small
-    Hit@1 $\geq 50\%$ on unseen queries\\[3pt]
-    CWE Recall $\geq 60\%$ macro avg
-  \end{block}
+  \vspace{0.5em}
+  \textbf{Open questions for improvement}
+  \begin{itemize}\setlength{\itemsep}{3pt}
+    {\scriptsize
+    \item \textbf{Better evaluation}: CodeBLEU proxy is a surface metric —
+          does a CBP of 0.5 mean ``half correct'' or ``correct but reformatted''?
+          Compilation + test-based evaluation needed
+    \item \textbf{Multi-shot}: retrieve top-$k$ examples instead of one
+    \item \textbf{Iterative refinement}: let the agent self-critique and revise
+    \item \textbf{Larger context}: include caller/callee code, not just the function}
+  \end{itemize}
 
-  \vspace{0.6em}
-  \begin{alertblock}{Key risk}
-    \small The callgraph gain is partially an artefact
-    of same-CVE callee overlap in the augmented dataset.
-    Held-out evaluation is the priority.
+  \vspace{0.5em}
+  \begin{alertblock}{\scriptsize Takeaway}
+    \scriptsize Retrieval quality \textbf{directly impacts} patch quality —
+    the 17.8~pp retrieval gap causes a 15~pp CBP loss.
+    Improving both retriever and agent is needed.
   \end{alertblock}
 
 \end{column}
 \end{columns}
 \end{frame}
+
+% % ══════════════════════════════════════════════════════════════════════
+% \section{CWE Ontology}
+% % ══════════════════════════════════════════════════════════════════════
+
+% \begin{frame}{CWE Ontology: Structure \& Similarity Measure}
+% \begin{columns}[T]
+% \begin{column}{0.50\textwidth}
+
+%   \textbf{What it is}\\[3pt]
+%   The MITRE Research Concepts View encoded as a rooted tree.
+%   23 dataset CWE classes $+$ 12 intermediate nodes $= 35$ nodes.
+%   Each edge is a parent $\to$ child relationship in the taxonomy.
+
+%   \vspace{1.0em}
+%   \textbf{Wu-Palmer similarity}
+
+%   \vspace{0.3em}
+%   $$\text{WP}(a,b) = \frac{2 \cdot \text{depth}(\text{LCA}(a,b))}{\text{depth}(a) + \text{depth}(b)}$$
+
+%   \vspace{0.4em}
+%   \begin{itemize}
+%     \item Ranges in $[0, 1]$; identical CWEs $\to 1.0$
+%     \item Structurally adjacent CWEs score $> 0.5$
+%     \item Provides a \textbf{soft miss penalty}: a retrieved CVE
+%           in a nearby CWE counts as a partial hit
+%   \end{itemize}
+
+% \end{column}
+% \begin{column}{0.46\textwidth}
+
+%   \textbf{Example scores from the dataset}
+
+%   \vspace{0.4em}
+%   {\small
+%   \renewcommand{\arraystretch}{1.3}
+%   \begin{tabular}{lc}
+%     \toprule
+%     \textbf{Pair} & \textbf{WP} \\
+%     \midrule
+%     Oper.\ after Release $\leftrightarrow$ UAF        & 0.889 \\
+%     Improper Locking $\leftrightarrow$ Deadlock       & 0.857 \\
+%     Use After Free $\leftrightarrow$ Expired Ptr      & 0.800 \\
+%     NULL Ptr $\leftrightarrow$ Unchecked Return       & 0.571 \\
+%     Integer Overflow $\leftrightarrow$ Race Condition & 0.333 \\
+%     NULL Ptr $\leftrightarrow$ Use After Free         & 0.222 \\
+%     \bottomrule
+%   \end{tabular}}
+
+%   \vspace{0.6em}
+%   {\scriptsize\color{black!55}
+%   High WP = close common ancestor in the taxonomy.\\
+%   Low WP = unrelated subtrees — a genuinely wrong retrieval.}
+
+% \end{column}
+% \end{columns}
+% \end{frame}
+
+% \begin{frame}{CWE Ontology: Taxonomy Visualization}
+% \centering
+% \begin{tikzpicture}[
+%   root/.style={ellipse,draw=c1,fill=c1!15,font=\small\sffamily\bfseries,
+%                minimum width=2.0cm,minimum height=0.55cm,inner sep=2pt},
+%   inter/.style={ellipse,draw=c3!70,fill=c3!10,font=\small\sffamily,
+%                 minimum width=2.2cm,minimum height=0.52cm,inner sep=2pt},
+%   leaf/.style={rectangle,rounded corners=2pt,draw=c2!60,fill=c2!8,
+%                font=\small\sffamily,minimum width=2.0cm,minimum height=0.48cm,inner sep=3pt},
+%   arr/.style={->,gray!60,thin}]
+
+%   \node[root] (Nroot) at (0,5.5) {ROOT};
+
+%   \node[inter] (N664) at (-3.5,4.2) {Res.\ Lifetime};
+%   \node[inter] (N682) at (0.5,4.2)  {Numeric Err.};
+%   \node[inter] (N691) at (3.5,4.2)  {Control Flow};
+
+%   \node[inter] (N666) at (-5.2,3.0) {Wrong Phase};
+%   \node[inter] (N667) at (-2.5,3.0) {Locking};
+%   \node[inter] (N404) at (-0.5,3.0) {Res.\ Shutdown};
+
+%   \node[leaf]  (N672) at (-6.5,1.8) {Lifetime Mgmt};
+%   \node[leaf]  (N833) at (-2.5,1.8) {\textbf{Deadlock}};
+%   \node[leaf]  (N401) at (-0.5,1.8) {\textbf{Mem Leak}};
+%   \node[leaf]  (N190) at (0.5,3.0)  {\textbf{Int Ovf}};
+%   \node[leaf]  (N362) at (3.5,3.0)  {\textbf{Race}};
+
+%   \node[leaf]  (N416) at (-7.5,0.6) {\textbf{UAF}};
+%   \node[leaf]  (N825) at (-5.8,0.6) {\textbf{Exp Ptr}};
+%   \node[leaf]  (N476) at (-4.1,0.6) {\textbf{Null Ptr}};
+
+%   \draw[arr] (Nroot)--(N664); \draw[arr] (Nroot)--(N682);
+%   \draw[arr] (Nroot)--(N691);
+%   \draw[arr] (N664)--(N666); \draw[arr] (N664)--(N667);
+%   \draw[arr] (N664)--(N404);
+%   \draw[arr] (N666)--(N672); \draw[arr] (N667)--(N833);
+%   \draw[arr] (N404)--(N401);
+%   \draw[arr] (N672)--(N416); \draw[arr] (N672)--(N825);
+%   \draw[arr] (N672)--(N476);
+%   \draw[arr] (N682)--(N190); \draw[arr] (N691)--(N362);
+
+%   \draw[warn,thick,<->] (N416) to[bend left=25]
+%     node[below,font=\scriptsize\sffamily\bfseries,warn!80!black] {WP=0.80} (N825);
+%   \draw[c3!70,thick,<->] (N833) to[bend right=18]
+%     node[left,font=\scriptsize\sffamily\bfseries,c3] {WP=0.86} (N667);
+%   \draw[miss!80,thick,<->] (N416) to[bend right=15]
+%     node[above,font=\scriptsize\sffamily\bfseries,miss] {WP=0.22} (N476);
+% \end{tikzpicture}
+
+% \vspace{0.3em}
+% {\scriptsize\color{black!55}
+% Ellipses = intermediate taxonomy nodes.\quad
+% Rectangles = dataset CWE leaf classes.\quad
+% Coloured arcs show selected Wu-Palmer scores.}
+% \end{frame}
+
+% % ══════════════════════════════════════════════════════════════════════
+% \section{Cross-CVE Callgraph}
+% % ══════════════════════════════════════════════════════════════════════
+
+% \begin{frame}{Cross-CVE Callgraph: Idea \& Construction}
+% \begin{columns}[T]
+% \begin{column}{0.52\textwidth}
+
+%   \textbf{Observation}\\[3pt]
+%   Patches that fix a \emph{Deadlock} call locking primitives.
+%   Patches that fix \emph{UAF} call allocation or free functions.
+%   The callee set of $G_{\text{vuln}}$ carries a class signal
+%   orthogonal to graph structure.
+
+%   \vspace{0.9em}
+%   \textbf{Construction}\\[3pt]
+%   Extract CALL nodes from each CVE's $G_{\text{vuln}}$
+%   (excluding Joern internal operators).
+%   Pairwise \textbf{Jaccard similarity} over callee name sets:
+
+%   $$s_c(A,B) = \frac{|\text{callees}(A) \cap \text{callees}(B)|}{|\text{callees}(A) \cup \text{callees}(B)|}$$
+
+%   No re-embedding needed at retrieval time — $O(|\text{callees}|)$.
+
+% \end{column}
+% \begin{column}{0.44\textwidth}
+%   \textbf{Fused retrieval score}
+
+%   \vspace{0.5em}
+%   \centering
+%   \begin{tikzpicture}[
+%     box/.style={rounded corners=3pt,draw=c1!50,fill=c1!8,
+%                 minimum width=3.2cm,minimum height=0.6cm,
+%                 font=\small\sffamily,align=center},
+%     arr/.style={->,thick}]
+%     \node[box] (emb) at (0,2.2) {Embedding cosine $s_e$};
+%     \node[box] (cg)  at (0,1.0) {Callgraph Jaccard $s_c$};
+%     \node[font=\normalsize\sffamily,c3] (pl) at (0,-0.2)
+%       {$\alpha \cdot s_e \;+\; (1{-}\alpha)\cdot s_c$};
+%     \node[box,draw=hit,fill=hit!12,font=\small\sffamily\bfseries]
+%       (fused) at (0,-1.4) {Fused score};
+%     \draw[arr,c1!50] (emb.south) -- (pl.north);
+%     \draw[arr,c1!50] (cg.south)  -- (pl.north);
+%     \draw[arr,hit]   (pl.south)  -- (fused.north);
+%   \end{tikzpicture}
+
+%   \vspace{0.5em}
+%   {\scriptsize\color{black!55}
+%   $\alpha=1.0$ = pure embedding baseline.\\
+%   $\alpha=0.0$ = pure callgraph ranking.\\
+%   Sweep $\alpha \in [0,1]$ to find the optimal point.}
+% \end{column}
+% \end{columns}
+% \end{frame}
+
+% \begin{frame}{Cross-CVE Callgraph: Discriminative Callees}
+
+%   \textbf{Top discriminative callees per CWE class}
+
+%   \vspace{0.4em}
+%   {\small
+%   \renewcommand{\arraystretch}{1.35}
+%   \begin{tabular}{lp{9.5cm}r}
+%     \toprule
+%     \textbf{CWE class} & \textbf{Top callees (high specificity)} & \textbf{Specificity} \\
+%     \midrule
+%     Use After Free
+%       & \texttt{BUILD\_BUG\_ON}, \texttt{read\_pnet}, \texttt{ASSERT\_RTNL}
+%       & $\geq 0.90$ \\[2pt]
+%     Deadlock
+%       & \texttt{queue\_limits\_start\_update}, \texttt{blk\_unfreeze\_release\_lock}
+%       & $\geq 0.85$ \\[2pt]
+%     Race Condition
+%       & \texttt{snd\_pcm\_start\_lock\_irq}, \texttt{snd\_pcm\_drain}
+%       & $\geq 0.80$ \\[2pt]
+%     NULL Ptr Deref
+%       & \texttt{strcmp}, \texttt{intel\_crtc\_for\_pipe}
+%       & $\geq 0.75$ \\[2pt]
+%     Integer Overflow
+%       & \texttt{strncpy}, \texttt{get\_unaligned\_le32}
+%       & $\geq 0.80$ \\
+%     \bottomrule
+%   \end{tabular}}
+
+%   \vspace{0.9em}
+%   \begin{columns}[T]
+%   \begin{column}{0.48\textwidth}
+%     \begin{block}{Specificity defined}
+%       Fraction of all occurrences of that callee that fall within
+%       this CWE group. Specificity 0.90 means the callee appears
+%       in UAF patches 90\% of the time.
+%     \end{block}
+%   \end{column}
+%   \begin{column}{0.48\textwidth}
+%     \begin{block}{Why this works}
+%       Locking primitives discriminate Deadlock from Race Condition.
+%       Allocation/free calls separate UAF from Memory Leak.
+%       Cheap, interpretable, no retraining required.
+%     \end{block}
+%   \end{column}
+%   \end{columns}
+% \end{frame}
+
+% % ══════════════════════════════════════════════════════════════════════
+% \section{Reranking Results}
+% % ══════════════════════════════════════════════════════════════════════
+
+% \begin{frame}{Knowledge-Augmented Reranking: $\alpha$ Sweep}
+% \begin{columns}[T]
+% \begin{column}{0.48\textwidth}
+
+%   \begin{tikzpicture}[scale=0.92]
+%     \foreach \y/\alph/\val/\pct/\col in {
+%       5.8/0.0/0.959/95.9\%/hit,
+%       5.0/0.2/0.932/93.2\%/c2,
+%       4.2/0.4/0.932/93.2\%/c2,
+%       3.4/0.6/0.890/89.0\%/c2,
+%       2.6/0.8/0.849/84.9\%/c2,
+%       1.8/1.0/0.795/79.5\%/miss}{
+%       \node[left,font=\small\sffamily,text width=1.1cm,align=right]
+%         at (0,\y) {$\alpha{=}\alph$};
+%       \fill[\col!65,rounded corners=1pt]
+%         (0.05,\y-0.27) rectangle ({0.05+5.0*\val},\y+0.27);
+%       \node[right,font=\small\sffamily\bfseries,\col!80!black]
+%         at ({0.05+5.0*\val+0.04},\y) {\pct};
+%     }
+%     \draw[black!15] (0.05,1.3)--(0.05,6.3);
+%     \draw[black!10,dashed] (0.05+5.0*0.795,1.3)--(0.05+5.0*0.795,6.3)
+%       node[above,font=\tiny\color{black!40}] {baseline};
+%     \node[below,font=\tiny\color{black!40}] at (0.05,1.2) {0};
+%     \node[below,font=\tiny\color{black!40}] at (2.55,1.2) {50\%};
+%     \node[below,font=\tiny\color{black!40}] at (5.05,1.2) {100\%};
+%     \node[font=\small\sffamily\bfseries,c1] at (2.5,6.8)
+%       {Combined — hit@1 vs.\ $\alpha$};
+%   \end{tikzpicture}
+
+% \end{column}
+% \begin{column}{0.50\textwidth}
+
+%   \textbf{All embedders — gain from callgraph fusion}
+
+%   \vspace{0.4em}
+%   {\small
+%   \renewcommand{\arraystretch}{1.3}
+%   \begin{tabular}{lccc}
+%     \toprule
+%     \textbf{Embedder} & \textbf{Embed only} & \textbf{Best fused} & \textbf{$\Delta$} \\
+%     \midrule
+%     \rowcolor{hit!15}
+%     Combined         & 79.5\% & \textbf{95.9\%} & \textcolor{hit}{+16.4 pp} \\
+%     CodeBERT pattern & 71.2\% & \textbf{86.3\%} & \textcolor{hit}{+15.1 pp} \\
+%     VulnPattern      & 52.1\% & \textbf{71.2\%} & \textcolor{hit}{+19.1 pp} \\
+%     CodeBERT seq     & 75.3\% & \textbf{84.9\%} & \textcolor{hit}{+9.6 pp}  \\
+%     \bottomrule
+%   \end{tabular}}
+
+%   \vspace{0.8em}
+%   \begin{alertblock}{Important caveat}
+%     \small $\alpha{=}0$ = pure callgraph Jaccard.
+%     Augmented variants share callees almost perfectly with their
+%     original CVE, making this a near-exact identifier in
+%     self-retrieval. Held-out performance will be lower.
+%   \end{alertblock}
+
+% \end{column}
+% \end{columns}
+% \end{frame}
+
+% % ══════════════════════════════════════════════════════════════════════
+% \section{Ensembles}
+% % ══════════════════════════════════════════════════════════════════════
+
+% \begin{frame}{Embedder Ensembles: Strategies}
+% \begin{columns}[T]
+% \begin{column}{0.52\textwidth}
+
+%   \textbf{Why ensemble?}\\[3pt]
+%   The oracle — correct if \emph{any} embedder retrieves at rank 1 —
+%   reaches 91.8\%, far above any single model (79.5\%).
+%   Structural and semantic embedders fail on different queries;
+%   combining them should close part of that gap.
+
+%   \vspace{0.9em}
+%   \textbf{Strategies evaluated}
+%   \begin{description}[\textbf{Fallback cascade}]
+%     \item[\textbf{Majority vote}]
+%       Each embedder votes for its top-1; plurality wins.
+%     \item[\textbf{Conf.\ weighted}]
+%       Votes weighted by per-embedder confidence score.
+%     \item[\textbf{RRF}]
+%       Reciprocal Rank Fusion across all ranked lists.
+%     \item[\textbf{Fallback cascade}]
+%       Try Combined first; defer to CodeBERT seq if
+%       confidence is below threshold; then CodeBERT pattern.
+%   \end{description}
+
+% \end{column}
+% \begin{column}{0.44\textwidth}
+%   \centering
+%   \begin{tikzpicture}[
+%     box/.style={rounded corners=3pt,draw=c1!40,fill=c1!7,
+%                 minimum width=5.0cm,minimum height=0.55cm,
+%                 font=\small\sffamily,align=center},
+%     arr/.style={->,thick,black!30},
+%     note/.style={font=\tiny\sffamily,black!50,align=left}]
+%     \node[box,draw=c3,fill=c3!10,font=\small\sffamily\bfseries]
+%       (q) at (0,4.4) {Query embedding};
+%     \node[box] (e1) at (0,3.5) {Combined};
+%     \node[box] (e2) at (0,2.7) {GIN};
+%     \node[box] (e3) at (0,1.9) {CodeBERT seq};
+%     \node[box] (e4) at (0,1.1) {CodeBERT pattern};
+%     \draw[arr] (q)--(e1); \draw[arr] (e1)--(e2);
+%     \draw[arr] (e2)--(e3); \draw[arr] (e3)--(e4);
+%     \node[note] at (3.0,2.7) {if conf $<$ threshold\\$\Rightarrow$ defer};
+%     \node[box,draw=hit,fill=hit!12,font=\small\sffamily\bfseries]
+%       (out) at (0,0.2) {Top-$K$ results};
+%     \draw[arr] (e4)--(out);
+%   \end{tikzpicture}
+%   {\scriptsize\color{black!55} Fallback cascade — each step only fires if the previous confidence is low.}
+% \end{column}
+% \end{columns}
+% \end{frame}
+
+% \begin{frame}{Embedder Ensembles: Results}
+% \begin{columns}[T]
+% \begin{column}{0.50\textwidth}
+
+%   \begin{tikzpicture}[scale=0.92]
+%     \foreach \y/\lbl/\val/\pct/\col in {
+%       6.2/{Oracle (upper bound)}/0.918/91.8\%/c3,
+%       5.3/{Majority vote}/0.849/84.9\%/hit,
+%       4.4/{Fallback cascade}/0.849/84.9\%/hit,
+%       3.5/{Conf.\ weighted}/0.836/83.6\%/c2,
+%       2.6/{Individual best (Combined)}/0.795/79.5\%/c1,
+%       1.7/{RRF}/0.740/74.0\%/warn}{
+%       \node[left,font=\small\sffamily,text width=3.6cm,align=right] at (0,\y) {\lbl};
+%       \fill[\col!65,rounded corners=1pt]
+%         (0.05,\y-0.28) rectangle ({0.05+5.0*\val},\y+0.28);
+%       \node[right,font=\small\sffamily\bfseries,\col!80!black]
+%         at ({0.05+5.0*\val+0.05},\y) {\pct};
+%     }
+%     \draw[black!15] (0.05,1.2)--(0.05,6.7);
+%     \draw[black!10,dashed] (0.05+5.0*0.795,1.2)--(0.05+5.0*0.795,6.7)
+%       node[above,font=\tiny\color{black!40}] {single best};
+%     \node[below,font=\tiny\color{black!40}] at (0.05,1.1) {0};
+%     \node[below,font=\tiny\color{black!40}] at (2.55,1.1) {50\%};
+%     \node[below,font=\tiny\color{black!40}] at (5.05,1.1) {100\%};
+%   \end{tikzpicture}
+
+% \end{column}
+% \begin{column}{0.47\textwidth}
+
+%   \textbf{Observations}
+%   \begin{itemize}
+%     \item Majority vote and cascade both reach \textbf{84.9\%}
+%           — a \textbf{+5.4 pp} gain over any single model.
+%     \item RRF \emph{underperforms} the single best (74.0\%) —
+%           fusing ranked lists dilutes strong individual signals.
+%     \item Oracle = 91.8\%; the \textbf{7 pp gap} corresponds to
+%           5 queries that every embedder fails.
+%           No ensemble strategy closes it.
+%   \end{itemize}
+
+%   \vspace{0.8em}
+%   \begin{alertblock}{Interpretation}
+%     \small The 7 pp gap is not recoverable by aggregation.
+%     It requires a fundamentally different signal —
+%     either a better graph feature or a held-out-trained model.
+%   \end{alertblock}
+
+% \end{column}
+% \end{columns}
+% \end{frame}
+
+% % ══════════════════════════════════════════════════════════════════════
+% \section{Confusion Analysis}
+% % ══════════════════════════════════════════════════════════════════════
+
+% \begin{frame}{Where We Still Fail: Confusion Analysis}
+% \begin{columns}[T]
+% \begin{column}{0.50\textwidth}
+
+%   \textbf{Top confusions — Combined embedder}\\[4pt]
+%   {\small 15 misses total; 5 fail every embedder}
+
+%   \vspace{0.4em}
+%   {\small
+%   \renewcommand{\arraystretch}{1.3}
+%   \setlength{\tabcolsep}{5pt}
+%   \begin{tabular}{llcc}
+%     \toprule
+%     \textbf{Query CWE} & \textbf{Ret.\ CWE} & \textbf{N} & \textbf{WP} \\
+%     \midrule
+%     \rowcolor{miss!15}
+%     Type Confusion     & Use After Free      & 3 & 0.25 \\
+%     \rowcolor{miss!15}
+%     NULL Ptr Deref     & Use After Free      & 2 & 0.22 \\
+%     NULL Ptr Deref     & Unchecked Return    & 1 & 0.57 \\
+%     NULL Ptr Deref     & Out-of-bounds Wr.   & 1 & 0.29 \\
+%     Unchecked Return   & Use After Free      & 1 & 0.25 \\
+%     \bottomrule
+%   \end{tabular}}
+
+%   \vspace{0.5em}
+%   {\scriptsize\color{black!55}
+%   WP $> 0.5$ = taxonomically close (soft miss).\\
+%   \textcolor{miss!80!black}{Highlighted} rows = taxonomically far — genuine failures.}
+
+% \end{column}
+% \begin{column}{0.47\textwidth}
+
+%   \textbf{Why this matters}
+%   \begin{itemize}
+%     \item Only 1 of 5 confusion types is taxonomically close
+%           (NullPtr $\leftrightarrow$ Unchecked Return, WP=0.57).
+%     \item The dominant error — UAF retrieved for NullPtr or
+%           Type Confusion — is a \textbf{topological failure}:
+%           all three patch types add a guard node with
+%           similar graph structure.
+%     \item The CWE knowledge graph helps \emph{interpret}
+%           these errors but cannot fix them.
+%   \end{itemize}
+
+%   \vspace{0.5em}
+%   \begin{block}{The 5 hard cases}
+%     \small 5 CVEs fail \emph{every} embedder.
+%     Hypotheses: trivial single-token patch;
+%     graph too small; or missing feature
+%     (pointer aliasing, lock scope, data-flow depth).
+%     Manual inspection is the next step.
+%   \end{block}
+
+% \end{column}
+% \end{columns}
+% \end{frame}
+
+% % ══════════════════════════════════════════════════════════════════════
+% \section{Key Findings}
+% % ══════════════════════════════════════════════════════════════════════
+
+% \begin{frame}{Key Findings}
+%   \begin{enumerate}
+%     \item[\faIcon{star}]
+%       \textbf{Callgraph reranking is highly effective — but verify on held-out data.}\\
+%       Pure callgraph Jaccard ($\alpha{=}0$) reaches 95.9\% hit@1 for Combined
+%       (+16.4 pp vs.\ embedding only). However, augmented variants share callees
+%       nearly perfectly, inflating this number in self-retrieval.
+
+%     \vspace{0.7em}
+%     \item[\faIcon{layer-group}]
+%       \textbf{Ensembling gains +5.4 pp; oracle reveals a hard 7 pp ceiling.}\\
+%       Majority vote and cascade reach 84.9\%. The 7 pp gap to oracle (91.8\%)
+%       corresponds to 5 queries that every embedder fails — not recoverable
+%       by any aggregation strategy.
+
+%     \vspace{0.7em}
+%     \item[\faIcon{sitemap}]
+%       \textbf{Confusion errors are topological, not taxonomic.}\\
+%       Most misses have WP $< 0.4$ — they are genuinely wrong retrievals
+%       caused by structurally similar patch patterns across different CWE classes.
+%       The CWE knowledge graph illuminates but does not fix this.
+
+%     \vspace{0.7em}
+%     \item[\faIcon{exclamation-triangle}]
+%       \textbf{Self-retrieval is a ceiling, not a baseline.}\\
+%       Numbers are inflated by same-CVE callee overlap in the augmented dataset.
+%       Held-out evaluation is the prerequisite for all further design choices.
+%   \end{enumerate}
+% \end{frame}
+
+% % ══════════════════════════════════════════════════════════════════════
+% \section{Next Steps}
+% % ══════════════════════════════════════════════════════════════════════
+
+% \begin{frame}{Next Steps}
+% \begin{columns}[T]
+% \begin{column}{0.60\textwidth}
+
+%   \textbf{1. Held-out evaluation (priority)}\\[2pt]
+%   Build a query set where the correct CVE is not in the index —
+%   cross-version matches or real bug reports with known ground truth.
+%   All further architecture decisions depend on this.
+
+%   \vspace{0.8em}
+%   \textbf{2. Inspect the 5 persistent failures}\\[2pt]
+%   Manually examine the CVEs that fail every embedder.
+%   Hypotheses: single-token patch; graph too small;
+%   missing feature (pointer aliasing, lock scope, data-flow depth).
+
+%   \vspace{0.8em}
+%   \textbf{3. Hybrid GIN $\oplus$ CodeBERT embedder}\\[2pt]
+%   Concatenate GIN (graph topology) with CodeBERT (code semantics)
+%   and project to 128-d. They fail on complementary queries —
+%   a fusion should close part of the oracle gap.
+
+%   \vspace{0.8em}
+%   \textbf{4. Semantic graph diff}\\[2pt]
+%   Replace exact-string $G_{\text{vuln}}$ construction with
+%   node-level CodeBERT distance thresholding to catch
+%   logical rewrites invisible to string comparison.
+
+% \end{column}
+% \begin{column}{0.36\textwidth}
+
+%   \vspace{0.3em}
+%   \begin{block}{Current best (self-retrieval)}
+%     \centering\small
+%     Callgraph reranked: \textbf{95.9\%} hit@1\\[3pt]
+%     Ensemble (majority): \textbf{84.9\%} hit@1\\[3pt]
+%     Oracle upper bound: \textbf{91.8\%}
+%   \end{block}
+
+%   \vspace{0.6em}
+%   \begin{block}{Target (held-out eval)}
+%     \centering\small
+%     Hit@1 $\geq 50\%$ on unseen queries\\[3pt]
+%     CWE Recall $\geq 60\%$ macro avg
+%   \end{block}
+
+%   \vspace{0.6em}
+%   \begin{alertblock}{Key risk}
+%     \small The callgraph gain is partially an artefact
+%     of same-CVE callee overlap in the augmented dataset.
+%     Held-out evaluation is the priority.
+%   \end{alertblock}
+
+% \end{column}
+% \end{columns}
+% \end{frame}
 
 \begin{frame}[plain]
 \centering
