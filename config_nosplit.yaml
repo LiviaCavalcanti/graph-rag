@@ -32,6 +32,8 @@ graph:
 embeddings:
   active: [combined, codebert_seq, gin, wl, codebert_pattern, rgcn]
   dim: 128
+  projection: pca              # pca | none
+  l2_normalize: true            # true | false
   netlsd:
     timescales: 128
   wl:
