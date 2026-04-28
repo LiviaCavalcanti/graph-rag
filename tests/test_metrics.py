@@ -19,6 +19,15 @@ Run only low-severity:   pytest -m severity_low
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+# Ensure the project root is on sys.path so that `from src.…` imports
+# (used inside src/rag/index.py etc.) resolve correctly under pytest.
+_project_root = str(Path(__file__).resolve().parent.parent)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
 import numpy as np
 import pytest
 
@@ -218,11 +227,10 @@ class TestSelfRetrievalMetrics:
         embs, meta, _ = self._build_perfect_scenario(n=n)
         counting_retr = CountingRetriever(embs, meta)
         self_retrieval_metrics(embs, meta, counting_retr, ks=[1, 5])
-        # Implementation queries twice per sample:
-        # once for results_no_self filtering, once for all_results scoring
-        assert counting_retr.call_count == n * 2, (
-            f"Expected {n * 2} queries (two per sample), "
-            f"got {counting_retr.call_count}"
+        # Expected: one query per sample
+        assert counting_retr.call_count == n, (
+            f"Expected {n} queries (one per sample), "
+            f"got {counting_retr.call_count} — likely a double-query bug"
         )
 
 
@@ -327,13 +335,13 @@ class TestCWEGroupRecall:
         retr = FakeRetriever(embs, meta)
         result = cwe_group_recall(embs, meta, retr, top_k=3)
 
-        # Implementation excludes results by CVE ID string match,
-        # so both CVE-1 variants are removed when querying either one.
-        # Query idx 0 (CVE-1): excludes idx 0 & 1 → only CVE-2 → recall=0.5
-        # Query idx 1 (CVE-1): same → recall=0.5
-        # Query idx 2 (CVE-2): excludes idx 2 → CVE-1 x2 → recall=1.0
-        # Average = (0.5 + 0.5 + 1.0) / 3 ≈ 0.667
-        assert result["macro_avg"] == pytest.approx(2 / 3, abs=0.01)
+        # All 3 are CWE-A. For each query, after removing ONLY self,
+        # the other 2 results should both be CWE-A → recall = 1.0
+        assert result["macro_avg"] == pytest.approx(1.0), (
+            f"Got macro_avg={result['macro_avg']:.3f}. "
+            "Likely CVE-ID-based exclusion is removing augmented "
+            "variants that share the same CVE ID."
+        )
 
 
 # ===================================================================
@@ -365,19 +373,21 @@ class TestEmbeddingSpaceStats:
     @severity_low
     def test_pairwise_sim_bounded(self):
         """
-        Pairwise similarity on L2-normalized embeddings must be in [-1, 1].
-        The implementation assumes pre-normalized input (dot product = cosine).
+        BUG DETECTOR: cosine similarity must be in [-1, 1].
+        If embeddings are NOT L2-normalized, a naive dot product
+        gives values outside this range.
         """
         n, dim = 30, 8
         rng = np.random.RandomState(123)
-        embs = rng.randn(n, dim).astype(np.float32)
-        embs /= np.linalg.norm(embs, axis=1, keepdims=True)  # L2-normalize
+        embs = rng.randn(n, dim).astype(np.float32) * 5.0  # norm ≈ 5
         stats = embedding_space_stats(embs)
         assert stats["min_pairwise_sim"] >= -1.0 - 1e-3, (
-            f"min_pairwise_sim={stats['min_pairwise_sim']:.2f} < -1"
+            f"min_pairwise_sim={stats['min_pairwise_sim']:.2f} < -1: "
+            "dot product on non-unit vectors is not cosine similarity"
         )
         assert stats["max_pairwise_sim"] <= 1.0 + 1e-3, (
-            f"max_pairwise_sim={stats['max_pairwise_sim']:.2f} > 1"
+            f"max_pairwise_sim={stats['max_pairwise_sim']:.2f} > 1: "
+            "dot product on non-unit vectors is not cosine similarity"
         )
 
     def test_returns_all_expected_keys(self):
@@ -432,11 +442,11 @@ class TestEffectiveDim:
         assert ed < 2.0, f"effective_dim={ed:.1f}, expected ≈1 for 1D data"
 
     @severity_low
-    @pytest.mark.xfail(reason="_effective_dim returns NaN for zero-variance input (0/0 from zero eigenvalues)")
     def test_identical_embeddings_finite(self):
         """
-        All-identical embeddings → covariance is zero → all eigenvalues
-        are 0. Currently returns NaN from 0/0.
+        BUG DETECTOR: all-identical embeddings → covariance is zero →
+        all eigenvalues are 0. The function should return a finite value
+        (e.g. 0 or 1), not NaN from 0/0.
         """
         embs = np.ones((20, 8), dtype=np.float32)
         ed = _effective_dim(embs)
@@ -446,12 +456,13 @@ class TestEffectiveDim:
         )
 
     @severity_low
-    @pytest.mark.xfail(raises=np.linalg.LinAlgError, reason="np.cov on single sample produces 0-d array that breaks eigvalsh")
     def test_single_sample_does_not_crash(self):
         """
-        np.cov on a single sample returns a 0-d array which breaks eigvalsh.
+        BUG DETECTOR: np.cov on a single sample can return a 0-d
+        array, which breaks eigvalsh.
         """
         embs = np.array([[1.0, 2.0, 3.0]], dtype=np.float32)
+        # Should not raise — return some finite number
         ed = _effective_dim(embs)
         assert np.isfinite(ed), f"effective_dim crashed or returned {ed} for 1 sample"
 
@@ -467,11 +478,10 @@ class TestEffectiveDim:
         assert 1.5 < ed < 3.0, f"effective_dim={ed:.1f}, expected ≈2"
 
     @severity_low
-    @pytest.mark.xfail(reason="_effective_dim returns NaN for all-zero embeddings (0/0 from zero eigenvalues)")
     def test_all_zero_embeddings_finite(self):
         """
-        All-zero embeddings → covariance is zero → all eigenvalues are 0.
-        Currently returns NaN from 0/0.
+        BUG DETECTOR: all-zero embeddings are a valid degenerate case.
+        Should return a finite value, not NaN.
         """
         embs = np.zeros((10, 4), dtype=np.float32)
         ed = _effective_dim(embs)
@@ -487,14 +497,12 @@ class TestEmbeddingSpaceStatsEdgeCases:
     @severity_low
     def test_identical_embeddings_all_finite(self):
         """
-        All-identical embeddings: effective_dim is NaN (known limitation),
-        other stats should be finite.
+        BUG DETECTOR: all-identical embeddings. effective_dim should not
+        be NaN, and pairwise sim should be 1.0.
         """
         embs = np.tile([0.5, 0.5, 0.5, 0.5], (15, 1)).astype(np.float32)
         stats = embedding_space_stats(embs)
         for key, val in stats.items():
-            if key == 'effective_dim':
-                continue  # known NaN for zero-variance input
             assert np.isfinite(val), (
                 f"{key}={val} is not finite for identical embeddings"
             )
@@ -519,7 +527,7 @@ class TestLeaveOneOutMetrics:
     @pytest.fixture
     def _loo_setup(self, tmp_path):
         """Orthogonal unit vectors with unique CVE IDs — perfect LOO."""
-        from metrics.metrics import leave_one_out_metrics
+        # from src.metrics import leave_one_out_metrics
         from rag.hnsw import HNSWIndex
 
         n, dim = 5, 16
