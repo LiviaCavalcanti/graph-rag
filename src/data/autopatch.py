@@ -4,7 +4,6 @@ from typing import Iterator
 
 import networkx as nx
 
-from src.graph.joern_graph import get_cpg
 
 from .base import BaseDataset, ExportJob, FunctionPair
 from .pipeline import compute_graph_diff, load_cpg_dir, cpg_dir_for, read_supplementary_code
@@ -82,7 +81,7 @@ class AutoPatchDataset(BaseDataset):
             return None
         try:
             return json.loads(db_path.read_text())
-        except json.JSONDecoderError:
+        except json.JSONDecodeError:
             return None
 
     def stream(self) -> Iterator[FunctionPair]:
@@ -101,6 +100,7 @@ class AutoPatchDataset(BaseDataset):
                 "root_cause": db.get("root_cause", ""),
                 "fix_list": db.get("fix_list", []),
                 "function_prototype": db.get("function_prototype", ""),
+                "dir_name": cve_dir.name,
             }
 
             # original code
