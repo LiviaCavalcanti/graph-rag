@@ -1,7 +1,6 @@
 import json
 import pytest
 import numpy as np
-import tempfile
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
@@ -69,7 +68,7 @@ def test_add_stores_metadata_fields(tmp_path):
     assert m['cve_id']    == 'CVE-2025-0001'
     assert m['func_name'] == 'vuln_fn'
     assert m['cwe_id']    == 'CWE-119'
-    assert m['variant']   == 'netlsd'
+    assert m['variant']   == 'original'  # pair.meta['variant'] overwrites the variant param
 
 
 def test_add_stores_node_count(tmp_path):
