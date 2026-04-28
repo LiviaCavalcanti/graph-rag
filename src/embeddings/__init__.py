@@ -1,25 +1,24 @@
-from .motif import MotifEmbedder
-
-from .netlsd import NetLSDEmbedder
-from .wl import WLEmbedder
-from .gin import GINEmbedder
-from .combined import CombinedEmbedder
-from .rgcn import RGCNEmbedder
 from .codebert_seq import CodeBERTSeqEmbedder
-from .vuln_pattern import VulnPatternEmbedder, CodeBERTPatternEmbedder
 from .codexglue_baseline import CodeXGLUEBaselineEmbedder
+from .combined import CombinedEmbedder
+from .gin import GINEmbedder
+from .motif import MotifEmbedder
+from .netlsd import NetLSDEmbedder
+from .rgcn import RGCNEmbedder
+from .vuln_pattern import CodeBERTPatternEmbedder, VulnPatternEmbedder
+from .wl import WLEmbedder
 
 REGISTRY: dict[str, type] = {
     "netlsd": NetLSDEmbedder,
     "wl": WLEmbedder,
     "gin": GINEmbedder,
     "combined": CombinedEmbedder,
-    'motif':    MotifEmbedder,
-    'rgcn':  RGCNEmbedder,
-    'codebert_seq':    CodeBERTSeqEmbedder,
-    'vuln_pattern':    VulnPatternEmbedder,
-    'codebert_pattern': CodeBERTPatternEmbedder,
-    'codexglue_baseline': CodeXGLUEBaselineEmbedder,
+    "motif": MotifEmbedder,
+    "rgcn": RGCNEmbedder,
+    "codebert_seq": CodeBERTSeqEmbedder,
+    "vuln_pattern": VulnPatternEmbedder,
+    "codebert_pattern": CodeBERTPatternEmbedder,
+    "codexglue_baseline": CodeXGLUEBaselineEmbedder,
 }
 
 

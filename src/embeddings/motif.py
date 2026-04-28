@@ -13,9 +13,10 @@ This is the key insight: motif + semantic features are CWE-discriminative
 even when pure topology is not.
 """
 
-import numpy as np
 import networkx as nx
+import numpy as np
 from sklearn.random_projection import GaussianRandomProjection
+
 from .base import BaseEmbedder
 
 
@@ -27,7 +28,7 @@ class MotifEmbedder(BaseEmbedder):
 
     def __init__(self, cfg: dict):
         super().__init__(cfg)
-        self._projector = None   # fit on first embed_many call
+        self._projector = None  # fit on first embed_many call
 
     @property
     def name(self) -> str:
@@ -35,55 +36,72 @@ class MotifEmbedder(BaseEmbedder):
 
     def _raw_features(self, G: nx.MultiDiGraph) -> np.ndarray:
         import re
+
         if G.number_of_nodes() == 0:
             return np.zeros(64, dtype=np.float32)
 
         # ── motif histogram ────────────────────────────────────────
-        changed = {n for n,a in G.nodes(data=True)
-                   if a.get('diff') in ('removed','added','mutated','rewired')}
+        changed = {
+            n
+            for n, a in G.nodes(data=True)
+            if a.get("diff") in ("removed", "added", "mutated", "rewired")
+        }
         from knowledge.slicing import extract_motif_histogram
+
         motifs = extract_motif_histogram(G, changed or set(G.nodes()))
 
         # ── semantic CODE features ─────────────────────────────────
-        PTR   = re.compile(r'[*&]|->|\[')
-        ALLOC = re.compile(r'\b(malloc|calloc|kmalloc|alloc|new)\b')
-        FREE  = re.compile(r'\b(free|kfree|delete|release)\b')
-        LOCK  = re.compile(r'\b(lock|mutex|spin|acquire)\b')
-        CHECK = re.compile(r'\b(if|assert|check|verify|validate)\b')
-        CAST  = re.compile(r'\(\s*\w[\w\s\*]+\)')
+        PTR = re.compile(r"[*&]|->|\[")
+        ALLOC = re.compile(r"\b(malloc|calloc|kmalloc|alloc|new)\b")
+        FREE = re.compile(r"\b(free|kfree|delete|release)\b")
+        LOCK = re.compile(r"\b(lock|mutex|spin|acquire)\b")
+        CHECK = re.compile(r"\b(if|assert|check|verify|validate)\b")
+        CAST = re.compile(r"\(\s*\w[\w\s\*]+\)")
 
-        n          = G.number_of_nodes()
-        has_ptr    = has_alloc = has_free = has_lock = has_check = has_cast = 0
-        diff_wts   = []
+        n = G.number_of_nodes()
+        has_ptr = has_alloc = has_free = has_lock = has_check = has_cast = 0
+        diff_wts = []
         tok_counts = []
 
         for _, attr in G.nodes(data=True):
-            code = attr.get('CODE', '') or ''
-            has_ptr   += bool(PTR.search(code))
+            code = attr.get("CODE", "") or ""
+            has_ptr += bool(PTR.search(code))
             has_alloc += bool(ALLOC.search(code))
-            has_free  += bool(FREE.search(code))
-            has_lock  += bool(LOCK.search(code))
+            has_free += bool(FREE.search(code))
+            has_lock += bool(LOCK.search(code))
             has_check += bool(CHECK.search(code))
-            has_cast  += bool(CAST.search(code))
-            diff_wts.append(attr.get('diff_weight', 0.1))
+            has_cast += bool(CAST.search(code))
+            diff_wts.append(attr.get("diff_weight", 0.1))
             tok_counts.append(len(code.split()))
 
         # node type distribution
         from collections import Counter
-        ntypes    = Counter(a.get('labelV','UNKNOWN')
-                            for _,a in G.nodes(data=True))
-        etypes    = Counter(d.get('label','')
-                            for _,_,d in G.edges(data=True))
-        NODE_T    = ['METHOD','CALL','IDENTIFIER','LITERAL','RETURN',
-                     'BLOCK','CONTROL_STRUCTURE','LOCAL','PARAM']
-        EDGE_T    = ['AST','CFG','CDG','REF','ARGUMENT','REACHING_DEF']
-        node_hist = [ntypes.get(t,0)/n for t in NODE_T]
-        e         = max(G.number_of_edges(), 1)
-        edge_hist = [etypes.get(t,0)/e for t in EDGE_T]
+
+        ntypes = Counter(a.get("labelV", "UNKNOWN") for _, a in G.nodes(data=True))
+        etypes = Counter(d.get("label", "") for _, _, d in G.edges(data=True))
+        NODE_T = [
+            "METHOD",
+            "CALL",
+            "IDENTIFIER",
+            "LITERAL",
+            "RETURN",
+            "BLOCK",
+            "CONTROL_STRUCTURE",
+            "LOCAL",
+            "PARAM",
+        ]
+        EDGE_T = ["AST", "CFG", "CDG", "REF", "ARGUMENT", "REACHING_DEF"]
+        node_hist = [ntypes.get(t, 0) / n for t in NODE_T]
+        e = max(G.number_of_edges(), 1)
+        edge_hist = [etypes.get(t, 0) / e for t in EDGE_T]
 
         semantic = [
-            has_ptr/n, has_alloc/n, has_free/n,
-            has_lock/n, has_check/n, has_cast/n,
+            has_ptr / n,
+            has_alloc / n,
+            has_free / n,
+            has_lock / n,
+            has_check / n,
+            has_cast / n,
             float(np.mean(diff_wts)),
             float(np.std(diff_wts)),
             float(np.mean(tok_counts)),
@@ -95,10 +113,11 @@ class MotifEmbedder(BaseEmbedder):
         # ── NetLSD on the slice ────────────────────────────────────
         try:
             import netlsd
-            H  = nx.Graph(G)
+
+            H = nx.Graph(G)
             H.remove_nodes_from(list(nx.isolates(H)))
             if H.number_of_nodes() >= 3:
-                ts  = np.logspace(-2, 2, 16)
+                ts = np.logspace(-2, 2, 16)
                 lsd = netlsd.heat(H, timescales=ts).astype(np.float32)
                 lsd = lsd / (np.linalg.norm(lsd) + 1e-8)
             else:
@@ -106,13 +125,17 @@ class MotifEmbedder(BaseEmbedder):
         except Exception:
             lsd = np.zeros(16, dtype=np.float32)
 
-        raw = np.concatenate([
-            motifs,     # 8
-            node_hist,  # 9
-            edge_hist,  # 6
-            semantic,   # 12
-            lsd,        # 16
-        ]).astype(np.float32)   # total: 51
+        raw = np.concatenate(
+            [
+                motifs,  # 8
+                node_hist,  # 9
+                edge_hist,  # 6
+                semantic,  # 12
+                lsd,  # 16
+            ]
+        ).astype(
+            np.float32
+        )  # total: 51
 
         return raw
 
@@ -128,8 +151,8 @@ class MotifEmbedder(BaseEmbedder):
 
         if self._projector is None:
             self._projector = GaussianRandomProjection(
-                n_components = self.dim,
-                random_state = 42,
+                n_components=self.dim,
+                random_state=42,
             )
             self._projector.fit(raws)
 

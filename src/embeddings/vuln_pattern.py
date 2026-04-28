@@ -18,77 +18,84 @@ then PCA-projects — the key ablation variant.
 """
 
 import re
-import numpy as np
+
 import networkx as nx
+import numpy as np
+
 from .base import BaseEmbedder
 
 # ── constants ──────────────────────────────────────────────────────────
 
 ALL_EDGE_TYPES = [
-    'AST', 'CFG', 'CDG', 'REACHING_DEF',
-    'REF', 'ARGUMENT', 'RECEIVER', 'CALL',
+    "AST",
+    "CFG",
+    "CDG",
+    "REACHING_DEF",
+    "REF",
+    "ARGUMENT",
+    "RECEIVER",
+    "CALL",
 ]
 _EDGE_IDX = {t: i for i, t in enumerate(ALL_EDGE_TYPES)}
 
-FLOW_EDGE_TYPES = ('CFG', 'CDG', 'REACHING_DEF')
+FLOW_EDGE_TYPES = ("CFG", "CDG", "REACHING_DEF")
 
 CHANGED_THRESH = 0.3
 
-VULN_PATTERN_DIM = 34   # total raw feature dimension
+VULN_PATTERN_DIM = 34  # total raw feature dimension
 
 # ── regex patterns for code classification ─────────────────────────────
 
-RE_PTR_DEREF  = re.compile(r'\*\w|->')
-RE_ALLOC      = re.compile(
-    r'\b(malloc|calloc|kmalloc|kzalloc|alloc|realloc|krealloc|new)\b')
-RE_FREE       = re.compile(
-    r'\b(free|kfree|vfree|kvfree|delete|release)\b')
-RE_LOCK       = re.compile(
-    r'\b(lock|mutex_lock|spin_lock|down_read|down_write|rtnl_lock)\b')
-RE_UNLOCK     = re.compile(
-    r'\b(unlock|mutex_unlock|spin_unlock|up_read|up_write|rtnl_unlock)\b')
-RE_NULL_CHECK = re.compile(r'\b(NULL|null|nullptr)\b')
-RE_ARITH      = re.compile(r'[+\-*/]|<<|>>')
-RE_BOUNDS     = re.compile(
-    r'\b(MAX|MIN|SIZE_MAX|UINT_MAX|INT_MAX|limit|bound|clamp)\b', re.I)
-RE_CAST       = re.compile(
-    r'\(\s*(?:unsigned|signed|int|long|short|char|void|size_t'
-    r'|u?int\d+_t)\s*\*?\s*\)')
-RE_CHECK      = re.compile(
-    r'\b(if|assert|BUG_ON|WARN_ON|check|verify|IS_ERR)\b')
+RE_PTR_DEREF = re.compile(r"\*\w|->")
+RE_ALLOC = re.compile(r"\b(malloc|calloc|kmalloc|kzalloc|alloc|realloc|krealloc|new)\b")
+RE_FREE = re.compile(r"\b(free|kfree|vfree|kvfree|delete|release)\b")
+RE_LOCK = re.compile(r"\b(lock|mutex_lock|spin_lock|down_read|down_write|rtnl_lock)\b")
+RE_UNLOCK = re.compile(
+    r"\b(unlock|mutex_unlock|spin_unlock|up_read|up_write|rtnl_unlock)\b"
+)
+RE_NULL_CHECK = re.compile(r"\b(NULL|null|nullptr)\b")
+RE_ARITH = re.compile(r"[+\-*/]|<<|>>")
+RE_BOUNDS = re.compile(
+    r"\b(MAX|MIN|SIZE_MAX|UINT_MAX|INT_MAX|limit|bound|clamp)\b", re.I
+)
+RE_CAST = re.compile(
+    r"\(\s*(?:unsigned|signed|int|long|short|char|void|size_t"
+    r"|u?int\d+_t)\s*\*?\s*\)"
+)
+RE_CHECK = re.compile(r"\b(if|assert|BUG_ON|WARN_ON|check|verify|IS_ERR)\b")
 
 
 # ── helpers ────────────────────────────────────────────────────────────
 
+
 def _edge_type(data: dict) -> str:
-    return data.get('labelE') or data.get('label', '')
+    return data.get("labelE") or data.get("label", "")
 
 
 def _code(G: nx.MultiDiGraph, n) -> str:
-    return G.nodes[n].get('CODE', '') or ''
+    return G.nodes[n].get("CODE", "") or ""
 
 
 def _ntype(G: nx.MultiDiGraph, n) -> str:
-    return G.nodes[n].get('labelV', 'UNKNOWN')
+    return G.nodes[n].get("labelV", "UNKNOWN")
 
 
 def _is_changed(G: nx.MultiDiGraph, n) -> bool:
-    return float(G.nodes[n].get('diff_weight', 0.2)) > CHANGED_THRESH
+    return float(G.nodes[n].get("diff_weight", 0.2)) > CHANGED_THRESH
 
 
 def _out_by_type(G, n, etype):
     """Set of successors via edges of given type."""
-    return {v for _, v, d in G.out_edges(n, data=True)
-            if _edge_type(d) == etype}
+    return {v for _, v, d in G.out_edges(n, data=True) if _edge_type(d) == etype}
 
 
 def _in_by_type(G, n, etype):
     """Set of predecessors via edges of given type."""
-    return {u for u, _, d in G.in_edges(n, data=True)
-            if _edge_type(d) == etype}
+    return {u for u, _, d in G.in_edges(n, data=True) if _edge_type(d) == etype}
 
 
 # ── main feature extraction ───────────────────────────────────────────
+
 
 def build_vuln_pattern_features(G: nx.MultiDiGraph) -> np.ndarray:
     """
@@ -97,7 +104,7 @@ def build_vuln_pattern_features(G: nx.MultiDiGraph) -> np.ndarray:
 
     Returns np.ndarray of shape (34,).
     """
-    nodes   = list(G.nodes())
+    nodes = list(G.nodes())
     n_total = len(nodes)
     if n_total == 0:
         return np.zeros(VULN_PATTERN_DIM, dtype=np.float32)
@@ -115,32 +122,36 @@ def build_vuln_pattern_features(G: nx.MultiDiGraph) -> np.ndarray:
         n_changed = len(changed)
 
     # ── classify changed nodes ─────────────────────────────────────
-    free_nodes    = set()
-    alloc_nodes   = set()
-    lock_nodes    = set()
-    unlock_nodes  = set()
-    deref_nodes   = set()   # pointer dereferences
-    arith_nodes   = set()   # arithmetic operations
-    cast_nodes    = set()   # type casts
-    check_nodes   = set()   # if / assert / null-check
+    free_nodes = set()
+    alloc_nodes = set()
+    lock_nodes = set()
+    unlock_nodes = set()
+    deref_nodes = set()  # pointer dereferences
+    arith_nodes = set()  # arithmetic operations
+    cast_nodes = set()  # type casts
+    check_nodes = set()  # if / assert / null-check
     changed_calls = set()
-    changed_ids   = set()
+    changed_ids = set()
 
     for n in changed:
-        nt   = _ntype(G, n)
+        nt = _ntype(G, n)
         code = _code(G, n)
 
-        if nt == 'CALL':
+        if nt == "CALL":
             changed_calls.add(n)
-            if RE_FREE.search(code):    free_nodes.add(n)
-            if RE_ALLOC.search(code):   alloc_nodes.add(n)
-            if RE_LOCK.search(code):    lock_nodes.add(n)
-            if RE_UNLOCK.search(code):  unlock_nodes.add(n)
-        elif nt == 'IDENTIFIER':
+            if RE_FREE.search(code):
+                free_nodes.add(n)
+            if RE_ALLOC.search(code):
+                alloc_nodes.add(n)
+            if RE_LOCK.search(code):
+                lock_nodes.add(n)
+            if RE_UNLOCK.search(code):
+                unlock_nodes.add(n)
+        elif nt == "IDENTIFIER":
             changed_ids.add(n)
             if RE_PTR_DEREF.search(code):
                 deref_nodes.add(n)
-        elif nt == 'CONTROL_STRUCTURE':
+        elif nt == "CONTROL_STRUCTURE":
             if RE_CHECK.search(code) or RE_NULL_CHECK.search(code):
                 check_nodes.add(n)
 
@@ -156,13 +167,13 @@ def build_vuln_pattern_features(G: nx.MultiDiGraph) -> np.ndarray:
     a1 = 0.0
     for fn in free_nodes:
         # 1-hop: direct REACHING_DEF from free to an identifier
-        rd = _out_by_type(G, fn, 'REACHING_DEF')
+        rd = _out_by_type(G, fn, "REACHING_DEF")
         if rd & changed_ids:
             a1 = 1.0
             break
         # 2-hop: free → X → identifier
         for mid in rd:
-            if _out_by_type(G, mid, 'REACHING_DEF') & changed_ids:
+            if _out_by_type(G, mid, "REACHING_DEF") & changed_ids:
                 a1 = 1.0
                 break
         if a1:
@@ -173,12 +184,12 @@ def build_vuln_pattern_features(G: nx.MultiDiGraph) -> np.ndarray:
     if deref_nodes:
         unguarded = 0
         for dn in deref_nodes:
-            cdg_preds = _in_by_type(G, dn, 'CDG')
+            cdg_preds = _in_by_type(G, dn, "CDG")
             guarded = any(n in check_nodes for n in cdg_preds)
             if not guarded:
                 # 2-hop CDG check
                 for p in cdg_preds:
-                    if _in_by_type(G, p, 'CDG') & check_nodes:
+                    if _in_by_type(G, p, "CDG") & check_nodes:
                         guarded = True
                         break
             if not guarded:
@@ -191,15 +202,13 @@ def build_vuln_pattern_features(G: nx.MultiDiGraph) -> np.ndarray:
     if changed_calls:
         unchecked = 0
         for cn in changed_calls:
-            succs = _out_by_type(G, cn, 'REACHING_DEF')
-            has_check = any(
-                _ntype(G, s) == 'CONTROL_STRUCTURE' for s in succs)
+            succs = _out_by_type(G, cn, "REACHING_DEF")
+            has_check = any(_ntype(G, s) == "CONTROL_STRUCTURE" for s in succs)
             if not has_check:
                 # 2-hop
                 for s in succs:
-                    s2 = _out_by_type(G, s, 'REACHING_DEF')
-                    if any(_ntype(G, x) == 'CONTROL_STRUCTURE'
-                           for x in s2):
+                    s2 = _out_by_type(G, s, "REACHING_DEF")
+                    if any(_ntype(G, x) == "CONTROL_STRUCTURE" for x in s2):
                         has_check = True
                         break
             if not has_check:
@@ -215,9 +224,8 @@ def build_vuln_pattern_features(G: nx.MultiDiGraph) -> np.ndarray:
     if arith_nodes:
         unguarded = 0
         for an in arith_nodes:
-            neigh = _in_by_type(G, an, 'CDG') | _out_by_type(G, an, 'CDG')
-            has_bound = any(RE_BOUNDS.search(_code(G, nb))
-                           for nb in neigh)
+            neigh = _in_by_type(G, an, "CDG") | _out_by_type(G, an, "CDG")
+            has_bound = any(RE_BOUNDS.search(_code(G, nb)) for nb in neigh)
             if not has_bound:
                 unguarded += 1
         a5 = unguarded / len(arith_nodes)
@@ -226,8 +234,9 @@ def build_vuln_pattern_features(G: nx.MultiDiGraph) -> np.ndarray:
     #     REACHING_DEF (uninitialised variable signal)
     a6 = 0.0
     if changed_ids:
-        no_def = sum(1 for idn in changed_ids
-                     if not _in_by_type(G, idn, 'REACHING_DEF'))
+        no_def = sum(
+            1 for idn in changed_ids if not _in_by_type(G, idn, "REACHING_DEF")
+        )
         a6 = no_def / len(changed_ids)
 
     # A7: Alloc/free imbalance (resource leak signal)
@@ -237,14 +246,13 @@ def build_vuln_pattern_features(G: nx.MultiDiGraph) -> np.ndarray:
     # A8: Type cast connected via REACHING_DEF to other changed nodes
     a8 = 0.0
     for cn in cast_nodes:
-        rd_in  = _in_by_type(G, cn, 'REACHING_DEF')
-        rd_out = _out_by_type(G, cn, 'REACHING_DEF')
+        rd_in = _in_by_type(G, cn, "REACHING_DEF")
+        rd_out = _out_by_type(G, cn, "REACHING_DEF")
         if (rd_in | rd_out) & changed:
             a8 = 1.0
             break
 
-    flow_patterns = np.array(
-        [a1, a2, a3, a4, a5, a6, a7, a8], dtype=np.float32)
+    flow_patterns = np.array([a1, a2, a3, a4, a5, a6, a7, a8], dtype=np.float32)
 
     # ── Group B: diff edge composition (8) ─────────────────────────
     # Fraction of each edge type among edges touching changed nodes.
@@ -264,41 +272,40 @@ def build_vuln_pattern_features(G: nx.MultiDiGraph) -> np.ndarray:
         et = _edge_type(d)
         u_ch, v_ch = u in changed, v in changed
         if u_ch == v_ch:
-            continue   # both changed or both context — not a boundary
-        if et == 'CFG':
+            continue  # both changed or both context — not a boundary
+        if et == "CFG":
             boundary[0 if u_ch else 1] += 1
-        elif et == 'CDG':
+        elif et == "CDG":
             boundary[2 if u_ch else 3] += 1
-        elif et == 'REACHING_DEF':
+        elif et == "REACHING_DEF":
             boundary[4 if u_ch else 5] += 1
     b_total = boundary.sum()
     boundary = boundary / (b_total + 1e-8)
 
     # ── Group D: diff topology stats (6) ───────────────────────────
     changed_sub = G.subgraph(changed)
-    n_edges_ch  = changed_sub.number_of_edges()
+    n_edges_ch = changed_sub.number_of_edges()
 
-    d1 = n_changed / (n_total + 1e-8)                    # changed frac
-    d2 = (n_edges_ch / (n_changed * max(n_changed - 1, 1))
-          if n_changed > 1 else 0.0)                      # density
+    d1 = n_changed / (n_total + 1e-8)  # changed frac
+    d2 = (
+        n_edges_ch / (n_changed * max(n_changed - 1, 1)) if n_changed > 1 else 0.0
+    )  # density
     # connected components (undirected view)
-    d3 = (nx.number_connected_components(nx.Graph(changed_sub))
-          / (n_changed + 1e-8))
+    d3 = nx.number_connected_components(nx.Graph(changed_sub)) / (n_changed + 1e-8)
     degs = [changed_sub.degree(n) for n in changed]
-    d4 = np.mean(degs) / max(n_changed, 1)               # mean degree
+    d4 = np.mean(degs) / max(n_changed, 1)  # mean degree
     d5 = max(degs) / max(n_changed, 1) if degs else 0.0  # max degree
     # internal vs crossing edges
     n_crossing = sum(
-        1 for u, v, _ in G.edges(data=True)
-        if (u in changed) != (v in changed))
+        1 for u, v, _ in G.edges(data=True) if (u in changed) != (v in changed)
+    )
     d6 = n_edges_ch / (n_edges_ch + n_crossing + 1e-8)
 
     topology = np.array([d1, d2, d3, d4, d5, d6], dtype=np.float32)
 
     # ── Group E: changed node role distribution (6) ────────────────
-    ROLE_TYPES = ['CALL', 'CONTROL_STRUCTURE', 'IDENTIFIER',
-                  'LITERAL', 'BLOCK']
-    role_counts = np.zeros(6, dtype=np.float32)   # 5 named + OTHER
+    ROLE_TYPES = ["CALL", "CONTROL_STRUCTURE", "IDENTIFIER", "LITERAL", "BLOCK"]
+    role_counts = np.zeros(6, dtype=np.float32)  # 5 named + OTHER
     for n in changed:
         nt = _ntype(G, n)
         if nt in ROLE_TYPES:
@@ -307,16 +314,19 @@ def build_vuln_pattern_features(G: nx.MultiDiGraph) -> np.ndarray:
             role_counts[5] += 1
     roles = role_counts / (n_changed + 1e-8)
 
-    return np.concatenate([
-        flow_patterns,   # 8
-        edge_fracs,      # 8
-        boundary,        # 6
-        topology,        # 6
-        roles,           # 6
-    ])                   # total = 34
+    return np.concatenate(
+        [
+            flow_patterns,  # 8
+            edge_fracs,  # 8
+            boundary,  # 6
+            topology,  # 6
+            roles,  # 6
+        ]
+    )  # total = 34
 
 
 # ── VulnPattern-only embedder ─────────────────────────────────────────
+
 
 class VulnPatternEmbedder(BaseEmbedder):
     """
@@ -326,7 +336,7 @@ class VulnPatternEmbedder(BaseEmbedder):
 
     def __init__(self, cfg: dict):
         super().__init__(cfg)
-        self._pca    = None
+        self._pca = None
         self._fitted = False
 
     @property
@@ -336,20 +346,20 @@ class VulnPatternEmbedder(BaseEmbedder):
     @staticmethod
     def build_raw_many(graphs: list[nx.MultiDiGraph]) -> np.ndarray:
         """Raw pattern features for a list of graphs (N, 34)."""
-        return np.stack([
-            build_vuln_pattern_features(G) for G in graphs
-        ]).astype(np.float32)
+        return np.stack([build_vuln_pattern_features(G) for G in graphs]).astype(
+            np.float32
+        )
 
     def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
         raw = build_vuln_pattern_features(G).reshape(1, -1)
-        if self.projection == 'none':
+        if self.projection == "none":
             return self._norm_vec(raw[0])
         if not self._fitted:
             raise RuntimeError("Call embed_many() first to fit PCA")
         proj = self._pca.transform(raw)[0].astype(np.float32)
         if proj.shape[0] < self.dim:
             padded = np.zeros(self.dim, dtype=np.float32)
-            padded[:proj.shape[0]] = proj
+            padded[: proj.shape[0]] = proj
             proj = padded
         return self._norm_vec(proj)
 
@@ -358,12 +368,13 @@ class VulnPatternEmbedder(BaseEmbedder):
         if raw.shape[0] == 0:
             return np.zeros((len(graphs), self.dim), dtype=np.float32)
 
-        if self.projection == 'none':
+        if self.projection == "none":
             self.dim = raw.shape[1]
             print(f"    [vuln_pattern] no projection — dim={self.dim}")
             return self._norm_mat(raw)
 
         from sklearn.decomposition import PCA
+
         out = np.zeros((len(graphs), self.dim), dtype=np.float32)
 
         if not self._fitted:
@@ -372,18 +383,21 @@ class VulnPatternEmbedder(BaseEmbedder):
             self._pca.fit(raw)
             self._fitted = True
             expl = self._pca.explained_variance_ratio_.sum()
-            print(f"    [vuln_pattern] PCA fitted — {n_comp} comp, "
-                  f"explained variance: {expl:.2%}")
+            print(
+                f"    [vuln_pattern] PCA fitted — {n_comp} comp, "
+                f"explained variance: {expl:.2%}"
+            )
 
         projected = self._pca.transform(raw).astype(np.float32)
         if projected.shape[1] < self.dim:
-            padded = np.zeros((projected.shape[0], self.dim),
-                              dtype=np.float32)
-            padded[:, :projected.shape[1]] = projected
+            padded = np.zeros((projected.shape[0], self.dim), dtype=np.float32)
+            padded[:, : projected.shape[1]] = projected
             projected = padded
         return self._norm_mat(projected)
 
+
 # ── CodeBERT + VulnPattern fusion ──────────────────────────────────────
+
 
 class CodeBERTPatternEmbedder(BaseEmbedder):
     """
@@ -398,9 +412,10 @@ class CodeBERTPatternEmbedder(BaseEmbedder):
         super().__init__(cfg)
         # lazily import to avoid circular deps
         from .codebert_seq import CodeBERTSeqEmbedder, collect_changed_code
+
         self._cb_embedder = CodeBERTSeqEmbedder(cfg)
         self._collect = collect_changed_code
-        self._pca    = None
+        self._pca = None
         self._fitted = False
 
     @property
@@ -408,7 +423,8 @@ class CodeBERTPatternEmbedder(BaseEmbedder):
         return "codebert_pattern"
 
     def _build_raw(
-        self, graphs: list[nx.MultiDiGraph],
+        self,
+        graphs: list[nx.MultiDiGraph],
     ) -> tuple[np.ndarray, list[int]]:
         """Concatenated [pattern(34) || codebert(768)] for each graph."""
         # structural patterns (fast, no model)
@@ -424,22 +440,24 @@ class CodeBERTPatternEmbedder(BaseEmbedder):
         # valid = non-degenerate graphs
         valid = []
         for i in range(len(graphs)):
-            if (np.linalg.norm(pattern_raw[i]) > 1e-8
-                    or np.linalg.norm(cb_raw[i]) > 1e-8):
+            if (
+                np.linalg.norm(pattern_raw[i]) > 1e-8
+                or np.linalg.norm(cb_raw[i]) > 1e-8
+            ):
                 valid.append(i)
 
         return raw, valid
 
     def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
         raw, _ = self._build_raw([G])
-        if self.projection == 'none':
+        if self.projection == "none":
             return self._norm_vec(raw[0])
         if not self._fitted:
             raise RuntimeError("Call embed_many() first to fit PCA")
         proj = self._pca.transform(raw)[0].astype(np.float32)
         if proj.shape[0] < self.dim:
             padded = np.zeros(self.dim, dtype=np.float32)
-            padded[:proj.shape[0]] = proj
+            padded[: proj.shape[0]] = proj
             proj = padded
         return self._norm_vec(proj)
 
@@ -448,7 +466,7 @@ class CodeBERTPatternEmbedder(BaseEmbedder):
         if not valid_idx:
             return np.zeros((len(graphs), self.dim), dtype=np.float32)
 
-        if self.projection == 'none':
+        if self.projection == "none":
             self.dim = raw.shape[1]
             out = np.zeros((len(graphs), self.dim), dtype=np.float32)
             projected = self._norm_mat(raw)
@@ -458,24 +476,25 @@ class CodeBERTPatternEmbedder(BaseEmbedder):
             return out
 
         from sklearn.decomposition import PCA
+
         out = np.zeros((len(graphs), self.dim), dtype=np.float32)
         valid_raw = raw[valid_idx]
 
         if not self._fitted:
-            n_comp = min(self.dim, valid_raw.shape[0] - 1,
-                         valid_raw.shape[1])
+            n_comp = min(self.dim, valid_raw.shape[0] - 1, valid_raw.shape[1])
             self._pca = PCA(n_components=n_comp, random_state=42)
             self._pca.fit(valid_raw)
             self._fitted = True
             expl = self._pca.explained_variance_ratio_.sum()
-            print(f"    [codebert_pattern] PCA fitted — {n_comp} comp, "
-                  f"explained variance: {expl:.2%}")
+            print(
+                f"    [codebert_pattern] PCA fitted — {n_comp} comp, "
+                f"explained variance: {expl:.2%}"
+            )
 
         projected = self._pca.transform(raw).astype(np.float32)
         if projected.shape[1] < self.dim:
-            padded = np.zeros((projected.shape[0], self.dim),
-                              dtype=np.float32)
-            padded[:, :projected.shape[1]] = projected
+            padded = np.zeros((projected.shape[0], self.dim), dtype=np.float32)
+            padded[:, : projected.shape[1]] = projected
             projected = padded
         projected = self._norm_mat(projected)
 

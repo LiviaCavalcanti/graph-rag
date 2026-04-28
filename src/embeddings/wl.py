@@ -1,15 +1,24 @@
-import numpy as np
 import networkx as nx
+import numpy as np
 import torch
 import torch.nn.functional as F
-from torch_geometric.nn import WLConv, global_add_pool
 from torch_geometric.data import Data
+from torch_geometric.nn import WLConv, global_add_pool
+
 from .base import BaseEmbedder
 
 NODE_TYPES = [
-    'METHOD', 'METHOD_PARAMETER_IN', 'BLOCK', 'LOCAL',
-    'CALL', 'IDENTIFIER', 'LITERAL', 'RETURN',
-    'CONTROL_STRUCTURE', 'FIELD_IDENTIFIER', 'UNKNOWN'
+    "METHOD",
+    "METHOD_PARAMETER_IN",
+    "BLOCK",
+    "LOCAL",
+    "CALL",
+    "IDENTIFIER",
+    "LITERAL",
+    "RETURN",
+    "CONTROL_STRUCTURE",
+    "FIELD_IDENTIFIER",
+    "UNKNOWN",
 ]
 NODE_TYPE_IDX = {t: i for i, t in enumerate(NODE_TYPES)}
 
@@ -22,7 +31,7 @@ def nx_to_pyg(G: nx.MultiDiGraph) -> Data | None:
 
     colours = []
     for n in nodes:
-        ntype = G.nodes[n].get('labelV', 'UNKNOWN')
+        ntype = G.nodes[n].get("labelV", "UNKNOWN")
         colours.append(NODE_TYPE_IDX.get(ntype, len(NODE_TYPES) - 1))
 
     edge_index = [[], []]
@@ -32,8 +41,8 @@ def nx_to_pyg(G: nx.MultiDiGraph) -> Data | None:
             edge_index[1].append(idx[v])
 
     return Data(
-        x          = torch.tensor(colours, dtype=torch.long),
-        edge_index = torch.tensor(edge_index, dtype=torch.long),
+        x=torch.tensor(colours, dtype=torch.long),
+        edge_index=torch.tensor(edge_index, dtype=torch.long),
     )
 
 
@@ -46,15 +55,15 @@ class WLEmbedder(BaseEmbedder):
 
     def __init__(self, cfg: dict):
         super().__init__(cfg)
-        self.num_iterations = cfg.get('wl', {}).get('num_iterations', 4)
-        self.hidden_dim     = cfg.get('wl', {}).get('hidden_dim', 64)
+        self.num_iterations = cfg.get("wl", {}).get("num_iterations", 4)
+        self.hidden_dim = cfg.get("wl", {}).get("hidden_dim", 64)
 
-        seed = cfg.get('wl', {}).get('seed', 42)
+        seed = cfg.get("wl", {}).get("seed", 42)
         torch.manual_seed(seed)
 
-        self.convs     = torch.nn.ModuleList([WLConv() for _ in range(self.num_iterations)])
+        self.convs = torch.nn.ModuleList([WLConv() for _ in range(self.num_iterations)])
         self.embedding = torch.nn.Embedding(8192, self.hidden_dim)
-        self.proj      = torch.nn.Linear(self.hidden_dim * self.num_iterations, self.dim)
+        self.proj = torch.nn.Linear(self.hidden_dim * self.num_iterations, self.dim)
 
     @property
     def name(self) -> str:
@@ -63,7 +72,7 @@ class WLEmbedder(BaseEmbedder):
     def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
         if G.number_of_nodes() < 3:
             return np.zeros(self.dim, dtype=np.float32)
-        
+
         data = nx_to_pyg(G)
         if data is None:
             return np.zeros(self.dim, dtype=np.float32)
@@ -72,15 +81,14 @@ class WLEmbedder(BaseEmbedder):
         data.batch = torch.zeros(data.x.shape[0], dtype=torch.long)
 
         colours = data.x
-        pooled  = []
+        pooled = []
         for conv in self.convs:
             colours = conv(colours, data.edge_index)
             colours = colours % self.embedding.num_embeddings
-            emb     = self.embedding(colours)
+            emb = self.embedding(colours)
             pooled.append(global_add_pool(emb, data.batch))  # (1, hidden_dim)
 
-            
-        out = torch.cat(pooled, dim=1)           # (1, hidden_dim * num_iterations)
-        out = self.proj(out).detach().numpy()[0] # (dim,)
+        out = torch.cat(pooled, dim=1)  # (1, hidden_dim * num_iterations)
+        out = self.proj(out).detach().numpy()[0]  # (dim,)
 
         return self._norm_vec(out)

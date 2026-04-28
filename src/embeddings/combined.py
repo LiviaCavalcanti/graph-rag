@@ -1,10 +1,11 @@
+import networkx as nx
 import numpy as np
 from sklearn.decomposition import PCA
-import networkx as nx
+
 from .base import BaseEmbedder
+from .gin import GINEmbedder
 from .netlsd import NetLSDEmbedder
 from .wl import WLEmbedder
-from .gin import GINEmbedder
 
 
 class CombinedEmbedder(BaseEmbedder):
@@ -17,9 +18,9 @@ class CombinedEmbedder(BaseEmbedder):
     def __init__(self, cfg: dict):
         super().__init__(cfg)
         self._netlsd = NetLSDEmbedder(cfg)
-        self._wl     = WLEmbedder(cfg)
-        self._gin    = GINEmbedder(cfg)
-        self._pca    = None
+        self._wl = WLEmbedder(cfg)
+        self._gin = GINEmbedder(cfg)
+        self._pca = None
         self._fitted = False
 
     @property
@@ -28,7 +29,7 @@ class CombinedEmbedder(BaseEmbedder):
 
     def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
         raw = self._raw_one(G)
-        if self.projection == 'none':
+        if self.projection == "none":
             return self._norm_vec(raw)
         if not self._fitted:
             raise RuntimeError("Call embed_many() first to fit PCA")
@@ -44,7 +45,7 @@ class CombinedEmbedder(BaseEmbedder):
     def embed_many(self, graphs: list[nx.MultiDiGraph]) -> np.ndarray:
         raws = np.stack([self._raw_one(G) for G in graphs]).astype(np.float32)
 
-        if self.projection == 'none':
+        if self.projection == "none":
             self.dim = raws.shape[1]
             print(f"    [combined] no projection — dim={self.dim}")
             return self._norm_mat(raws)
