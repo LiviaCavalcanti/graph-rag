@@ -45,7 +45,7 @@ def _get_target_code(query_pair, target_db: dict) -> str:
     For original variants it's a file path; fall back to db_entry['original_code'].
     """
     code = query_pair.meta.get("source_before", "")
-    if code and not Path(code).exists():
+    if code :
         # inline code (augmented variant)
         return strip_code_fences(code)
     # original variant — prefer db_entry which has the actual code string
@@ -108,6 +108,20 @@ def _run_single_query(
     target_dir = query_pair.meta.get("dir_name", "")
     example_db = db_cache.get(example_dir)
     target_db = db_cache.get(target_dir)
+
+    # fallback: when dir_name is empty (e.g. older precomputed results),
+    # scan db_cache for a matching cve_id
+    if not example_db and example_dir == "":
+        ex_cve = getattr(example_pair, "cve_id", None) or example_pair.meta.get("cve_id", "")
+        for dname, db in db_cache.items():
+            if db.get("cve_id") == ex_cve or dname.startswith(ex_cve):
+                example_db = db
+                break
+    if not target_db and target_dir == "":
+        for dname, db in db_cache.items():
+            if db.get("cve_id") == cve_id or dname.startswith(cve_id):
+                target_db = db
+                break
 
     if not example_db or not target_db:
         return {**base, "status": "skipped", "reason": "missing_db_entry",
@@ -173,7 +187,7 @@ def _run_single_query(
         "retrieval": retrieval_info,
         "raw_output_len": len(raw_output),
         "generated_patch": parsed["vuln_patch"] if parsed else None,
-        "ground_truth_patch": ground_truth[:500],
+        "ground_truth_patch": ground_truth,
     }
 
 
