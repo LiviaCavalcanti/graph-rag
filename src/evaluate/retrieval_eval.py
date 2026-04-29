@@ -27,8 +27,9 @@ from experiments.common import build_split, load_config, load_pairs
 from src.embeddings import build_embedders
 from src.evaluate.preprocessing import extract_function_body
 from src.metrics.metrics import hits_at_k, mean_reciprocal_rank
-from src.rag.index import FAISSIndex
+from src.rag.faiss_index import FAISSIndex
 from src.rag.retriever import Retriever
+from src.rag.utils import populate_index
 
 
 def _build_index_and_retriever(
@@ -86,11 +87,11 @@ def _build_index_and_retriever(
             index_path=rag_cfg["index_path"],
             metadata_path=rag_cfg["metadata_path"],
         )
-        for pair, vec in zip(index_pairs, embeddings):
-            index.add(pair, vec, embedder.name)
+        retriever = populate_index(index, index_pairs, embeddings, embedder.name, top_k=top_k)
         print(f"Built fresh index: {index.index.ntotal} vectors, dim={dim}")
+    else:
+        retriever = Retriever(index, top_k=top_k)
 
-    retriever = Retriever(index, top_k=top_k)
     return embedder, retriever
 
 
