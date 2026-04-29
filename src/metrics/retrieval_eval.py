@@ -18,6 +18,19 @@ from src.io import read_code_file
 # ── ranx helpers ─────────────────────────────────────────────────────
 
 
+def _doc_id(result: dict, rank: int, qid: str) -> str:
+    """Return a stable global document id from a retriever result.
+
+    The ``Retriever`` always injects ``_idx`` (the FAISS vector position)
+    into every result dict, so each document has a canonical id.
+    Falls back to a per-query rank-based id for non-FAISS retrievers.
+    """
+    idx = result.get("_idx")
+    if idx is not None:
+        return f"d{idx}"
+    return f"d_rank{rank}_{qid}"
+
+
 def _build_cve_qrels_and_run(
     query_results: list[tuple[str, str, list[dict]]],
     index_metadata: list[dict] | None = None,
@@ -50,50 +63,17 @@ def _build_cve_qrels_and_run(
                 q_qrels[doc_id] = 1
 
         for j, r in enumerate(results):
-            doc_id = f"d{j}_{qid}"  # unique per query to avoid collisions
-            # If we don't have full index metadata, use per-query doc ids
-            if index_metadata is None:
-                if r.get("cve_id") == query_cve:
-                    q_qrels[doc_id] = 1
+            doc_id = _doc_id(r, j, qid)
             q_run[doc_id] = float(r.get("score", 0.0))
-
-        # When using full index metadata, remap retrieved results to
-        # the global doc ids so they match the qrels keys.
-        if index_metadata is not None:
-            q_run = {}
-            for j, r in enumerate(results):
-                # Find matching index entry by position hint or metadata
-                doc_id = _find_global_doc_id(r, index_metadata, cve_to_docs)
-                if doc_id is None:
-                    doc_id = f"d_unk_{j}_{qid}"
-                q_run[doc_id] = float(r.get("score", 0.0))
+            # Without full index metadata, judge from retrieved results
+            if index_metadata is None and r.get("cve_id") == query_cve:
+                q_qrels[doc_id] = 1
 
         if q_run:
             qrels_dict[qid] = q_qrels if q_qrels else {"__none__": 0}
             run_dict[qid] = q_run
 
     return Qrels(qrels_dict), Run(run_dict)
-
-
-def _find_global_doc_id(
-    result: dict,
-    index_metadata: list[dict],
-    cve_to_docs: dict[str, list[str]],
-) -> str | None:
-    """Best-effort map a retriever result back to its global index position."""
-    cve = result.get("cve_id", "")
-    variant = result.get("variant", "")
-    func = result.get("func_name", "")
-    for idx, m in enumerate(index_metadata):
-        if (
-            m.get("cve_id") == cve
-            and m.get("variant", "") == variant
-            and m.get("func_name", "") == func
-        ):
-            return f"d{idx}"
-    # Fallback: first doc with same CVE
-    docs = cve_to_docs.get(cve, [])
-    return docs[0] if docs else None
 
 
 def _ranx_metrics(qrels: Qrels, run: Run, ks: list[int]) -> dict:
@@ -263,12 +243,7 @@ def cross_cwe_recall(
                 q_qrels[f"d{idx}"] = 1
         q_run: dict[str, float] = {}
         for j, r in enumerate(results):
-            doc_id = _find_global_doc_id(
-                r, index_metadata, defaultdict(list)
-            )
-            if doc_id is None:
-                doc_id = f"d_unk_{j}_{qid}"
-            q_run[doc_id] = float(r.get("score", 0.0))
+            q_run[_doc_id(r, j, qid)] = float(r.get("score", 0.0))
 
         if q_qrels and q_run:
             qrels_dict[qid] = q_qrels
@@ -308,8 +283,7 @@ def cross_cwe_recall(
     if qrels_dict and run_dict:
         qrels = Qrels(qrels_dict)
         run = Run(run_dict)
-        ranx_scores = ranx_evaluate(qrels, run, [f"recall@{top_k}"])
-        ranx_recall = float(ranx_scores.get(f"recall@{top_k}", 0.0))
+        ranx_recall = float(ranx_evaluate(qrels, run, f"recall@{top_k}"))
 
     macro = float(np.mean([v["recall"] for v in per_cwe.values()])) if per_cwe else 0.0
     return {
@@ -474,10 +448,7 @@ def evaluate_cwe_recall(
                 q_qrels[f"d{idx}"] = 1
         q_run: dict[str, float] = {}
         for j, r in enumerate(res):
-            doc_id = _find_global_doc_id(r, index_metadata, defaultdict(list))
-            if doc_id is None:
-                doc_id = f"d_unk_{j}_{qid}"
-            q_run[doc_id] = float(r.get("score", 0.0))
+            q_run[_doc_id(r, j, qid)] = float(r.get("score", 0.0))
 
         if q_qrels and q_run:
             qrels_dict[qid] = q_qrels
@@ -498,8 +469,7 @@ def evaluate_cwe_recall(
     if qrels_dict and run_dict:
         qrels = Qrels(qrels_dict)
         run = Run(run_dict)
-        ranx_scores = ranx_evaluate(qrels, run, [f"recall@{top_k}"])
-        ranx_recall = float(ranx_scores.get(f"recall@{top_k}", 0.0))
+        ranx_recall = float(ranx_evaluate(qrels, run, f"recall@{top_k}"))
 
     return {
         "per_cwe": per_cwe,
