@@ -387,7 +387,6 @@ if __name__ == "__main__":
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
 
-    active = [n for n in DATASETS if cfg["data"].get(n)]
     if args.mode == "export":
         run_export(cfg, args.dataset)
     elif args.mode == "index":
@@ -398,6 +397,7 @@ if __name__ == "__main__":
         else:
             run_batch_query(cfg, args)
     elif args.mode == "experiment":
+        from experiments.common import load_pairs
         from experiments.runner import run_experiment
 
         cfg.setdefault("experiment", {})
@@ -412,13 +412,7 @@ if __name__ == "__main__":
         if args.aug_train_ratio is not None:
             split_cfg["augmented_train_ratio"] = args.aug_train_ratio
 
-        # load all pairs from all active datasets
-        all_pairs = []
-        for ds_name in active:
-            ds_cfg = cfg["data"][ds_name]
-            dataset = DATASETS[ds_name](ds_cfg)
-            print(f"Loading {dataset.name()}...")
-            all_pairs.extend(dataset.load_all())
+        all_pairs = load_pairs(cfg)
 
         run_experiment(
             pairs=all_pairs,
@@ -426,27 +420,20 @@ if __name__ == "__main__":
             run_leave_one_out=args.loo,
         )
     elif args.mode == "diagnostics":
+        from experiments.common import load_pairs
         from src.diagnostics import run_diagnostics
 
-        # load all pairs from all active datasets
-        all_pairs = []
-        for ds_name in active:
-            ds_cfg = cfg["data"][ds_name]
-            dataset = DATASETS[ds_name](ds_cfg)
-            print(f"Loading {dataset.name()}...")
-            all_pairs.extend(dataset.load_all())
+        all_pairs = load_pairs(cfg)
 
         run_diagnostics(all_pairs)
 
     elif args.mode == "batch":
-        import json as _json
         import os as _os
 
         from dotenv import load_dotenv
 
         from experiments.common import build_split
         from src.agents.batch_inference import run_batch_inference
-        from src.data.autopatch import AutoPatchDataset
         from src.rag.oracle import OracleRetriever
         from src.rag.precomputed import PrecomputedRetriever
 
@@ -470,8 +457,9 @@ if __name__ == "__main__":
             split_cfg["augmented_train_ratio"] = args.aug_train_ratio
 
         # load pairs WITHOUT CPGs (metadata only — fast)
-        ds = AutoPatchDataset(cfg["data"]["autopatch"])
-        pairs = ds.load_lightweight()
+        from experiments.common import load_pairs_lightweight
+
+        pairs = load_pairs_lightweight(cfg)
         print(f"Loaded {len(pairs)} lightweight pairs (no CPGs)")
         index_pairs, query_pairs, split_info = build_split(pairs, cfg)
 
@@ -501,18 +489,10 @@ if __name__ == "__main__":
             retriever_mode = "embedding"
 
         # preload db_entry.json for all CVEs, keyed by dir_name
+        from src.io import load_db_cache
+
         cve_root = Path(cfg["data"]["autopatch"]["root"])
-        db_cache = {}
-        for d in sorted(cve_root.iterdir()):
-            if not d.is_dir():
-                continue
-            db_path = d / "out_v2" / "db_entry.json"
-            if db_path.exists():
-                try:
-                    db = _json.loads(db_path.read_text())
-                    db_cache[d.name] = db
-                except (_json.JSONDecodeError, OSError):
-                    continue
+        db_cache = load_db_cache(cve_root)
         print(f"Cached {len(db_cache)} db_entries")
 
         run_batch_inference(
