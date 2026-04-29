@@ -489,10 +489,10 @@ if __name__ == "__main__":
             retriever_mode = "embedding"
 
         # preload db_entry.json for all CVEs, keyed by dir_name
-        from src.io import load_db_cache
+        from src.data.autopatch import AutoPatchDataset
 
         cve_root = Path(cfg["data"]["autopatch"]["root"])
-        db_cache = load_db_cache(cve_root)
+        db_cache = AutoPatchDataset.load_db_cache(cve_root)
         print(f"Cached {len(db_cache)} db_entries")
 
         run_batch_inference(
