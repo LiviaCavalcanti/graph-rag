@@ -3,7 +3,6 @@
 from src.io.results import (
     BackgroundWriter,
     append_jsonl,
-    find_cve_dir,
     load_completed,
     load_ground_truth,
     read_code_file,
@@ -13,7 +12,6 @@ from src.io.results import (
 __all__ = [
     "BackgroundWriter",
     "append_jsonl",
-    "find_cve_dir",
     "load_completed",
     "load_ground_truth",
     "read_code_file",
