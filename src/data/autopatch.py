@@ -83,6 +83,22 @@ class AutoPatchDataset(BaseDataset):
         )
 
     @staticmethod
+    def find_cve_dir(cve_id: str, base_dir: Path) -> Path | None:
+        """Find the CVE directory, handling suffixed names like CVE-2024-53142_1."""
+        exact = base_dir / "CVE-list" / cve_id
+        if exact.is_dir():
+            return exact
+        cve_list = base_dir / "CVE-list"
+        if cve_list.is_dir():
+            candidates = sorted(
+                d for d in cve_list.iterdir()
+                if d.is_dir() and d.name.startswith(cve_id + "_")
+            )
+            if candidates:
+                return candidates[0]
+        return None
+
+    @staticmethod
     def _load_db_entry(cve_dir: Path):
         db_path = cve_dir / "out_v2" / "db_entry.json"
         if not db_path.exists():
