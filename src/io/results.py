@@ -88,3 +88,24 @@ def load_db_cache(cve_root: Path) -> dict:
             except (json.JSONDecodeError, OSError):
                 continue
     return cache
+
+
+def save_json(data: dict | list, path: Path) -> None:
+    """Write data as pretty-printed JSON."""
+    path.write_text(json.dumps(data, indent=2, default=str))
+
+
+def read_code_file(path: str | None, max_chars: int = 4000) -> str:
+    """Read source code from a file path or inline string, truncating if needed."""
+    if not path:
+        return ""
+    p = Path(path)
+    if p.exists():
+        try:
+            text = p.read_text(errors="replace")
+            return text[:max_chars] + (f"\n... [truncated at {max_chars} chars]" if len(text) > max_chars else "")
+        except Exception:
+            return ""
+    if len(path) > 20:
+        return path[:max_chars] + ("\n... [truncated]" if len(path) > max_chars else "")
+    return ""
