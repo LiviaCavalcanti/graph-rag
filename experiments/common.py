@@ -52,6 +52,12 @@ def load_pairs(cfg: dict) -> list:
     return ds.load_all()
 
 
+def load_pairs_lightweight(cfg: dict) -> list:
+    """Load pairs with metadata only — no CPG/graph loading (fast)."""
+    ds = AutoPatchDataset(cfg["data"]["autopatch"])
+    return ds.load_lightweight()
+
+
 def _is_original(pair) -> bool:
     return pair.meta.get("variant") == "original"
 
