@@ -1,7 +1,7 @@
 import yaml
 
 from src.embeddings import build_embedders
-from src.rag.index import FAISSIndex
+from src.rag.faiss_index import FAISSIndex
 from src.rag.retriever import Retriever
 
 
