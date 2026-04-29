@@ -33,7 +33,34 @@ from src.metrics.similarity import (bertscore_pair, bleu_score,
 # ── main evaluation ──────────────────────────────────────────────────
 
 
-def evaluate_one(record: dict, base_dir: Path) -> dict:
+def _find_cve_dir(cve_id: str, base_dir: Path) -> Path | None:
+    """Find the CVE directory, handling suffixed names like CVE-2024-53142_1."""
+    exact = base_dir / "CVE-list" / cve_id
+    if exact.is_dir():
+        return exact
+    cve_list = base_dir / "CVE-list"
+    if cve_list.is_dir():
+        candidates = sorted(
+            d for d in cve_list.iterdir()
+            if d.is_dir() and d.name.startswith(cve_id + "_")
+        )
+        if candidates:
+            return candidates[0]
+    return None
+
+
+def strip_c_comments(code: str) -> str:
+    """Remove C/C++ comments (block and line) from source code."""
+    # Remove block comments /* ... */ (non-greedy, handles multiline)
+    code = re.sub(r"/\*.*?\*/", "", code, flags=re.DOTALL)
+    # Remove line comments // ...
+    code = re.sub(r"//[^\n]*", "", code)
+    # Collapse multiple blank lines into one
+    code = re.sub(r"\n\s*\n", "\n\n", code)
+    return code
+
+
+def evaluate_one(record: dict, base_dir: Path, strip_comments: bool = False) -> dict:
     """Evaluate a single result record. Returns an evaluation dict."""
 
     ident = {
@@ -58,11 +85,11 @@ def evaluate_one(record: dict, base_dir: Path) -> dict:
     cve_id = record.get("query_cve", "")
     variant = record.get("query_variant", "")
     if cve_id and variant:
-        gt_file = (
-            base_dir / "CVE-list" / cve_id / "out_v2" / "code" / f"{variant}_fixed.c"
-        )
-        if gt_file.exists():
-            gt_full = gt_file.read_text(errors="replace")
+        cve_dir = _find_cve_dir(cve_id, base_dir)
+        if cve_dir is not None:
+            gt_file = cve_dir / "out_v2" / "code" / f"{variant}_fixed.c"
+            if gt_file.exists():
+                gt_full = gt_file.read_text(errors="replace")
 
     # Fall back to ground_truth_patch field (may be a path or inline code)
     if gt_full is None and gt_path_str:
@@ -86,6 +113,12 @@ def evaluate_one(record: dict, base_dir: Path) -> dict:
     # Also keep the full file for a secondary comparison
     gt_full_stripped = gt_full.strip()
 
+    # ── optionally strip comments before comparison ──────────
+    if strip_comments:
+        generated = strip_c_comments(generated).strip()
+        gt_body = strip_c_comments(gt_body).strip()
+        gt_full_stripped = strip_c_comments(gt_full_stripped).strip()
+
     # ── compute metrics against extracted function body ──────────
     metrics_body = {
         "exact_match": exact_match(generated, gt_body),
@@ -101,6 +134,7 @@ def evaluate_one(record: dict, base_dir: Path) -> dict:
         "bleu_2": round(bleu_score(generated, gt_body, max_n=2), 4),
         "bleu_4": round(bleu_score(generated, gt_body, max_n=4), 4),
         "codebleu_proxy": round(codebleu_weighted(generated, gt_body), 4),
+        **bertscore_pair(generated, gt_body),
     }
 
     # ── compute metrics against full file (secondary) ────────────
@@ -280,7 +314,7 @@ def main():
     for i, rec in enumerate(records):
         label = f"{rec.get('query_cve', '?')}/{rec.get('query_variant', '?')}"
         try:
-            ev = evaluate_one(rec, base_dir)
+            ev = evaluate_one(rec, base_dir, strip_comments=args.strip_comments)
             status = ev.get("eval_status")
             if status == "evaluated":
                 bleu = ev["metrics_vs_function_body"]["bleu_4"]
