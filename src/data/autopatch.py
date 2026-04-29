@@ -82,14 +82,27 @@ class AutoPatchDataset(BaseDataset):
             meta=meta,
         )
 
-    def _load_db_entry(self, cve_dir: Path):
+    @staticmethod
+    def _load_db_entry(cve_dir: Path):
         db_path = cve_dir / "out_v2" / "db_entry.json"
         if not db_path.exists():
             return None
         try:
             return json.loads(db_path.read_text())
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, OSError):
             return None
+
+    @staticmethod
+    def load_db_cache(cve_root: Path) -> dict:
+        """Preload db_entry.json for all CVE directories, keyed by dir_name."""
+        cache: dict = {}
+        for d in sorted(cve_root.iterdir()):
+            if not d.is_dir():
+                continue
+            entry = AutoPatchDataset._load_db_entry(d)
+            if entry is not None:
+                cache[d.name] = entry
+        return cache
 
     def stream(self) -> Iterator[FunctionPair]:
         dataset_path = Path(self.cfg["root"])
