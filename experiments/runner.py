@@ -20,8 +20,6 @@ from datetime import datetime, timezone
 from itertools import product
 from pathlib import Path
 
-import numpy as np
-
 from experiments.common import build_split
 from experiments.visualization import generate_visualizations
 from src.embeddings import build_embedders
@@ -29,8 +27,8 @@ from src.metrics.metrics import (embedding_space_stats, leave_one_out_metrics,
                                  measure_latency)
 from src.metrics.retrieval_eval import code_query_eval, cross_cwe_recall
 from src.rag.hnsw import HNSWIndex
-from src.rag.index import FAISSIndex
-from src.rag.retriever import Retriever
+from src.rag.faiss_index import FAISSIndex
+from src.rag.utils import populate_index
 
 OUTPUT_DIR = Path("experiments/output")
 
@@ -160,13 +158,10 @@ def run_experiment(
             index = _build_index(
                 backend_name, embedder.dim, index_dir, embedder.name, graph_variant
             )
-            for pair, vec, _ in zip(index_pairs, index_embeddings, index_meta_list):
-                index.add(pair, vec, embedder.name)
-            index.save()
+            retriever = populate_index(
+                index, index_pairs, index_embeddings, embedder.name, top_k=max(ks)
+            )
             build_time = time.perf_counter() - t0
-
-            index.load()
-            retriever = Retriever(index, top_k=max(ks))
 
             # ── latency ──────────────────────────────────────────────
             latency = measure_latency(retriever, index_embeddings)
