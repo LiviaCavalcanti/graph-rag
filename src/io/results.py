@@ -95,6 +95,49 @@ def save_json(data: dict | list, path: Path) -> None:
     path.write_text(json.dumps(data, indent=2, default=str))
 
 
+def find_cve_dir(cve_id: str, base_dir: Path) -> Path | None:
+    """Find the CVE directory, handling suffixed names like CVE-2024-53142_1."""
+    exact = base_dir / "CVE-list" / cve_id
+    if exact.is_dir():
+        return exact
+    cve_list = base_dir / "CVE-list"
+    if cve_list.is_dir():
+        candidates = sorted(
+            d for d in cve_list.iterdir()
+            if d.is_dir() and d.name.startswith(cve_id + "_")
+        )
+        if candidates:
+            return candidates[0]
+    return None
+
+
+def load_ground_truth(cve_id: str, variant: str, gt_path_str: str, base_dir: Path) -> str | None:
+    """Load ground-truth source code from disk or inline string.
+
+    Tries the canonical file at ``<base_dir>/CVE-list/<cve_id>/out_v2/code/<variant>_fixed.c``
+    first, then falls back to *gt_path_str* (treated as a relative path or inline code).
+
+    Returns ``None`` when the ground truth cannot be found.
+    """
+    # Try canonical file on disk first
+    if cve_id and variant:
+        cve_dir = find_cve_dir(cve_id, base_dir)
+        if cve_dir is not None:
+            gt_file = cve_dir / "out_v2" / "code" / f"{variant}_fixed.c"
+            if gt_file.exists():
+                return gt_file.read_text(errors="replace")
+
+    # Fall back to ground_truth_patch field (may be a path or inline code)
+    if gt_path_str:
+        gt_candidate = base_dir / gt_path_str if len(gt_path_str) < 260 else None
+        if gt_candidate is not None and gt_candidate.exists():
+            return gt_candidate.read_text(errors="replace")
+        if "\n" in gt_path_str or len(gt_path_str) > 260:
+            return gt_path_str
+
+    return None
+
+
 def read_code_file(path: str | None, max_chars: int = 4000) -> str:
     """Read source code from a file path or inline string, truncating if needed."""
     if not path:
