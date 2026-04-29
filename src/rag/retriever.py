@@ -4,12 +4,12 @@ from collections import defaultdict
 
 import numpy as np
 
-from .index import FAISSIndex
+from .base import VectorIndex
 
 
 class Retriever:
 
-    def __init__(self, index: FAISSIndex, top_k: int = 5):
+    def __init__(self, index: VectorIndex, top_k: int = 5):
         self.index = index
         self.top_k = top_k
 
