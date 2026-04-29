@@ -65,5 +65,7 @@ def extract_function_body(full_source: str, func_name: str | None = None) -> str
             if func_name in body.split("(")[0]:
                 return body
 
-    # Otherwise return the last function (the main one in AutoPatch files)
-    return functions[-1][1]
+    # Return the longest function body — stub declarations and macros
+    # like EXPORT_SYMBOL are short one-liners, while the real target
+    # function is the substantial implementation.
+    return max(functions, key=lambda f: len(f[1]))[1]
