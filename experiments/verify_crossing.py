@@ -490,7 +490,7 @@ def main():
 
     # Regenerate unified dashboard
     try:
-        from experiments.dashboard import generate_html_dashboard
+        from experiments.dashboard_scripts.dashboard import generate_html_dashboard
         print(results_path.parent)
         generate_html_dashboard(results_path.parent)
     except Exception as e:
