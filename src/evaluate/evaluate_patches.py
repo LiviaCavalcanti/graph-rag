@@ -17,11 +17,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
 from src.evaluate.preprocessing import extract_function_body
-from src.metrics.similarity import (bleu_score, codebleu_weighted,
+from src.metrics.similarity import (bertscore_pair, bleu_score,
+                                    codebleu_weighted,
                                     compute_diff_details, exact_match,
                                     line_level_ratio, normalised_edit_distance,
                                     normalised_exact_match,
@@ -176,6 +178,9 @@ def aggregate(results: list[dict]) -> dict:
         "avg_bleu_2": _avg("bleu_2"),
         "avg_bleu_4": _avg("bleu_4"),
         "avg_codebleu_proxy": _avg("codebleu_proxy"),
+        "avg_bertscore_precision": _avg("bertscore_precision"),
+        "avg_bertscore_recall": _avg("bertscore_recall"),
+        "avg_bertscore_f1": _avg("bertscore_f1"),
         "by_cwe": _aggregate_by_field(evaluated, "query_cwe"),
         "by_variant": _aggregate_by_field(evaluated, "query_variant"),
     }
@@ -207,6 +212,10 @@ def _aggregate_by_field(evaluated: list[dict], field: str) -> dict:
                 sum(r["metrics_vs_function_body"]["codebleu_proxy"] for r in recs) / n,
                 4,
             ),
+            "avg_bertscore_f1": round(
+                sum(r["metrics_vs_function_body"].get("bertscore_f1", 0) for r in recs) / n,
+                4,
+            ),
             "exact_matches": sum(
                 1 for r in recs if r["metrics_vs_function_body"]["exact_match"]
             ),
@@ -233,6 +242,12 @@ def main():
         "--base-dir",
         default=None,
         help="Base directory for resolving ground_truth_patch paths (default: repo root)",
+    )
+    parser.add_argument(
+        "--strip-comments",
+        action="store_true",
+        default=False,
+        help="Remove C/C++ comments from generated and ground-truth code before comparison",
     )
     args = parser.parse_args()
 
@@ -312,6 +327,7 @@ def main():
     print(f"  Avg Token Jaccard: {agg.get('avg_token_jaccard', 'N/A')}")
     print(f"  Avg Char Ratio:    {agg.get('avg_char_sequence_ratio', 'N/A')}")
     print(f"  Avg CodeBLEU*:     {agg.get('avg_codebleu_proxy', 'N/A')}")
+    print(f"  Avg BERTScore F1:  {agg.get('avg_bertscore_f1', 'N/A')}")
     print(f"  Avg Edit Dist:     {agg.get('avg_normalised_edit_distance', 'N/A')}")
     print(f"{'═'*60}")
 
