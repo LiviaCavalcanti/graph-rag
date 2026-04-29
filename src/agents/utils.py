@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import os
 import re
-from difflib import SequenceMatcher
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -105,10 +104,4 @@ def parse_patch(output: str) -> dict | None:
     return None
 
 
-def code_similarity(generated: str, reference: str) -> float:
-    """Compute normalized similarity between generated and reference code."""
-    if not generated or not reference:
-        return 0.0
-    gen_lines = [l.strip() for l in generated.splitlines() if l.strip()]
-    ref_lines = [l.strip() for l in reference.splitlines() if l.strip()]
-    return SequenceMatcher(None, gen_lines, ref_lines).ratio()
+
