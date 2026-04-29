@@ -597,3 +597,85 @@ class TestLeaveOneOutMetrics:
         # When CVE-2 is held out, its nearest is CVE-1 → miss.
         # Expected hit@1 = 2/3 ≈ 0.667
         assert result["hit@1"] == pytest.approx(2 / 3, abs=0.01)
+
+
+# ===================================================================
+# bertscore_pair  (similarity.py)
+# ===================================================================
+
+class TestBertScorePair:
+    """
+    Tests for the single-pair BERTScore function in similarity.py.
+
+    These tests require the CodeBERT model to be downloaded (or cached).
+    Mark them slow so they can be skipped in fast CI runs:
+        pytest -m "not slow"
+    """
+
+    @pytest.fixture(autouse=True)
+    def _import(self):
+        """Import here so the test file still loads if torch is missing."""
+        from src.metrics.similarity import bertscore_pair
+        self.bertscore_pair = bertscore_pair
+
+    @severity_high
+    @pytest.mark.slow
+    def test_identical_strings_high_f1(self):
+        """Identical code should yield F1 very close to 1.0."""
+        code = "int foo(int x) { return x + 1; }"
+        result = self.bertscore_pair(code, code)
+        assert result["bertscore_f1"] == pytest.approx(1.0, abs=0.01)
+        assert result["bertscore_precision"] == pytest.approx(1.0, abs=0.01)
+        assert result["bertscore_recall"] == pytest.approx(1.0, abs=0.01)
+
+    @severity_high
+    @pytest.mark.slow
+    def test_different_strings_lower_f1(self):
+        """Completely unrelated code should score noticeably lower."""
+        gen = "int foo(int x) { return x + 1; }"
+        ref = "void bar(char *buf, size_t len) { memset(buf, 0, len); }"
+        result = self.bertscore_pair(gen, ref)
+        # Not zero (BERT embeddings share some baseline similarity),
+        # but clearly below an identical match.
+        assert result["bertscore_f1"] < 0.95
+
+    @severity_high
+    @pytest.mark.slow
+    def test_output_keys(self):
+        """Result dict should contain the expected keys."""
+        result = self.bertscore_pair("a", "b")
+        assert set(result.keys()) == {
+            "bertscore_precision",
+            "bertscore_recall",
+            "bertscore_f1",
+        }
+
+    @severity_high
+    @pytest.mark.slow
+    def test_values_in_range(self):
+        """All scores should be in [0, 1]."""
+        result = self.bertscore_pair(
+            "if (ptr == NULL) { free(ptr); }",
+            "if (ptr != NULL) { free(ptr); ptr = NULL; }",
+        )
+        for key in ("bertscore_precision", "bertscore_recall", "bertscore_f1"):
+            assert 0.0 <= result[key] <= 1.0, f"{key}={result[key]} out of [0,1]"
+
+    @severity_high
+    @pytest.mark.slow
+    def test_similar_code_higher_than_dissimilar(self):
+        """A close variant should score higher than an unrelated snippet."""
+        ref = "int add(int a, int b) { return a + b; }"
+        similar = "int add(int x, int y) { return x + y; }"
+        different = "void print_hello() { printf(\"hello world\"); }"
+        score_similar = self.bertscore_pair(similar, ref)["bertscore_f1"]
+        score_different = self.bertscore_pair(different, ref)["bertscore_f1"]
+        assert score_similar > score_different
+
+    @severity_low
+    @pytest.mark.slow
+    def test_empty_strings(self):
+        """Empty inputs should not crash; scores should still be floats."""
+        result = self.bertscore_pair("", "")
+        for key in ("bertscore_precision", "bertscore_recall", "bertscore_f1"):
+            assert isinstance(result[key], float)
