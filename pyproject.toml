@@ -19,6 +19,7 @@ dependencies = [
     "pytest>=9.0.2",
     "python-dotenv>=1.2.2",
     "pyyaml>=6.0.3",
+    "ranx>=0.3.21",
     "rustworkx>=0.17.1",
     "scatter>=0.1.4",
     "scikit-learn>=1.8.0",
