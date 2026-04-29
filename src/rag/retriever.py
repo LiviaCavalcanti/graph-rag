@@ -26,6 +26,7 @@ class Retriever:
                 continue
             record = dict(self.index.metadata[idx])
             record["score"] = float(dist)
+            record["_idx"] = int(idx)
             results.append(record)
 
         return results
