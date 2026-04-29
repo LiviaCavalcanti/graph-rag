@@ -21,8 +21,8 @@ import re
 import sys
 from pathlib import Path
 
+from src.data.autopatch import AutoPatchDataset
 from src.evaluate.preprocessing import extract_function_body
-from src.io import load_ground_truth
 from src.metrics.similarity import (bertscore_pair, bleu_score,
                                     codebleu_weighted,
                                     compute_diff_details, exact_match,
@@ -66,7 +66,7 @@ def evaluate_one(record: dict, base_dir: Path, strip_comments: bool = False) -> 
 
     cve_id = record.get("query_cve", "")
     variant = record.get("query_variant", "")
-    gt_full = load_ground_truth(cve_id, variant, gt_path_str, base_dir)
+    gt_full = AutoPatchDataset.load_ground_truth(cve_id, variant, gt_path_str, base_dir)
 
     if gt_full is None:
         return {
