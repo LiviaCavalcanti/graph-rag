@@ -21,7 +21,7 @@ from itertools import product
 from pathlib import Path
 
 from experiments.common import build_split
-from experiments.visualization import generate_visualizations
+from experiments.dashboard_scripts.visualization import generate_visualizations
 from src.embeddings import build_embedders
 from src.metrics.metrics import (embedding_space_stats, leave_one_out_metrics,
                                  measure_latency)
