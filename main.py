@@ -11,7 +11,7 @@ from src.data.autopatch import AutoPatchDataset
 from src.data.base import ExportJob
 from src.data.pipeline import run_joern_export, write_c_file
 from src.embeddings import build_embedders
-from src.rag.index import FAISSIndex
+from src.rag.faiss_index import FAISSIndex
 
 DATASETS = {"autopatch": AutoPatchDataset, "cvefixes": None}
 
