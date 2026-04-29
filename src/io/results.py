@@ -75,21 +75,6 @@ class BackgroundWriter:
         self._thread.join(timeout=5)
 
 
-def load_db_cache(cve_root: Path) -> dict:
-    """Preload db_entry.json for all CVE directories, keyed by dir_name."""
-    cache: dict = {}
-    for d in sorted(cve_root.iterdir()):
-        if not d.is_dir():
-            continue
-        db_path = d / "out_v2" / "db_entry.json"
-        if db_path.exists():
-            try:
-                cache[d.name] = json.loads(db_path.read_text())
-            except (json.JSONDecodeError, OSError):
-                continue
-    return cache
-
-
 def save_json(data: dict | list, path: Path) -> None:
     """Write data as pretty-printed JSON."""
     path.write_text(json.dumps(data, indent=2, default=str))
