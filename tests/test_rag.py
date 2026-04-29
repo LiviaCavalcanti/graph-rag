@@ -4,7 +4,7 @@ import numpy as np
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from rag.index import FAISSIndex
+from rag.faiss_index import FAISSIndex
 from rag.retriever import Retriever
 from data.base import FunctionPair
 import networkx as nx
