@@ -6,7 +6,6 @@ Every experiment script should use these instead of reimplementing.
 
 from __future__ import annotations
 
-import json
 import random
 import uuid
 from collections import defaultdict
@@ -17,10 +16,8 @@ import numpy as np
 import yaml
 
 from src.data.autopatch import AutoPatchDataset
-from src.embeddings import build_embedders
 from src.rag.hnsw import HNSWIndex
 from src.rag.retriever import Retriever
-from src.metrics.metrics import embedding_space_stats
 
 OUTPUT_DIR = Path("experiments/output")
 
@@ -197,6 +194,9 @@ def build_split(pairs: list, cfg: dict, seed_override: int | None = None) -> tup
 
 # ── index building ───────────────────────────────────────────────────
 
+from src.rag.utils import populate_index
+
+
 def build_hnsw(
     pairs: list,
     embeddings: np.ndarray,
@@ -214,150 +214,12 @@ def build_hnsw(
         index_path=str(idx_dir / f"{stem}__hnsw.index"),
         metadata_path=str(idx_dir / f"{stem}__hnsw_meta.json"),
     )
-    for pair, vec in zip(pairs, embeddings):
-        index.add(pair, vec, embedder_name)
-    index.save()
-    index.load()
-    return index, Retriever(index, top_k=10)
+    retriever = populate_index(index, pairs, embeddings, embedder_name)
+    return index, retriever
 
 
-# ── evaluation primitives ────────────────────────────────────────────
-
-def evaluate_retrieval(
-    query_pairs: list,
-    query_embeddings: np.ndarray,
-    retriever: Retriever,
-    index_pairs: list,
-    ks: list[int] = (1, 5, 10),
-) -> dict:
-    """
-    Core retrieval evaluation — hit@k, MRR, CVE P/R/F1, CWE recall.
-
-    Returns a dict with all metrics + raw_queries list.
-    """
-    hits = defaultdict(int)
-    mrrs = []
-    raw_queries = []
-    n = 0
-    max_k = max(ks)
-
-    # CVE support in index
-    cve_support = defaultdict(int)
-    for p in index_pairs:
-        cve_support[p.cve_id] += 1
-
-    # per-query results grouped by CVE for macro-averaging
-    per_cve_hits = defaultdict(list)     # binary: did top-k contain correct CVE?
-    per_cve_recalls = defaultdict(list)  # fraction of same-CVE items retrieved
-
-    for pair, qvec in zip(query_pairs, query_embeddings):
-        if np.linalg.norm(qvec) < 1e-6:
-            continue
-        res = retriever.query(qvec, top_k=max_k)
-
-        # hit@k
-        for k in ks:
-            hits[k] += int(any(r["cve_id"] == pair.cve_id for r in res[:k]))
-
-        # MRR
-        mrr = next(
-            (1.0 / (j + 1) for j, r in enumerate(res) if r["cve_id"] == pair.cve_id),
-            0.0,
-        )
-        mrrs.append(mrr)
-
-        # Per-query CVE metrics for macro-averaging
-        top_k_res = res[:max_k]
-        tp = sum(1 for r in top_k_res if r["cve_id"] == pair.cve_id)
-        binary_hit = 1 if tp > 0 else 0
-        support = cve_support.get(pair.cve_id, 0)
-        recall = tp / support if support > 0 else 0.0
-
-        per_cve_hits[pair.cve_id].append(binary_hit)
-        per_cve_recalls[pair.cve_id].append(recall)
-
-        raw_queries.append({
-            "query_cve": pair.cve_id,
-            "query_cwe": pair.cwe_id,
-            "hit": mrr > 0,
-            "mrr": mrr,
-            "cve_binary_hit": binary_hit,
-            "cve_recall": recall,
-            "retrieved": [
-                {"rank": j + 1, "cve_id": r.get("cve_id"), "cwe_id": r.get("cwe_id"), "score": r.get("score")}
-                for j, r in enumerate(res)
-            ],
-        })
-        n += 1
-
-    if n == 0:
-        return {"n": 0, "raw_queries": []}
-
-    # Macro-averaged CVE precision / recall / F1 (per-class, then averaged)
-    class_precisions = []
-    class_recalls = []
-    class_f1s = []
-    for cve_id in per_cve_hits:
-        p = float(np.mean(per_cve_hits[cve_id]))
-        r = float(np.mean(per_cve_recalls[cve_id]))
-        f1 = 2 * p * r / (p + r) if (p + r) > 0 else 0.0
-        class_precisions.append(p)
-        class_recalls.append(r)
-        class_f1s.append(f1)
-
-    return {
-        **{f"hit@{k}": hits[k] / n for k in ks},
-        "mrr": float(np.mean(mrrs)),
-        "cve_precision": float(np.mean(class_precisions)) if class_precisions else 0.0,
-        "cve_recall": float(np.mean(class_recalls)) if class_recalls else 0.0,
-        "cve_f1": float(np.mean(class_f1s)) if class_f1s else 0.0,
-        "n": n,
-        "n_cve_classes": len(per_cve_hits),
-        "raw_queries": raw_queries,
-    }
-
-
-def evaluate_cwe_recall(
-    query_pairs: list,
-    query_embeddings: np.ndarray,
-    retriever: Retriever,
-    index_metadata: list[dict],
-    top_k: int = 10,
-) -> dict:
-    """CWE-level recall evaluation.  Returns per_cwe + macro_avg."""
-    cwe_support = defaultdict(int)
-    for m in index_metadata:
-        cwe = m.get("cwe_id")
-        if cwe and cwe != "UNKNOWN":
-            cwe_support[cwe] += 1
-
-    per_cwe_scores = defaultdict(list)
-    for pair, qvec in zip(query_pairs, query_embeddings):
-        cwe = pair.cwe_id
-        if not cwe or cwe == "UNKNOWN":
-            continue
-        # check whether the correct CWE is even retrievable (has support in index)
-        possible = min(top_k, cwe_support.get(cwe, 0))
-        if possible <= 0:
-            continue
-        # check recall among top-k retrieved items?
-        if np.linalg.norm(qvec) < 1e-6:
-            continue
-        res = retriever.query(qvec, top_k=top_k)
-        same = sum(1 for r in res if r.get("cwe_id") == cwe)
-        per_cwe_scores[cwe].append(same / possible)
-
-    per_cwe = {
-        cwe: {"recall": float(np.mean(vals)), "support": int(cwe_support.get(cwe, 0))}
-        for cwe, vals in per_cwe_scores.items()
-    }
-    macro = float(np.mean([v["recall"] for v in per_cwe.values()])) if per_cwe else 0.0
-    return {
-        "per_cwe": per_cwe,
-        "macro_avg": macro,
-        "n_cwes": len(per_cwe),
-    }
-
+# ── evaluation primitives (canonical home: src/metrics/retrieval_eval) ─
+from src.metrics.retrieval_eval import evaluate_cwe_recall, evaluate_retrieval
 
 # ── uncertainty helpers (used by analyze_misses & verify_crossing) ───
 
@@ -375,23 +237,5 @@ def is_uncertain(prob: float, margin: float, prob_floor: float = 0.12, margin_fl
     return prob < prob_floor or margin < margin_floor
 
 
-# ── I/O helpers ──────────────────────────────────────────────────────
-
-def save_json(data: dict | list, path: Path):
-    path.write_text(json.dumps(data, indent=2, default=str))
-
-
-def read_code_file(path: str | None, max_chars: int = 4000) -> str:
-    """Read source code from a file path or inline string."""
-    if not path:
-        return ""
-    p = Path(path)
-    if p.exists():
-        try:
-            text = p.read_text(errors="replace")
-            return text[:max_chars] + (f"\n... [truncated at {max_chars} chars]" if len(text) > max_chars else "")
-        except Exception:
-            return ""
-    if len(path) > 20:
-        return path[:max_chars] + ("\n... [truncated]" if len(path) > max_chars else "")
-    return ""
+# ── I/O helpers (canonical home: src/io) ─────────────────────────────
+from src.io import read_code_file, save_json
