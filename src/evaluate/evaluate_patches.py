@@ -22,6 +22,7 @@ import sys
 from pathlib import Path
 
 from src.evaluate.preprocessing import extract_function_body
+from src.io import load_ground_truth
 from src.metrics.similarity import (bertscore_pair, bleu_score,
                                     codebleu_weighted,
                                     compute_diff_details, exact_match,
@@ -31,22 +32,6 @@ from src.metrics.similarity import (bertscore_pair, bleu_score,
                                     token_jaccard_multiset, tokenize)
 
 # ── main evaluation ──────────────────────────────────────────────────
-
-
-def _find_cve_dir(cve_id: str, base_dir: Path) -> Path | None:
-    """Find the CVE directory, handling suffixed names like CVE-2024-53142_1."""
-    exact = base_dir / "CVE-list" / cve_id
-    if exact.is_dir():
-        return exact
-    cve_list = base_dir / "CVE-list"
-    if cve_list.is_dir():
-        candidates = sorted(
-            d for d in cve_list.iterdir()
-            if d.is_dir() and d.name.startswith(cve_id + "_")
-        )
-        if candidates:
-            return candidates[0]
-    return None
 
 
 def strip_c_comments(code: str) -> str:
@@ -79,25 +64,9 @@ def evaluate_one(record: dict, base_dir: Path, strip_comments: bool = False) -> 
     if not generated:
         return {**ident, "eval_status": "skipped", "reason": "missing_patch"}
 
-    # Try to load ground truth from the canonical file on disk first
-    # (inline code in ground_truth_patch may be truncated)
-    gt_full = None
     cve_id = record.get("query_cve", "")
     variant = record.get("query_variant", "")
-    if cve_id and variant:
-        cve_dir = _find_cve_dir(cve_id, base_dir)
-        if cve_dir is not None:
-            gt_file = cve_dir / "out_v2" / "code" / f"{variant}_fixed.c"
-            if gt_file.exists():
-                gt_full = gt_file.read_text(errors="replace")
-
-    # Fall back to ground_truth_patch field (may be a path or inline code)
-    if gt_full is None and gt_path_str:
-        gt_candidate = base_dir / gt_path_str if len(gt_path_str) < 260 else None
-        if gt_candidate is not None and gt_candidate.exists():
-            gt_full = gt_candidate.read_text(errors="replace")
-        elif "\n" in gt_path_str or len(gt_path_str) > 260:
-            gt_full = gt_path_str
+    gt_full = load_ground_truth(cve_id, variant, gt_path_str, base_dir)
 
     if gt_full is None:
         return {
