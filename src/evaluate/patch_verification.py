@@ -38,8 +38,9 @@ from experiments.common import build_split, load_config, load_pairs
 from src.data.pipeline import (compute_graph_diff, load_cpg_dir,
                                run_joern_export, write_c_file)
 from src.embeddings import build_embedders
-from src.rag.index import FAISSIndex
+from src.rag.faiss_index import FAISSIndex
 from src.rag.retriever import Retriever
+from src.rag.utils import populate_index
 
 # ── helpers ──────────────────────────────────────────────────────────
 
@@ -122,12 +123,11 @@ def _build_index_and_retriever(
         index = FAISSIndex(
             dim=dim, index_path=str(idx_path), metadata_path=str(meta_path)
         )
-        for pair, vec in zip(index_pairs, embeddings):
-            index.add(pair, vec, embedder.name)
-        index.save()
+        retriever = populate_index(index, index_pairs, embeddings, embedder.name, top_k=top_k)
         print(f"Built and saved index: {index.index.ntotal} vectors → {idx_path}")
+    else:
+        retriever = Retriever(index, top_k=top_k)
 
-    retriever = Retriever(index, top_k=top_k)
     return embedder, retriever
 
 
