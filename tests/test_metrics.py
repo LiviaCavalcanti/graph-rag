@@ -71,7 +71,7 @@ class FakeRetriever:
         scores = self._embs @ vec.ravel()
         order = np.argsort(-scores)[:top_k]
         return [
-            {**self._meta[i], "score": float(scores[i])}
+            {**self._meta[i], "score": float(scores[i]), "_idx": int(i)}
             for i in order
         ]
 
@@ -679,3 +679,64 @@ class TestBertScorePair:
         result = self.bertscore_pair("", "")
         for key in ("bertscore_precision", "bertscore_recall", "bertscore_f1"):
             assert isinstance(result[key], float)
+
+
+# ===================================================================
+# code_similarity  (similarity.py)
+# ===================================================================
+
+from src.metrics.similarity import code_similarity
+
+
+class TestCodeSimilarity:
+    """Tests for the line-level code_similarity function."""
+
+    @severity_high
+    def test_both_empty(self):
+        """Two empty strings → 0.0 (early return guard)."""
+        assert code_similarity("", "") == 0.0
+
+    @severity_high
+    def test_one_empty_gen(self):
+        """Empty generated, non-empty reference → 0.0."""
+        assert code_similarity("", "int x = 1;") == 0.0
+
+    @severity_high
+    def test_one_empty_ref(self):
+        """Non-empty generated, empty reference → 0.0."""
+        assert code_similarity("int x = 1;", "") == 0.0
+
+    @severity_high
+    def test_identical_code(self):
+        """Identical multi-line code → 1.0."""
+        code = "int foo(int x) {\n    return x + 1;\n}\n"
+        assert code_similarity(code, code) == pytest.approx(1.0)
+
+    @severity_high
+    def test_whitespace_only_diffs(self):
+        """Code differing only in leading/trailing whitespace → 1.0 (lines are stripped)."""
+        gen = "  int foo(int x) {  \n    return x + 1;\n  }\n"
+        ref = "int foo(int x) {\n  return x + 1;\n}\n"
+        assert code_similarity(gen, ref) == pytest.approx(1.0)
+
+    @severity_high
+    def test_partial_overlap(self):
+        """Some shared lines → 0 < ratio < 1."""
+        gen = "int foo(int x) {\n    return x + 1;\n}\n"
+        ref = "int foo(int x) {\n    return x * 2;\n}\n"
+        ratio = code_similarity(gen, ref)
+        assert 0.0 < ratio < 1.0
+
+    @severity_low
+    def test_blank_lines_ignored(self):
+        """Blank-only lines are stripped out, so extra blank lines don't affect ratio."""
+        code = "int x = 1;\nint y = 2;\n"
+        code_with_blanks = "int x = 1;\n\n\nint y = 2;\n\n"
+        assert code_similarity(code, code_with_blanks) == pytest.approx(1.0)
+
+    @severity_high
+    def test_completely_different(self):
+        """Totally different code → low similarity."""
+        gen = "void foo() { printf(\"hello\"); }"
+        ref = "struct Bar { int x; int y; int z; };"
+        assert code_similarity(gen, ref) < 0.5
