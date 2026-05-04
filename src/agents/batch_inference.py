@@ -14,16 +14,13 @@ Post-process results:
 
 from __future__ import annotations
 
-import json
 import re
-import sys
 import time
 from pathlib import Path
 
-from experiments.common import make_run_dir
 from src.agents.patcher import patch_one
-from src.agents.utils import MODEL_NAME, code_similarity, strip_code_fences
-from src.io import BackgroundWriter, load_completed
+from src.agents.utils import MODEL_NAME, strip_code_fences
+from src.metrics.similarity import code_similarity
 
 RESULTS_FILENAME = "results.jsonl"
 META_FILENAME = "run_meta.json"
@@ -44,9 +41,12 @@ def _get_target_code(query_pair, target_db: dict) -> str:
     """
     code = query_pair.meta.get("source_before", "")
     if code:
+        # For original variants, source_before is a file path — prefer db_entry
+        if query_pair.meta.get("variant") == "original" and Path(code).exists():
+            return strip_code_fences(target_db.get("original_code", ""))
         # inline code (augmented variant)
         return strip_code_fences(code)
-    # original variant — prefer db_entry which has the actual code string
+    # no source_before — fall back to db_entry
     return strip_code_fences(target_db.get("original_code", ""))
 
 
@@ -181,12 +181,15 @@ def _run_single_query(
 
     similarity = 0.0
     is_exact = False
+    rouge = {}
     if parsed and parsed.get("vuln_patch"):
         similarity = code_similarity(parsed["vuln_patch"], ground_truth)
         gen_stripped = re.sub(r"\s+", " ", parsed["vuln_patch"]).strip()
         ref_stripped = re.sub(r"\s+", " ", ground_truth).strip()
         is_exact = gen_stripped == ref_stripped
         status = "success"
+        from src.metrics.similarity import rouge_scores
+        rouge = rouge_scores(parsed["vuln_patch"], ground_truth)
     else:
         status = "parse_error"
 
@@ -200,6 +203,7 @@ def _run_single_query(
         "cwe_match": cwe_match,
         "similarity": round(similarity, 4),
         "exact_match": is_exact,
+        "rouge": rouge,
         "elapsed_s": round(elapsed, 2),
         "retrieval": retrieval_info,
         "raw_output_len": len(raw_output),
@@ -220,6 +224,7 @@ def run_batch_inference(
     run_tag: str = "batch",
     resume_dir: str | None = None,
     meta_extra: dict | None = None,
+    output_dir: Path | None = None,
 ) -> Path:
     """
     Run LLM patching in batches, writing results to JSONL incrementally.
@@ -236,153 +241,46 @@ def run_batch_inference(
 
     Returns the path to the run directory.
     """
+    from src.io.batch import run_batched
+
     resolved_model = model_name or MODEL_NAME
 
-    # ── resolve run directory ────────────────────────────────────────
-    if resume_dir:
-        run_dir = Path(resume_dir)
-        if not run_dir.exists():
-            print(f"ERROR: resume directory does not exist: {run_dir}")
-            sys.exit(1)
-        run_id = run_dir.name
-        print(f"Resuming run: {run_id}")
-    else:
-        run_id, run_dir = make_run_dir(run_tag)
-        print(f"New run: {run_id}")
+    # ── per-query callback ───────────────────────────────────────────
+    def process_one(query_pair, current: int, total: int) -> dict:
+        label = (
+            f"  [{current}/{total}] "
+            f"{query_pair.cve_id} ({query_pair.meta.get('variant', '?')})"
+        )
+        result = _run_single_query(
+            query_pair,
+            retriever,
+            db_cache,
+            resolved_model,
+        )
+        status = result["status"]
+        sim = result.get("similarity", "")
+        elapsed = result.get("elapsed_s", "")
+        print(
+            f"{label} → {status}"
+            + (f"  sim={sim}" if sim != "" else "")
+            + (f"  {elapsed}s" if elapsed != "" else "")
+        )
+        return result
 
-    jsonl_path = run_dir / RESULTS_FILENAME
-    meta_path = run_dir / META_FILENAME
-
-    # ── load completed queries ───────────────────────────────────────
-    completed = load_completed(jsonl_path)
-    if completed:
-        print(f"Found {len(completed)} completed queries — will skip them")
-
-    # ── filter out already-done queries ──────────────────────────────
-    pending = [
-        p for p in query_pairs if (p.cve_id, p.meta.get("variant", "")) not in completed
-    ]
-    total = len(query_pairs)
-    print(
-        f"Total queries: {total} | Already done: {total - len(pending)} | Pending: {len(pending)}"
-    )
-
-    if not pending:
-        print("All queries already completed.  Run postprocess to get summary.")
-        return run_dir
-
-    # ── save run metadata ────────────────────────────────────────────
-    meta = {
-        "run_id": run_id,
-        "model": resolved_model,
-        "batch_size": batch_size,
-        "total_queries": total,
-        "resumed": resume_dir is not None,
-        **(meta_extra or {}),
-    }
-    with open(meta_path, "w") as f:
-        json.dump(meta, f, indent=2, default=str)
-
-    # ── process in batches ───────────────────────────────────────────
-    writer = BackgroundWriter(jsonl_path)
-    n_done = len(completed)
-    n_success = 0
-    n_errors = 0
-    t_start = time.perf_counter()
-
-    try:
-        for batch_idx in range(0, len(pending), batch_size):
-            batch = pending[batch_idx : batch_idx + batch_size]
-            batch_num = batch_idx // batch_size + 1
-            total_batches = (len(pending) + batch_size - 1) // batch_size
-
-            print(f"\n{'─'*60}")
-            print(
-                f"Batch {batch_num}/{total_batches}  "
-                f"(queries {n_done+1}–{n_done+len(batch)} of {total})"
-            )
-            print(f"{'─'*60}")
-
-            batch_results = []
-
-            for i, query_pair in enumerate(batch):
-                label = (
-                    f"  [{n_done+i+1}/{total}] "
-                    f"{query_pair.cve_id} ({query_pair.meta.get('variant', '?')})"
-                )
-                try:
-                    result = _run_single_query(
-                        query_pair,
-                        retriever,
-                        db_cache,
-                        resolved_model,
-                    )
-                    status = result["status"]
-                    sim = result.get("similarity", "")
-                    elapsed = result.get("elapsed_s", "")
-                    print(
-                        f"{label} → {status}"
-                        + (f"  sim={sim}" if sim != "" else "")
-                        + (f"  {elapsed}s" if elapsed != "" else "")
-                    )
-
-                    if status == "success":
-                        n_success += 1
-                    elif status == "error":
-                        n_errors += 1
-
-                    batch_results.append(result)
-
-                except ForbiddenError as e:
-                    print(f"\n{'!'*60}")
-                    print(f"  ABORT: {e}")
-                    print(
-                        f"  Writing {len(batch_results)} results from current batch before exit."
-                    )
-                    print(f"{'!'*60}")
-                    if batch_results:
-                        writer.write(batch_results)
-                        writer.flush()
-                    writer.close()
-                    _print_progress(
-                        n_done + len(batch_results), total, n_success, n_errors, t_start
-                    )
-                    print(f"\nRun directory: {run_dir}")
-                    print("Re-run with --resume to continue after fixing credentials.")
-                    sys.exit(2)
-
-            # flush batch to disk via background writer
-            n_done += len(batch_results)
-            writer.write(batch_results)
-
-            _print_progress(n_done, total, n_success, n_errors, t_start)
-
-    except KeyboardInterrupt:
-        print(f"\n\nInterrupted — flushing writes...")
-        writer.flush()
-        writer.close()
-        _print_progress(n_done, total, n_success, n_errors, t_start)
-        print(f"Run directory: {run_dir}")
-        print("Re-run with --resume to continue.")
-        sys.exit(1)
-
-    writer.flush()
-    writer.close()
-
-    _print_progress(n_done, total, n_success, n_errors, t_start)
-    print(f"\nRun directory: {run_dir}")
-    print(f"Run postprocess:  python -m experiments.postprocess {run_dir}")
-
-    return run_dir
-
-
-def _print_progress(done: int, total: int, success: int, errors: int, t_start: float):
-    elapsed = time.perf_counter() - t_start
-    rate = done / elapsed if elapsed > 0 else 0
-    remaining = (total - done) / rate if rate > 0 else 0
-    print(
-        f"\n  Progress: {done}/{total} ({done/total:.0%})"
-        f"  |  OK: {success}  Errors: {errors}"
-        f"  |  {elapsed:.0f}s elapsed"
-        + (f"  ~{remaining:.0f}s remaining" if done < total else "")
+    # ── run batched ──────────────────────────────────────────────────
+    return run_batched(
+        query_pairs,
+        process_one=process_one,
+        run_tag=run_tag,
+        batch_size=batch_size,
+        resume=resume_dir,
+        output_dir=output_dir,
+        results_filename=RESULTS_FILENAME,
+        meta_filename=META_FILENAME,
+        meta={
+            "model": resolved_model,
+            "batch_size": batch_size,
+            **(meta_extra or {}),
+        },
+        abort_on=(ForbiddenError,),
     )
