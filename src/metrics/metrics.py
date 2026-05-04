@@ -6,7 +6,10 @@ All metrics work without ground-truth query→CVE labels.
 import time
 from collections import defaultdict
 
+
 import numpy as np
+
+from src.metrics.retrieval_eval import _cwe_recall_summary
 
 
 def hits_at_k(results: list[dict], query_cve: str, k: int) -> int:
@@ -21,37 +24,37 @@ def mean_reciprocal_rank(results: list[dict], query_cve: str) -> float:
             return 1.0 / (i + 1)
     return 0.0
 
+# not currently used, kept for reference for previous work
+# def self_retrieval_metrics(
+#     embeddings: np.ndarray,
+#     metadata: list[dict],
+#     retriever,
+#     ks: list[int] = [1, 5, 10],
+# ) -> dict:
+#     """
+#     For each vector, query the index with itself and check if it
+#     retrieves itself at rank 1. This is the minimum sanity check —
+#     a perfect embedder + index should score 1.0 at k=1.
 
-def self_retrieval_metrics(
-    embeddings: np.ndarray,
-    metadata: list[dict],
-    retriever,
-    ks: list[int] = [1, 5, 10],
-) -> dict:
-    """
-    For each vector, query the index with itself and check if it
-    retrieves itself at rank 1. This is the minimum sanity check —
-    a perfect embedder + index should score 1.0 at k=1.
+#     Note: leave-one-out would be stronger but requires rebuilding
+#     the index N times. Self-retrieval is O(N) and catches
+#     degenerate embeddings (constant vectors, collapsed dimensions).
+#     """
+#     hits = defaultdict(int)
+#     mrrs = []
+#     n = len(embeddings)
 
-    Note: leave-one-out would be stronger but requires rebuilding
-    the index N times. Self-retrieval is O(N) and catches
-    degenerate embeddings (constant vectors, collapsed dimensions).
-    """
-    hits = defaultdict(int)
-    mrrs = []
-    n = len(embeddings)
+#     for i, (vec, meta) in enumerate(zip(embeddings, metadata)):
+#         results = retriever.query(vec, top_k=max(ks))
+#         for k in ks:
+#             hits[k] += hits_at_k(results, meta["cve_id"], k)
+#         mrrs.append(mean_reciprocal_rank(results, meta["cve_id"]))
 
-    for i, (vec, meta) in enumerate(zip(embeddings, metadata)):
-        results = retriever.query(vec, top_k=max(ks))
-        for k in ks:
-            hits[k] += hits_at_k(results, meta["cve_id"], k)
-        mrrs.append(mean_reciprocal_rank(results, meta["cve_id"]))
-
-    return {
-        **{f"hit@{k}": hits[k] / n for k in ks},
-        "mrr": float(np.mean(mrrs)),
-        "n": n,
-    }
+#     return {
+#         **{f"hit@{k}": hits[k] / n for k in ks},
+#         "mrr": float(np.mean(mrrs)),
+#         "n": n,
+#     }
 
 
 def leave_one_out_metrics(
@@ -108,11 +111,18 @@ def cwe_group_recall(
     top_k: int = 10,
 ) -> dict:
     """
-    For each sample, query top-k and measure what fraction share the
-    same CWE. Measures whether the embedding space clusters by
-    vulnerability type — useful signal even without CVE-level labels.
+    **Self-retrieval** CWE recall: query and index are the *same* set.
 
-    Returns per-CWE recall and macro average.
+    For each sample, query top-k+1 (to account for the self-hit),
+    remove the query itself via ``_idx``, then measure what fraction
+    of the remaining top-k share the same CWE.
+
+    Unlike ``cross_cwe_recall`` / ``evaluate_cwe_recall`` (where
+    query and index are disjoint), this function must:
+    - fetch one extra result and filter the self-hit by FAISS position,
+    - use ``support - 1`` as the recall denominator (self is not a peer).
+
+    Returns per-CWE recall, macro average, ranx recall, and singletons.
     """
     by_cwe = defaultdict(list)
     unknown_cwe_count = 0
@@ -126,40 +136,28 @@ def cwe_group_recall(
         f"Metadata contains {len(by_cwe)} unique CWEs, plus {unknown_cwe_count} with unknown CWE."
     )
 
-    cwe_recalls = {}
+    per_query: list[tuple[str, str, list[dict], int | None]] = []
     raw_queries = []
-    n_singletons = 0
-    for cwe, indices in by_cwe.items():
-        if len(indices) < 2:
-            n_singletons += 1
-            continue  # no same-CWE peers to retrieve; score would always be 0
+    n = 0
 
-        recalls = []
-        for idx_pos, i in enumerate(indices):
+    for cwe, indices in by_cwe.items():
+        for i in indices:
             results = retriever.query(embeddings[i], top_k=top_k + 1)
-            # Exclude only the query entry itself (by index position),
-            # not all entries sharing the same CVE ID (augmented variants).
-            query_cve = metadata[i]["cve_id"]
-            results_filtered = []
-            self_removed = False
-            for r in results:
-                if not self_removed and r.get("cve_id") == query_cve:
-                    # Remove only the first match (the self-hit, which has the
-                    # highest score). Other entries sharing the same CVE ID
-                    # (augmented variants) are kept.
-                    self_removed = True
-                    continue
-                results_filtered.append(r)
-            results = results_filtered[:top_k]
+            # Remove self-hit by FAISS index position, keep augmented
+            # variants that share the same cve_id.
+            results = [r for r in results if r.get("_idx") != i][:top_k]
+
+            qid = f"q{n}"
+            per_query.append((cwe, qid, results, i))
+
+            support = len(indices) - 1
+            possible = min(top_k, support)
             same_cwe = sum(1 for r in results if r.get("cwe_id") == cwe)
-            possible = min(top_k, len(indices) - 1)
-            recall = same_cwe / possible if possible > 0 else 0.0
-            recalls.append(recall)
             raw_queries.append(
                 {
                     "query_cve": metadata[i]["cve_id"],
                     "query_cwe": cwe,
-                    "recall": recall,
+                    "recall": same_cwe / possible if possible > 0 else 0.0,
                     "retrieved": [
                         {
                             "rank": j + 1,
@@ -171,19 +169,11 @@ def cwe_group_recall(
                     ],
                 }
             )
+            n += 1
 
-        cwe_recalls[cwe] = {"recall": float(np.mean(recalls)), "support": len(indices)}
-
-    macro_avg = (
-        float(np.mean([v["recall"] for v in cwe_recalls.values()]))
-        if cwe_recalls
-        else 0.0
-    )
+    summary = _cwe_recall_summary(per_query, metadata, top_k)
     return {
-        "per_cwe": cwe_recalls,
-        "macro_avg": macro_avg,
-        "n_cwes": len(cwe_recalls),
-        "n_singletons": n_singletons,
+        **summary,
         "raw_queries": raw_queries,
     }
 
