@@ -219,6 +219,11 @@ class NormConcatPCA(_BaseCombined):
 
 
 # ── 4-way variants (NetLSD + WL + GIN + CodeBERT-pattern) ───────────
+#
+# CodeBERT-pattern produces 802d raw vectors (34 pattern + 768 CodeBERT).
+# Naively concatenating raw 802d with 3×128d = 1186d lets CodeBERT
+# dominate PCA (68% of dimensions).  Fix: PCA CodeBERT-pattern to 128d
+# first, so all 4 sub-embedders contribute equally (512d → PCA to 128d).
 
 
 class _BaseCombined4(BaseEmbedder):
@@ -233,8 +238,9 @@ class _BaseCombined4(BaseEmbedder):
         self._gin = GINEmbedder(cfg)
         self._cbpat = CodeBERTPatternEmbedder(cfg)
         self._pca_final: PCA | None = None
+        self._pca_cb: PCA | None = None
+        self._cb_pca_fitted = False
         self._fitted = False
-        self._cbpat_fitted = False
 
     @property
     def name(self) -> str:
@@ -248,16 +254,48 @@ class _BaseCombined4(BaseEmbedder):
         ]
 
     def _raw_parts_batch(self, graphs: list[nx.MultiDiGraph]) -> list[list[np.ndarray]]:
-        """Embed all graphs; CodeBERT-pattern uses batch embed_many."""
-        # Structural: per-graph
+        """Embed all graphs; PCA CodeBERT-pattern to 128d for balanced fusion."""
+        # Structural: per-graph (each already 128d)
         struct_parts = [self._raw_parts(G) for G in graphs]
-        # CodeBERT-pattern: batch (needs PCA fit internally)
-        cbpat_embs = self._cbpat.embed_many(graphs)
-        self._cbpat_fitted = True
-        # Append codebert_pattern as 4th part
+
+        # CodeBERT-pattern: get raw 802d, then PCA to 128d ourselves
+        cbpat_raw, valid_idx = self._cbpat._build_raw(graphs)
+
+        if not self._cb_pca_fitted:
+            valid_raw = cbpat_raw[valid_idx] if valid_idx else cbpat_raw
+            n_comp = min(self.dim, valid_raw.shape[0] - 1, valid_raw.shape[1])
+            self._pca_cb = PCA(n_components=n_comp, random_state=42)
+            self._pca_cb.fit(valid_raw)
+            self._cb_pca_fitted = True
+            expl = self._pca_cb.explained_variance_ratio_.sum()
+            print(f"      [4way] CodeBERT-pattern PCA: 802d → {n_comp}d, explained variance: {expl:.2%}")
+
+        cbpat_reduced = self._pca_cb.transform(cbpat_raw).astype(np.float32)
+        # Pad if n_comp < self.dim
+        if cbpat_reduced.shape[1] < self.dim:
+            padded = np.zeros((cbpat_reduced.shape[0], self.dim), dtype=np.float32)
+            padded[:, :cbpat_reduced.shape[1]] = cbpat_reduced
+            cbpat_reduced = padded
+        # L2 normalize each row
+        cbpat_reduced = normalize(cbpat_reduced, norm="l2")
+
+        # Append as 4th part
         for i, parts in enumerate(struct_parts):
-            parts.append(cbpat_embs[i])
+            parts.append(cbpat_reduced[i])
         return struct_parts
+
+    def _cb_embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
+        """PCA-reduced CodeBERT-pattern for a single graph."""
+        if not self._cb_pca_fitted:
+            raise RuntimeError("Call embed_many() first to fit CodeBERT PCA")
+        raw, _ = self._cbpat._build_raw([G])
+        reduced = self._pca_cb.transform(raw)[0].astype(np.float32)
+        if reduced.shape[0] < self.dim:
+            padded = np.zeros(self.dim, dtype=np.float32)
+            padded[:reduced.shape[0]] = reduced
+            reduced = padded
+        norm = np.linalg.norm(reduced)
+        return (reduced / (norm + 1e-8)).astype(np.float32)
 
     def _fuse(self, parts_batch: list[list[np.ndarray]]) -> np.ndarray:
         raise NotImplementedError
@@ -266,7 +304,7 @@ class _BaseCombined4(BaseEmbedder):
         if not self._fitted:
             raise RuntimeError("Call embed_many() first to fit PCA")
         parts = self._raw_parts(G)
-        parts.append(self._cbpat.embed_one(G))
+        parts.append(self._cb_embed_one(G))
         fused = self._fuse([parts])
         proj = self._pca_final.transform(fused)[0].astype(np.float32)
         return self._norm_vec(proj)
