@@ -46,6 +46,15 @@ def line_level_ratio(gen: str, ref: str) -> float:
     ).ratio()
 
 
+def code_similarity(generated: str, reference: str) -> float:
+    """Compute normalized similarity between generated and reference code."""
+    if not generated or not reference:
+        return 0.0
+    gen_lines = [l.strip() for l in generated.splitlines() if l.strip()]
+    ref_lines = [l.strip() for l in reference.splitlines() if l.strip()]
+    return difflib.SequenceMatcher(None, gen_lines, ref_lines).ratio()
+
+
 def levenshtein_distance(a: str, b: str) -> int:
     """Character-level edit distance (Wagner–Fischer)."""
     if len(a) < len(b):
@@ -118,6 +127,96 @@ def bleu_score(gen: str, ref: str, max_n: int = 4) -> float:
     return bp * math.exp(log_avg)
 
 
+# ── ROUGE metrics ────────────────────────────────────────────────────
+
+
+def _lcs_length(x: list, y: list) -> int:
+    """Compute length of longest common subsequence."""
+    m, n = len(x), len(y)
+    if m == 0 or n == 0:
+        return 0
+    # Space-optimized DP (two rows)
+    prev = [0] * (n + 1)
+    for i in range(1, m + 1):
+        curr = [0] * (n + 1)
+        for j in range(1, n + 1):
+            if x[i - 1] == y[j - 1]:
+                curr[j] = prev[j - 1] + 1
+            else:
+                curr[j] = max(curr[j - 1], prev[j])
+        prev = curr
+    return prev[n]
+
+
+def rouge_l(gen: str, ref: str) -> dict[str, float]:
+    """ROUGE-L (token-level LCS) precision, recall, and F1.
+
+    Uses code-aware tokenization (identifiers, operators, literals).
+    """
+    gen_tokens = tokenize(gen)
+    ref_tokens = tokenize(ref)
+
+    if not ref_tokens and not gen_tokens:
+        return {"precision": 1.0, "recall": 1.0, "f1": 1.0}
+    if not ref_tokens or not gen_tokens:
+        return {"precision": 0.0, "recall": 0.0, "f1": 0.0}
+
+    lcs = _lcs_length(gen_tokens, ref_tokens)
+    precision = lcs / len(gen_tokens)
+    recall = lcs / len(ref_tokens)
+    f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+
+    return {"precision": precision, "recall": recall, "f1": f1}
+
+
+def rouge_n(gen: str, ref: str, n: int = 1) -> dict[str, float]:
+    """ROUGE-N (n-gram overlap) precision, recall, and F1.
+
+    Parameters
+    ----------
+    n : int
+        N-gram size. 1 = unigram (ROUGE-1), 2 = bigram (ROUGE-2).
+    """
+    gen_tokens = tokenize(gen)
+    ref_tokens = tokenize(ref)
+
+    if not ref_tokens and not gen_tokens:
+        return {"precision": 1.0, "recall": 1.0, "f1": 1.0}
+    if not ref_tokens or not gen_tokens:
+        return {"precision": 0.0, "recall": 0.0, "f1": 0.0}
+
+    gen_ng = collections.Counter(ngrams(gen_tokens, n))
+    ref_ng = collections.Counter(ngrams(ref_tokens, n))
+
+    if not gen_ng or not ref_ng:
+        return {"precision": 0.0, "recall": 0.0, "f1": 0.0}
+
+    overlap = sum((gen_ng & ref_ng).values())
+    precision = overlap / sum(gen_ng.values())
+    recall = overlap / sum(ref_ng.values())
+    f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+
+    return {"precision": precision, "recall": recall, "f1": f1}
+
+
+def rouge_scores(gen: str, ref: str) -> dict[str, float]:
+    """Compute ROUGE-1, ROUGE-2, and ROUGE-L F1 scores.
+
+    Returns a flat dict suitable for logging:
+        rouge1_f1, rouge2_f1, rougeL_f1, rougeL_precision, rougeL_recall
+    """
+    r1 = rouge_n(gen, ref, n=1)
+    r2 = rouge_n(gen, ref, n=2)
+    rl = rouge_l(gen, ref)
+    return {
+        "rouge1_f1": r1["f1"],
+        "rouge2_f1": r2["f1"],
+        "rougeL_f1": rl["f1"],
+        "rougeL_precision": rl["precision"],
+        "rougeL_recall": rl["recall"],
+    }
+
+
 def codebleu_weighted(gen: str, ref: str) -> float:
     """Simplified CodeBLEU proxy: 0.5*BLEU + 0.25*token_jaccard + 0.25*line_ratio."""
     return (
@@ -188,16 +287,20 @@ _bertscore_device = None
 
 
 def _get_bertscore_model(
-    model_name: str = "microsoft/codebert-base",
+    model_name: str = "models/codebert-base",
 ) -> tuple:
     global _bertscore_model, _bertscore_tokenizer, _bertscore_device
     if _bertscore_model is None:
         _bertscore_device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu"
         )
-        _bertscore_tokenizer = AutoTokenizer.from_pretrained(model_name)
+        _bertscore_tokenizer = AutoTokenizer.from_pretrained(
+            model_name, local_files_only=True
+        )
         _bertscore_model = (
-            AutoModel.from_pretrained(model_name).to(_bertscore_device).eval()
+            AutoModel.from_pretrained(model_name, local_files_only=True)
+            .to(_bertscore_device)
+            .eval()
         )
     return _bertscore_model, _bertscore_tokenizer, _bertscore_device
 
@@ -205,7 +308,7 @@ def _get_bertscore_model(
 def bertscore_pair(
     gen: str,
     ref: str,
-    model_name: str = "microsoft/codebert-base",
+    model_name: str = "models/codebert-base",
     baseline: float | None = None,
 ) -> dict[str, float]:
     """BERTScore (precision, recall, F1) for a single gen/ref pair.
