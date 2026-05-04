@@ -160,9 +160,74 @@ python main.py --config config.yaml --mode index
 ```
 
 ### Step 3 — query
+
+Run retrieval queries against the FAISS index:
+
+```bash
+# query a single CVE
+python main.py --config config.yaml --mode query --cve CVE-2025-22017
+
+# batch query (all test samples)
+python main.py --config config.yaml --mode query
 ```
-# TODO
-````
+
+### Step 4 — batch patching (LLM-generated patches)
+
+Use an LLM to generate patches for retrieved vulnerabilities:
+
+```bash
+# run batch patching with a specific model (limit to 10 queries for testing)
+python main.py --mode batch --model gpt-4o --max-queries 10
+
+# use oracle retriever (perfect same-CVE lookup) instead of FAISS
+python main.py --mode batch --model gpt-4o --max-queries 10 --oracle
+
+# resume an interrupted run
+python main.py --mode batch --model gpt-4o --resume experiments/output/<run_id>/
+
+# use pre-computed retrieval from a previous query run
+python main.py --mode batch --model gpt-4o --query-run experiments/output/<query_run_id>/
+
+# strip C/C++ comments before patch comparison
+python main.py --mode batch --model gpt-4o --strip-comments
+```
+
+Batch mode options:
+
+| Flag | Description |
+|---|---|
+| `--model` | Azure model/deployment name (default: `MODEL_NAME` from `.env`) |
+| `--max-queries` | Limit total queries (useful for testing) |
+| `--batch-size` | Queries per batch flush (default: 10) |
+| `--oracle` | Use oracle retriever (perfect same-CVE lookup) instead of FAISS |
+| `--query-run` | Path to a `--mode query` run dir for pre-computed retrieval |
+| `--resume` | Path to run dir to resume |
+| `--strip-comments` | Remove C/C++ comments before patch comparison |
+
+Results are written to `experiments/output/<run_id>/results.jsonl`.
+
+### Step 5 — evaluate results
+
+Run the full evaluation pipeline (patch metrics + retrieval metrics + confidence + HTML dashboard) on a batch run:
+
+```bash
+# point to the run directory (auto-finds results.jsonl)
+python -m src.evaluate experiments/output/<run_id>/
+
+# or point directly to the results file
+python -m src.evaluate experiments/output/<run_id>/results.jsonl
+
+# equivalent thin wrapper
+python evaluate_patches.py experiments/output/<run_id>/
+```
+
+The evaluation pipeline produces:
+- `evaluation.jsonl` — per-record patch evaluation (BLEU-4, Jaccard, exact match, etc.)
+- `evaluation_summary.json` — aggregate patch metrics
+- `retrieval_eval_summary.json` — retrieval hit rates and MRR
+- `evaluation_dashboard.html` — interactive HTML dashboard
+- `patch_analysis.html` — detailed patch analysis with code triples
+
 ---
 
 ## Using from ADK agents
