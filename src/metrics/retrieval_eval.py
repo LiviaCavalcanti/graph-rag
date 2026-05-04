@@ -7,8 +7,6 @@ the experiment runner's orchestration logic.
 
 import os
 from collections import defaultdict
-from pathlib import Path
-
 import numpy as np
 from ranx import Qrels, Run, evaluate as ranx_evaluate
 
@@ -93,43 +91,139 @@ def _ranx_metrics(qrels: Qrels, run: Run, ks: list[int]) -> dict:
     return {str(k): float(v) for k, v in scores.items()}
 
 
+def _cwe_recall_summary(
+    per_query: list[tuple[str, str, list[dict], int | None]],
+    index_metadata: list[dict],
+    top_k: int,
+) -> dict:
+    """Shared CWE-recall computation for both cross-split and self-retrieval.
+
+    *per_query* is a list of ``(query_cwe, qid, results, self_idx)`` tuples.
+    *self_idx* is the FAISS index position of the query itself (for
+    self-retrieval where the query is *inside* the index) or ``None``
+    (for cross-split where query and index are disjoint).
+
+    When *self_idx* is not ``None``:
+    - CWE support is decremented by 1 (the query cannot retrieve itself).
+    - That position is excluded from ranx qrels.
+
+    Returns a dict with per_cwe breakdown, macro_avg (capped recall),
+    ranx_recall (standard recall@k), n_cwes, and n_singletons.
+    """
+    cwe_support = defaultdict(int)
+    for m in index_metadata:
+        cwe = m.get("cwe_id")
+        if cwe and cwe != "UNKNOWN":
+            cwe_support[cwe] += 1
+
+    qrels_dict: dict[str, dict[str, int]] = {}
+    run_dict: dict[str, dict[str, float]] = {}
+    per_cwe_scores: dict[str, list[float]] = defaultdict(list)
+    n_singletons_seen: set[str] = set()
+
+    for query_cwe, qid, results, self_idx in per_query:
+        support = cwe_support.get(query_cwe, 0)
+        if self_idx is not None:
+            support -= 1  # exclude self from available peers
+        possible = min(top_k, support)
+        if possible <= 0:
+            n_singletons_seen.add(query_cwe)
+            continue
+
+        # qrels: all index docs with same CWE (excluding self when applicable)
+        q_qrels: dict[str, int] = {}
+        for idx, m in enumerate(index_metadata):
+            if m.get("cwe_id") == query_cwe and idx != self_idx:
+                q_qrels[f"d{idx}"] = 1
+        q_run: dict[str, float] = {}
+        for j, r in enumerate(results):
+            q_run[_doc_id(r, j, qid)] = float(r.get("score", 0.0))
+
+        if q_qrels and q_run:
+            qrels_dict[qid] = q_qrels
+            run_dict[qid] = q_run
+
+        same = sum(1 for r in results if r.get("cwe_id") == query_cwe)
+        per_cwe_scores[query_cwe].append(same / possible)
+
+    per_cwe = {
+        cwe: {
+            "recall": float(np.mean(vals)),
+            "support": int(cwe_support.get(cwe, 0)),
+        }
+        for cwe, vals in per_cwe_scores.items()
+    }
+    macro = float(np.mean([v["recall"] for v in per_cwe.values()])) if per_cwe else 0.0
+
+    ranx_recall = 0.0
+    if qrels_dict and run_dict:
+        qrels = Qrels(qrels_dict)
+        run = Run(run_dict)
+        ranx_recall = float(ranx_evaluate(qrels, run, f"recall@{top_k}"))
+
+    return {
+        "per_cwe": per_cwe,
+        "macro_avg": macro,
+        "ranx_recall": ranx_recall,
+        "n_cwes": len(per_cwe),
+        "n_singletons": len(n_singletons_seen - set(per_cwe)),
+    }
+
+
 def _query_graph_for(pair):
     """Pick the right graph to embed as a query for this pair."""
-    if (
-        pair.meta.get("dataset") == "autopatch"
-        and pair.meta.get("variant") != "original"
-    ):
-        return pair.G_before
     return pair.G_vuln
 
 
-def code_query_eval(
+def _retrieve_for(pair, embedder, retriever, top_k: int) -> list[dict] | None:
+    """Embed the appropriate graph for *pair* and retrieve top_k results.
+
+    Returns None if the embedding has near-zero norm.
+    """
+    query_graph = _query_graph_for(pair)
+    query_vec = embedder.embed_one(query_graph)
+    if np.linalg.norm(query_vec) < 1e-6:
+        return None
+    return retriever.query(query_vec, top_k=top_k)
+
+
+def retrieve_all(
     pairs: list,
-    retriever,
     embedder,
+    retriever,
+    top_k: int,
+) -> list[tuple]:
+    """Run retrieval for all pairs, returning (pair, results) tuples.
+
+    Pairs whose embedding has near-zero norm are silently skipped.
+    """
+    out = []
+    for pair in pairs:
+        results = _retrieve_for(pair, embedder, retriever, top_k)
+        if results is not None:
+            out.append((pair, results))
+    return out
+
+
+# ── Modular metric functions ─────────────────────────────────────────
+
+
+def cve_retrieval_metrics(
+    query_results: list[tuple],
     ks: list[int],
 ) -> dict:
-    """
-    Self-retrieval via re-embedding: for each query pair, embed its graph
-    with ``embedder.embed_one`` and retrieve from the index.
+    """Compute CVE-level IR metrics from pre-retrieved (pair, results) tuples.
 
-    Returns hit@k for each k, MRR, nDCG, MAP, and per-query details.
+    Returns hit@k, MRR, nDCG, MAP, per-query details, and n.
     """
     raw_queries = []
-    query_results = []  # (qid, cve_id, results) for ranx
+    ranx_input = []  # (qid, cve_id, results) for ranx
     n = 0
 
-    for pair in pairs:
-        query_graph = _query_graph_for(pair)
-        query_vec = embedder.embed_one(query_graph)
-        if np.linalg.norm(query_vec) < 1e-6:
-            continue
-        results = retriever.query(query_vec, top_k=max(ks))
-
+    for pair, results in query_results:
         qid = f"q{n}"
-        query_results.append((qid, pair.cve_id, results))
+        ranx_input.append((qid, pair.cve_id, results))
 
-        # Per-query MRR for raw_queries detail
         mrr = next(
             (
                 1.0 / (j + 1)
@@ -174,8 +268,7 @@ def code_query_eval(
     if n == 0:
         return {"n": 0, "raw_queries": []}
 
-    # Compute aggregate metrics via ranx
-    qrels, run = _build_cve_qrels_and_run(query_results)
+    qrels, run = _build_cve_qrels_and_run(ranx_input)
     ranx_scores = _ranx_metrics(qrels, run, ks)
 
     max_k = max(ks)
@@ -189,21 +282,15 @@ def code_query_eval(
     }
 
 
-def cross_cwe_recall(
-    query_pairs: list,
-    retriever,
-    embedder,
+def cwe_recall_metrics(
+    query_results: list[tuple],
     index_metadata: list[dict],
     top_k: int,
 ) -> dict:
-    """
-    CWE recall where queries and index can come from different splits.
+    """Compute CWE recall from pre-retrieved (pair, results) tuples.
 
-    For each query pair with a known CWE, retrieve top_k results and
-    measure how many share the same CWE type.
-
-    Aggregate recall is computed via ranx; per-CWE breakdown is kept for
-    diagnostic purposes.
+    Pairs with unknown CWE or no index support are skipped.
+    Returns per-CWE breakdown, macro_avg, ranx_recall, and raw_queries.
     """
     support_by_cwe = defaultdict(int)
     for m in index_metadata:
@@ -211,52 +298,29 @@ def cross_cwe_recall(
         if cwe and cwe != "UNKNOWN":
             support_by_cwe[cwe] += 1
 
-    # Build ranx structures for CWE-level recall
-    qrels_dict: dict[str, dict[str, int]] = {}
-    run_dict: dict[str, dict[str, float]] = {}
-    per_cwe_scores = defaultdict(list)
+    per_query = []
     raw_queries = []
     skipped_no_support = 0
     n = 0
 
-    for pair in query_pairs:
+    for pair, results in query_results:
         cwe = pair.cwe_id
         if not cwe or cwe == "UNKNOWN":
             continue
-        possible = min(top_k, support_by_cwe.get(cwe, 0))
-        if possible <= 0:
+        if support_by_cwe.get(cwe, 0) <= 0:
             skipped_no_support += 1
             continue
 
-        query_graph = _query_graph_for(pair)
-        query_vec = embedder.embed_one(query_graph)
-        if np.linalg.norm(query_vec) < 1e-6:
-            continue
-
-        results = retriever.query(query_vec, top_k=top_k)
-
-        # Build per-query qrels: all index docs with same CWE are relevant
         qid = f"q{n}"
-        q_qrels: dict[str, int] = {}
-        for idx, m in enumerate(index_metadata):
-            if m.get("cwe_id") == cwe:
-                q_qrels[f"d{idx}"] = 1
-        q_run: dict[str, float] = {}
-        for j, r in enumerate(results):
-            q_run[_doc_id(r, j, qid)] = float(r.get("score", 0.0))
+        per_query.append((cwe, qid, results, None))
 
-        if q_qrels and q_run:
-            qrels_dict[qid] = q_qrels
-            run_dict[qid] = q_run
-
+        possible = min(top_k, support_by_cwe.get(cwe, 0))
         same_cwe = sum(1 for r in results if r.get("cwe_id") == cwe)
-        recall = same_cwe / possible
-        per_cwe_scores[cwe].append(recall)
         raw_queries.append(
             {
                 "query_cve": pair.cve_id,
                 "query_cwe": cwe,
-                "recall": recall,
+                "recall": same_cwe / possible if possible > 0 else 0.0,
                 "retrieved": [
                     {
                         "rank": j + 1,
@@ -270,32 +334,46 @@ def cross_cwe_recall(
         )
         n += 1
 
-    per_cwe = {
-        cwe: {
-            "recall": float(np.mean(vals)),
-            "support": int(support_by_cwe.get(cwe, 0)),
-        }
-        for cwe, vals in per_cwe_scores.items()
-    }
-
-    # Compute aggregate recall via ranx
-    ranx_recall = 0.0
-    if qrels_dict and run_dict:
-        qrels = Qrels(qrels_dict)
-        run = Run(run_dict)
-        ranx_recall = float(ranx_evaluate(qrels, run, f"recall@{top_k}"))
-
-    macro = float(np.mean([v["recall"] for v in per_cwe.values()])) if per_cwe else 0.0
+    summary = _cwe_recall_summary(per_query, index_metadata, top_k)
     return {
-        "per_cwe": per_cwe,
-        "macro_avg": macro,
-        "ranx_recall": ranx_recall,
-        "n_cwes": len(per_cwe),
+        **summary,
         "n_singletons": 0,
         "n_queries": len(raw_queries),
         "n_skipped_no_support": skipped_no_support,
         "raw_queries": raw_queries,
     }
+
+
+# ── Convenience wrappers (retrieve + compute in one call) ────────────
+
+
+def code_query_eval(
+    pairs: list,
+    retriever,
+    embedder,
+    ks: list[int],
+) -> dict:
+    """Self-retrieval via re-embedding + CVE metrics.
+
+    Convenience wrapper: calls ``retrieve_all`` then ``cve_retrieval_metrics``.
+    """
+    qr = retrieve_all(pairs, embedder, retriever, max(ks))
+    return cve_retrieval_metrics(qr, ks)
+
+
+def cross_cwe_recall(
+    query_pairs: list,
+    retriever,
+    embedder,
+    index_metadata: list[dict],
+    top_k: int,
+) -> dict:
+    """CWE recall where queries and index can come from different splits.
+
+    Convenience wrapper: calls ``retrieve_all`` then ``cwe_recall_metrics``.
+    """
+    qr = retrieve_all(query_pairs, embedder, retriever, top_k)
+    return cwe_recall_metrics(qr, index_metadata, top_k)
 
 
 # ── Pre-computed embedding evaluation ────────────────────────────────
@@ -423,57 +501,81 @@ def evaluate_cwe_recall(
         if cwe and cwe != "UNKNOWN":
             cwe_support[cwe] += 1
 
-    # Build ranx structures
-    qrels_dict: dict[str, dict[str, int]] = {}
-    run_dict: dict[str, dict[str, float]] = {}
-    per_cwe_scores = defaultdict(list)
+    per_query = []  # (cwe, qid, results) for _cwe_recall_summary
     n = 0
 
     for pair, qvec in zip(query_pairs, query_embeddings):
         cwe = pair.cwe_id
         if not cwe or cwe == "UNKNOWN":
             continue
-        possible = min(top_k, cwe_support.get(cwe, 0))
-        if possible <= 0:
+        if cwe_support.get(cwe, 0) <= 0:
             continue
         if np.linalg.norm(qvec) < 1e-6:
             continue
         res = retriever.query(qvec, top_k=top_k)
-
-        # Build qrels: all index docs with same CWE are relevant
-        qid = f"q{n}"
-        q_qrels: dict[str, int] = {}
-        for idx, m in enumerate(index_metadata):
-            if m.get("cwe_id") == cwe:
-                q_qrels[f"d{idx}"] = 1
-        q_run: dict[str, float] = {}
-        for j, r in enumerate(res):
-            q_run[_doc_id(r, j, qid)] = float(r.get("score", 0.0))
-
-        if q_qrels and q_run:
-            qrels_dict[qid] = q_qrels
-            run_dict[qid] = q_run
-
-        same = sum(1 for r in res if r.get("cwe_id") == cwe)
-        per_cwe_scores[cwe].append(same / possible)
+        per_query.append((cwe, f"q{n}", res, None))
         n += 1
 
-    per_cwe = {
-        cwe: {"recall": float(np.mean(vals)), "support": int(cwe_support.get(cwe, 0))}
-        for cwe, vals in per_cwe_scores.items()
-    }
-    macro = float(np.mean([v["recall"] for v in per_cwe.values()])) if per_cwe else 0.0
+    return _cwe_recall_summary(per_query, index_metadata, top_k)
 
-    # Compute aggregate recall via ranx
-    ranx_recall = 0.0
-    if qrels_dict and run_dict:
-        qrels = Qrels(qrels_dict)
-        run = Run(run_dict)
-        ranx_recall = float(ranx_evaluate(qrels, run, f"recall@{top_k}"))
+
+def evaluate_retrieval_from_records(records: list[dict]) -> dict:
+    """Compute retrieval metrics from serialized results.jsonl records.
+
+    Each record must have ``query_cve``, ``query_cwe``, and
+    ``retrieval.top_k`` (list of {rank, cve_id, cwe_id, score, ...}).
+
+    Returns a dict compatible with the evaluation dashboard schema:
+    matched, top_k, hit_at_1, hit_rate_at_1, hit_cve_at_k, hit_rate_at_k,
+    mrr, cwe_hit_at_k, cwe_hit_rate_at_k.
+    """
+    retrieved = [r for r in records if r.get("retrieval", {}).get("top_k")]
+    total = len(retrieved)
+
+    if total == 0:
+        return {"matched": 0, "top_k": 5, "hit_at_1": 0, "hit_rate_at_1": 0,
+                "hit_cve_at_k": 0, "hit_rate_at_k": 0, "mrr": 0,
+                "cwe_hit_at_k": 0, "cwe_hit_rate_at_k": 0}
+
+    # Determine k from first record
+    sample_topk = retrieved[0].get("retrieval", {}).get("top_k", [])
+    k = len(sample_topk) if sample_topk else 5
+
+    # Build query_results for ranx
+    query_results = []
+    for i, r in enumerate(retrieved):
+        qid = f"q{i}"
+        query_cve = r.get("query_cve", "")
+        # Convert top_k entries to the format expected by _build_cve_qrels_and_run
+        results = []
+        for entry in r.get("retrieval", {}).get("top_k", []):
+            results.append({
+                "cve_id": entry.get("cve_id"),
+                "cwe_id": entry.get("cwe_id"),
+                "score": entry.get("score", 0.0),
+            })
+        query_results.append((qid, query_cve, results))
+
+    # Use existing ranx infrastructure for CVE hit metrics
+    qrels, run = _build_cve_qrels_and_run(query_results)
+    ranx_scores = _ranx_metrics(qrels, run, [1, k])
+
+    # CWE recall@k (any result in top-k shares CWE)
+    cwe_hit_at_k = 0
+    for r in retrieved:
+        query_cwe = r.get("query_cwe", "")
+        top_k_list = r.get("retrieval", {}).get("top_k", [])
+        if any(entry.get("cwe_id") == query_cwe for entry in top_k_list):
+            cwe_hit_at_k += 1
 
     return {
-        "per_cwe": per_cwe,
-        "macro_avg": macro,
-        "ranx_recall": ranx_recall,
-        "n_cwes": len(per_cwe),
+        "matched": total,
+        "top_k": k,
+        "hit_at_1": int(round(ranx_scores.get("hit_rate@1", 0.0) * total)),
+        "hit_rate_at_1": round(ranx_scores.get("hit_rate@1", 0.0), 4),
+        "hit_cve_at_k": int(round(ranx_scores.get(f"hit_rate@{k}", 0.0) * total)),
+        "hit_rate_at_k": round(ranx_scores.get(f"hit_rate@{k}", 0.0), 4),
+        "mrr": round(ranx_scores.get(f"mrr@{k}", 0.0), 4),
+        "cwe_hit_at_k": cwe_hit_at_k,
+        "cwe_hit_rate_at_k": round(cwe_hit_at_k / total, 4),
     }
