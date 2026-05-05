@@ -226,6 +226,10 @@
     \end{itemize}
   \end{column}
   \end{columns}
+
+  \vspace{0.3em}
+  {\scriptsize\color{black!55}
+  Runs: \texttt{1b1ca9\_pca}, \texttt{d3ea0d\_nopca}, \texttt{f1a6c7\_nol2}}
 \end{frame}
 
 % ══════════════════════════════════════════════════════════════════════
@@ -323,7 +327,7 @@
     \item 225 index graphs ($G_{\text{diff}}$), seed$=$42, stratified
     \item 6 embedders: Combined, GIN, WL, CodeBERT seq, CodeBERT pat., RGCN
     \item All projected to 128d (PCA) $+$ L2-normalized
-    \item CWE labels as class signal ($\sim$15 unique classes)
+    \item CWE labels as class signal (22 unique classes)
   \end{itemize}}
 
   \vspace{0.5em}
@@ -375,7 +379,8 @@
 
   \vspace{0.4em}
   {\scriptsize\color{black!55}
-  Run: \texttt{python -m experiments.space\_analysis\_experiment}}
+  Run: \texttt{python -m experiments.space\_analysis\_experiment}\\
+  Run ID: \texttt{20260502\_140227\_space\_analysis\_85aac9}}
 
 \end{column}
 \end{columns}
@@ -446,7 +451,8 @@
   {\scriptsize\color{black!55}
   225 index, 73 query ($G_{\text{diff}}$, seed$=$42).\\
   Each sub-embedder: 128d (NetLSD, WL, GIN).\\
-  Run: \texttt{python -m experiments.combining\_experiment}}
+  Run: \texttt{python -m experiments.combining\_experiment}\\
+  Run ID: \texttt{20260503\_200736\_combining\_e60d9d}}
 
 \end{column}
 \end{columns}
@@ -605,32 +611,32 @@
     node distance=0.3cm]
 
     % 3-way baseline
-    \node[font=\scriptsize\sffamily\bfseries,c1] (lbl3) at (0,2.3) {3-way (baseline)};
-    \node[box=c1, minimum width=3.5cm] (c3) at (0,1.7) {NetLSD\,+\,WL\,+\,GIN};
-    \node[box=c3, right=0.3cm of c3, minimum width=1cm] (cat3) {concat};
-    \node[box=c5, right=0.3cm of cat3, minimum width=1cm] (pca3) {PCA};
+    \node[font=\scriptsize\sffamily\bfseries,c1] (lbl3) at (0,3.0) {3-way (baseline)};
+    \node[box=c1, minimum width=3.5cm] (c3) at (0,2.3) {NetLSD\,+\,WL\,+\,GIN};
+    \node[box=c3, right=0.5cm of c3, minimum width=1cm] (cat3) {concat};
+    \node[box=c5, right=0.5cm of cat3, minimum width=1cm] (pca3) {PCA};
     \draw[arr] (c3) -- (cat3);
     \draw[arr] (cat3) -- node[above,font=\tiny] {384d} (pca3);
     \node[right=0.15cm of pca3, font=\tiny\color{black!50}] {128d};
 
     % 4-way run 1
-    \node[font=\scriptsize\sffamily\bfseries,miss] (lbl4a) at (0,0.8) {4-way Run 1};
-    \node[box=c1, minimum width=2.2cm] (s4a) at (-0.65,0.2) {Struct (384d)};
-    \node[box=c4, minimum width=2.2cm] (cb4a) at (-0.65,-0.4) {CB-pat (802d)};
-    \node[box=c3, right=0.3cm of s4a, minimum width=1cm, yshift=-0.3cm] (cat4a) {concat};
-    \node[box=c5, right=0.3cm of cat4a, minimum width=1cm] (pca4a) {PCA};
+    \node[font=\scriptsize\sffamily\bfseries,miss] (lbl4a) at (0,1.0) {4-way Run 1};
+    \node[box=c1, minimum width=2.2cm] (s4a) at (-0.65,0.4) {Struct (384d)};
+    \node[box=c4, minimum width=2.2cm] (cb4a) at (-0.65,-0.6) {CB-pat (802d)};
+    \node[box=c3, right=0.5cm of s4a, minimum width=1cm, yshift=-0.5cm] (cat4a) {concat};
+    \node[box=c5, right=0.5cm of cat4a, minimum width=1cm] (pca4a) {PCA};
     \draw[arr] (s4a.east) -- (cat4a.west);
     \draw[arr] (cb4a.east) -- (cat4a.west);
     \draw[arr] (cat4a) -- node[above,font=\tiny] {1186d} (pca4a);
     \node[right=0.15cm of pca4a, font=\tiny\color{black!50}] {128d};
 
     % 4-way run 2
-    \node[font=\scriptsize\sffamily\bfseries,warn] (lbl4b) at (0,-1.3) {4-way Run 2};
-    \node[box=c1, minimum width=2.2cm] (s4b) at (-0.65,-1.9) {Struct (384d)};
-    \node[box=c4, minimum width=1.2cm] (cb4b) at (-0.9,-2.5) {CB 802d};
-    \node[box=c5, right=0.15cm of cb4b, minimum width=0.8cm] (pcb) {\scriptsize PCA};
-    \node[box=c3, right=0.3cm of s4b, minimum width=1cm, yshift=-0.3cm] (cat4b) {concat};
-    \node[box=c5, right=0.3cm of cat4b, minimum width=1cm] (pca4b) {PCA};
+    \node[font=\scriptsize\sffamily\bfseries,warn] (lbl4b) at (0,-1.8) {4-way Run 2};
+    \node[box=c1, minimum width=2.2cm] (s4b) at (-0.65,-2.4) {Struct (384d)};
+    \node[box=c4, minimum width=1.2cm] (cb4b) at (-1.2,-3.4) {CB 802d};
+    \node[box=c5, right=0.2cm of cb4b, minimum width=0.8cm] (pcb) {\scriptsize PCA};
+    \node[box=c3, right=0.5cm of s4b, minimum width=1cm, yshift=-0.5cm] (cat4b) {concat};
+    \node[box=c5, right=0.5cm of cat4b, minimum width=1cm] (pca4b) {PCA};
     \draw[arr] (s4b.east) -- (cat4b.west);
     \draw[arr] (cb4b) -- (pcb);
     \draw[arr] (pcb.east) -- node[above,font=\tiny] {128d} (cat4b.west);
@@ -675,6 +681,10 @@
       & & & & && & & & \\
     \bottomrule
   \end{tabular}}
+
+  \vspace{0.3em}
+  {\scriptsize\color{black!55}
+  Run ID: \texttt{20260503\_200736\_combining\_e60d9d}}
 
 \end{frame}
 
@@ -786,7 +796,7 @@
 
   \vspace{0.3em}
   {\small
-  \renewcommand{\arraystretch}{1.25}
+  \renewcommand{\arraystretch}{1.2}
   \begin{tabular}{p{1.5cm}p{4.5cm}}
     \toprule
     \textbf{Mode} & \textbf{What it retrieves} \\
@@ -800,7 +810,7 @@
 
   \vspace{0.5em}
   \textbf{Evaluation protocol}
-  \begin{itemize}\setlength{\itemsep}{2pt}
+  \begin{itemize}\setlength{\itemsep}{1pt}
     {\scriptsize
     \item Same split: 225 index, 73 query (seed$=$42)
     \item \textbf{Patch quality}: BLEU-4, token Jaccard, CodeBLEU proxy
@@ -846,6 +856,10 @@
     \textbf{Overall}          & 73 & \textbf{.655} & \textbf{.748} & \textbf{.660} & \textbf{.716} \\
     \bottomrule
   \end{tabular}}
+
+  \vspace{0.3em}
+  {\scriptsize\color{black!55}
+  Run ID: \texttt{20260423\_095841\_batch\_oracle\_834322}}
 
 \end{frame}
 
@@ -1120,7 +1134,8 @@
   \textbf{Implication:} An ensemble (structural $+$ semantic)
   could recover $\sim$3--4 extra hits $\to$ push hit@1
   from 82\% toward $\sim$87\%.
-  This motivates late fusion / reranking.}
+  This motivates late fusion / reranking.\\
+  Run ID: \texttt{20260430\_205537\_experiment\_2a2c26}}
 
 \end{column}
 \end{columns}
@@ -1140,9 +1155,7 @@
     \item \textbf{CWEs with stereotyped patterns:}
           Use After Free (BLEU .80),
           Uninitialized Variable (BLEU .89),
-          Integer Overflow (BLEU .73)
-    \item \textbf{DeepSeek-R1 variants} produce highest-quality patches
-          (BLEU .775 vs.\ .586 for DeepSeek base)}
+          Integer Overflow (BLEU .73)}
   \end{itemize}
 
   \vspace{0.5em}
@@ -1220,7 +1233,7 @@
 \end{frame}
 
 
-\begin{frame}{LLM Semantic Evaluation: Overall Results ($n{=}73$)}
+\begin{frame}{LLM Semantic Evaluation: Preliminary Results ($n{=}73$)}
 
   \begin{columns}[T]
   \begin{column}{0.45\textwidth}
@@ -1306,57 +1319,58 @@
   {\tiny
   \renewcommand{\arraystretch}{1.15}
   \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{l r c c c c}
+  \begin{tabular}{l r c c c c c}
     \toprule
     \textbf{CWE class}
       & \textbf{n}
+      & \textbf{hit@1 CVE (\%)}
       & \textbf{FIXED}
       & \textbf{PARTIAL}
       & \textbf{NOT\_FIXED}
       & \textbf{Fix rate} \\
     \midrule
     \rowcolor{hit!8}
-    Array Index Validation     & 1  & 1 & 0 & 0 & \chit{100\%} \\
+    Array Index Validation     & 1  & \cmiss{0}   & 1 & 0 & 0 & \chit{100\%} \\
     \rowcolor{hit!8}
-    Business Logic             & 1  & 1 & 0 & 0 & \chit{100\%} \\
+    Business Logic             & 1  & \chit{100}  & 1 & 0 & 0 & \chit{100\%} \\
     \rowcolor{hit!8}
-    Input Validation           & 1  & 1 & 0 & 0 & \chit{100\%} \\
+    Input Validation           & 1  & \cmiss{0}   & 1 & 0 & 0 & \chit{100\%} \\
     \rowcolor{hit!8}
-    Integer Underflow          & 1  & 1 & 0 & 0 & \chit{100\%} \\
+    Integer Underflow          & 1  & \chit{100}  & 1 & 0 & 0 & \chit{100\%} \\
     \rowcolor{hit!8}
-    Out-of-bounds Write        & 1  & 1 & 0 & 0 & \chit{100\%} \\
+    Out-of-bounds Write        & 1  & \cmiss{0}   & 1 & 0 & 0 & \chit{100\%} \\
     \rowcolor{hit!8}
-    Resource Expiration        & 2  & 2 & 0 & 0 & \chit{100\%} \\
+    Resource Expiration        & 2  & \cwarn{50}  & 2 & 0 & 0 & \chit{100\%} \\
     \rowcolor{hit!8}
-    Unchecked Return Value     & 1  & 1 & 0 & 0 & \chit{100\%} \\
+    Unchecked Return Value     & 1  & \cmiss{0}   & 1 & 0 & 0 & \chit{100\%} \\
     \rowcolor{hit!8}
-    Uninitialized Variable     & 2  & 2 & 0 & 0 & \chit{100\%} \\
+    Uninitialized Variable     & 2  & \chit{100}  & 2 & 0 & 0 & \chit{100\%} \\
     \addlinespace[2pt]
-    Integer Overflow           & 10 & 7 & 2 & 1 & \chit{90.0\%} \\
-    Use After Free             & 12 & 10 & 0 & 2 & \chit{83.3\%} \\
-    Race Condition             & 5  & 3 & 0 & 2 & 60.0\% \\
-    Deadlock                   & 4  & 2 & 0 & 2 & 50.0\% \\
-    Improper Locking           & 8  & 3 & 1 & 4 & 50.0\% \\
-    Memory Leak                & 2  & 1 & 0 & 1 & 50.0\% \\
-    Resource Exhaustion        & 2  & 1 & 0 & 1 & 50.0\% \\
+    Integer Overflow           & 10 & \cwarn{60}  & 7 & 2 & 1 & \chit{90.0\%} \\
+    Use After Free             & 12 & \cwarn{75}  & 10 & 0 & 2 & \chit{83.3\%} \\
+    Race Condition             & 5  & \chit{100}  & 3 & 0 & 2 & 60.0\% \\
+    Deadlock                   & 4  & \chit{100}  & 2 & 0 & 2 & 50.0\% \\
+    Improper Locking           & 8  & \chit{100}  & 3 & 1 & 4 & 50.0\% \\
+    Memory Leak                & 2  & \chit{100}  & 1 & 0 & 1 & 50.0\% \\
+    Resource Exhaustion        & 2  & \cmiss{0}   & 1 & 0 & 1 & 50.0\% \\
     \addlinespace[2pt]
     \rowcolor{miss!8}
-    NULL Pointer Deref         & 11 & 3 & 1 & 7 & \cmiss{36.4\%} \\
+    NULL Pointer Deref         & 11 & \cmiss{36}  & 3 & 1 & 7 & \cmiss{36.4\%} \\
     \rowcolor{miss!8}
-    Check Return Value         & 3  & 1 & 0 & 2 & \cmiss{33.3\%} \\
+    Check Return Value         & 3  & \cwarn{33}  & 1 & 0 & 2 & \cmiss{33.3\%} \\
     \rowcolor{miss!8}
-    Expired Pointer Deref      & 2  & 0 & 0 & 2 & \cmiss{0\%} \\
+    Expired Pointer Deref      & 2  & \chit{100}  & 0 & 0 & 2 & \cmiss{0\%} \\
     \rowcolor{miss!8}
-    Fixed Address to Pointer   & 1  & 0 & 0 & 1 & \cmiss{0\%} \\
+    Fixed Address to Pointer   & 1  & \chit{100}  & 0 & 0 & 1 & \cmiss{0\%} \\
     \rowcolor{miss!8}
-    Resource Lifetime          & 1  & 0 & 0 & 1 & \cmiss{0\%} \\
+    Resource Lifetime          & 1  & \chit{100}  & 0 & 0 & 1 & \cmiss{0\%} \\
     \rowcolor{miss!8}
-    Return of Stack Var        & 1  & 0 & 0 & 1 & \cmiss{0\%} \\
+    Return of Stack Var        & 1  & \chit{100}  & 0 & 0 & 1 & \cmiss{0\%} \\
     \rowcolor{miss!8}
-    Type Conversion            & 1  & 0 & 0 & 1 & \cmiss{0\%} \\
+    Type Conversion            & 1  & \chit{100}  & 0 & 0 & 1 & \cmiss{0\%} \\
     \midrule
     \rowcolor{c1!8}
-    \textbf{Overall}           & \textbf{73} & \textbf{41} & \textbf{4} & \textbf{28} & \textbf{61.6\%} \\
+    \textbf{Overall}           & \textbf{73} & \textbf{68.5} & \textbf{41} & \textbf{4} & \textbf{28} & \textbf{61.6\%} \\
     \bottomrule
   \end{tabular}}
 
