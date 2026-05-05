@@ -16,56 +16,13 @@ from __future__ import annotations
 
 import html
 import json
-from collections import Counter
 from pathlib import Path
 
-# ── CSS (shared with experiments dashboard) ──────────────────────────
+from experiments.dashboard_scripts._theme import THEME_CSS
 
-_CSS = """\
-:root {
-  --c0: #4361EE; --c1: #F72585; --c2: #7209B7; --c3: #FB8500;
-  --c4: #06D6A0; --c5: #118AB2; --c6: #FFD166; --c7: #EF476F;
-  --bg: #f5f4f0; --surface: #ffffff; --ink: #1a1a2e; --muted: #6b7280;
-  --accent: var(--c0); --accent-light: #eef0fd; --border: #e2e0db;
-  --radius: 12px; --shadow: 0 4px 24px rgba(10,10,40,.07);
-}
-*, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
-body { font-family: "Inter","Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--ink); font-size:14px; line-height:1.6; }
-a { color:var(--accent); }
-.topbar { background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%); color:#fff; padding:18px 32px; display:flex; align-items:center; gap:16px; }
-.topbar h1 { font-size:1.4rem; font-weight:700; letter-spacing:-.5px; }
-.topbar .run-id { font-size:.8rem; background:#ffffff22; padding:3px 10px; border-radius:99px; }
-.tab-nav { background:var(--surface); border-bottom:2px solid var(--border); display:flex; padding:0 32px; gap:4px; position:sticky; top:0; z-index:10; box-shadow:0 2px 8px rgba(0,0,0,.06); }
-.tab-btn { padding:12px 20px; border:none; background:none; cursor:pointer; font-size:.95rem; font-weight:500; color:var(--muted); border-bottom:3px solid transparent; margin-bottom:-2px; transition:color .2s,border-color .2s; }
-.tab-btn:hover { color:var(--ink); }
-.tab-btn.active { color:var(--accent); border-bottom-color:var(--accent); }
-.content { max-width:1300px; margin:0 auto; padding:28px 24px 64px; }
-.tab-panel { display:none; }
-.tab-panel.active { display:block; }
-h2 { font-size:1.5rem; font-weight:700; margin-bottom:6px; }
-h3 { font-size:1.05rem; font-weight:600; margin-bottom:12px; }
-p.sub { color:var(--muted); margin-bottom:20px; font-size:.92rem; }
-.card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px 24px; margin-bottom:18px; box-shadow:var(--shadow); }
-.stat-row { display:flex; flex-wrap:wrap; gap:14px; margin-bottom:20px; }
-.stat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; min-width:160px; box-shadow:var(--shadow); flex:1; }
-.stat-card.accent { background:var(--accent-light); border-color:var(--accent); }
-.stat-card.warn { background:#fff0f3; border-color:#c62828; }
-.stat-card.ok { background:#e8faf3; border-color:#146c43; }
-.stat-label { font-size:.78rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); }
-.stat-value { font-size:1.9rem; font-weight:700; color:var(--ink); line-height:1.2; }
-.stat-sub { font-size:.8rem; color:var(--muted); margin-top:4px; }
-table { width:100%; border-collapse:collapse; font-size:.9rem; }
-th, td { padding:9px 12px; text-align:left; border-bottom:1px solid var(--border); }
-th { background:var(--bg); font-weight:600; font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; }
-tr:hover td { background:#f9f8f5; }
-.scroll-x { overflow-x:auto; }
-.sparkbar-wrap { display:inline-flex; align-items:center; gap:6px; }
-.sparkbar { display:inline-block; height:10px; border-radius:3px; }
-.sparkbar-label { font-size:.82rem; color:var(--ink); }
-.dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:5px; vertical-align:middle; }
-.pill { display:inline-block; padding:2px 8px; border-radius:99px; font-size:.78rem; background:var(--accent-light); color:var(--accent); }
-.pill.warn { background:#fff0f3; color:#c62828; }
-.pill.ok { background:#e8faf3; color:#146c43; }
+# ── CSS (from shared theme + evaluation-specific additions) ──────────
+
+_CSS = THEME_CSS + """
 .chart-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(440px,1fr)); gap:18px; margin-bottom:18px; }
 .chart-card { min-height:280px; }
 .gauge-row { display:flex; flex-wrap:wrap; gap:18px; margin-bottom:20px; }
@@ -73,7 +30,7 @@ tr:hover td { background:#f9f8f5; }
 .gauge-ring { position:relative; width:120px; height:120px; margin:0 auto 8px; }
 .gauge-ring svg { transform:rotate(-90deg); }
 .gauge-ring .value { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:1.4rem; font-weight:700; }
-.high-conf-table td.cve { font-family:"JetBrains Mono","Fira Code",monospace; font-size:.82rem; }
+.high-conf-table td.cve { font-family:var(--font-mono); font-size:.82rem; }
 td.num { text-align:right; font-variant-numeric:tabular-nums; }
 """
 
@@ -134,10 +91,6 @@ def _gauge_svg(value: float, color: str) -> str:
         f' stroke-dasharray="{filled} {empty}" stroke-linecap="round"/>'
         f"</svg>"
     )
-
-
-def _js_obj(d: dict) -> str:
-    return json.dumps(d)
 
 
 def _pct(v: float) -> str:
