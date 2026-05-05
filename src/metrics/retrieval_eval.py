@@ -211,8 +211,16 @@ def retrieve_all(
 def cve_retrieval_metrics(
     query_results: list[tuple],
     ks: list[int],
+    index_metadata: list[dict],
 ) -> dict:
     """Compute CVE-level IR metrics from pre-retrieved (pair, results) tuples.
+
+    Args:
+        query_results: List of (pair, results) tuples from retrieval.
+        ks: List of k values for hit@k, nDCG@k, MAP@k.
+        index_metadata: Full index metadata (list of dicts with at least
+            'cve_id') so that recall/nDCG/MAP are computed against the
+            complete set of relevant documents, not just retrieved ones.
 
     Returns hit@k, MRR, nDCG, MAP, per-query details, and n.
     """
@@ -268,7 +276,7 @@ def cve_retrieval_metrics(
     if n == 0:
         return {"n": 0, "raw_queries": []}
 
-    qrels, run = _build_cve_qrels_and_run(ranx_input)
+    qrels, run = _build_cve_qrels_and_run(ranx_input, index_metadata)
     ranx_scores = _ranx_metrics(qrels, run, ks)
 
     max_k = max(ks)
@@ -352,13 +360,14 @@ def code_query_eval(
     retriever,
     embedder,
     ks: list[int],
+    index_metadata: list[dict],
 ) -> dict:
     """Self-retrieval via re-embedding + CVE metrics.
 
     Convenience wrapper: calls ``retrieve_all`` then ``cve_retrieval_metrics``.
     """
     qr = retrieve_all(pairs, embedder, retriever, max(ks))
-    return cve_retrieval_metrics(qr, ks)
+    return cve_retrieval_metrics(qr, ks, index_metadata)
 
 
 def cross_cwe_recall(
