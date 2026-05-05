@@ -34,7 +34,9 @@ from pathlib import Path
 
 import numpy as np
 
-from experiments.common import build_split, load_config, load_pairs
+from src.data.autopatch import load_pairs
+from src.io.read_write import load_config
+from src.data.split import build_split
 from src.data.pipeline import (compute_graph_diff, load_cpg_dir,
                                run_joern_export, write_c_file)
 from src.embeddings import build_embedders
@@ -43,6 +45,40 @@ from src.rag.retriever import Retriever
 from src.rag.utils import populate_index
 
 # ── helpers ──────────────────────────────────────────────────────────
+
+
+def _extract_diff_lines(G_diff) -> list[dict]:
+    """Extract code lines from G_diff nodes, grouped by diff label.
+
+    Returns a list of dicts with keys: line, code, labelV, diff, diff_weight.
+    Sorted by LINE_NUMBER.  Only includes nodes that carry a CODE attribute.
+    """
+    lines = []
+    for n, attrs in G_diff.nodes(data=True):
+        code = str(attrs.get("CODE", "")).strip()
+        if not code:
+            continue
+        lines.append({
+            "line": attrs.get("LINE_NUMBER"),
+            "code": code,
+            "labelV": attrs.get("labelV", ""),
+            "diff": attrs.get("diff", "context"),
+            "diff_weight": attrs.get("diff_weight", 0.2),
+        })
+    lines.sort(key=lambda x: (x["line"] or 0, x["code"]))
+    return lines
+
+
+def _summarize_diff_lines(diff_lines: list[dict]) -> dict:
+    """Compact summary: unique code lines per diff category."""
+    by_cat: dict[str, list[str]] = {}
+    for entry in diff_lines:
+        cat = entry["diff"]
+        code = entry["code"]
+        by_cat.setdefault(cat, [])
+        if code not in by_cat[cat]:
+            by_cat[cat].append(code)
+    return by_cat
 
 
 def _load_records(path: Path) -> list[dict]:
@@ -229,6 +265,14 @@ def verify_one(
     G_diff = compute_graph_diff(G_before, G_generated)
     n_diff_nodes = G_diff.number_of_nodes()
 
+    # Extract code lines from the generated-patch diff
+    patch_diff_lines = _extract_diff_lines(G_diff) if n_diff_nodes > 0 else []
+    patch_diff_summary = _summarize_diff_lines(patch_diff_lines) if patch_diff_lines else {}
+
+    # Extract code lines from the ground-truth vulnerability diff (G_vuln)
+    gt_vuln_lines = _extract_diff_lines(qp.G_vuln) if qp.G_vuln and qp.G_vuln.number_of_nodes() > 0 else []
+    gt_vuln_summary = _summarize_diff_lines(gt_vuln_lines) if gt_vuln_lines else {}
+
     if n_diff_nodes == 0:
         # No structural difference detected — patch is identical to vulnerable code
         return {
@@ -236,6 +280,10 @@ def verify_one(
             "status": "no_diff",
             "g_generated_nodes": n_nodes_generated,
             "g_diff_nodes": 0,
+            "patch_diff_lines": [],
+            "patch_diff_summary": {},
+            "gt_vuln_lines": gt_vuln_lines,
+            "gt_vuln_summary": gt_vuln_summary,
             "retrieved": [],
         }
 
@@ -249,6 +297,10 @@ def verify_one(
             "error": str(e),
             "g_generated_nodes": n_nodes_generated,
             "g_diff_nodes": n_diff_nodes,
+            "patch_diff_lines": patch_diff_lines,
+            "patch_diff_summary": patch_diff_summary,
+            "gt_vuln_lines": gt_vuln_lines,
+            "gt_vuln_summary": gt_vuln_summary,
             "retrieved": [],
         }
 
@@ -267,6 +319,10 @@ def verify_one(
         "same_cve_in_topk": same_cve_in_topk,
         "top1_cve": top1_cve,
         "top1_score": round(top1_score, 6),
+        "patch_diff_lines": patch_diff_lines,
+        "patch_diff_summary": patch_diff_summary,
+        "gt_vuln_lines": gt_vuln_lines,
+        "gt_vuln_summary": gt_vuln_summary,
         "retrieved": [
             {
                 "rank": j + 1,
