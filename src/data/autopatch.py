@@ -409,3 +409,17 @@ class AutoPatchDataset(BaseDataset):
                                         source_code=fixed_c_path.read_text(),
                                         out_dir=str(base / variant_name / "after"),
                                     )
+
+
+# ── convenience loaders (used by experiments & main) ─────────────────
+
+def load_pairs(cfg: dict) -> list:
+    """Load all FunctionPair objects from the configured dataset."""
+    ds = AutoPatchDataset(cfg["data"]["autopatch"])
+    return ds.load_all()
+
+
+def load_pairs_lightweight(cfg: dict) -> list:
+    """Load pairs with metadata only — no CPG/graph loading (fast)."""
+    ds = AutoPatchDataset(cfg["data"]["autopatch"])
+    return ds.load_lightweight()
