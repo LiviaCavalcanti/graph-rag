@@ -14,18 +14,22 @@ One run = one dataset snapshot. Multiple runs can be compared later.
 
 import json
 import time
-import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from itertools import product
 from pathlib import Path
 
 from experiments.common import build_split
+from src.io import make_run_dir
 from experiments.dashboard_scripts.visualization import generate_visualizations
 from src.embeddings import build_embedders
 from src.metrics.metrics import (embedding_space_stats, leave_one_out_metrics,
                                  measure_latency)
-from src.metrics.retrieval_eval import code_query_eval, cross_cwe_recall
+from src.metrics.retrieval_eval import (
+    retrieve_all,
+    cve_retrieval_metrics,
+    cwe_recall_metrics,
+)
 from src.rag.hnsw import HNSWIndex
 from src.rag.faiss_index import FAISSIndex
 from src.rag.utils import populate_index
@@ -83,17 +87,12 @@ def run_experiment(
     pairs: list,  # list[FunctionPair]
     cfg: dict,
     run_leave_one_out: bool = False,
+    run_self_retrieval: bool = True,
     ks: list[int] = [1, 5, 10],
     output_dir: Path = OUTPUT_DIR,
 ) -> ExperimentResult:
 
-    run_id = (
-        datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-        + "_"
-        + uuid.uuid4().hex[:6]
-    )
-    run_dir = output_dir / run_id
-    run_dir.mkdir(parents=True, exist_ok=True)
+    run_id, run_dir = make_run_dir("experiment", output_dir=output_dir)
 
     index_pairs, query_pairs, split_info = build_split(pairs, cfg)
 
@@ -169,23 +168,18 @@ def run_experiment(
                 f"    latency p50={latency['p50_ms']:.2f}ms  p99={latency['p99_ms']:.2f}ms"
             )
 
-            # ── self-retrieval ───────────────────────────────────────
-            sr = code_query_eval(query_pairs, retriever, embedder, ks=ks)
-            # Omitting self-retrieval for its lengthy raw query logs, but they are available in the CellResult for later analysis.
-            # print(sr)
-            if sr.get("n") == 0:
-                print(f"    code-query hit@1=NaN  mrr=-1")
-            else:
-                print(f"    code-query hit@1={sr['hit@1']:.3f}  mrr={sr['mrr']:.3f}")
+            # ── retrieve once, compute metrics separately ────────────
+            qr = retrieve_all(query_pairs, embedder, retriever, max(ks))
 
-            # ── CWE group recall ─────────────────────────────────────
-            cwr = cross_cwe_recall(
-                query_pairs=query_pairs,
-                retriever=retriever,
-                embedder=embedder,
-                index_metadata=index.metadata,
-                top_k=max(ks),
-            )
+            sr = {}
+            if run_self_retrieval:
+                sr = cve_retrieval_metrics(qr, ks=ks)
+                if sr.get("n") == 0:
+                    print(f"    code-query hit@1=NaN  mrr=-1")
+                else:
+                    print(f"    code-query hit@1={sr['hit@1']:.3f}  mrr={sr['mrr']:.3f}")
+
+            cwr = cwe_recall_metrics(qr, index.metadata, max(ks))
             print(
                 f"    CWE recall macro={cwr['macro_avg']:.3f}  n_cwes={cwr['n_cwes']}"
             )
