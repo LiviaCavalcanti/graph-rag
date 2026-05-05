@@ -67,9 +67,9 @@ class _BaseCombined(BaseEmbedder):
 
     def __init__(self, cfg: dict):
         super().__init__(cfg)
-        self._netlsd = NetLSDEmbedder(cfg)
-        self._wl = WLEmbedder(cfg)
-        self._gin = GINEmbedder(cfg)
+        self._netlsd = NetLSDEmbedder(cfg, apply_norm=False)
+        self._wl = WLEmbedder(cfg, apply_norm=False)
+        self._gin = GINEmbedder(cfg, apply_norm=False)
         self._pca_final: PCA | None = None
         self._fitted = False
 
@@ -233,10 +233,10 @@ class _BaseCombined4(BaseEmbedder):
 
     def __init__(self, cfg: dict):
         super().__init__(cfg)
-        self._netlsd = NetLSDEmbedder(cfg)
-        self._wl = WLEmbedder(cfg)
-        self._gin = GINEmbedder(cfg)
-        self._cbpat = CodeBERTPatternEmbedder(cfg)
+        self._netlsd = NetLSDEmbedder(cfg, apply_norm=False)  # let final PCA handle scaling
+        self._wl = WLEmbedder(cfg, apply_norm=False)
+        self._gin = GINEmbedder(cfg, apply_norm=False)
+        self._cbpat = CodeBERTPatternEmbedder(cfg, apply_norm=False)
         self._pca_final: PCA | None = None
         self._pca_cb: PCA | None = None
         self._cb_pca_fitted = False
