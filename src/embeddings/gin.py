@@ -16,8 +16,8 @@ class GINEmbedder(BaseEmbedder):
     because it operates on node features, not just the spectrum.
     """
 
-    def __init__(self, cfg: dict):
-        super().__init__(cfg)
+    def __init__(self, cfg: dict, apply_norm: bool = True):
+        super().__init__(cfg, apply_norm)
         in_dim = len(NODE_TYPES)
         hidden_dim = cfg.get("gin", {}).get("hidden_dim", 128)
         num_layers = cfg.get("gin", {}).get("num_layers", 3)
@@ -78,4 +78,4 @@ class GINEmbedder(BaseEmbedder):
         )
         out = self.readout(out).detach().numpy()[0]
 
-        return self._norm_vec(out)
+        return self._norm_vec(out) if self.apply_norm else out

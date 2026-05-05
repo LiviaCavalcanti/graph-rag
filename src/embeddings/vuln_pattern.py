@@ -408,12 +408,12 @@ class CodeBERTPatternEmbedder(BaseEmbedder):
     adds value.  If it beats vuln_pattern, CodeBERT adds value.
     """
 
-    def __init__(self, cfg: dict):
+    def __init__(self, cfg: dict, apply_norm: bool = True):
         super().__init__(cfg)
         # lazily import to avoid circular deps
         from .codebert_seq import CodeBERTSeqEmbedder, collect_changed_code
 
-        self._cb_embedder = CodeBERTSeqEmbedder(cfg)
+        self._cb_embedder = CodeBERTSeqEmbedder(cfg, apply_norm=apply_norm)
         self._collect = collect_changed_code
         self._pca = None
         self._fitted = False

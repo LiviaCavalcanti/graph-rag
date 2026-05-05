@@ -6,6 +6,9 @@ from .base import BaseEmbedder
 
 
 class NetLSDEmbedder(BaseEmbedder):
+    def __init__(self, cfg: dict, apply_norm: bool = True):
+        super().__init__(cfg, apply_norm)
+
     @property
     def name(self) -> str:
         return "netlsd"
@@ -27,4 +30,4 @@ class NetLSDEmbedder(BaseEmbedder):
         norm = np.linalg.norm(desc)
         if norm < 1e-8:
             return np.zeros(self.dim, dtype=np.float32)
-        return self._norm_vec(desc)
+        return self._norm_vec(desc) if self.apply_norm else desc
