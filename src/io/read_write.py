@@ -1,0 +1,121 @@
+"""JSONL result I/O — reading completed queries, appending results, background writer."""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+import json
+import os
+import threading
+from pathlib import Path
+from queue import Queue
+import uuid
+
+import yaml
+
+OUTPUT_DIR = Path("experiments/output")
+
+
+# ── config ───────────────────────────────────────────────────────────
+
+def load_config(path: str = "config.yaml") -> dict:
+    with open(path) as f:
+        return yaml.safe_load(f)
+
+
+# ── run directory ────────────────────────────────────────────────────
+
+def make_run_dir(tag: str = "", output_dir: Path | None = None) -> tuple[str, Path]:
+    """Create a timestamped run directory.  Returns (run_id, run_dir)."""
+    ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    suffix = f"_{tag}" if tag else ""
+    run_id = f"{ts}{suffix}_{uuid.uuid4().hex[:6]}"
+    base = output_dir if output_dir is not None else OUTPUT_DIR
+    run_dir = base / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    return run_id, run_dir
+
+def load_completed(jsonl_path: Path) -> set[tuple[str, str]]:
+    """Load already-completed (cve_id, variant) keys from a JSONL file."""
+    done: set[tuple[str, str]] = set()
+    if not jsonl_path.exists():
+        return done
+    with open(jsonl_path) as f:
+        for lineno, line in enumerate(f, 1):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+                key = (rec["query_cve"], rec.get("query_variant", ""))
+                done.add(key)
+            except (json.JSONDecodeError, KeyError):
+                print(f"  WARNING: skipping malformed line {lineno} in {jsonl_path}")
+    return done
+
+
+def append_jsonl(path: Path, records: list[dict]) -> None:
+    """Append records to a JSONL file (atomic per batch, fsync'd)."""
+    with open(path, "a") as f:
+        for rec in records:
+            f.write(json.dumps(rec, default=str) + "\n")
+        f.flush()
+        os.fsync(f.fileno())
+
+
+class BackgroundWriter:
+    """Writes batches to disk in a background thread."""
+
+    def __init__(self, jsonl_path: Path):
+        self._path = jsonl_path
+        self._queue: Queue[list[dict] | None] = Queue()
+        self._thread = threading.Thread(target=self._worker, daemon=True)
+        self._thread.start()
+        self._error: Exception | None = None
+
+    def _worker(self):
+        while True:
+            batch = self._queue.get()
+            if batch is None:
+                break
+            try:
+                append_jsonl(self._path, batch)
+            except Exception as e:
+                self._error = e
+            self._queue.task_done()
+
+    def write(self, batch: list[dict]):
+        """Enqueue a batch for writing.  Raises if a previous write failed."""
+        if self._error:
+            raise self._error
+        self._queue.put(batch)
+
+    def flush(self):
+        """Wait for all pending writes to complete."""
+        self._queue.join()
+        if self._error:
+            raise self._error
+
+    def close(self):
+        self._queue.put(None)
+        self._thread.join(timeout=5)
+
+
+def save_json(data: dict | list, path: Path) -> None:
+    """Write data as pretty-printed JSON."""
+    path.write_text(json.dumps(data, indent=2, default=str))
+
+
+def read_code_file(path: str | None, max_chars: int = 4000) -> str:
+    """Read source code from a file path or inline string, truncating if needed."""
+    if not path:
+        return ""
+    p = Path(path)
+    if p.exists():
+        try:
+            text = p.read_text(errors="replace")
+            return text[:max_chars] + (f"\n... [truncated at {max_chars} chars]" if len(text) > max_chars else "")
+        except Exception:
+            return ""
+    if len(path) > 20:
+        return path[:max_chars] + ("\n... [truncated]" if len(path) > max_chars else "")
+    return ""
