@@ -46,8 +46,9 @@ def _metric_space_stats(ctx: CellContext) -> dict:
 def _metric_self_retrieval(ctx: CellContext) -> dict:
     """CVE-level hit@k / MRR via re-embedding queries."""
     qr = ctx.artifacts["query_results"]
+    index_metadata = ctx.artifacts["index_metadata"]
     ks = ctx.cfg.get("experiment", {}).get("ks", [1, 5, 10])
-    return cve_retrieval_metrics(qr, ks=ks)
+    return cve_retrieval_metrics(qr, ks=ks, index_metadata=index_metadata)
 
 
 def _metric_cwe_recall(ctx: CellContext) -> dict:
