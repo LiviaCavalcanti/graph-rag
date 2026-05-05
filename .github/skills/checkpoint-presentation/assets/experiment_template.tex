@@ -1,0 +1,155 @@
+% ══════════════════════════════════════════════════════════════════════
+% EXPERIMENT SECTION TEMPLATE
+% Copy this block for each experiment. Replace placeholders in <angle brackets>.
+% ══════════════════════════════════════════════════════════════════════
+
+\section{<Experiment Name>}
+
+% ── Slide 1: Experiment Design (Goal + Metrics + Rationale) ──────────
+
+\begin{frame}[fragile]{<Experiment Name>: Experiment Design}
+\begin{columns}[T]
+\begin{column}{0.50\textwidth}
+
+  \textbf{Goal}\\[3pt]
+  {\small <2–3 sentences describing what this experiment tests and why.>}
+
+  \vspace{0.6em}
+  \textbf{Metrics}
+  \begin{description}[\textbf{CWE recall}]
+    \item[\textbf{hit@K}] <Definition of hit@K in this context.>
+    \item[\textbf{MRR}] <Definition of MRR.>
+    \item[\textbf{CWE recall}] <Definition of CWE recall.>
+    % Add or remove metrics as needed
+  \end{description}
+
+  \vspace{0.6em}
+  \textbf{Rationale}\\[3pt]
+  {\small <Why does this experiment matter? What hypothesis does it test?>}
+
+\end{column}
+\begin{column}{0.47\textwidth}
+
+  % Option A: Bar chart summary
+  \centering
+  \begin{tikzpicture}[scale=0.8]
+    \foreach \y/\lbl/\col/\val in {
+      3.6/{<Condition 1>}/c1/<value>,
+      2.7/{<Condition 2>}/c2/<value>,
+      1.8/{<Condition 3>}/c3/<value>,
+      0.9/{<Condition 4>}/hit/<value>,
+      0.0/{<Condition 5>}/miss/<value>}{
+      \node[left,font=\tiny\sffamily,text width=3cm,align=right] at (0,\y) {\lbl};
+      \fill[\col!70,rounded corners=1pt] (0.1,\y-0.22) rectangle ({0.1+4.5*\val},\y+0.22);
+      \node[right,font=\tiny\sffamily\bfseries,\col!80!black] at ({0.1+4.5*\val+0.05},\y) {\val};
+    }
+    \draw[black!15] (0.1,-0.3)--(0.1,4.1);
+  \end{tikzpicture}
+
+  % Option B: Compact setup table (uncomment if preferred)
+  % {\small
+  % \renewcommand{\arraystretch}{1.25}
+  % \begin{tabular}{p{2.0cm}p{4.5cm}}
+  %   \toprule
+  %   \textbf{Parameter} & \textbf{Value} \\
+  %   \midrule
+  %   Split     & 225 index, 73 query (seed=42) \\
+  %   Embedders & Combined, GIN, WL, CodeBERT \\
+  %   Backend   & FAISS Flat (exact) \\
+  %   \bottomrule
+  % \end{tabular}}
+
+\end{column}
+\end{columns}
+\end{frame}
+
+
+% ── Slide 2: Results Table ───────────────────────────────────────────
+
+\begin{frame}{<Experiment Name>: Results}
+
+  \centering
+  \vspace{0.2em}
+  {\small
+  \renewcommand{\arraystretch}{1.35}
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{l *{3}{c} c *{3}{c}}
+    \toprule
+    & \multicolumn{3}{c}{\textbf{<Condition A>}}
+    && \multicolumn{3}{c}{\textbf{<Condition B>}} \\
+    \cmidrule{2-4} \cmidrule{6-8}
+    \textbf{Embedder}
+      & hit@1 & MRR & CWE
+      && hit@1 & MRR & CWE \\
+    \midrule
+    \rowcolor{c1!12}
+    Combined
+      & \chit{84.9\%} & \chit{.890} & \chit{.501}
+      && 74.0\% & .780 & .398 \\
+    GIN
+      & 72.6\% & .788 & .443
+      && 72.6\% & .788 & .443 \\
+    CodeBERT
+      & 75.3\% & .793 & .412
+      && 76.7\% & .799 & .402 \\
+    WL
+      & 65.8\% & .720 & .423
+      && \cmiss{45.2\%} & .550 & .300 \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.6em}
+  % Three-column interpretation below the table
+  \begin{columns}[T]
+  \begin{column}{0.32\textwidth}
+    {\small\textbf{\textcolor{hit}{<Interpretation 1 title>}}}
+    \begin{itemize}\setlength{\itemsep}{2pt}
+      {\scriptsize
+      \item <Key observation from Condition A>
+      \item <Supporting detail>}
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.32\textwidth}
+    {\small\textbf{\textcolor{warn}{<Interpretation 2 title>}}}
+    \begin{itemize}\setlength{\itemsep}{2pt}
+      {\scriptsize
+      \item <Key observation from comparison>
+      \item <Supporting detail>}
+    \end{itemize}
+  \end{column}
+  \begin{column}{0.32\textwidth}
+    {\small\textbf{\textcolor{miss}{<Interpretation 3 title>}}}
+    \begin{itemize}\setlength{\itemsep}{2pt}
+      {\scriptsize
+      \item <Key observation about failures>
+      \item <Supporting detail>}
+    \end{itemize}
+  \end{column}
+  \end{columns}
+\end{frame}
+
+
+% ── Slide 3: Key Findings ───────────────────────────────────────────
+
+\begin{frame}{<Experiment Name>: Key Findings}
+\begin{enumerate}
+  \item[\faIcon{chart-bar}\;] \textbf{<Finding 1 headline.>}
+    <1–2 sentence explanation.>
+    \textit{<Fix or implication.>}
+
+  \vspace{0.5em}
+  \item[\faIcon{lightbulb}\;] \textbf{<Finding 2 headline.>}
+    <1–2 sentence explanation.>
+    \textit{<Fix or implication.>}
+
+  \vspace{0.5em}
+  \item[\faIcon{bug}\;] \textbf{<Finding 3 headline.>}
+    <1–2 sentence explanation.>
+    \textit{<Fix or implication.>}
+
+  \vspace{0.5em}
+  \item[\faIcon{check-circle}\;] \textbf{<Finding 4 headline.>}
+    <1–2 sentence explanation.>
+    \textit{<Fix or implication.>}
+\end{enumerate}
+\end{frame}
