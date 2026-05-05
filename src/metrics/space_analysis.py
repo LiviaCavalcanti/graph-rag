@@ -295,7 +295,9 @@ def knn_overlap(
     for i in range(n):
         set_a = set(neigh_a[i])
         set_b = set(neigh_b[i])
-        overlaps[i] = len(set_a & set_b) / k
+        intersection = len(set_a & set_b)
+        union = len(set_a | set_b)
+        overlaps[i] = intersection / union if union else 0.0
 
     return {
         "mean_overlap": float(overlaps.mean()),
