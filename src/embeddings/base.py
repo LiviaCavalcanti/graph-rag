@@ -5,11 +5,12 @@ import numpy as np
 
 
 class BaseEmbedder(ABC):
-    def __init__(self, cfg: dict):
+    def __init__(self, cfg: dict, apply_norm: bool = True):
         self.cfg = cfg
         self.dim = cfg.get("dim", 128)
         self.projection = cfg.get("projection", "pca")  # "pca" or "none"
         self.l2_normalize = cfg.get("l2_normalize", True)
+        self.apply_norm = apply_norm
 
     def _norm_vec(self, v: np.ndarray) -> np.ndarray:
         """L2-normalize a single vector if l2_normalize is enabled."""

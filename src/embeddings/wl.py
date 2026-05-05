@@ -53,8 +53,8 @@ class WLEmbedder(BaseEmbedder):
     No training required.
     """
 
-    def __init__(self, cfg: dict):
-        super().__init__(cfg)
+    def __init__(self, cfg: dict, apply_norm: bool = True):
+        super().__init__(cfg, apply_norm)
         self.num_iterations = cfg.get("wl", {}).get("num_iterations", 4)
         self.hidden_dim = cfg.get("wl", {}).get("hidden_dim", 64)
 
@@ -91,4 +91,4 @@ class WLEmbedder(BaseEmbedder):
         out = torch.cat(pooled, dim=1)  # (1, hidden_dim * num_iterations)
         out = self.proj(out).detach().numpy()[0]  # (dim,)
 
-        return self._norm_vec(out)
+        return self._norm_vec(out) if self.apply_norm else out

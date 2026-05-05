@@ -79,8 +79,8 @@ class CodeBERTSeqEmbedder(BaseEmbedder):
     Serves as the semantic-only control for ablation experiments.
     """
 
-    def __init__(self, cfg: dict):
-        super().__init__(cfg)
+    def __init__(self, cfg: dict, apply_norm: bool = True):
+        super().__init__(cfg, apply_norm=apply_norm)
         self._device = (
             "cuda"
             if torch.cuda.is_available()
@@ -170,14 +170,14 @@ class CodeBERTSeqEmbedder(BaseEmbedder):
         raw = self.encode_batch([code])
 
         if self.projection == "none":
-            return self._norm_vec(raw[0])
+            return self._norm_vec(raw[0]) if self.apply_norm else raw[0]
 
         projected = self._pca.transform(raw)[0].astype(np.float32)
         if projected.shape[0] < self.dim:
             padded = np.zeros(self.dim, dtype=np.float32)
             padded[: projected.shape[0]] = projected
             projected = padded
-        return self._norm_vec(projected)
+        return self._norm_vec(projected) if self.apply_norm else projected  
 
     def embed_many(self, graphs: list) -> np.ndarray:
         self._load_codebert()
