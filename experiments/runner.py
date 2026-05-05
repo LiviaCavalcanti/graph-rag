@@ -173,7 +173,7 @@ def run_experiment(
 
             sr = {}
             if run_self_retrieval:
-                sr = cve_retrieval_metrics(qr, ks=ks)
+                sr = cve_retrieval_metrics(qr, ks=ks, index_metadata=index_meta_list)
                 if sr.get("n") == 0:
                     print(f"    code-query hit@1=NaN  mrr=-1")
                 else:
