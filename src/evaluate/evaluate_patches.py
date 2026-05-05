@@ -27,7 +27,7 @@ from src.metrics.similarity import (bertscore_pair, bleu_score,
                                     codebleu_weighted,
                                     compute_diff_details, exact_match,
                                     line_level_ratio, normalised_edit_distance,
-                                    normalised_exact_match,
+                                    normalised_exact_match, rouge_scores,
                                     sequence_matcher_ratio, token_jaccard,
                                     token_jaccard_multiset, tokenize)
 
@@ -104,6 +104,7 @@ def evaluate_one(record: dict, base_dir: Path, strip_comments: bool = False) -> 
         "bleu_4": round(bleu_score(generated, gt_body, max_n=4), 4),
         "codebleu_proxy": round(codebleu_weighted(generated, gt_body), 4),
         **bertscore_pair(generated, gt_body),
+        **{k: round(v, 4) for k, v in rouge_scores(generated, gt_body).items()},
     }
 
     # ── compute metrics against full file (secondary) ────────────
@@ -184,6 +185,9 @@ def aggregate(results: list[dict]) -> dict:
         "avg_bertscore_precision": _avg("bertscore_precision"),
         "avg_bertscore_recall": _avg("bertscore_recall"),
         "avg_bertscore_f1": _avg("bertscore_f1"),
+        "avg_rouge1_f1": _avg("rouge1_f1"),
+        "avg_rouge2_f1": _avg("rouge2_f1"),
+        "avg_rougeL_f1": _avg("rougeL_f1"),
         "by_cwe": _aggregate_by_field(evaluated, "query_cwe"),
         "by_variant": _aggregate_by_field(evaluated, "query_variant"),
     }
@@ -217,6 +221,10 @@ def _aggregate_by_field(evaluated: list[dict], field: str) -> dict:
             ),
             "avg_bertscore_f1": round(
                 sum(r["metrics_vs_function_body"].get("bertscore_f1", 0) for r in recs) / n,
+                4,
+            ),
+            "avg_rougeL_f1": round(
+                sum(r["metrics_vs_function_body"].get("rougeL_f1", 0) for r in recs) / n,
                 4,
             ),
             "exact_matches": sum(
