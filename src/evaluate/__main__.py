@@ -25,52 +25,92 @@ def run_all(
     config_path: str = "config.yaml",
     base_dir: Path | None = None,
     top_k: int = 5,
+    strip_comments: bool = False,
 ) -> Path:
     """Execute the full evaluation pipeline and return the dashboard path."""
     from src.evaluate.confidence_eval import run_confidence_eval
     from src.evaluate.dashboard import generate_dashboard
     from src.evaluate.evaluate_patches import main as _patches_main
-    from src.evaluate.retrieval_eval import evaluate_retrieval
 
     run_dir = results_path.parent
     base = base_dir or Path.cwd()
 
     # ── 1. Patch evaluation ──────────────────────────────────────
     print(f"\n{'━'*60}")
-    print(f"  STEP 1/4 — Patch Evaluation")
+    print(f"  STEP 1/3 — Patch Evaluation")
     print(f"{'━'*60}")
-    _run_patch_eval(results_path, base)
+    _run_patch_eval(results_path, base, strip_comments=strip_comments)
 
-    # ── 2. Retrieval evaluation ──────────────────────────────────
+    # ── 2. Confidence evaluation ─────────────────────────────────
     print(f"\n{'━'*60}")
-    print(f"  STEP 2/4 — Retrieval Evaluation")
-    print(f"{'━'*60}")
-    from experiments.common import load_config
-
-    cfg = load_config(config_path)
-    evaluate_retrieval(results_path, cfg, top_k=top_k)
-
-    # ── 3. Confidence evaluation ─────────────────────────────────
-    print(f"\n{'━'*60}")
-    print(f"  STEP 3/4 — Confidence Evaluation")
+    print(f"  STEP 2/3 — Confidence Evaluation")
     print(f"{'━'*60}")
     retrieval_eval_path = run_dir / "retrieval_eval.jsonl"
     if retrieval_eval_path.exists():
         run_confidence_eval(retrieval_eval_path)
     else:
-        print("WARNING: retrieval_eval.jsonl not found, skipping confidence eval")
+        # compute basic retrieval stats from the results.jsonl records
+        _run_retrieval_summary(results_path)
 
-    # ── 4. Dashboard generation ──────────────────────────────────
+    # ── 3. Dashboard generation ──────────────────────────────────
     print(f"\n{'━'*60}")
-    print(f"  STEP 4/4 — Dashboard Generation")
+    print(f"  STEP 3/3 — Dashboard Generation")
     print(f"{'━'*60}")
     dashboard_path = generate_dashboard(run_dir)
-    print(f"\nDashboard: {dashboard_path}")
+    print(f"\n  Evaluation dashboard: {dashboard_path}")
+
+    # ── Patch analysis dashboard (code triples + detailed scores) ─
+    from experiments.dashboard_scripts.analyze_patches import analyze as _analyze_patches
+    from experiments.dashboard_scripts.analyze_patches import _render_html as _render_patch_html
+
+    eval_jsonl = run_dir / "evaluation.jsonl"
+    if eval_jsonl.exists():
+        analysis = _analyze_patches(results_path, eval_jsonl, base)
+        patch_html = run_dir / "patch_analysis.html"
+        patch_html.write_text(_render_patch_html(analysis))
+        print(f"  Patch analysis:      {patch_html}")
+    else:
+        print("  WARNING: evaluation.jsonl not found, skipping patch analysis dashboard")
 
     return dashboard_path
 
 
-def _run_patch_eval(results_path: Path, base_dir: Path) -> None:
+def _run_retrieval_summary(results_path: Path) -> None:
+    """Compute retrieval metrics from results.jsonl (compatible with dashboard)."""
+    import json
+
+    from src.metrics.retrieval_eval import evaluate_retrieval_from_records
+
+    records = []
+    with open(results_path) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                records.append(json.loads(line))
+
+    summary = evaluate_retrieval_from_records(records)
+
+    # Attach split_info from run_meta.json if available
+    meta_path = results_path.parent / "retrieval_meta.json"
+    if not meta_path.exists():
+        meta_path = results_path.parent / "run_meta.json"
+    if meta_path.exists():
+        meta = json.loads(meta_path.read_text())
+        summary["split_info"] = meta.get("split_info", {})
+
+    summary_path = results_path.parent / "retrieval_eval_summary.json"
+    with open(summary_path, "w") as f:
+        json.dump(summary, f, indent=2)
+    print(f"  Retrieval summary: {summary_path}")
+    print(
+        f"  Hit@1: {summary['hit_rate_at_1']:.1%}  |  "
+        f"Hit@{summary['top_k']}: {summary['hit_rate_at_k']:.1%}  |  "
+        f"MRR: {summary['mrr']:.3f}  |  "
+        f"CWE@{summary['top_k']}: {summary['cwe_hit_rate_at_k']:.1%}"
+    )
+
+
+def _run_patch_eval(results_path: Path, base_dir: Path, *, strip_comments: bool = False) -> None:
     """Run patch evaluation programmatically (avoid argparse)."""
     import json
 
@@ -87,12 +127,14 @@ def _run_patch_eval(results_path: Path, base_dir: Path) -> None:
                 records.append(json.loads(line))
 
     print(f"Loaded {len(records)} records from {results_path}")
+    if strip_comments:
+        print("  (stripping C/C++ comments before comparison)")
 
     evaluations = []
     for i, rec in enumerate(records):
         label = f"{rec.get('query_cve', '?')}/{rec.get('query_variant', '?')}"
         try:
-            ev = evaluate_one(rec, base_dir)
+            ev = evaluate_one(rec, base_dir, strip_comments=strip_comments)
             status = ev.get("eval_status")
             if status == "evaluated":
                 bleu = ev["metrics_vs_function_body"]["bleu_4"]
