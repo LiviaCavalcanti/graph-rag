@@ -37,8 +37,9 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from experiments.common import (build_hnsw, build_split, evaluate_cwe_recall,
-                                evaluate_retrieval, load_config, load_pairs,
+                                evaluate_retrieval, load_config,
                                 make_run_dir, save_json)
+from src.data.autopatch import load_pairs
 from src.embeddings import build_embedders
 from src.metrics.metrics import embedding_space_stats
 
@@ -92,12 +93,7 @@ VARIANT_DEFS = {
 
 def _runner_compat_query_graph(pair):
     """Reproduce checkpoint-2 runner.py query protocol:
-    augmented queries → G_before, originals → G_vuln."""
-    if (
-        pair.meta.get("dataset") == "autopatch"
-        and pair.meta.get("variant") != "original"
-    ):
-        return pair.G_before
+    all queries use G_vuln (the diff graph)."""
     return pair.G_vuln
 
 
