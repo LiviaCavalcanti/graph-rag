@@ -1,0 +1,33 @@
+\documentclass[aspectratio=169,10pt]{beamer}
+\usetheme{Madrid}
+\usecolortheme{default}
+\usepackage{tikz}
+\usepackage{booktabs}
+\usepackage{fontawesome5}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{colortbl}
+\usetikzlibrary{arrows.meta,shadows,positioning,fit,shapes.geometric,calc}
+
+% ── palette ──────────────────────────────────────────────────────────
+\definecolor{c1}{RGB}{41,128,185}
+\definecolor{c2}{RGB}{52,152,219}
+\definecolor{c3}{RGB}{155,89,182}
+\definecolor{c4}{RGB}{142,68,173}
+\definecolor{c5}{RGB}{230,126,34}
+\definecolor{c6}{RGB}{211,84,0}
+\definecolor{hit}{RGB}{39,174,96}
+\definecolor{miss}{RGB}{192,57,43}
+\definecolor{warn}{RGB}{243,156,18}
+
+\setbeamercolor{frametitle}{bg=c1,fg=white}
+\setbeamercolor{title}{fg=white}
+\setbeamercolor{structure}{fg=c1}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\setbeamerfont{frametitle}{series=\bfseries}
+
+\newcommand{\chit}[1]{\cellcolor{hit!30} #1}
+\newcommand{\cmiss}[1]{\cellcolor{miss!25} #1}
+\newcommand{\cwarn}[1]{\cellcolor{warn!30} #1}
+\newcommand{\czero}{\cellcolor{black!4} }
