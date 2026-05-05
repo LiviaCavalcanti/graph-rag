@@ -26,9 +26,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.embeddings import build_embedders
 from experiments.common import (
-    load_config, load_pairs, build_split, make_run_dir,
+    load_config, build_split, make_run_dir,
     build_hnsw, evaluate_retrieval, evaluate_cwe_recall, save_json,
 )
+from src.data.autopatch import load_pairs
 from experiments.slicing_comparison import (
     VARIANT_DEFS, _resolve_query_build_fn,
     _strip_diff_attrs, _add_labels_from_vuln,
