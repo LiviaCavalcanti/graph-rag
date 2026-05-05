@@ -385,7 +385,7 @@ def bertscore_pair(
 def bertscore(
     preds: list[str],
     refs: list[str],
-    model_name: str = "microsoft/codebert-base",
+    model_name: str = "models/codebert-base",
     batch_size: int = 8,
 ) -> dict:
     """
