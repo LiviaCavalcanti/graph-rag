@@ -434,10 +434,10 @@
   \vspace{0.5em}
   \begin{tikzpicture}[scale=0.8]
     \foreach \y/\lbl/\col/\val in {
-      2.7/{concat\_pca (baseline)}/hit/0.890,
-      1.8/{pca\_concat\_pca}/c2/0.890,
-      0.9/{norm\_concat\_pca}/c3/0.890,
-      0.0/{pca\_concat}/miss/0.836}{
+      2.7/{norm\_concat\_pca}/hit/0.808,
+      1.8/{pca\_concat\_pca}/miss/0.644,
+      0.9/{concat\_pca}/miss/0.644,
+      0.0/{pca\_concat}/miss/0.644}{
       \node[left,font=\tiny\sffamily,text width=3.2cm,align=right] at (0,\y) {\lbl};
       \fill[\col!70,rounded corners=1pt] (0.1,\y-0.22) rectangle ({0.1+4.5*\val},\y+0.22);
       \node[right,font=\tiny\sffamily\bfseries,\col!80!black] at ({0.1+4.5*\val+0.05},\y)
@@ -452,7 +452,7 @@
   225 index, 73 query ($G_{\text{diff}}$, seed$=$42).\\
   Each sub-embedder: 128d (NetLSD, WL, GIN).\\
   Run: \texttt{python -m experiments.combining\_experiment}\\
-  Run ID: \texttt{20260503\_200736\_combining\_e60d9d}}
+  Run ID: \texttt{20260505\_190455\_combining\_ae1579}}
 
 \end{column}
 \end{columns}
@@ -476,18 +476,18 @@
       && Eff.\ Dim & Isotropy & Hub Skew & Intra/Inter \\
     \midrule
     \rowcolor{c1!12}
-    \texttt{concat\_pca}
-      & \chit{89.0\%} & 95.9\% & 97.3\% & \chit{.915} & \chit{.687} & \chit{.567}
-      && \chit{30.9} & .0024 & 1.40 & \chit{2.07} \\
-    \texttt{pca\_concat\_pca}
-      & \chit{89.0\%} & 95.9\% & 97.3\% & \chit{.915} & \chit{.687} & \chit{.567}
-      && \chit{30.9} & .0023 & 1.40 & \chit{2.07} \\
     \texttt{norm\_concat\_pca}
-      & \chit{89.0\%} & 95.9\% & 97.3\% & \chit{.915} & \chit{.687} & \chit{.567}
-      && \chit{30.9} & .0024 & 1.40 & \chit{2.07} \\
+      & \chit{80.8\%} & \chit{93.2\%} & \chit{95.9\%} & \chit{.849} & \chit{.645} & \chit{.514}
+      && \chit{30.9} & .0023 & 1.39 & \chit{2.09} \\
+    \texttt{concat\_pca}
+      & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{84.9\%} & \cmiss{.707} & \cmiss{.452} & \cmiss{.336}
+      && \cmiss{2.1} & \cmiss{$\approx$0} & \cwarn{2.09} & \cmiss{1.51} \\
+    \texttt{pca\_concat\_pca}
+      & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{84.9\%} & \cmiss{.707} & \cmiss{.452} & \cmiss{.336}
+      && \cmiss{2.1} & \cmiss{$\approx$0} & \cwarn{2.09} & \cmiss{1.51} \\
     \texttt{pca\_concat}
-      & \cmiss{83.6\%} & 95.9\% & 97.3\% & \cwarn{.882} & \cwarn{.665} & \cwarn{.538}
-      && \cwarn{23.0} & \cmiss{$\approx$0} & 1.09 & \cwarn{1.87} \\
+      & \cmiss{64.4\%} & \cmiss{78.1\%} & \cmiss{83.6\%} & \cmiss{.706} & \cmiss{.449} & \cmiss{.334}
+      && \cmiss{2.0} & \cmiss{$\approx$0} & 1.55 & \cmiss{1.51} \\
     \bottomrule
   \end{tabular}}
 
@@ -498,29 +498,30 @@
 
   \begin{columns}[T]
   \begin{column}{0.32\textwidth}
-    {\small\textbf{\textcolor{hit}{Baseline is optimal}}}
+    {\small\textbf{\textcolor{hit}{Normalization is critical}}}
     \begin{itemize}\setlength{\itemsep}{2pt}
       {\scriptsize
-      \item Three strategies are \textbf{identical} to 4+ decimal places
-      \item Sub-embedders already output 128d L2-normed vectors $\to$ pre-processing is a no-op}
+      \item \texttt{norm\_concat\_pca} wins by \textbf{+16.4~pp} hit@1
+      \item L2 per embedder equalizes scale $\to$ PCA sees balanced signal
+      \item Eff.\ dim 30.9 vs.\ 2.1: healthy vs.\ collapsed space}
     \end{itemize}
   \end{column}
   \begin{column}{0.32\textwidth}
-    {\small\textbf{\textcolor{miss}{\texttt{pca\_concat} hurts}}}
+    {\small\textbf{\textcolor{miss}{Raw concat collapses PCA}}}
     \begin{itemize}\setlength{\itemsep}{2pt}
       {\scriptsize
-      \item hit@1 drops $-$5.4~pp, MRR $-$3.3~pp
-      \item PCA to 42d per embedder loses too much information
-      \item Isotropy collapses ($\approx$0): space degenerate}
+      \item Without normalization, sub-embedder scales differ wildly
+      \item PCA top-2 components capture only magnitude $\to$ eff.\ dim $\approx$ 2
+      \item Hub skew 2.09: severe hubness problem}
     \end{itemize}
   \end{column}
   \begin{column}{0.32\textwidth}
-    {\small\textbf{\textcolor{c1}{Why single PCA wins}}}
+    {\small\textbf{\textcolor{c1}{Per-embedder PCA is useless}}}
     \begin{itemize}\setlength{\itemsep}{2pt}
       {\scriptsize
-      \item Final PCA over full 384d can exploit \textbf{cross-embedder correlations}
-      \item Independent per-embedder PCA cannot discover joint structure
-      \item Eff.\ dim 30.9 vs.\ 23.0: richer space}
+      \item \texttt{pca\_concat\_pca} $\equiv$ \texttt{concat\_pca} (PCA(128) on 128d is a rotation)
+      \item Does not fix the scale imbalance
+      \item Only explicit normalization rescues the space}
     \end{itemize}
   \end{column}
   \end{columns}
@@ -533,34 +534,31 @@
   \begin{enumerate}\setlength{\itemsep}{0.5em}
 
     \item[\textcolor{hit}{\faIcon{check-circle}}]
-      \textbf{Current pipeline is already well-conditioned.}
-      Pre-normalizing or pre-reducing individual embeddings before concatenation
-      adds zero measurable benefit --- the sub-embedders already produce
-      128d L2-normalized vectors.
-      \textit{No pipeline change needed.}
+      \textbf{L2 normalization before concatenation is essential.}
+      Without per-embedder normalization, raw scale differences
+      collapse PCA to eff.\ dim $\approx$~2 and hit@1 drops to 64\%.
+      \textit{Pipeline fix: always normalize sub-embedders before fusion.}
 
     \vspace{0.5em}
     \item[\textcolor{miss}{\faIcon{compress-arrows-alt}}]
-      \textbf{Double PCA without final reduction = information loss.}
-      Reducing each embedder to 42d then concatenating (126d, no second PCA)
-      drops hit@1 by 5.4~pp and collapses isotropy to $\approx$0.
-      \textit{The final PCA is essential --- it finds the best 128 directions across
-      the full 384d concatenated space.}
+      \textbf{Per-embedder PCA is a no-op.}
+      \texttt{pca\_concat\_pca} is identical to \texttt{concat\_pca} because
+      PCA(128) on 128d input is just a rotation --- it cannot fix
+      the scale imbalance that causes PCA collapse.
 
     \vspace{0.5em}
     \item[\textcolor{c1}{\faIcon{chart-bar}}]
-      \textbf{Cross-embedder correlations matter.}
-      A single PCA over the joint space (eff.\ dim 30.9) outperforms
-      three independent PCAs (eff.\ dim 23.0) because it captures
-      shared structure between NetLSD, WL, and GIN\@.
+      \textbf{Scale equalization unlocks PCA's potential.}
+      Once all sub-embedders live on the unit sphere,
+      PCA finds 30.9 effective dimensions capturing cross-embedder
+      correlations --- vs.\ 2.1 when scales are unbalanced.
 
     \vspace{0.5em}
     \item[\textcolor{c3}{\faIcon{lightbulb}}]
-      \textbf{Implication for future embedders.}
-      When adding new sub-embedders (e.g.\ CodeBERT), they should be
-      concatenated raw into the joint space and let PCA handle fusion ---
-      no per-embedder preprocessing is warranted.
-      \textit{But does this actually work? $\to$ next experiment.}
+      \textbf{Revised pipeline for future embedders.}
+      New sub-embedders must be L2-normalized to unit norm
+      before concatenation $\to$ final PCA handles fusion.
+      \textit{Does adding CodeBERT with this approach help? $\to$ next experiment.}
 
   \end{enumerate}
 \end{frame}
@@ -572,9 +570,8 @@
   \textbf{Goal}\\[3pt]
   {\small Can adding a semantic signal (CodeBERT-pattern) to the structural
   fusion (NetLSD~$+$~WL~$+$~GIN) improve retrieval?
-  We test two hypotheses:
-  (1)~raw concat lets PCA discover joint directions,
-  (2)~pre-PCA'ing CodeBERT to 128d equalizes scale.}
+  We test with the best 3-way strategy (\texttt{norm\_concat\_pca})
+  and compare raw vs.\ normalized 4-way fusion.}
 
   \vspace{0.6em}
   \textbf{Rationale}\\[3pt]
@@ -585,16 +582,16 @@
 \end{column}
 \begin{column}{0.47\textwidth}
 
-  \textbf{Run 1: raw concatenation}\\[2pt]
-  {\scriptsize CodeBERT-pattern emits 802d (34 pattern $+$ 768 CodeBERT).
-  Concat with 3$\times$128d structural $=$ 1186d $\to$ PCA to 128d.\\
-  \textbf{Problem:} CodeBERT contributes 68\% of dimensions.}
+  \textbf{Run 1: raw concatenation (no norm)}\\[2pt]
+  {\scriptsize Concat all 4 sub-embedders without per-embedder
+  normalization $\to$ PCA to 128d.\\
+  \textbf{Problem:} Scale imbalance collapses PCA (same failure as 3-way raw).}
 
   \vspace{0.5em}
-  \textbf{Run 2: balanced pre-PCA}\\[2pt]
-  {\scriptsize PCA CodeBERT-pattern 802d~$\to$~128d first,
-  then concat 4$\times$128d $=$ 512d $\to$ PCA to 128d.\\
-  Each sub-embedder gets 25\% of the pre-PCA space.}
+  \textbf{Run 2: L2-norm each $\to$ concat $\to$ PCA}\\[2pt]
+  {\scriptsize L2-normalize each sub-embedder (128d each + CodeBERT 128d after
+  pre-PCA), concat 4$\times$128d $=$ 512d $\to$ PCA to 128d.\\
+  Each sub-embedder contributes equally.}
 
 \end{column}
 \end{columns}
@@ -611,16 +608,18 @@
     node distance=0.3cm]
 
     % 3-way baseline
-    \node[font=\scriptsize\sffamily\bfseries,c1] (lbl3) at (0,3.0) {3-way (baseline)};
+    \node[font=\scriptsize\sffamily\bfseries,c1] (lbl3) at (0,3.0) {3-way norm\_concat\_pca};
     \node[box=c1, minimum width=3.5cm] (c3) at (0,2.3) {NetLSD\,+\,WL\,+\,GIN};
-    \node[box=c3, right=0.5cm of c3, minimum width=1cm] (cat3) {concat};
-    \node[box=c5, right=0.5cm of cat3, minimum width=1cm] (pca3) {PCA};
-    \draw[arr] (c3) -- (cat3);
+    \node[box=c5, right=0.4cm of c3, minimum width=0.8cm] (l23) {L2};
+    \node[box=c3, right=0.3cm of l23, minimum width=1cm] (cat3) {concat};
+    \node[box=c5, right=0.4cm of cat3, minimum width=1cm] (pca3) {PCA};
+    \draw[arr] (c3) -- (l23);
+    \draw[arr] (l23) -- (cat3);
     \draw[arr] (cat3) -- node[above,font=\tiny] {384d} (pca3);
     \node[right=0.15cm of pca3, font=\tiny\color{black!50}] {128d};
 
-    % 4-way run 1
-    \node[font=\scriptsize\sffamily\bfseries,miss] (lbl4a) at (0,1.0) {4-way Run 1};
+    % 4-way run 1: raw concat (no norm)
+    \node[font=\scriptsize\sffamily\bfseries,miss] (lbl4a) at (0,1.0) {4-way raw concat};
     \node[box=c1, minimum width=2.2cm] (s4a) at (-0.65,0.4) {Struct (384d)};
     \node[box=c4, minimum width=2.2cm] (cb4a) at (-0.65,-0.6) {CB-pat (802d)};
     \node[box=c3, right=0.5cm of s4a, minimum width=1cm, yshift=-0.5cm] (cat4a) {concat};
@@ -630,8 +629,8 @@
     \draw[arr] (cat4a) -- node[above,font=\tiny] {1186d} (pca4a);
     \node[right=0.15cm of pca4a, font=\tiny\color{black!50}] {128d};
 
-    % 4-way run 2
-    \node[font=\scriptsize\sffamily\bfseries,warn] (lbl4b) at (0,-1.8) {4-way Run 2};
+    % 4-way run 2: norm_concat_pca
+    \node[font=\scriptsize\sffamily\bfseries,warn] (lbl4b) at (0,-1.8) {4-way norm\_concat\_pca};
     \node[box=c1, minimum width=2.2cm] (s4b) at (-0.65,-2.4) {Struct (384d)};
     \node[box=c4, minimum width=1.2cm] (cb4b) at (-1.2,-3.4) {CB 802d};
     \node[box=c5, right=0.2cm of cb4b, minimum width=0.8cm] (pcb) {\scriptsize PCA};
@@ -664,27 +663,27 @@
       && Eff.\ Dim & Isotropy & Mean Sim & Intra/Inter \\
     \midrule
     \rowcolor{c1!12}
-    3-way baseline
-      & \chit{90.4\%} & \chit{95.9\%} & \chit{.928} & \chit{.690}
-      && \chit{31.2} & .0023 & .030 & \chit{2.30} \\
+    3-way norm\_concat\_pca
+      & \chit{80.8\%} & \chit{93.2\%} & \chit{.849} & \chit{.645}
+      && \chit{30.9} & .0023 & .034 & \chit{2.09} \\
     \addlinespace[2pt]
     4-way raw concat
-      & \cmiss{74.0\%} & \cmiss{86.3\%} & \cmiss{.786} & \cmiss{.572}
-      && \cwarn{19.3} & .0029 & \cmiss{$-$.004} & \cmiss{$-$6.46} \\
-    {\scriptsize (Run~1: 1186d$\to$128d)}
+      & \cmiss{64.4\%} & \cmiss{79.5\%} & \cmiss{.707} & \cmiss{.452}
+      && \cmiss{2.1} & \cmiss{$\approx$0} & .075 & \cmiss{1.51} \\
+    {\scriptsize (concat, no per-emb.\ norm)}
       & & & & && & & & \\
     \addlinespace[2pt]
-    4-way pre-PCA
-      & \cmiss{74.0\%} & \cmiss{86.3\%} & \cmiss{.786} & \cmiss{.572}
-      && \cwarn{19.2} & .0028 & \cmiss{$-$.004} & \cmiss{$-$6.59} \\
-    {\scriptsize (Run~2: 512d$\to$128d)}
+    4-way norm\_concat\_pca
+      & \cwarn{72.6\%} & \cwarn{86.3\%} & \cwarn{.773} & \cwarn{.569}
+      && \cwarn{19.3} & .0026 & \cmiss{$-$.004} & \cmiss{$-$6.57} \\
+    {\scriptsize (L2-norm each $\to$ concat $\to$ PCA)}
       & & & & && & & & \\
     \bottomrule
   \end{tabular}}
 
   \vspace{0.3em}
   {\scriptsize\color{black!55}
-  Run ID: \texttt{20260503\_200736\_combining\_e60d9d}}
+  Run ID: \texttt{20260505\_190455\_combining\_ae1579}}
 
 \end{frame}
 
@@ -693,30 +692,30 @@
 
   \begin{columns}[T]
   \begin{column}{0.32\textwidth}
-    {\small\textbf{\textcolor{miss}{CodeBERT hurts: $-$16~pp}}}
+    {\small\textbf{\textcolor{miss}{Raw 4-way collapses PCA}}}
     \begin{itemize}\setlength{\itemsep}{2pt}
       {\scriptsize
-      \item hit@1 drops from 90.4\% to 74.0\%
-      \item MRR drops from .928 to .786
-      \item Both runs produce \textbf{identical} degradation}
+      \item Without per-embedder norm: eff.\ dim 2.1, hit@1 64.4\%
+      \item CodeBERT's 802d raw scale dominates PCA
+      \item Identical to raw 3-way failure mode}
     \end{itemize}
   \end{column}
   \begin{column}{0.32\textwidth}
-    {\small\textbf{\textcolor{warn}{Pre-PCA does not help}}}
+    {\small\textbf{\textcolor{warn}{Norm helps but CodeBERT still hurts}}}
     \begin{itemize}\setlength{\itemsep}{2pt}
       {\scriptsize
-      \item Equalizing dimensions (512d) gives same result as raw (1186d)
-      \item Problem is \textbf{signal conflict}, not scale imbalance
-      \item CodeBERT dominates PCA regardless}
+      \item 4-way norm: 72.6\% vs.\ 3-way norm: 80.8\% ($-$8.2~pp)
+      \item Normalization rescues PCA (eff.\ dim 19.3)
+      \item But CodeBERT signal still degrades class separation}
     \end{itemize}
   \end{column}
   \begin{column}{0.32\textwidth}
-    {\small\textbf{\textcolor{c1}{Space explains the failure}}}
+    {\small\textbf{\textcolor{c1}{Negative intra/inter is diagnostic}}}
     \begin{itemize}\setlength{\itemsep}{2pt}
       {\scriptsize
-      \item \textbf{Negative mean sim} ($-$0.004): embeddings anti-correlated
-      \item \textbf{Negative intra/inter} ($-$6.5): class structure inverted
-      \item Eff.\ dim 19 vs.\ 31: PCA captures wrong directions}
+      \item 4-way norm: intra/inter $= -6.57$ (class structure inverted)
+      \item Same-CWE pairs less similar than cross-CWE
+      \item CodeBERT's semantic signal contradicts structural patterns}
     \end{itemize}
   \end{column}
   \end{columns}
@@ -729,28 +728,27 @@
   \begin{enumerate}\setlength{\itemsep}{0.5em}
 
     \item[\textcolor{miss}{\faIcon{times-circle}}]
-      \textbf{CodeBERT-pattern is incompatible with structural fusion.}
-      Adding it degrades every metric by 15--16~pp.
+      \textbf{CodeBERT-pattern degrades structural fusion regardless of strategy.}
+      Even with proper normalization, adding CodeBERT drops hit@1 by 8.2~pp
+      (80.8\% $\to$ 72.6\%).
       The semantic signal encodes \textit{what code does}, not
       \textit{how the vulnerability manifests structurally} ---
       these are contradictory for CWE discrimination.
-      \textit{The signals destructively interfere in PCA.}
 
     \vspace{0.5em}
     \item[\textcolor{warn}{\faIcon{balance-scale}}]
-      \textbf{Dimension balancing is not the fix.}
-      Pre-PCA'ing CodeBERT to 128d (equal to each structural embedder)
-      produces identical results to raw 802d concatenation.
-      PCA's top components still reflect CodeBERT's high-variance
-      semantic directions, not vulnerability-discriminative structure.
+      \textbf{Normalization is necessary but not sufficient for 4-way.}
+      Without norm: PCA collapses (eff.\ dim 2.1, 64.4\% hit@1).
+      With norm: PCA recovers (eff.\ dim 19.3, 72.6\%) but
+      CodeBERT's signal still inverts class structure (intra/inter $= -6.57$).
 
     \vspace{0.5em}
     \item[\textcolor{c1}{\faIcon{chart-bar}}]
-      \textbf{Negative intra/inter ratio is the diagnostic.}
-      Same-CWE pairs become \textit{less} similar than cross-CWE pairs
-      ($-$6.5 ratio). Two functions with the same CWE can have very
-      different code semantics --- CodeBERT sees them as ``different''
-      and overrides the structural ``same-pattern'' signal.
+      \textbf{Negative intra/inter ratio confirms signal conflict.}
+      Same-CWE pairs become \textit{less} similar than cross-CWE pairs.
+      Two functions with the same CWE can have very
+      different code semantics --- CodeBERT overrides the structural
+      ``same-pattern'' signal.
 
     \vspace{0.5em}
     \item[\textcolor{c3}{\faIcon{lightbulb}}]
@@ -1497,14 +1495,14 @@
 
     \vspace{0.3em}
     \item[\textcolor{c1}{\faIcon{chart-bar}}]
-      \textbf{3-way structural fusion is optimal.}
-      Pre-processing sub-embedders before concatenation adds zero benefit.
-      A single final PCA captures cross-embedder correlations
-      (eff.\ dim 30.9 vs.\ 23.0).
+      \textbf{L2-norm before concat is critical for fusion.}
+      \texttt{norm\_concat\_pca} (80.8\%) dominates raw concat (64.4\%).
+      Per-embedder normalization equalizes scales so PCA can find
+      meaningful directions (eff.\ dim 30.9 vs.\ 2.1).
 
     \vspace{0.3em}
     \item[\textcolor{miss}{\faIcon{times-circle}}]
-      \textbf{Early fusion with CodeBERT fails ($-$16~pp).}
+      \textbf{Early fusion with CodeBERT fails ($-$8~pp).}
       Semantic and structural signals destructively interfere in PCA.
       CodeBERT needs late fusion (reranking, RRF, or gating).
 
