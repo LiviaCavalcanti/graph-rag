@@ -81,6 +81,121 @@ def _build_cve_qrels_and_run(
     return qrels_dict, run_dict
 
 
+def _reciprocal_rank(ranked_docs: list[tuple[str, float]], qrels: dict[str, int], k: int) -> float:
+    """Reciprocal rank of the first relevant document within the top-k.
+
+    Scans the ranked list from position 1 to k and returns 1/rank for the
+    first document marked relevant in *qrels*. Returns 0.0 if no relevant
+    document appears within the cutoff.
+
+    Args:
+        ranked_docs: List of (doc_id, score) tuples sorted by score descending.
+        qrels: Mapping of doc_id → relevance (>0 means relevant).
+        k: Rank cutoff.
+
+    Returns:
+        Float in (0, 1] or 0.0.
+    """
+    for i, (doc_id, _) in enumerate(ranked_docs[:k]):
+        if qrels.get(doc_id, 0) > 0:
+            return 1.0 / (i + 1)
+    return 0.0
+
+
+def _hit_rate_at_k(relevance: list[int], k: int) -> float:
+    """Binary hit indicator for the top-k positions.
+
+    Returns 1.0 if at least one relevant document exists in the first k
+    positions of the ranked list, 0.0 otherwise. Equivalent to
+    ``min(1, recall@k * total_rel)`` but avoids the denominator.
+
+    Args:
+        relevance: Binary relevance labels in rank order.
+        k: Rank cutoff.
+    """
+    return 1.0 if any(r > 0 for r in relevance[:k]) else 0.0
+
+
+def _precision_at_k(relevance: list[int], k: int) -> float:
+    """Precision at rank k: fraction of retrieved documents that are relevant.
+
+    P@k = |{relevant docs in top-k}| / k
+
+    Args:
+        relevance: Binary relevance labels in rank order.
+        k: Rank cutoff (must be > 0).
+    """
+    return sum(relevance[:k]) / k
+
+
+def _recall_at_k(relevance: list[int], k: int, total_rel: int) -> float:
+    """Recall at rank k: fraction of all relevant documents found in top-k.
+
+    R@k = |{relevant docs in top-k}| / |{all relevant docs}|
+
+    Returns 0.0 when total_rel is 0 (no relevant documents exist).
+
+    Args:
+        relevance: Binary relevance labels in rank order.
+        k: Rank cutoff.
+        total_rel: Total number of relevant documents in the collection.
+    """
+    if total_rel == 0:
+        return 0.0
+    return sum(relevance[:k]) / total_rel
+
+
+def _ndcg_at_k(y_true: np.ndarray, y_score: np.ndarray, k: int) -> float:
+    """Normalized Discounted Cumulative Gain at rank k.
+
+    Uses ``sklearn.metrics.ndcg_score`` which computes:
+        DCG@k  = Σ_{i=1}^{k} (2^rel_i - 1) / log2(i + 1)
+        NDCG@k = DCG@k / IDCG@k
+
+    Returns 0.0 when there are no relevant documents or fewer than 2
+    documents in the ranking (sklearn requires at least 2).
+
+    Args:
+        y_true: Ground-truth relevance scores for all ranked documents.
+        y_score: Predicted scores for all ranked documents (same order).
+        k: Rank cutoff.
+    """
+    if y_true.sum() == 0 or len(y_true) < 2:
+        return 0.0
+    try:
+        return float(ndcg_score(y_true.reshape(1, -1), y_score.reshape(1, -1), k=k))
+    except ValueError:
+        return 0.0
+
+
+def _average_precision_at_k(relevance: list[int], k: int, total_rel: int) -> float:
+    """Average Precision at rank k (AP@k).
+
+    AP@k = (1 / min(total_rel, k)) * Σ_{i=1}^{k} P(i) * rel(i)
+
+    where P(i) is precision at position i and rel(i) is the binary
+    relevance of the document at position i. The denominator is
+    ``min(total_rel, k)`` so that AP is 1.0 when all available relevant
+    documents are ranked at the top.
+
+    Returns 0.0 when total_rel is 0.
+
+    Args:
+        relevance: Binary relevance labels in rank order.
+        k: Rank cutoff.
+        total_rel: Total number of relevant documents in the collection.
+    """
+    if total_rel == 0:
+        return 0.0
+    ap = 0.0
+    n_rel = 0
+    for rank_i, rel in enumerate(relevance[:k]):
+        if rel > 0:
+            n_rel += 1
+            ap += n_rel / (rank_i + 1)
+    return ap / min(total_rel, k)
+
+
 def _compute_metrics(
     qrels_dict: dict[str, dict[str, int]],
     run_dict: dict[str, dict[str, float]],
@@ -91,81 +206,39 @@ def _compute_metrics(
     Computes hit_rate@k, precision@k, recall@k, ndcg@k, map@k for each k,
     and mrr@max(ks). Averaged over all queries in run_dict.
     """
-    results = {}
     max_k = max(ks)
 
-    for k in ks:
-        hit_rates = []
-        precisions = []
-        recalls = []
-        ndcgs = []
-        aps = []
-
-        for qid in run_dict:
-            q_qrels = qrels_dict.get(qid, {})
-            q_run = run_dict[qid]
-
-            # Rank docs by score descending, take top-k
-            ranked_docs = sorted(q_run.items(), key=lambda x: x[1], reverse=True)[:k]
-            rels = [q_qrels.get(doc_id, 0) for doc_id, _ in ranked_docs]
-
-            total_rel = sum(1 for v in q_qrels.values() if v > 0)
-
-            # Hit rate: 1 if any relevant in top-k
-            hit_rates.append(1.0 if any(r > 0 for r in rels) else 0.0)
-
-            # Precision@k
-            precisions.append(sum(rels) / k if k > 0 else 0.0)
-
-            # Recall@k
-            recalls.append(sum(rels) / total_rel if total_rel > 0 else 0.0)
-
-            # NDCG@k via sklearn
-            if total_rel > 0 and len(q_run) > 1:
-                all_docs = sorted(q_run.items(), key=lambda x: x[1], reverse=True)
-                y_true = np.array([q_qrels.get(d, 0) for d, _ in all_docs])
-                y_score = np.array([s for _, s in all_docs])
-                try:
-                    ndcg_val = ndcg_score(
-                        y_true.reshape(1, -1), y_score.reshape(1, -1), k=k
-                    )
-                except ValueError:
-                    ndcg_val = 0.0
-                ndcgs.append(ndcg_val)
-            else:
-                ndcgs.append(0.0)
-
-            # MAP@k (average precision at k)
-            if total_rel > 0:
-                ap = 0.0
-                n_rel = 0
-                for i, rel in enumerate(rels):
-                    if rel > 0:
-                        n_rel += 1
-                        ap += n_rel / (i + 1)
-                ap = ap / min(total_rel, k)
-                aps.append(ap)
-            else:
-                aps.append(0.0)
-
-        results[f"hit_rate@{k}"] = float(np.mean(hit_rates)) if hit_rates else 0.0
-        results[f"precision@{k}"] = float(np.mean(precisions)) if precisions else 0.0
-        results[f"recall@{k}"] = float(np.mean(recalls)) if recalls else 0.0
-        results[f"ndcg@{k}"] = float(np.mean(ndcgs)) if ndcgs else 0.0
-        results[f"map@{k}"] = float(np.mean(aps)) if aps else 0.0
-
-    # MRR@max_k
+    per_k: dict[int, dict[str, list[float]]] = {
+        k: {"hit_rate": [], "precision": [], "recall": [], "ndcg": [], "map": []}
+        for k in ks
+    }
     mrrs = []
+
     for qid in run_dict:
         q_qrels = qrels_dict.get(qid, {})
         q_run = run_dict[qid]
-        ranked_docs = sorted(q_run.items(), key=lambda x: x[1], reverse=True)[:max_k]
-        rr = 0.0
-        for i, (doc_id, _) in enumerate(ranked_docs):
-            if q_qrels.get(doc_id, 0) > 0:
-                rr = 1.0 / (i + 1)
-                break
-        mrrs.append(rr)
+
+        ranked_docs = sorted(q_run.items(), key=lambda x: x[1], reverse=True)
+        relevance = [q_qrels.get(doc_id, 0) for doc_id, _ in ranked_docs]
+        total_rel = sum(1 for v in q_qrels.values() if v > 0)
+
+        mrrs.append(_reciprocal_rank(ranked_docs, q_qrels, max_k))
+
+        y_true = np.array(relevance, dtype=float)
+        y_score = np.array([s for _, s in ranked_docs], dtype=float)
+
+        for k in ks:
+            per_k[k]["hit_rate"].append(_hit_rate_at_k(relevance, k))
+            per_k[k]["precision"].append(_precision_at_k(relevance, k))
+            per_k[k]["recall"].append(_recall_at_k(relevance, k, total_rel))
+            per_k[k]["ndcg"].append(_ndcg_at_k(y_true, y_score, k))
+            per_k[k]["map"].append(_average_precision_at_k(relevance, k, total_rel))
+
+    # Aggregate across queries
+    results = {}
+    for k in ks:
+        for metric_name, vals in per_k[k].items():
+            results[f"{metric_name}@{k}"] = float(np.mean(vals)) if vals else 0.0
     results[f"mrr@{max_k}"] = float(np.mean(mrrs)) if mrrs else 0.0
 
     return results
