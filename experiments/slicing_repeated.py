@@ -30,7 +30,7 @@ from experiments.common import (
     build_hnsw, evaluate_retrieval, evaluate_cwe_recall, save_json,
 )
 from src.data.autopatch import load_pairs
-from experiments.slicing_comparison import (
+from experiments.exp.slicing_comparison import (
     VARIANT_DEFS, _resolve_query_build_fn,
     _strip_diff_attrs, _add_labels_from_vuln,
 )
