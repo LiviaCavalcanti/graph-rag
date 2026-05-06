@@ -244,6 +244,43 @@ def _compute_metrics(
     return results
 
 
+def _cwe_standard_recall(
+    per_query: list[tuple[str, str, list[dict], int | None]],
+    cwe_support: dict[str, int],
+    top_k: int,
+) -> float:
+    """Standard recall@k for CWE retrieval using CWE string matching.
+
+    Unlike the capped ``macro_avg`` (denominator = min(top_k, support)),
+    this uses the full support as the denominator so the score reflects
+    how much of the CWE neighbourhood was retrieved.
+
+    Excludes the query itself (by ``_idx``) when *self_idx* is set.
+
+    Args:
+        per_query: List of (query_cwe, qid, results, self_idx) tuples.
+        cwe_support: Mapping of CWE → total number of index entries.
+        top_k: Rank cutoff applied to results.
+
+    Returns:
+        Mean recall across all eligible queries, or 0.0 if none.
+    """
+    recall_values: list[float] = []
+    for query_cwe, qid, results, self_idx in per_query:
+        support = cwe_support.get(query_cwe, 0)
+        if self_idx is not None:
+            support -= 1
+        if support <= 0:
+            continue
+        found = 0
+        for r in results[:top_k]:
+            if r.get("cwe_id") == query_cwe:
+                if self_idx is None or r.get("_idx") != self_idx:
+                    found += 1
+        recall_values.append(found / support)
+    return float(np.mean(recall_values)) if recall_values else 0.0
+
+
 def _cwe_recall_summary(
     per_query: list[tuple[str, str, list[dict], int | None]],
     index_metadata: list[dict],
@@ -258,10 +295,11 @@ def _cwe_recall_summary(
 
     When *self_idx* is not ``None``:
     - CWE support is decremented by 1 (the query cannot retrieve itself).
-    - That position is excluded from ranx qrels.
+    - That position is excluded when counting matches.
 
-    Returns a dict with per_cwe breakdown, macro_avg (capped recall),
-    ranx_recall (standard recall@k), n_cwes, and n_singletons.
+    Returns a dict with per_cwe breakdown, macro_avg (capped recall,
+    denominator = min(top_k, support)), ranx_recall (standard recall@k,
+    denominator = support), n_cwes, and n_singletons.
     """
     cwe_support = defaultdict(int)
     for m in index_metadata:
@@ -269,8 +307,6 @@ def _cwe_recall_summary(
         if cwe and cwe != "UNKNOWN":
             cwe_support[cwe] += 1
 
-    qrels_dict: dict[str, dict[str, int]] = {}
-    run_dict: dict[str, dict[str, float]] = {}
     per_cwe_scores: dict[str, list[float]] = defaultdict(list)
     n_singletons_seen: set[str] = set()
 
@@ -282,19 +318,6 @@ def _cwe_recall_summary(
         if possible <= 0:
             n_singletons_seen.add(query_cwe)
             continue
-
-        # qrels: all index docs with same CWE (excluding self when applicable)
-        q_qrels: dict[str, int] = {}
-        for idx, m in enumerate(index_metadata):
-            if m.get("cwe_id") == query_cwe and idx != self_idx:
-                q_qrels[f"d{idx}"] = 1
-        q_run: dict[str, float] = {}
-        for j, r in enumerate(results):
-            q_run[_doc_id(r, j, qid)] = float(r.get("score", 0.0))
-
-        if q_qrels and q_run:
-            qrels_dict[qid] = q_qrels
-            run_dict[qid] = q_run
 
         same = sum(1 for r in results if r.get("cwe_id") == query_cwe)
         per_cwe_scores[query_cwe].append(same / possible)
@@ -308,15 +331,12 @@ def _cwe_recall_summary(
     }
     macro = float(np.mean([v["recall"] for v in per_cwe.values()])) if per_cwe else 0.0
 
-    sklearn_recall = 0.0
-    if qrels_dict and run_dict:
-        recall_scores = _compute_metrics(qrels_dict, run_dict, [top_k])
-        sklearn_recall = recall_scores.get(f"recall@{top_k}", 0.0)
+    std_recall = _cwe_standard_recall(per_query, cwe_support, top_k)
 
     return {
         "per_cwe": per_cwe,
         "macro_avg": macro,
-        "ranx_recall": sklearn_recall,
+        "ranx_recall": std_recall,
         "n_cwes": len(per_cwe),
         "n_singletons": len(n_singletons_seen - set(per_cwe)),
     }
