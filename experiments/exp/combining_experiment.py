@@ -37,6 +37,8 @@ from experiments.base import Axis, CellContext, Experiment, ExperimentOutput, Me
 from experiments.common import build_hnsw, evaluate_retrieval, save_json
 from src.embeddings.base import BaseEmbedder
 from src.embeddings.gin import GINEmbedder
+from src.embeddings.gin_codebert import GINCodeBERTEmbedder
+from src.embeddings.gin_struct import GINStructEmbedder
 from src.embeddings.netlsd import NetLSDEmbedder
 from src.embeddings.wl import WLEmbedder
 from src.embeddings.vuln_pattern import CodeBERTPatternEmbedder
@@ -218,6 +220,26 @@ class NormConcatPCA(_BaseCombined):
         return np.hstack(normed)
 
 
+class NormConcatPCA_GINStruct(_BaseCombined):
+    """Like norm_concat_pca but with trained GIN-Struct instead of frozen GIN."""
+
+    _strategy = "norm_concat_pca_gin_struct"
+
+    def __init__(self, cfg: dict):
+        super().__init__(cfg)
+        # Replace frozen GIN with trained GIN-Struct
+        self._gin = GINStructEmbedder(cfg, apply_norm=False)
+
+    def _fuse(self, parts_batch: list[list[np.ndarray]]) -> np.ndarray:
+        n = len(parts_batch)
+        mats = [
+            np.stack([parts_batch[i][j] for i in range(n)]).astype(np.float32)
+            for j in range(3)
+        ]
+        normed = [normalize(mat, norm="l2") for mat in mats]
+        return np.hstack(normed)
+
+
 # ── 4-way variants (NetLSD + WL + GIN + CodeBERT-pattern) ───────────
 #
 # CodeBERT-pattern produces 802d raw vectors (34 pattern + 768 CodeBERT).
@@ -355,8 +377,10 @@ STRATEGY_CLASSES = {
     "pca_concat_pca": PCAConcatPCA,
     "pca_concat": PCAConcat,
     "norm_concat_pca": NormConcatPCA,
+    "norm_concat_pca_gin_struct": NormConcatPCA_GINStruct,
     "4way_concat_pca": ConcatPCA4,
     "4way_norm_concat_pca": NormConcatPCA4,
+    "gin_codebert": GINCodeBERTEmbedder,
 }
 
 
