@@ -8,7 +8,7 @@ the experiment runner's orchestration logic.
 import os
 from collections import defaultdict
 import numpy as np
-from ranx import Qrels, Run, evaluate as ranx_evaluate
+from sklearn.metrics import ndcg_score
 
 from src.io import read_code_file
 
@@ -19,9 +19,12 @@ from src.io import read_code_file
 def _doc_id(result: dict, rank: int, qid: str) -> str:
     """Return a stable global document id from a retriever result.
 
-    The ``Retriever`` always injects ``_idx`` (the FAISS vector position)
-    into every result dict, so each document has a canonical id.
-    Falls back to a per-query rank-based id for non-FAISS retrievers.
+    Two cases:
+    - Live retrieval (via ``Retriever.query()``): ``_idx`` is always
+      present — it's the FAISS vector position injected by the Retriever.
+    - Offline evaluation (via ``evaluate_retrieval_from_records()``):
+      results are deserialized from JSON and lack ``_idx``, so we
+      synthesize a per-query rank-based id instead.
     """
     idx = result.get("_idx")
     if idx is not None:
@@ -32,8 +35,8 @@ def _doc_id(result: dict, rank: int, qid: str) -> str:
 def _build_cve_qrels_and_run(
     query_results: list[tuple[str, str, list[dict]]],
     index_metadata: list[dict] | None = None,
-) -> tuple[Qrels, Run]:
-    """Build ranx Qrels/Run for CVE-level retrieval.
+) -> tuple[dict[str, dict[str, int]], dict[str, dict[str, float]]]:
+    """Build qrels/run dicts for CVE-level retrieval.
 
     *query_results* is a list of ``(query_id, query_cve, results)`` triples
     where *results* are the ranked dicts returned by the retriever.
@@ -41,6 +44,10 @@ def _build_cve_qrels_and_run(
     If *index_metadata* is provided, **all** index entries sharing the
     query CVE are marked relevant (needed for recall).  Otherwise only
     retrieved entries are judged.
+
+    Returns plain dicts (not ranx objects):
+    - qrels_dict: ``{qid: {doc_id: relevance}}``
+    - run_dict: ``{qid: {doc_id: score}}``
     """
     qrels_dict: dict[str, dict[str, int]] = {}
     run_dict: dict[str, dict[str, float]] = {}
@@ -71,24 +78,97 @@ def _build_cve_qrels_and_run(
             qrels_dict[qid] = q_qrels if q_qrels else {"__none__": 0}
             run_dict[qid] = q_run
 
-    return Qrels(qrels_dict), Run(run_dict)
+    return qrels_dict, run_dict
 
 
-def _ranx_metrics(qrels: Qrels, run: Run, ks: list[int]) -> dict:
-    """Compute standard IR metrics via ranx."""
-    metric_strings = []
+def _compute_metrics(
+    qrels_dict: dict[str, dict[str, int]],
+    run_dict: dict[str, dict[str, float]],
+    ks: list[int],
+) -> dict:
+    """Compute standard IR metrics using sklearn/numpy.
+
+    Computes hit_rate@k, precision@k, recall@k, ndcg@k, map@k for each k,
+    and mrr@max(ks). Averaged over all queries in run_dict.
+    """
+    results = {}
+    max_k = max(ks)
+
     for k in ks:
-        metric_strings.extend([
-            f"hit_rate@{k}",
-            f"precision@{k}",
-            f"recall@{k}",
-            f"ndcg@{k}",
-            f"map@{k}",
-        ])
-    metric_strings.append(f"mrr@{max(ks)}")
+        hit_rates = []
+        precisions = []
+        recalls = []
+        ndcgs = []
+        aps = []
 
-    scores = ranx_evaluate(qrels, run, metric_strings)
-    return {str(k): float(v) for k, v in scores.items()}
+        for qid in run_dict:
+            q_qrels = qrels_dict.get(qid, {})
+            q_run = run_dict[qid]
+
+            # Rank docs by score descending, take top-k
+            ranked_docs = sorted(q_run.items(), key=lambda x: x[1], reverse=True)[:k]
+            rels = [q_qrels.get(doc_id, 0) for doc_id, _ in ranked_docs]
+
+            total_rel = sum(1 for v in q_qrels.values() if v > 0)
+
+            # Hit rate: 1 if any relevant in top-k
+            hit_rates.append(1.0 if any(r > 0 for r in rels) else 0.0)
+
+            # Precision@k
+            precisions.append(sum(rels) / k if k > 0 else 0.0)
+
+            # Recall@k
+            recalls.append(sum(rels) / total_rel if total_rel > 0 else 0.0)
+
+            # NDCG@k via sklearn
+            if total_rel > 0 and len(q_run) > 1:
+                all_docs = sorted(q_run.items(), key=lambda x: x[1], reverse=True)
+                y_true = np.array([q_qrels.get(d, 0) for d, _ in all_docs])
+                y_score = np.array([s for _, s in all_docs])
+                try:
+                    ndcg_val = ndcg_score(
+                        y_true.reshape(1, -1), y_score.reshape(1, -1), k=k
+                    )
+                except ValueError:
+                    ndcg_val = 0.0
+                ndcgs.append(ndcg_val)
+            else:
+                ndcgs.append(0.0)
+
+            # MAP@k (average precision at k)
+            if total_rel > 0:
+                ap = 0.0
+                n_rel = 0
+                for i, rel in enumerate(rels):
+                    if rel > 0:
+                        n_rel += 1
+                        ap += n_rel / (i + 1)
+                ap = ap / min(total_rel, k)
+                aps.append(ap)
+            else:
+                aps.append(0.0)
+
+        results[f"hit_rate@{k}"] = float(np.mean(hit_rates)) if hit_rates else 0.0
+        results[f"precision@{k}"] = float(np.mean(precisions)) if precisions else 0.0
+        results[f"recall@{k}"] = float(np.mean(recalls)) if recalls else 0.0
+        results[f"ndcg@{k}"] = float(np.mean(ndcgs)) if ndcgs else 0.0
+        results[f"map@{k}"] = float(np.mean(aps)) if aps else 0.0
+
+    # MRR@max_k
+    mrrs = []
+    for qid in run_dict:
+        q_qrels = qrels_dict.get(qid, {})
+        q_run = run_dict[qid]
+        ranked_docs = sorted(q_run.items(), key=lambda x: x[1], reverse=True)[:max_k]
+        rr = 0.0
+        for i, (doc_id, _) in enumerate(ranked_docs):
+            if q_qrels.get(doc_id, 0) > 0:
+                rr = 1.0 / (i + 1)
+                break
+        mrrs.append(rr)
+    results[f"mrr@{max_k}"] = float(np.mean(mrrs)) if mrrs else 0.0
+
+    return results
 
 
 def _cwe_recall_summary(
@@ -155,16 +235,15 @@ def _cwe_recall_summary(
     }
     macro = float(np.mean([v["recall"] for v in per_cwe.values()])) if per_cwe else 0.0
 
-    ranx_recall = 0.0
+    sklearn_recall = 0.0
     if qrels_dict and run_dict:
-        qrels = Qrels(qrels_dict)
-        run = Run(run_dict)
-        ranx_recall = float(ranx_evaluate(qrels, run, f"recall@{top_k}"))
+        recall_scores = _compute_metrics(qrels_dict, run_dict, [top_k])
+        sklearn_recall = recall_scores.get(f"recall@{top_k}", 0.0)
 
     return {
         "per_cwe": per_cwe,
         "macro_avg": macro,
-        "ranx_recall": ranx_recall,
+        "ranx_recall": sklearn_recall,
         "n_cwes": len(per_cwe),
         "n_singletons": len(n_singletons_seen - set(per_cwe)),
     }
@@ -276,15 +355,15 @@ def cve_retrieval_metrics(
     if n == 0:
         return {"n": 0, "raw_queries": []}
 
-    qrels, run = _build_cve_qrels_and_run(ranx_input, index_metadata)
-    ranx_scores = _ranx_metrics(qrels, run, ks)
+    qrels_dict, run_dict = _build_cve_qrels_and_run(ranx_input, index_metadata)
+    scores = _compute_metrics(qrels_dict, run_dict, ks)
 
     max_k = max(ks)
     return {
-        **{f"hit@{k}": ranx_scores.get(f"hit_rate@{k}", 0.0) for k in ks},
-        "mrr": ranx_scores.get(f"mrr@{max_k}", 0.0),
-        **{f"ndcg@{k}": ranx_scores.get(f"ndcg@{k}", 0.0) for k in ks},
-        **{f"map@{k}": ranx_scores.get(f"map@{k}", 0.0) for k in ks},
+        **{f"hit@{k}": scores.get(f"hit_rate@{k}", 0.0) for k in ks},
+        "mrr": scores.get(f"mrr@{max_k}", 0.0),
+        **{f"ndcg@{k}": scores.get(f"ndcg@{k}", 0.0) for k in ks},
+        **{f"map@{k}": scores.get(f"map@{k}", 0.0) for k in ks},
         "n": n,
         "raw_queries": raw_queries,
     }
@@ -464,9 +543,9 @@ def evaluate_retrieval(
     if n == 0:
         return {"n": 0, "raw_queries": []}
 
-    # Compute aggregate IR metrics via ranx
-    qrels, run = _build_cve_qrels_and_run(query_results, index_metadata)
-    ranx_scores = _ranx_metrics(qrels, run, ks)
+    # Compute aggregate IR metrics via sklearn
+    qrels_dict, run_dict = _build_cve_qrels_and_run(query_results, index_metadata)
+    scores = _compute_metrics(qrels_dict, run_dict, ks)
 
     # Macro-averaged CVE precision / recall / F1 (per-class, then averaged)
     class_precisions = []
@@ -481,12 +560,12 @@ def evaluate_retrieval(
         class_f1s.append(f1)
 
     return {
-        **{f"hit@{k}": ranx_scores.get(f"hit_rate@{k}", 0.0) for k in ks},
-        "mrr": ranx_scores.get(f"mrr@{max_k}", 0.0),
-        **{f"ndcg@{k}": ranx_scores.get(f"ndcg@{k}", 0.0) for k in ks},
-        **{f"map@{k}": ranx_scores.get(f"map@{k}", 0.0) for k in ks},
-        **{f"precision@{k}": ranx_scores.get(f"precision@{k}", 0.0) for k in ks},
-        **{f"recall@{k}": ranx_scores.get(f"recall@{k}", 0.0) for k in ks},
+        **{f"hit@{k}": scores.get(f"hit_rate@{k}", 0.0) for k in ks},
+        "mrr": scores.get(f"mrr@{max_k}", 0.0),
+        **{f"ndcg@{k}": scores.get(f"ndcg@{k}", 0.0) for k in ks},
+        **{f"map@{k}": scores.get(f"map@{k}", 0.0) for k in ks},
+        **{f"precision@{k}": scores.get(f"precision@{k}", 0.0) for k in ks},
+        **{f"recall@{k}": scores.get(f"recall@{k}", 0.0) for k in ks},
         "cve_precision": float(np.mean(class_precisions)) if class_precisions else 0.0,
         "cve_recall": float(np.mean(class_recalls)) if class_recalls else 0.0,
         "cve_f1": float(np.mean(class_f1s)) if class_f1s else 0.0,
@@ -565,9 +644,9 @@ def evaluate_retrieval_from_records(records: list[dict]) -> dict:
             })
         query_results.append((qid, query_cve, results))
 
-    # Use existing ranx infrastructure for CVE hit metrics
-    qrels, run = _build_cve_qrels_and_run(query_results)
-    ranx_scores = _ranx_metrics(qrels, run, [1, k])
+    # Use existing infrastructure for CVE hit metrics
+    qrels_dict, run_dict = _build_cve_qrels_and_run(query_results)
+    scores = _compute_metrics(qrels_dict, run_dict, [1, k])
 
     # CWE recall@k (any result in top-k shares CWE)
     cwe_hit_at_k = 0
@@ -580,11 +659,11 @@ def evaluate_retrieval_from_records(records: list[dict]) -> dict:
     return {
         "matched": total,
         "top_k": k,
-        "hit_at_1": int(round(ranx_scores.get("hit_rate@1", 0.0) * total)),
-        "hit_rate_at_1": round(ranx_scores.get("hit_rate@1", 0.0), 4),
-        "hit_cve_at_k": int(round(ranx_scores.get(f"hit_rate@{k}", 0.0) * total)),
-        "hit_rate_at_k": round(ranx_scores.get(f"hit_rate@{k}", 0.0), 4),
-        "mrr": round(ranx_scores.get(f"mrr@{k}", 0.0), 4),
+        "hit_at_1": int(round(scores.get("hit_rate@1", 0.0) * total)),
+        "hit_rate_at_1": round(scores.get("hit_rate@1", 0.0), 4),
+        "hit_cve_at_k": int(round(scores.get(f"hit_rate@{k}", 0.0) * total)),
+        "hit_rate_at_k": round(scores.get(f"hit_rate@{k}", 0.0), 4),
+        "mrr": round(scores.get(f"mrr@{k}", 0.0), 4),
         "cwe_hit_at_k": cwe_hit_at_k,
         "cwe_hit_rate_at_k": round(cwe_hit_at_k / total, 4),
     }
