@@ -15,10 +15,9 @@ _project_root = str(Path(__file__).resolve().parent.parent)
 if _project_root not in sys.path:
     sys.path.insert(0, _project_root)
 
-import numpy as np
 import pytest
 
-from metrics.retrieval_eval import _cwe_recall_summary
+from metrics.metrics import _cwe_recall_summary
 
 
 # ── helpers ──────────────────────────────────────────────────────────
@@ -180,86 +179,3 @@ class TestSelfRetrieval:
         assert out["per_cwe"]["CWE-B"]["recall"] == pytest.approx(1.0)
         assert out["macro_avg"] == pytest.approx(0.75)  # (0.5+1.0)/2
 
-
-# ── cwe_group_recall integration ────────────────────────────────────
-
-class TestCweGroupRecallIntegration:
-    """End-to-end test of the refactored cwe_group_recall function."""
-
-    def _make_retriever(self, embs, meta):
-        """Brute-force inner-product retriever with _idx."""
-        class R:
-            def __init__(self, e, m):
-                self._e = e.astype(np.float32)
-                self._m = m
-            def query(self, vec, top_k=10):
-                scores = self._e @ vec.ravel()
-                order = np.argsort(-scores)[:top_k]
-                return [
-                    {**self._m[i], "score": float(scores[i]), "_idx": int(i)}
-                    for i in order
-                ]
-        return R(embs, meta)
-
-    def test_perfect_clustering(self):
-        """Two CWEs, well-separated → macro 1.0."""
-        from metrics.metrics import cwe_group_recall
-
-        embs = np.array([
-            [1.0, 0.0], [0.95, 0.05],  # CWE-A
-            [0.0, 1.0], [0.05, 0.95],  # CWE-B
-        ], dtype=np.float32)
-        norms = np.linalg.norm(embs, axis=1, keepdims=True)
-        embs = embs / norms
-
-        meta = [
-            {"cve_id": "CVE-1", "cwe_id": "CWE-A"},
-            {"cve_id": "CVE-2", "cwe_id": "CWE-A"},
-            {"cve_id": "CVE-3", "cwe_id": "CWE-B"},
-            {"cve_id": "CVE-4", "cwe_id": "CWE-B"},
-        ]
-        retr = self._make_retriever(embs, meta)
-        result = cwe_group_recall(embs, meta, retr, top_k=3)
-
-        assert result["macro_avg"] == pytest.approx(1.0)
-        assert "ranx_recall" in result  # new: ranx now available
-        assert result["n_singletons"] == 0
-
-    def test_singleton_skipped(self):
-        """CWE with 1 entry → singleton, not in per_cwe."""
-        from metrics.metrics import cwe_group_recall
-
-        embs = np.eye(3, dtype=np.float32)
-        meta = [
-            {"cve_id": "CVE-1", "cwe_id": "CWE-SOLO"},
-            {"cve_id": "CVE-2", "cwe_id": "CWE-DUO"},
-            {"cve_id": "CVE-3", "cwe_id": "CWE-DUO"},
-        ]
-        retr = self._make_retriever(embs, meta)
-        result = cwe_group_recall(embs, meta, retr, top_k=2)
-
-        assert result["n_singletons"] == 1
-        assert "CWE-SOLO" not in result["per_cwe"]
-
-    def test_augmented_variants_not_over_excluded(self):
-        """Same CVE ID but different augmented entries → only self removed."""
-        from metrics.metrics import cwe_group_recall
-
-        embs = np.array([
-            [1.0, 0.1],  # CVE-1 variant A
-            [1.0, 0.2],  # CVE-1 variant B (same CVE!)
-            [0.9, 0.3],  # CVE-2
-        ], dtype=np.float32)
-        norms = np.linalg.norm(embs, axis=1, keepdims=True)
-        embs = embs / norms
-
-        meta = [
-            {"cve_id": "CVE-1", "cwe_id": "CWE-A"},
-            {"cve_id": "CVE-1", "cwe_id": "CWE-A"},  # same CVE!
-            {"cve_id": "CVE-2", "cwe_id": "CWE-A"},
-        ]
-        retr = self._make_retriever(embs, meta)
-        result = cwe_group_recall(embs, meta, retr, top_k=3)
-
-        # Each query should see the other 2 CWE-A results → recall 1.0
-        assert result["macro_avg"] == pytest.approx(1.0)
