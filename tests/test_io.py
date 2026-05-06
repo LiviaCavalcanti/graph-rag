@@ -59,42 +59,42 @@ class TestReadCodeFile:
 
 class TestMakeRunDir:
     def test_creates_directory(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("src.io.results.OUTPUT_DIR", tmp_path)
+        monkeypatch.setattr("src.io.read_write.OUTPUT_DIR", tmp_path)
         run_id, run_dir = make_run_dir("test")
         assert run_dir.exists()
         assert "test" in run_id
 
     def test_unique_ids(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("src.io.results.OUTPUT_DIR", tmp_path)
+        monkeypatch.setattr("src.io.read_write.OUTPUT_DIR", tmp_path)
         id1, _ = make_run_dir()
         id2, _ = make_run_dir()
         assert id1 != id2
 
     def test_default_tag_no_double_underscore(self, tmp_path, monkeypatch):
         """Empty tag should not produce a double underscore in run_id."""
-        monkeypatch.setattr("src.io.results.OUTPUT_DIR", tmp_path)
+        monkeypatch.setattr("src.io.read_write.OUTPUT_DIR", tmp_path)
         run_id, _ = make_run_dir()
         assert "__" not in run_id.split("_", 2)[0:2]  # no adjacent empty segment
 
     def test_custom_tag_in_id(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("src.io.results.OUTPUT_DIR", tmp_path)
+        monkeypatch.setattr("src.io.read_write.OUTPUT_DIR", tmp_path)
         run_id, _ = make_run_dir("myexp")
         assert "myexp" in run_id
 
     def test_return_types(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("src.io.results.OUTPUT_DIR", tmp_path)
+        monkeypatch.setattr("src.io.read_write.OUTPUT_DIR", tmp_path)
         run_id, run_dir = make_run_dir("t")
         assert isinstance(run_id, str)
         assert isinstance(run_dir, Path)
 
     def test_directory_is_real(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("src.io.results.OUTPUT_DIR", tmp_path)
+        monkeypatch.setattr("src.io.read_write.OUTPUT_DIR", tmp_path)
         _, run_dir = make_run_dir("x")
         assert run_dir.is_dir()
 
     def test_uniqueness_rapid(self, tmp_path, monkeypatch):
         """10 rapid calls produce 10 distinct run IDs and directories."""
-        monkeypatch.setattr("src.io.results.OUTPUT_DIR", tmp_path)
+        monkeypatch.setattr("src.io.read_write.OUTPUT_DIR", tmp_path)
         results = [make_run_dir("r") for _ in range(10)]
         ids = [r[0] for r in results]
         dirs = [r[1] for r in results]
