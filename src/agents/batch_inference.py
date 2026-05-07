@@ -182,14 +182,14 @@ def _run_single_query(
     similarity = 0.0
     is_exact = False
     rouge = {}
-    if parsed and parsed.get("vuln_patch"):
-        similarity = code_similarity(parsed["vuln_patch"], ground_truth)
-        gen_stripped = re.sub(r"\s+", " ", parsed["vuln_patch"]).strip()
+    if parsed and parsed.vuln_patch:
+        similarity = code_similarity(parsed.vuln_patch, ground_truth)
+        gen_stripped = re.sub(r"\s+", " ", parsed.vuln_patch).strip()
         ref_stripped = re.sub(r"\s+", " ", ground_truth).strip()
         is_exact = gen_stripped == ref_stripped
         status = "success"
         from src.metrics.similarity import rouge_scores
-        rouge = rouge_scores(parsed["vuln_patch"], ground_truth)
+        rouge = rouge_scores(parsed.vuln_patch, ground_truth)
     else:
         status = "parse_error"
 
@@ -207,7 +207,7 @@ def _run_single_query(
         "elapsed_s": round(elapsed, 2),
         "retrieval": retrieval_info,
         "raw_output_len": len(raw_output),
-        "generated_patch": parsed["vuln_patch"] if parsed else None,
+        "generated_patch": parsed.vuln_patch if parsed else None,
         "ground_truth_patch": ground_truth,
     }
 
