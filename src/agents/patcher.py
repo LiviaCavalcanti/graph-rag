@@ -123,18 +123,65 @@ class AutoPatchPatcher:
             logger.warning("Pydantic validation failed: %s", e)
             return None
 
-    def invoke(self, input_dict: dict) -> str:
+    def invoke(self, input_dict: dict) -> InvocationRecord:
         messages = self._build_messages(input_dict)
-        response = litellm.completion(
+        params = dict(
             model=f"azure/{self.model_name}",
-            messages=messages,
-            api_key=os.getenv("AZURE_API_KEY"),
-            api_base=os.getenv("AZURE_API_BASEURL"),
-            api_version="2024-12-01-preview",
             temperature=0.2,
             max_tokens=4096,
         )
-        return response.choices[0].message.content or ""
+        record = InvocationRecord(
+            model=params["model"],
+            temperature=params["temperature"],
+            max_tokens=params["max_tokens"],
+            messages=messages,
+        )
+
+        logger.info(
+            "Invoking %s  (prompt_msgs=%d, max_tokens=%d)",
+            params["model"], len(messages), params["max_tokens"],
+        )
+        t0 = time.perf_counter()
+
+        try:
+            response = litellm.completion(
+                **params,
+                messages=messages,
+                api_key=os.getenv("AZURE_API_KEY"),
+                api_base=os.getenv("AZURE_API_BASEURL"),
+                api_version="2024-12-01-preview",
+            )
+            record.elapsed_s = round(time.perf_counter() - t0, 3)
+            record.raw_output = response.choices[0].message.content or ""
+            record.finish_reason = response.choices[0].finish_reason or ""
+            record.response_id = getattr(response, "id", "") or ""
+
+            usage = getattr(response, "usage", None)
+            if usage:
+                record.prompt_tokens = getattr(usage, "prompt_tokens", 0) or 0
+                record.completion_tokens = getattr(usage, "completion_tokens", 0) or 0
+                record.total_tokens = getattr(usage, "total_tokens", 0) or 0
+
+            logger.info(
+                "LLM responded  (tokens=%d/%d/%d, finish=%s, elapsed=%.1fs)",
+                record.prompt_tokens, record.completion_tokens, record.total_tokens,
+                record.finish_reason, record.elapsed_s,
+            )
+
+            record.parsed = self.parse(record.raw_output)
+            if record.parsed is None:
+                logger.warning("Parse failed for response_id=%s", record.response_id)
+
+        except Exception as exc:
+            record.elapsed_s = round(time.perf_counter() - t0, 3)
+            record.error = str(exc)
+            logger.error(
+                "LLM call failed after %.1fs: %s", record.elapsed_s, exc,
+                exc_info=True,
+            )
+            raise
+
+        return record
 
 
 # ── single-shot patcher ─────────────────────────────────────────────
@@ -146,11 +193,15 @@ def patch_one(
     target_code: str,
     target_supplementary: str = "",
     model_name: str | None = None,
-) -> tuple[str, PatchResult | None]:
+    trace_dir: str | Path | None = None,
+) -> tuple[str, PatchResult | None, InvocationRecord]:
     """Build prompt, invoke LLM via litellm (google-adk Azure backend), parse result.
 
-    Returns (raw_output, parsed) where *parsed* is a PatchResult
-    with 'cot' and 'vuln_patch' fields, or None on parse failure.
+    Returns (raw_output, parsed, record) where *parsed* is a PatchResult
+    with 'cot' and 'vuln_patch' fields (or None on parse failure), and
+    *record* is an InvocationRecord capturing everything for reproducibility.
+
+    If *trace_dir* is provided, the record is saved as a JSON file there.
     """
     input_dict = {
         "example_target_cwe_type": example_db.get("cwe_type", "Unknown"),
@@ -180,6 +231,11 @@ def patch_one(
     }
 
     patcher = AutoPatchPatcher(model_name)
-    raw_output = patcher.invoke(input_dict)
-    parsed = patcher.parse(raw_output)
-    return raw_output, parsed
+    record = patcher.invoke(input_dict)
+
+    if trace_dir:
+        cve_id = example_db.get("cve_id", "unknown")
+        fname = f"{cve_id}_{int(time.time())}.json"
+        record.save(Path(trace_dir) / fname)
+
+    return record.raw_output, record.parsed, record
