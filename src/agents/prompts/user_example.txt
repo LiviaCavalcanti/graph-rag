@@ -1,0 +1,14 @@
+[Supplementary Code]
+None
+
+[Variable Mapping]
+{example_target_vulnerability_related_variable_mapping}
+
+[Function Mapping]
+{example_target_vulnerability_related_function_mapping}
+
+[Root Cause]
+{example_target_root_cause}
+
+[Target Code]
+{example_target_code}
