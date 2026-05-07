@@ -17,11 +17,27 @@ from agents.batch_inference import (
     _run_single_query,
     ForbiddenError,
 )
+from agents.patcher import PatchResult, InvocationRecord
 from data.base import FunctionPair
 import networkx as nx
 
 
 # ── helpers ───────────────────────────────────────────────────────────
+
+def _mock_record(**overrides):
+    """Build a minimal InvocationRecord for test mocks."""
+    defaults = dict(
+        model="azure/test-model",
+        temperature=0.2,
+        max_tokens=4096,
+        messages=[],
+        prompt_tokens=100,
+        completion_tokens=50,
+        total_tokens=150,
+        finish_reason="stop",
+    )
+    defaults.update(overrides)
+    return InvocationRecord(**defaults)
 
 
 def _make_pair(
@@ -213,7 +229,8 @@ class TestRunSingleQuery:
         }
 
         with patch("agents.batch_inference.patch_one") as mock_patch:
-            mock_patch.return_value = ("raw output", {"vuln_patch": "void func_a_fixed(){}", "cot": "..."})
+            parsed = PatchResult(vuln_patch="void func_a_fixed(){}", cot="...")
+            mock_patch.return_value = ("raw output", parsed, _mock_record(parsed=parsed))
             result = _run_single_query(query, retriever, db_cache, "test-model")
 
         # patch_one should have been called with the correct per-dir db entries
@@ -238,7 +255,8 @@ class TestRunSingleQuery:
     @patch("agents.batch_inference.patch_one")
     def test_success_returns_similarity_and_patch(self, mock_patch):
         ground_truth = "void vuln_fn() { buf[9]=0; }"
-        mock_patch.return_value = ("raw", {"vuln_patch": ground_truth, "cot": "fixed it"})
+        parsed = PatchResult(vuln_patch=ground_truth, cot="fixed it")
+        mock_patch.return_value = ("raw", parsed, _mock_record(parsed=parsed))
 
         query = _make_pair(dir_name="CVE-2025-0001", source_after="")
         example = _make_pair(dir_name="CVE-2025-0002")
@@ -262,7 +280,8 @@ class TestRunSingleQuery:
         gt = "void fixed() { return 0; }"
         # same code with different whitespace
         generated = "void fixed()  {  return 0;  }"
-        mock_patch.return_value = ("raw", {"vuln_patch": generated, "cot": "..."})
+        parsed = PatchResult(vuln_patch=generated, cot="...")
+        mock_patch.return_value = ("raw", parsed, _mock_record(parsed=parsed))
 
         query = _make_pair(dir_name="CVE-2025-0001", source_after="")
         example = _make_pair(dir_name="CVE-2025-0002")
@@ -279,7 +298,7 @@ class TestRunSingleQuery:
     @patch("agents.batch_inference.patch_one")
     def test_parse_error_when_no_vuln_patch(self, mock_patch):
         """If LLM output doesn't produce a vuln_patch, status should be parse_error."""
-        mock_patch.return_value = ("raw", {"vuln_patch": None, "cot": "..."})
+        mock_patch.return_value = ("raw", None, _mock_record())
 
         query = _make_pair(dir_name="CVE-2025-0001")
         example = _make_pair(dir_name="CVE-2025-0002")
@@ -324,7 +343,8 @@ class TestRunSingleQuery:
 
     @patch("agents.batch_inference.patch_one")
     def test_result_contains_retrieval_info(self, mock_patch):
-        mock_patch.return_value = ("raw", {"vuln_patch": "fixed()", "cot": "..."})
+        parsed = PatchResult(vuln_patch="fixed()", cot="...")
+        mock_patch.return_value = ("raw", parsed, _mock_record(parsed=parsed))
         query = _make_pair(dir_name="CVE-2025-0001")
         example = _make_pair(dir_name="CVE-2025-0002")
         info = {"cve_match": True, "cwe_match": False, "distance": 0.5}
