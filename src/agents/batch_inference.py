@@ -154,7 +154,7 @@ def _run_single_query(
     # invoke patcher (prompt build → LLM → parse)
     t0 = time.perf_counter()
     try:
-        raw_output, parsed = patch_one(
+        raw_output, parsed, record = patch_one(
             example_db=example_db,
             target_db=target_db,
             target_code=target_code,
@@ -209,6 +209,10 @@ def _run_single_query(
         "raw_output_len": len(raw_output),
         "generated_patch": parsed.vuln_patch if parsed else None,
         "ground_truth_patch": ground_truth,
+        "prompt_tokens": record.prompt_tokens,
+        "completion_tokens": record.completion_tokens,
+        "total_tokens": record.total_tokens,
+        "finish_reason": record.finish_reason,
     }
 
 
