@@ -1,11 +1,17 @@
+import json
+import logging
 import os
 import re
+import time
 from pathlib import Path
 
 import litellm
 from dotenv import load_dotenv
+from pydantic import BaseModel, Field, ValidationError
 
 from src.agents.utils import MODEL_NAME, fmt_mapping, strip_code_fences
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 # litellm._turn_on_debug()
@@ -49,6 +55,37 @@ _MESSAGE_TEMPLATES = [
 ]
 
 
+class PatchResult(BaseModel):
+    """Structured output from the patcher LLM."""
+    cot: str
+    vuln_patch: str
+
+
+class InvocationRecord(BaseModel):
+    """Everything needed to reproduce / debug a single LLM call."""
+    model: str
+    temperature: float
+    max_tokens: int
+    messages: list[dict]
+    raw_output: str = ""
+    parsed: PatchResult | None = None
+    error: str | None = None
+    elapsed_s: float = 0.0
+    prompt_tokens: int = 0
+    completion_tokens: int = 0
+    total_tokens: int = 0
+    finish_reason: str = ""
+    response_id: str = ""
+
+    def save(self, path: str | Path) -> Path:
+        """Persist record as JSON for later replay / debugging."""
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(self.model_dump(), indent=2, default=str))
+        logger.debug("Saved invocation record → %s", p)
+        return p
+
+
 class AutoPatchPatcher:
 
     def __init__(self, model_name: str | None = None):
@@ -61,24 +98,30 @@ class AutoPatchPatcher:
             for role, tmpl in _MESSAGE_TEMPLATES
         ]
 
-    def parse(self, output):
-        json_output = None
-        try:
-            cot = output[
-                output.find("[CoT START]")
-                + len("[CoT START]") : output.find("[CoT END]")
-            ]
-            vuln_patch = output[
-                output.find("[Patched Code START]")
-                + len("[Patched Code START]") : output.find("[Patched Code END]")
-            ]
-            json_output = {"cot": cot, "vuln_patch": vuln_patch}
-        except Exception as e:
-            print("LLM output not directly JSON2. Need manual parsing.")
-            print(e)
-            print(output)
+    @staticmethod
+    def _extract_between(text: str, start_marker: str, end_marker: str) -> str | None:
+        start = text.find(start_marker)
+        if start == -1:
             return None
-        return json_output
+        start += len(start_marker)
+        end = text.find(end_marker, start)
+        if end == -1:
+            return None
+        return text[start:end].strip()
+
+    def parse(self, output: str) -> PatchResult | None:
+        cot = self._extract_between(output, "[CoT START]", "[CoT END]")
+        vuln_patch = self._extract_between(output, "[Patched Code START]", "[Patched Code END]")
+
+        if cot is None or vuln_patch is None:
+            logger.warning("Missing markers in LLM output (len=%d)", len(output))
+            return None
+
+        try:
+            return PatchResult(cot=cot, vuln_patch=vuln_patch)
+        except ValidationError as e:
+            logger.warning("Pydantic validation failed: %s", e)
+            return None
 
     def invoke(self, input_dict: dict) -> str:
         messages = self._build_messages(input_dict)
@@ -103,11 +146,11 @@ def patch_one(
     target_code: str,
     target_supplementary: str = "",
     model_name: str | None = None,
-) -> tuple[str, dict | None]:
+) -> tuple[str, PatchResult | None]:
     """Build prompt, invoke LLM via litellm (google-adk Azure backend), parse result.
 
-    Returns (raw_output, parsed) where *parsed* is a dict with
-    'cot' and 'vuln_patch' keys, or None on parse failure.
+    Returns (raw_output, parsed) where *parsed* is a PatchResult
+    with 'cot' and 'vuln_patch' fields, or None on parse failure.
     """
     input_dict = {
         "example_target_cwe_type": example_db.get("cwe_type", "Unknown"),
