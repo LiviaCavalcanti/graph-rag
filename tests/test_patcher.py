@@ -5,7 +5,13 @@ import pytest
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from agents.patcher import sanitize_after_index, AutoPatchPatcher, patch_one
+from agents.patcher import (
+    sanitize_after_index,
+    AutoPatchPatcher,
+    PatchResult,
+    InvocationRecord,
+    patch_one,
+)
 
 
 # ── sanitize_after_index ─────────────────────────────────────────────
@@ -75,23 +81,20 @@ Some trailing text.
 """
         result = patcher.parse(output)
         assert result is not None
-        assert "null check" in result["cot"]
-        assert "if (ptr != NULL)" in result["vuln_patch"]
+        assert isinstance(result, PatchResult)
+        assert "null check" in result.cot
+        assert "if (ptr != NULL)" in result.vuln_patch
 
     def test_parse_missing_markers(self, patcher):
         output = "No markers at all, just plain text."
         result = patcher.parse(output)
-        # When markers are missing, find() returns -1, slicing produces empty strings
-        # vuln_patch will be empty → but the code still returns a dict
-        # The current implementation returns {"cot": ..., "vuln_patch": ...}
-        # with possibly garbage substrings. Let's just verify it doesn't crash.
-        assert result is not None or result is None  # doesn't crash
+        assert result is None
 
     def test_parse_only_cot_marker(self, patcher):
         output = "[CoT START]some reasoning[CoT END]"
         result = patcher.parse(output)
-        assert result is not None
-        assert "some reasoning" in result["cot"]
+        # Missing [Patched Code] markers → None
+        assert result is None
 
     def test_parse_with_code_fences(self, patcher):
         output = """```
@@ -107,6 +110,96 @@ int x = 0;
 ```"""
         result = patcher.parse(output)
         assert result is not None
-        assert "int x = 0;" in result["vuln_patch"]
+        assert isinstance(result, PatchResult)
+        assert "int x = 0;" in result.vuln_patch
+
+
+# ── InvocationRecord ─────────────────────────────────────────────────
+
+class TestInvocationRecord:
+
+    def test_create_minimal_record(self):
+        record = InvocationRecord(
+            model="azure/test",
+            temperature=0.2,
+            max_tokens=4096,
+            messages=[{"role": "user", "content": "hello"}],
+        )
+        assert record.raw_output == ""
+        assert record.parsed is None
+        assert record.error is None
+        assert record.elapsed_s == 0.0
+        assert record.prompt_tokens == 0
+
+    def test_record_with_parsed_result(self):
+        parsed = PatchResult(cot="reasoning", vuln_patch="fixed code")
+        record = InvocationRecord(
+            model="azure/test",
+            temperature=0.2,
+            max_tokens=4096,
+            messages=[],
+            raw_output="some output",
+            parsed=parsed,
+            elapsed_s=1.5,
+            prompt_tokens=100,
+            completion_tokens=50,
+            total_tokens=150,
+            finish_reason="stop",
+        )
+        assert record.parsed.vuln_patch == "fixed code"
+        assert record.total_tokens == 150
+
+    def test_save_and_load(self, tmp_path):
+        parsed = PatchResult(cot="cot text", vuln_patch="patch text")
+        record = InvocationRecord(
+            model="azure/test",
+            temperature=0.2,
+            max_tokens=4096,
+            messages=[{"role": "system", "content": "you are an expert"}],
+            raw_output="raw llm output",
+            parsed=parsed,
+            elapsed_s=2.3,
+            prompt_tokens=200,
+            completion_tokens=100,
+            total_tokens=300,
+            finish_reason="stop",
+            response_id="chatcmpl-abc123",
+        )
+        import json
+        out_path = record.save(tmp_path / "traces" / "test.json")
+        assert out_path.exists()
+
+        loaded = json.loads(out_path.read_text())
+        assert loaded["model"] == "azure/test"
+        assert loaded["parsed"]["vuln_patch"] == "patch text"
+        assert loaded["prompt_tokens"] == 200
+        assert loaded["response_id"] == "chatcmpl-abc123"
+        assert loaded["messages"][0]["role"] == "system"
+
+    def test_save_creates_parent_dirs(self, tmp_path):
+        record = InvocationRecord(
+            model="azure/test",
+            temperature=0.2,
+            max_tokens=4096,
+            messages=[],
+        )
+        deep_path = tmp_path / "a" / "b" / "c" / "record.json"
+        out = record.save(deep_path)
+        assert out.exists()
+
+    def test_model_dump_roundtrip(self):
+        parsed = PatchResult(cot="cot", vuln_patch="patch")
+        record = InvocationRecord(
+            model="azure/test",
+            temperature=0.2,
+            max_tokens=4096,
+            messages=[{"role": "user", "content": "test"}],
+            parsed=parsed,
+            error=None,
+        )
+        data = record.model_dump()
+        restored = InvocationRecord(**data)
+        assert restored.parsed.vuln_patch == "patch"
+        assert restored.model == "azure/test"
 
 
