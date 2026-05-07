@@ -1,0 +1,10 @@
+in the following format, including the leading and trailing "```" and "```" 
+```
+[CoT START]
+<the thinking process for the vulnerability patching (Step 1)>
+[CoT END]
+
+[Patched Code START]
+<the patched code>
+[Patched Code END]
+```

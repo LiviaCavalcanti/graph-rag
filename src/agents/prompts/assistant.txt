@@ -1,0 +1,20 @@
+Now, I will patch user-provided [Target Code] having a vulnerabilitiy of {example_target_cwe_type} similar to {example_target_cve_id}. Then, I will provide the results {format_instructions}
+
+Let's think step-by-step.
+
+Step 1. Describe how to patch [Target Code] to fix {example_target_cwe_type} similar to {example_target_cve_id}.
+{example_target_patch_cot}
+
+Step 2. Generate a patched code based on Step 1.
+{example_target_vuln_patch}
+
+Step 3. Provide the results.
+```
+[CoT START]
+ {example_target_patch_cot}
+[CoT END]
+
+[Patched Code START]
+{example_target_vuln_patch}
+[Patched Code END]
+```
