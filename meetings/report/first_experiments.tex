@@ -1075,6 +1075,482 @@ The result is the vulnerability-relevant **program slice** — the subgraph of \
   % ── END REVIEW SECTION ──
 
   % ─────────────────────────────────────────────────────────────────
+  \subsection{Embedding Combination Strategies}
+  \label{sec:combining}
+
+  The Combined embedder concatenates NetLSD, WL, and GIN descriptors
+  ($3 \times 128 = 384$~dimensions) and reduces via PCA to 128-d.
+  This section investigates \emph{how} the sub-embedders should be
+  combined---whether raw concatenation, normalisation, or
+  intermediate dimensionality reduction yields the best retrieval
+  performance.
+
+  \subsubsection{Strategies}
+
+  Six fusion strategies are evaluated, all using the same three
+  structural sub-embedders (NetLSD, WL, GIN) and producing a
+  final 128-dimensional L2-normalised vector:
+
+  \begin{enumerate}[nosep]
+    \item \textbf{concat\_pca} — Concatenate raw embeddings
+      ($384$-d) $\to$ PCA to 128-d.
+    \item \textbf{pca\_concat\_pca} — PCA each sub-embedder to
+      128-d individually $\to$ concatenate ($384$-d) $\to$
+      PCA to 128-d.
+    \item \textbf{pca\_concat} — PCA each sub-embedder to 42-d
+      ($128/3$) $\to$ concatenate ($126$-d), no second PCA.
+    \item \textbf{norm\_concat\_pca} — L2-normalise each
+      sub-embedder independently $\to$ concatenate ($384$-d)
+      $\to$ PCA to 128-d.
+    \item \textbf{4way\_concat\_pca} — Like (1) but adds
+      CodeBERT-pattern as a 4th sub-embedder ($512$-d $\to$ PCA
+      to 128-d).
+    \item \textbf{4way\_norm\_concat\_pca} — Like (4) but with
+      4~sub-embedders.
+  \end{enumerate}
+
+  \subsubsection{Results}
+
+  \begin{table}[ht]
+  \centering
+  \caption{Combination strategy comparison. 225~index, 73~queries,
+    $G_{\mathrm{vuln}}$, seed\,=\,42. All sub-embedders are
+    unsupervised (frozen random weights for GIN).}
+  \label{tab:combining}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{l cccc}
+    \toprule
+    \textbf{Strategy}
+      & \textbf{hit@1} & \textbf{hit@5} & \textbf{hit@10}
+      & \textbf{MRR} \\
+    \midrule
+    concat\_pca            & 64.4\% & 79.5\% & 84.9\% & 0.707 \\
+    pca\_concat\_pca       & 64.4\% & 79.5\% & 84.9\% & 0.707 \\
+    pca\_concat            & 64.4\% & 78.1\% & 83.6\% & 0.706 \\
+    \textbf{norm\_concat\_pca} & \textbf{80.8\%} & \textbf{93.2\%}
+      & \textbf{95.9\%} & \textbf{0.849} \\
+    4way\_concat\_pca      & 64.4\% & 79.5\% & 84.9\% & 0.707 \\
+    4way\_norm\_concat\_pca & 72.6\% & 86.3\% & 87.7\% & 0.773 \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \subsubsection{Analysis}
+
+  \paragraph{Normalisation dominates.}
+  The \textbf{norm\_concat\_pca} strategy outperforms all others by
+  a large margin: $+16.4$~pp hit@1 over raw concatenation
+  (80.8\% vs.\ 64.4\%).
+  The explanation is that the three sub-embedders operate at
+  different scales (NetLSD produces heat-trace values of order
+  $10^{-3}$; GIN outputs arbitrary-magnitude activations after
+  sum pooling).
+  Without normalisation, PCA is dominated by the highest-variance
+  sub-embedder (GIN), effectively discarding NetLSD and WL signal.
+  L2-normalising each sub-embedder ensures equal contribution to
+  the joint PCA basis.
+
+  \paragraph{PCA pre-reduction is neutral.}
+  \texttt{pca\_concat\_pca} and \texttt{pca\_concat} produce
+  identical or near-identical results to raw \texttt{concat\_pca}
+  (all at 64.4\% hit@1), indicating that intermediate PCA neither
+  helps nor hurts---the bottleneck is scale mismatch, not
+  dimensionality.
+
+  \paragraph{Adding CodeBERT does not help in the 4-way variants.}
+  The 4-way strategies add CodeBERT-pattern (802-d raw, PCA'd to
+  128-d before fusion) as a 4th sub-embedder.
+  Without normalisation (\texttt{4way\_concat\_pca}), performance
+  is identical to the 3-way version (64.4\%), confirming that the
+  high-dimensional CodeBERT component simply dominates PCA.
+  With normalisation (\texttt{4way\_norm\_concat\_pca}), hit@1
+  improves to 72.6\%---better than unnormalised but \emph{worse}
+  than the 3-way normalised variant (80.8\%).
+  This suggests that CodeBERT-pattern introduces noise that
+  dilutes the strong structural signal from the topology-based
+  sub-embedders in this dataset configuration.
+
+  \paragraph{Standalone embedder context.}
+  For reference, the individual sub-embedders achieve:
+  GIN alone 72.6\% hit@1 (MRR\,=\,0.788);
+  Combined (norm\_concat\_pca) 80.8\% (MRR\,=\,0.849).
+  The fusion strategy improves retrieval by $+8.2$~pp over the
+  strongest individual component, confirming the value of
+  multi-view structural representations.
+
+  % ─────────────────────────────────────────────────────────────────
+  \subsection{Trained GIN-Struct: Triplet Learning on Structural Features}
+  \label{sec:gin-struct}
+
+  The frozen GIN embedder uses random weights (Johnson--Lindenstrauss
+  style random projections through GIN message-passing layers).
+  While this provides a reasonable structural fingerprint, the
+  representation is not optimised for vulnerability retrieval.
+  This experiment asks: \emph{can we train the GIN with a triplet
+  loss to learn a discriminative embedding space where same-CVE
+  graphs cluster together?}
+
+  \subsubsection{Architecture}
+
+  \textbf{GIN-Struct} is a 3-layer Graph Isomorphism Network
+  operating on \emph{structural node-type features} (one-hot
+  encoding of node labels such as \textsc{Call}, \textsc{Identifier},
+  \textsc{ControlStructure}, etc.) rather than code text.
+  Architecture details:
+
+  \begin{itemize}[nosep]
+    \item \textbf{Input}: one-hot node-type features (13 types).
+    \item \textbf{Layers}: 3 GINConv layers with 128 hidden dimensions,
+      BatchNorm1d after each layer, ReLU activation.
+    \item \textbf{Readout}: global mean pooling $\to$ linear projection
+      to 128-d output.
+    \item \textbf{No dropout} in the message-passing layers (to match
+      the frozen GIN architecture for warm-start compatibility).
+    \item \texttt{train\_eps=False} (fixed $\epsilon=0$ in GIN update).
+  \end{itemize}
+
+  \subsubsection{Training}
+
+  \textbf{Warm-start from frozen GIN.}
+  Rather than training from scratch, the model is initialised with
+  the exact weights of the frozen random GIN embedder.
+  This ensures the starting point already produces reasonable
+  structural fingerprints (cosine similarity 1.0 to frozen GIN
+  outputs at initialisation), and the triplet loss fine-tunes
+  the representation to improve CVE discrimination.
+
+  \textbf{Loss.}
+  Triplet margin loss with margin $m = 0.5$:
+  \[
+    \mathcal{L} = \max(0,\; \|f(G_a) - f(G_p)\|_2 -
+    \|f(G_a) - f(G_n)\|_2 + m)
+  \]
+  where $(G_a, G_p, G_n)$ are anchor/positive/negative triplets
+  mined per batch.
+
+  \textbf{Triplet mining.}
+  Labels are CVE IDs (64 unique CVEs across 225 index graphs).
+  Positives: a different variant of the same CVE (e.g.\ original
+  $\leftrightarrow$ augmented).
+  Negatives: semi-hard mining within each batch---negatives that
+  are closer to the anchor than the positive but still outside
+  the margin.
+
+  \textbf{Hyperparameters.}
+  \begin{itemize}[nosep]
+    \item Learning rate: $5 \times 10^{-4}$ (Adam)
+    \item Batch size: 32
+    \item Epochs: 94 (early stopping with patience 10)
+    \item Label mode: CVE-level (same-CVE = positive)
+    \item Final training loss: 0.012; validation loss: 0.018
+    \item Training time: 474\,s on CPU
+  \end{itemize}
+
+  \subsubsection{Standalone Results}
+
+  \begin{table}[ht]
+  \centering
+  \caption{Trained GIN-Struct vs.\ frozen GIN (standalone, 128-d).
+    225~index, 73~queries, seed\,=\,42.}
+  \label{tab:gin-struct-standalone}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{l cccc cc}
+    \toprule
+    \textbf{Embedder}
+      & \textbf{hit@1} & \textbf{hit@5} & \textbf{hit@10}
+      & \textbf{MRR}
+      & \textbf{CVE P} & \textbf{CVE R} \\
+    \midrule
+    Frozen GIN (random)
+      & 72.6\% & 87.7\% & 90.4\% & 0.788
+      & --- & --- \\
+    Trained GIN-Struct
+      & \textbf{78.1\%} & \textbf{93.2\%} & \textbf{94.5\%}
+      & \textbf{0.826}
+      & 93.3\% & 74.5\% \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  The trained GIN-Struct improves hit@1 by $+5.5$~pp and MRR by
+  $+3.8$~pp over the frozen baseline, demonstrating that triplet
+  learning on purely structural features (node types + topology)
+  can learn vulnerability-discriminative representations without
+  any code text.
+
+  \subsubsection{Embedding Space Quality}
+
+  Table~\ref{tab:space-quality} compares intrinsic space quality
+  metrics across three embedders.
+
+  \begin{table}[ht]
+  \centering
+  \caption{Embedding space quality metrics. Silhouette: higher is
+    better ($[-1, 1]$); kNN purity: higher is better ($[0, 1]$);
+    intra/inter ratio: lower is better (tighter clusters, more
+    separation).}
+  \label{tab:space-quality}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{l ccc ccc}
+    \toprule
+    & \multicolumn{3}{c}{\textbf{CVE-level}}
+    & \multicolumn{3}{c}{\textbf{CWE-level}} \\
+    \cmidrule(lr){2-4} \cmidrule(lr){5-7}
+    \textbf{Embedder}
+      & Silh. & kNN@5 & I/I ratio
+      & Silh. & kNN@5 & I/I ratio \\
+    \midrule
+    Frozen GIN
+      & 0.003 & 0.410 & 0.538
+      & $-0.30$ & 0.456 & 0.897 \\
+    GIN-Struct (trained)
+      & 0.054 & 0.448 & 0.305
+      & $-0.31$ & 0.500 & 0.909 \\
+    Combined (norm\_concat\_pca)
+      & \textbf{0.124} & \textbf{0.458} & \textbf{0.685}
+      & $-0.06$ & \textbf{0.509} & \textbf{0.934} \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  Key observations:
+  \begin{itemize}[nosep]
+    \item \textbf{CVE-level clustering improves with training.}
+      GIN-Struct achieves a dramatically lower intra/inter ratio
+      (0.305 vs.\ 0.538 for frozen GIN), meaning same-CVE
+      embeddings are much tighter relative to cross-CVE distances.
+      Silhouette also improves from near-zero to 0.054.
+    \item \textbf{CWE-level structure is not learned.}
+      The triplet loss optimises for CVE-level discrimination
+      (same-CVE = positive), which does not explicitly encourage
+      CWE clustering. CWE silhouette remains negative for both
+      GIN variants.
+    \item \textbf{Combined still has higher absolute quality.}
+      The multi-view Combined embedder benefits from complementary
+      spectral (NetLSD) and colour-refinement (WL) signals,
+      achieving the best silhouette and kNN purity overall.
+      However, its intra/inter ratio (0.685) is \emph{worse} than
+      trained GIN-Struct (0.305), indicating that the trained model
+      has tighter CVE clusters despite lower absolute separability.
+  \end{itemize}
+
+  \subsubsection{Fusion with Trained GIN-Struct}
+  \label{sec:gin-struct-fusion}
+
+  The central question: \emph{does replacing the frozen random GIN
+  with the trained GIN-Struct in the \texttt{norm\_concat\_pca}
+  fusion strategy improve retrieval?}
+
+  We compare the two fusion variants head-to-head: both use
+  identical NetLSD and WL sub-embedders, identical L2-normalisation
+  and PCA pipeline, and differ only in the GIN component.
+
+  \begin{table}[ht]
+  \centering
+  \caption{Fusion comparison: frozen GIN vs.\ trained GIN-Struct
+    in the \texttt{norm\_concat\_pca} pipeline. 225~index,
+    73~queries, seed\,=\,42.}
+  \label{tab:gin-struct-fusion}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{l cccc}
+    \toprule
+    \textbf{GIN component in fusion}
+      & \textbf{hit@1} & \textbf{hit@5} & \textbf{hit@10}
+      & \textbf{MRR} \\
+    \midrule
+    Frozen GIN (random)
+      & 86.3\% & 97.3\% & 97.3\% & 0.907 \\
+    \textbf{Trained GIN-Struct}
+      & \textbf{89.0\%} & \textbf{98.6\%} & \textbf{98.6\%}
+      & \textbf{0.929} \\
+    \midrule
+    \textit{Improvement}
+      & \textit{+2.7pp} & \textit{+1.4pp} & \textit{+1.4pp}
+      & \textit{+0.022} \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \subsubsection{Analysis}
+
+  \paragraph{Training compounds with fusion.}
+  The trained GIN-Struct improves the fusion from 86.3\% to 89.0\%
+  hit@1 ($+2.7$~pp) and MRR from 0.907 to 0.929.
+  This demonstrates that the discriminative structure learned via
+  triplet loss is \emph{complementary} to NetLSD and WL---it
+  captures CVE-specific topology patterns that the spectral and
+  colour-refinement descriptors miss.
+
+  \paragraph{Diminishing returns at high performance.}
+  The absolute improvement ($+2.7$~pp) is smaller than the
+  standalone improvement ($+5.5$~pp) because the fusion already
+  achieves high accuracy via complementary sub-embedders.
+  At 89.0\% hit@1, only 8 out of 73 queries fail---these represent
+  genuinely difficult cases (e.g.\ NULL-pointer-dereference
+  patterns that are structurally near-identical across unrelated
+  CVEs).
+
+  \paragraph{Near-perfect hit@5.}
+  The 98.6\% hit@5 means only 1 query out of 73 fails to have the
+  correct CVE in its top-5 neighbours.
+  This is relevant for a production RAG system where
+  re-ranking the top-5 candidates (e.g.\ via CodeBERT similarity
+  or an LLM judge) is feasible.
+
+  \paragraph{New best result.}
+  The \texttt{norm\_concat\_pca} with trained GIN-Struct achieves
+  \textbf{89.0\% hit@1 / 0.929 MRR}---the strongest retrieval
+  result in the project to date.
+  This is achieved entirely from structural features (node types
+  + graph topology), without any code text or LLM-based embeddings.
+
+  % ─────────────────────────────────────────────────────────────────
+  \subsection{Learnings and Takeaways}
+  \label{sec:learnings}
+
+  \begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+
+    \item \textbf{Normalisation before fusion is critical.}
+      The single most impactful change across all experiments was
+      L2-normalising sub-embedders before concatenation.
+      Without it, PCA is dominated by whichever sub-embedder has
+      the largest scale, effectively discarding complementary signals.
+      This yielded a $+16$~pp improvement with zero computational cost.
+
+    \item \textbf{Structural features suffice for vulnerability retrieval.}
+      The best result (89.0\% hit@1) uses only node types and graph
+      topology---no code text, no LLM, no pre-trained language model.
+      This has practical implications: the system is language-agnostic
+      (works on any language with a CPG exporter), does not require
+      GPU inference for CodeBERT, and produces deterministic embeddings.
+
+    \item \textbf{Warm-starting from frozen weights is effective.}
+      Initialising the trainable GIN from the frozen random GIN
+      (exact architecture match, cosine sim 1.0 at init) allows
+      triplet fine-tuning to converge quickly (94 epochs, 8~min)
+      while preserving the Johnson--Lindenstrauss distance properties
+      of the random initialisation as a regulariser.
+
+    \item \textbf{BatchNorm mode matters for GIN.}
+      When using BatchNorm in a GIN, the frozen model's embeddings
+      use per-batch statistics (since running stats are never updated).
+      At inference time, the trained model must also use
+      \texttt{model.train()} mode to match per-batch statistics,
+      rather than the standard \texttt{model.eval()} which uses
+      (uninitialised) running statistics.
+      This is a subtle but critical implementation detail.
+
+    \item \textbf{CVE-level triplet loss does not transfer to CWE clustering.}
+      The trained model dramatically improves CVE-level metrics
+      (intra/inter ratio drops from 0.538 to 0.305) but CWE-level
+      silhouette remains near-random ($-0.31$).
+      CWE-level retrieval would require CWE-aware labels or a
+      hierarchical loss.
+
+    \item \textbf{Complementary views compound.}
+      Each sub-embedder captures different structural aspects:
+      NetLSD captures global spectral shape, WL captures local
+      neighbourhood patterns via colour refinement, and GIN captures
+      multi-hop message-passing topology.
+      Their fusion consistently outperforms any individual component,
+      and improving one component (GIN-Struct) lifts the fusion
+      without degrading others.
+
+    \item \textbf{The agent gap is real and quantifiable.}
+      A 17.8~pp retrieval gap translates almost linearly into a
+      15~pp patch quality (CodeBLEU proxy) loss.
+      Improving retrieval from 68.5\% to 89.0\% hit@1 (+20.5~pp)
+      should yield approximately $+18$~pp in patch quality---a
+      substantial improvement that justifies continued investment
+      in retrieval quality.
+
+    \item \textbf{NULL-pointer-dereference is the hardest class.}
+      Across all experiments, NPD vulnerabilities consistently
+      underperform because their fixes (adding a null check) are
+      structurally near-identical across unrelated CVEs.
+      Disambiguating these requires function-level context
+      (e.g.\ function name, call site) that current topology-only
+      embedders do not capture.
+
+  \end{enumerate}
+
+  % ─────────────────────────────────────────────────────────────────
+  \subsection{Summary of Results}
+  \label{sec:results-summary}
+
+  Table~\ref{tab:results-summary} consolidates key results
+  across all experiments.
+
+  \begin{table}[ht]
+  \centering
+  \caption{Consolidated retrieval results across experiments.
+    All on the same 225/73 index/query split, $G_{\mathrm{vuln}}$,
+    seed\,=\,42.}
+  \label{tab:results-summary}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{l l cccc}
+    \toprule
+    \textbf{Experiment} & \textbf{Configuration}
+      & \textbf{hit@1} & \textbf{hit@5}
+      & \textbf{MRR} \\
+    \midrule
+    Individual & Frozen GIN
+      & 72.6\% & 87.7\% & 0.788 \\
+    Individual & Trained GIN-Struct
+      & 78.1\% & 93.2\% & 0.826 \\
+    \midrule
+    Fusion & concat\_pca (raw)
+      & 64.4\% & 79.5\% & 0.707 \\
+    Fusion & norm\_concat\_pca (frozen)
+      & 86.3\% & 97.3\% & 0.907 \\
+    Fusion & norm\_concat\_pca (trained GIN-Struct)
+      & \textbf{89.0\%} & \textbf{98.6\%} & \textbf{0.929} \\
+    \midrule
+    Agent & Embedding retriever (patch quality)
+      & 68.5\% & 80.8\% & 0.733 \\
+    Agent & Oracle retriever (patch quality)
+      & 86.3\% & 90.4\% & 0.880 \\
+    \midrule
+    Verification & Diff-based patch verification
+      & 73.6\% & 90.3\% & --- \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  % ─────────────────────────────────────────────────────────────────
+  \subsection{Next Steps}
+  \label{sec:next-steps}
+
+  Based on these findings, the following directions are prioritised:
+
+  \begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+    \item \textbf{Deploy trained GIN-Struct in the agent pipeline.}
+      Replace the frozen GIN in the production retriever with the
+      trained GIN-Struct checkpoint to realise the 89.0\% hit@1 in
+      end-to-end patch generation.
+    \item \textbf{CWE-aware training.}
+      Add a hierarchical triplet loss that uses CWE class as a
+      coarse label, encouraging same-CWE graphs to cluster even when
+      they are different CVEs.
+    \item \textbf{Function-name augmentation for NPD disambiguation.}
+      Add function-name hashing or a lightweight code-token feature
+      to break ties between structurally identical null-check patches.
+    \item \textbf{Re-ranking with CodeBERT.}
+      Use the top-5 candidates from the structural retriever and
+      re-rank with CodeBERT code similarity to combine structural
+      recall (98.6\% hit@5) with semantic precision.
+    \item \textbf{Scale to full dataset.}
+      Extend evaluation to the full BigVul ($\sim$3,500 CVEs) and
+      CVEFixes ($\sim$10,000 pairs) to validate generalisation.
+  \end{enumerate}
+
+  % ─────────────────────────────────────────────────────────────────
   \begin{thebibliography}{9}
 
   \bibitem{beyer1999nearest}
