@@ -1,6 +1,6 @@
 import os
 import re
-import textwrap
+from pathlib import Path
 
 import litellm
 from dotenv import load_dotenv
@@ -9,6 +9,12 @@ from src.agents.utils import MODEL_NAME, fmt_mapping, strip_code_fences
 
 load_dotenv()
 # litellm._turn_on_debug()
+
+_PROMPTS_DIR = Path(__file__).parent / "prompts"
+
+
+def _load_prompt(name: str) -> str:
+    return (_PROMPTS_DIR / name).read_text()
 
 
 def sanitize_after_index(s, start, until):
@@ -29,82 +35,11 @@ def sanitize_after_index(s, start, until):
 
 # ── prompt templates ─────────────────────────────────────────────────
 
-_FORMAT_INSTRUCTIONS = textwrap.dedent("""\
-in the following format, including the leading and trailing "```" and "```" 
-```
-[CoT START]
-<the thinking process for the vulnerability patching (Step 1)>
-[CoT END]
-
-[Patched Code START]
-<the patched code>
-[Patched Code END]
-```""")
-
-_SYSTEM_TMPL = textwrap.dedent("""\
-You are an expert software security engineer. Your goal is to patch user-provided [Target Code] having a vulnerabilitiy of {example_target_cwe_type} similar to {example_target_cve_id}. To patch a vulnerability similar to {example_target_cve_id}, you will mainly focus on the following [Fix-List for {example_target_cve_id}], where mapping from actual variables to each symbolic variables/functions in [Fix-List for {example_target_cve_id}] should be provided by user with [Variable Mapping] and [Function Mapping]. 
-
-[Fix-List for {example_target_cve_id}]
-{example_anonymized_target_fix_list}
-
-Perform the followings step by step and show the reasoning in each step. Start answering with "Let's think step-by-step."
-1) Based on [Fix-List for {example_target_cve_id}] along with the user-provided [Variable Mapping] and [Function Mapping], describe how to patch [Target Code] for fixing {example_target_cwe_type} similar to {example_target_cve_id}.
-2) Use the patch description from Step 1 to generate a patched code.
-3) Provide the results {format_instructions}""")
-
-_USER_EXAMPLE_TMPL = textwrap.dedent("""\
-[Supplementary Code]
-None
-
-[Variable Mapping]
-{example_target_vulnerability_related_variable_mapping}
-
-[Function Mapping]
-{example_target_vulnerability_related_function_mapping}
-
-[Root Cause]
-{example_target_root_cause}
-
-[Target Code]
-{example_target_code}""")
-
-_ASSISTANT_TMPL = textwrap.dedent("""\
-Now, I will patch user-provided [Target Code] having a vulnerabilitiy of {example_target_cwe_type} similar to {example_target_cve_id}. Then, I will provide the results {format_instructions}
-
-Let's think step-by-step.
-
-Step 1. Describe how to patch [Target Code] to fix {example_target_cwe_type} similar to {example_target_cve_id}.
-{example_target_patch_cot}
-
-Step 2. Generate a patched code based on Step 1.
-{example_target_vuln_patch}
-
-Step 3. Provide the results.
-```
-[CoT START]
- {example_target_patch_cot}
-[CoT END]
-
-[Patched Code START]
-{example_target_vuln_patch}
-[Patched Code END]
-```""")
-
-_USER_TARGET_TMPL = textwrap.dedent("""\
-[Supplementary Code]
-{target_supplementary_code}
-
-[Variable Mapping]
-{target_vulnerability_related_variable_mapping}
-
-[Function Mapping]
-{target_vulnerability_related_function_mapping}
-
-[Root Cause]
-{target_root_cause}
-
-[Target Code]
-{target_code}""")
+_FORMAT_INSTRUCTIONS = _load_prompt("format_instructions.txt")
+_SYSTEM_TMPL = _load_prompt("system.txt")
+_USER_EXAMPLE_TMPL = _load_prompt("user_example.txt")
+_ASSISTANT_TMPL = _load_prompt("assistant.txt")
+_USER_TARGET_TMPL = _load_prompt("user_target.txt")
 
 _MESSAGE_TEMPLATES = [
     ("system", _SYSTEM_TMPL),
