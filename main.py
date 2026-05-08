@@ -197,7 +197,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--strip-comments",
         action="store_true",
-        default=False,
+        default=True,
         help="remove C/C++ comments before patch comparison (full/batch mode)",
     )
 
