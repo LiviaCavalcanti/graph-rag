@@ -74,14 +74,6 @@ def _load_ground_truth(cve_id: str, variant: str, base_dir: Path) -> str | None:
     return None
 
 
-def _truncate(text: str | None, max_len: int = 600) -> str:
-    if not text:
-        return ""
-    if len(text) <= max_len:
-        return text
-    return text[:max_len] + "\n... [truncated]"
-
-
 def _fmt(val, ndigits: int = 4) -> str:
     if val is None:
         return "-"
@@ -363,15 +355,15 @@ def _render_html(analysis: dict) -> str:
             <div class="code-triple">
               <div class="code-block-light">
                 <h4>Input (Vulnerable Code)</h4>
-                <pre>{escape(_truncate(rec.get('input_code'), 800))}</pre>
+                <pre>{escape(rec.get('input_code') or '')}</pre>
               </div>
               <div class="code-block-light">
                 <h4>Ground Truth (Fixed)</h4>
-                <pre>{escape(_truncate(rec.get('ground_truth'), 800))}</pre>
+                <pre>{escape(rec.get('ground_truth') or '')}</pre>
               </div>
               <div class="code-block-light">
                 <h4>Agent Patch (Generated)</h4>
-                <pre>{escape(_truncate(rec.get('generated_patch'), 800))}</pre>
+                <pre>{escape(rec.get('generated_patch') or '')}</pre>
               </div>
             </div>
           </div>
