@@ -203,3 +203,30 @@ class TestInvocationRecord:
         assert restored.model == "azure/test"
 
 
+# ── AutoPatchPatcher prompt variant ──────────────────────────────────
+
+class TestPromptVariant:
+
+    def test_default_variant(self):
+        patcher = AutoPatchPatcher(prompt_variant="default")
+        assert patcher.prompt_variant == "default"
+
+    def test_graph_variant(self):
+        patcher = AutoPatchPatcher(prompt_variant="graph")
+        assert patcher.prompt_variant == "graph"
+
+    def test_invalid_variant_raises(self):
+        with pytest.raises(ValueError, match="Unknown prompt_variant"):
+            AutoPatchPatcher(prompt_variant="nonexistent")
+
+    def test_graph_variant_has_graph_context_placeholder(self):
+        patcher = AutoPatchPatcher(prompt_variant="graph")
+        # The last template (user_target) should contain {target_graph_context}
+        last_role, last_tmpl = patcher._templates[-1]
+        assert last_role == "user"
+        assert "{target_graph_context}" in last_tmpl
+
+    def test_default_variant_does_not_have_graph_placeholder(self):
+        patcher = AutoPatchPatcher(prompt_variant="default")
+        last_role, last_tmpl = patcher._templates[-1]
+        assert "{target_graph_context}" not in last_tmpl
