@@ -136,6 +136,18 @@ def _build_record(result: dict, evaluation: dict, base_dir: Path) -> dict:
     }
 
 
+def _load_llm_eval(run_dir: Path) -> dict[tuple[str, str], dict]:
+    """Load LLM vulnerability evaluation results if available."""
+    llm_path = run_dir / "llm_vulnerability_eval.jsonl"
+    if not llm_path.exists():
+        return {}
+    index: dict[tuple[str, str], dict] = {}
+    for entry in _load_jsonl(llm_path):
+        key = (entry.get("query_cve", ""), entry.get("query_variant", ""))
+        index[key] = entry
+    return index
+
+
 def analyze(
     results_path: Path,
     evaluation_path: Path,
@@ -143,6 +155,7 @@ def analyze(
 ) -> dict:
     results = _load_jsonl(results_path)
     evaluations = _load_jsonl(evaluation_path)
+    llm_eval_index = _load_llm_eval(results_path.parent)
 
     # Index evaluations by (query_cve, query_variant)
     eval_index: dict[tuple[str, str], dict] = {}
@@ -154,7 +167,20 @@ def analyze(
     for r in results:
         key = (r.get("query_cve", ""), r.get("query_variant", ""))
         ev = eval_index.get(key, {})
-        records.append(_build_record(r, ev, base_dir))
+        rec = _build_record(r, ev, base_dir)
+        # Attach LLM evaluation if available
+        llm = llm_eval_index.get(key)
+        if llm:
+            rec["llm_eval"] = {
+                "verdict": llm.get("verdict", ""),
+                "confidence": llm.get("confidence", 0.0),
+                "reasoning": llm.get("reasoning", ""),
+                "fix_description": llm.get("fix_description", ""),
+                "issues": llm.get("issues", []),
+            }
+        else:
+            rec["llm_eval"] = None
+        records.append(rec)
 
     # Aggregate scores
     metric_keys = [
@@ -163,7 +189,6 @@ def analyze(
         "normalised_edit_distance",
         "token_jaccard", "token_jaccard_multiset",
         "bleu_1", "bleu_2", "bleu_4",
-        "codebleu_proxy",
         "bertscore_precision", "bertscore_recall", "bertscore_f1",
         "rouge1_f1", "rouge2_f1", "rougeL_f1", "rougeL_precision", "rougeL_recall",
     ]
@@ -193,7 +218,6 @@ def analyze(
             "avg_bleu_4": _cwe_avg("bleu_4"),
             "avg_bertscore_f1": _cwe_avg("bertscore_f1"),
             "avg_token_jaccard": _cwe_avg("token_jaccard"),
-            "avg_codebleu_proxy": _cwe_avg("codebleu_proxy"),
             "avg_rouge1_f1": _cwe_avg("rouge1_f1"),
             "avg_rouge2_f1": _cwe_avg("rouge2_f1"),
             "avg_rougeL_f1": _cwe_avg("rougeL_f1"),
@@ -216,10 +240,28 @@ def analyze(
             "avg_bleu_4": _var_avg("bleu_4"),
             "avg_bertscore_f1": _var_avg("bertscore_f1"),
             "avg_token_jaccard": _var_avg("token_jaccard"),
-            "avg_codebleu_proxy": _var_avg("codebleu_proxy"),
             "avg_rouge1_f1": _var_avg("rouge1_f1"),
             "avg_rouge2_f1": _var_avg("rouge2_f1"),
             "avg_rougeL_f1": _var_avg("rougeL_f1"),
+        }
+
+    # LLM evaluation summary
+    llm_summary = None
+    llm_records = [r for r in records if r.get("llm_eval")]
+    if llm_records:
+        from collections import Counter
+        verdict_counts = Counter(r["llm_eval"]["verdict"] for r in llm_records)
+        total_llm = len(llm_records)
+        llm_summary = {
+            "total": total_llm,
+            "verdicts": dict(verdict_counts),
+            "fix_rate": round(
+                (verdict_counts.get("FIXED", 0) + verdict_counts.get("PARTIAL", 0))
+                / total_llm * 100, 1
+            ) if total_llm else 0,
+            "avg_confidence": round(
+                mean(r["llm_eval"]["confidence"] for r in llm_records), 3
+            ),
         }
 
     return {
@@ -231,6 +273,7 @@ def analyze(
         "aggregates": aggregates,
         "by_cwe": cwe_summary,
         "by_variant": variant_summary,
+        "llm_evaluation": llm_summary,
         "records": records,
     }
 
@@ -246,7 +289,6 @@ def _render_html(analysis: dict) -> str:
     summary_rows = ""
     key_metrics = [
         ("BLEU-4", "bleu_4"),
-        ("CodeBLEU*", "codebleu_proxy"),
         ("BERTScore F1", "bertscore_f1"),
         ("BERTScore P", "bertscore_precision"),
         ("BERTScore R", "bertscore_recall"),
@@ -280,7 +322,6 @@ def _render_html(analysis: dict) -> str:
             f"<td style='color:{_score_color(stats.get('avg_bleu_4'))}'>{_fmt(stats.get('avg_bleu_4'))}</td>"
             f"<td style='color:{_score_color(stats.get('avg_bertscore_f1'))}'>{_fmt(stats.get('avg_bertscore_f1'))}</td>"
             f"<td style='color:{_score_color(stats.get('avg_token_jaccard'))}'>{_fmt(stats.get('avg_token_jaccard'))}</td>"
-            f"<td style='color:{_score_color(stats.get('avg_codebleu_proxy'))}'>{_fmt(stats.get('avg_codebleu_proxy'))}</td>"
             f"<td style='color:{_score_color(stats.get('avg_rouge1_f1'))}'>{_fmt(stats.get('avg_rouge1_f1'))}</td>"
             f"<td style='color:{_score_color(stats.get('avg_rouge2_f1'))}'>{_fmt(stats.get('avg_rouge2_f1'))}</td>"
             f"<td style='color:{_score_color(stats.get('avg_rougeL_f1'))}'>{_fmt(stats.get('avg_rougeL_f1'))}</td>"
@@ -296,7 +337,6 @@ def _render_html(analysis: dict) -> str:
             f"<td style='color:{_score_color(stats.get('avg_bleu_4'))}'>{_fmt(stats.get('avg_bleu_4'))}</td>"
             f"<td style='color:{_score_color(stats.get('avg_bertscore_f1'))}'>{_fmt(stats.get('avg_bertscore_f1'))}</td>"
             f"<td style='color:{_score_color(stats.get('avg_token_jaccard'))}'>{_fmt(stats.get('avg_token_jaccard'))}</td>"
-            f"<td style='color:{_score_color(stats.get('avg_codebleu_proxy'))}'>{_fmt(stats.get('avg_codebleu_proxy'))}</td>"
             f"<td style='color:{_score_color(stats.get('avg_rouge1_f1'))}'>{_fmt(stats.get('avg_rouge1_f1'))}</td>"
             f"<td style='color:{_score_color(stats.get('avg_rouge2_f1'))}'>{_fmt(stats.get('avg_rouge2_f1'))}</td>"
             f"<td style='color:{_score_color(stats.get('avg_rougeL_f1'))}'>{_fmt(stats.get('avg_rougeL_f1'))}</td>"
@@ -308,6 +348,7 @@ def _render_html(analysis: dict) -> str:
     for i, rec in enumerate(records, 1):
         scores = rec.get("scores", {})
         retrieval = rec.get("retrieval", {})
+        llm_eval = rec.get("llm_eval")
 
         score_rows = ""
         for label, key in key_metrics:
@@ -324,6 +365,36 @@ def _render_html(analysis: dict) -> str:
             f"Similarity: <strong>{_fmt(retrieval.get('similarity'))}</strong> | "
             f"Retrieved variant: <strong>{escape(str(retrieval.get('retrieved_variant', '-')))}</strong>"
         )
+
+        # LLM evaluation box (per-record)
+        llm_box = ""
+        if llm_eval:
+            verdict = llm_eval.get("verdict", "")
+            verdict_color = {"FIXED": "#2e7d32", "PARTIAL": "#f57c00", "NOT_FIXED": "#c62828", "ERROR": "#888"}.get(verdict, "#888")
+            issues_html = ""
+            if llm_eval.get("issues"):
+                issues_html = "<ul class='llm-issues'>" + "".join(
+                    f"<li>{escape(issue)}</li>" for issue in llm_eval["issues"]
+                ) + "</ul>"
+            llm_box = f"""
+            <div class="llm-eval-box">
+              <h4>LLM Vulnerability Assessment</h4>
+              <div class="llm-verdict" style="color:{verdict_color}">
+                <strong>{escape(verdict)}</strong>
+                <span class="llm-confidence">(confidence: {llm_eval.get('confidence', 0):.2f})</span>
+              </div>
+              <div class="llm-reasoning">{escape(llm_eval.get('reasoning', ''))}</div>
+              <div class="llm-fix-desc"><em>{escape(llm_eval.get('fix_description', ''))}</em></div>
+              {issues_html}
+            </div>
+            """
+
+        # Verdict badge for summary line
+        verdict_badge = ""
+        if llm_eval:
+            v = llm_eval.get("verdict", "")
+            vc = {"FIXED": "#2e7d32", "PARTIAL": "#f57c00", "NOT_FIXED": "#c62828", "ERROR": "#888"}.get(v, "#888")
+            verdict_badge = f"<span class='verdict-badge' style='background:{vc}'>{escape(v)}</span>"
 
         record_cards += f"""
         <details class="card" {'open' if i <= 3 else ''}>
@@ -395,13 +466,13 @@ def _render_html(analysis: dict) -> str:
 
 <h2>By CWE Type</h2>
 <table>
-  <tr><th>CWE</th><th>Count</th><th>BLEU-4</th><th>BERTScore F1</th><th>Jaccard</th><th>CodeBLEU*</th><th>ROUGE-1</th><th>ROUGE-2</th><th>ROUGE-L</th></tr>
+  <tr><th>CWE</th><th>Count</th><th>BLEU-4</th><th>BERTScore F1</th><th>Jaccard</th><th>ROUGE-1</th><th>ROUGE-2</th><th>ROUGE-L</th></tr>
   {cwe_rows}
 </table>
 
 <h2>By Variant</h2>
 <table>
-  <tr><th>Variant</th><th>Count</th><th>BLEU-4</th><th>BERTScore F1</th><th>Jaccard</th><th>CodeBLEU*</th><th>ROUGE-1</th><th>ROUGE-2</th><th>ROUGE-L</th></tr>
+  <tr><th>Variant</th><th>Count</th><th>BLEU-4</th><th>BERTScore F1</th><th>Jaccard</th><th>ROUGE-1</th><th>ROUGE-2</th><th>ROUGE-L</th></tr>
   {variant_rows}
 </table>
 
@@ -485,7 +556,6 @@ def main():
     print(f"{'═'*60}")
     for label, key in [
         ("BLEU-4", "bleu_4"),
-        ("CodeBLEU*", "codebleu_proxy"),
         ("BERTScore F1", "bertscore_f1"),
         ("ROUGE-1 F1", "rouge1_f1"),
         ("ROUGE-2 F1", "rouge2_f1"),
