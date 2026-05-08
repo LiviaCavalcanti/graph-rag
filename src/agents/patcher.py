@@ -42,17 +42,22 @@ def sanitize_after_index(s, start, until):
 # ── prompt templates ─────────────────────────────────────────────────
 
 _FORMAT_INSTRUCTIONS = _load_prompt("format_instructions.txt")
-_SYSTEM_TMPL = _load_prompt("system.txt")
-_USER_EXAMPLE_TMPL = _load_prompt("user_example.txt")
-_ASSISTANT_TMPL = _load_prompt("assistant.txt")
-_USER_TARGET_TMPL = _load_prompt("user_target.txt")
 
-_MESSAGE_TEMPLATES = [
-    ("system", _SYSTEM_TMPL),
-    ("user", _USER_EXAMPLE_TMPL),
-    ("assistant", _ASSISTANT_TMPL),
-    ("user", _USER_TARGET_TMPL),
-]
+# Prompt variant → (system, user_example, assistant, user_target) templates
+_VARIANTS: dict[str, list[tuple[str, str]]] = {
+    "default": [
+        ("system", _load_prompt("system.txt")),
+        ("user", _load_prompt("user_example.txt")),
+        ("assistant", _load_prompt("assistant.txt")),
+        ("user", _load_prompt("user_target.txt")),
+    ],
+    "graph": [
+        ("system", _load_prompt("graph_system.txt")),
+        ("user", _load_prompt("user_example.txt")),
+        ("assistant", _load_prompt("assistant.txt")),
+        ("user", _load_prompt("graph_user_target.txt")),
+    ],
+}
 
 
 class PatchResult(BaseModel):
@@ -88,14 +93,21 @@ class InvocationRecord(BaseModel):
 
 class AutoPatchPatcher:
 
-    def __init__(self, model_name: str | None = None):
+    def __init__(self, model_name: str | None = None, prompt_variant: str = "default"):
         self.model_name = model_name or MODEL_NAME
+        if prompt_variant not in _VARIANTS:
+            raise ValueError(
+                f"Unknown prompt_variant {prompt_variant!r}, "
+                f"expected one of {list(_VARIANTS)}"
+            )
+        self.prompt_variant = prompt_variant
+        self._templates = _VARIANTS[prompt_variant]
 
     def _build_messages(self, input_dict: dict) -> list[dict]:
         fmt_vars = {**input_dict, "format_instructions": _FORMAT_INSTRUCTIONS}
         return [
             {"role": role, "content": tmpl.format(**fmt_vars)}
-            for role, tmpl in _MESSAGE_TEMPLATES
+            for role, tmpl in self._templates
         ]
 
     @staticmethod
@@ -194,6 +206,8 @@ def patch_one(
     target_supplementary: str = "",
     model_name: str | None = None,
     trace_dir: str | Path | None = None,
+    prompt_variant: str = "default",
+    graph_context: str = "",
 ) -> tuple[str, PatchResult | None, InvocationRecord]:
     """Build prompt, invoke LLM via litellm (google-adk Azure backend), parse result.
 
@@ -202,6 +216,13 @@ def patch_one(
     *record* is an InvocationRecord capturing everything for reproducibility.
 
     If *trace_dir* is provided, the record is saved as a JSON file there.
+
+    Args:
+        prompt_variant: "default" for original AutoPatch prompts,
+                        "graph" for graph-enhanced prompts.
+        graph_context:  Serialized graph analysis text (from
+                        graph_context.serialize_graph_context). Only used
+                        when prompt_variant="graph".
     """
     input_dict = {
         "example_target_cwe_type": example_db.get("cwe_type", "Unknown"),
@@ -228,9 +249,10 @@ def patch_one(
         ),
         "target_root_cause": target_db.get("root_cause", "Unknown"),
         "target_code": target_code,
+        "target_graph_context": graph_context or "None",
     }
 
-    patcher = AutoPatchPatcher(model_name)
+    patcher = AutoPatchPatcher(model_name, prompt_variant=prompt_variant)
     record = patcher.invoke(input_dict)
 
     if trace_dir:
