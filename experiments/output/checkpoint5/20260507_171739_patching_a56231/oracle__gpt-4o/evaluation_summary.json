@@ -1,0 +1,277 @@
+{
+  "total_records": 73,
+  "evaluated": 73,
+  "skipped": 0,
+  "exact_matches": 0,
+  "normalised_exact_matches": 0,
+  "avg_char_sequence_ratio": 0.6221,
+  "avg_line_sequence_ratio": 0.5738,
+  "avg_normalised_edit_distance": 0.319,
+  "avg_token_jaccard": 0.7632,
+  "avg_token_jaccard_multiset": 0.7301,
+  "avg_bleu_1": 0.7524,
+  "avg_bleu_2": 0.7188,
+  "avg_bleu_4": 0.6664,
+  "avg_bertscore_precision": 0.719,
+  "avg_bertscore_recall": 0.7434,
+  "avg_bertscore_f1": 0.7283,
+  "avg_rouge1_f1": 0.8281,
+  "avg_rouge2_f1": 0.7561,
+  "avg_rougeL_f1": 0.7789,
+  "by_cwe": {
+    "Assignment of a Fixed Address to a Pointer": {
+      "count": 1,
+      "avg_bleu_4": 0.9757,
+      "avg_token_jaccard": 1.0,
+      "avg_char_ratio": 0.9949,
+      "avg_bertscore_f1": 0.9686,
+      "avg_rougeL_f1": 0.9931,
+      "exact_matches": 0
+    },
+    "Business Logic Errors": {
+      "count": 1,
+      "avg_bleu_4": 0.6508,
+      "avg_token_jaccard": 0.7674,
+      "avg_char_ratio": 0.7579,
+      "avg_bertscore_f1": 0.7598,
+      "avg_rougeL_f1": 0.8276,
+      "exact_matches": 0
+    },
+    "Deadlock": {
+      "count": 4,
+      "avg_bleu_4": 0.8461,
+      "avg_token_jaccard": 0.837,
+      "avg_char_ratio": 0.6817,
+      "avg_bertscore_f1": 0.7985,
+      "avg_rougeL_f1": 0.8975,
+      "exact_matches": 0
+    },
+    "Expired Pointer Dereference": {
+      "count": 2,
+      "avg_bleu_4": 0.3065,
+      "avg_token_jaccard": 0.3487,
+      "avg_char_ratio": 0.1608,
+      "avg_bertscore_f1": 0.5877,
+      "avg_rougeL_f1": 0.4598,
+      "exact_matches": 0
+    },
+    "Improper Control of a Resource Through Its Lifetime": {
+      "count": 1,
+      "avg_bleu_4": 0.946,
+      "avg_token_jaccard": 0.9375,
+      "avg_char_ratio": 0.9063,
+      "avg_bertscore_f1": 0.9341,
+      "avg_rougeL_f1": 0.9508,
+      "exact_matches": 0
+    },
+    "Improper Input Validation": {
+      "count": 1,
+      "avg_bleu_4": 0.4871,
+      "avg_token_jaccard": 0.72,
+      "avg_char_ratio": 0.4718,
+      "avg_bertscore_f1": 0.6954,
+      "avg_rougeL_f1": 0.6349,
+      "exact_matches": 0
+    },
+    "Improper Locking": {
+      "count": 8,
+      "avg_bleu_4": 0.3288,
+      "avg_token_jaccard": 0.4739,
+      "avg_char_ratio": 0.2618,
+      "avg_bertscore_f1": 0.5641,
+      "avg_rougeL_f1": 0.5302,
+      "exact_matches": 0
+    },
+    "Improper Validation of Array Index": {
+      "count": 1,
+      "avg_bleu_4": 0.8052,
+      "avg_token_jaccard": 0.8929,
+      "avg_char_ratio": 0.8377,
+      "avg_bertscore_f1": 0.7957,
+      "avg_rougeL_f1": 0.9097,
+      "exact_matches": 0
+    },
+    "Incorrect Check of Function Return Value": {
+      "count": 3,
+      "avg_bleu_4": 0.8702,
+      "avg_token_jaccard": 0.8366,
+      "avg_char_ratio": 0.9175,
+      "avg_bertscore_f1": 0.9053,
+      "avg_rougeL_f1": 0.9307,
+      "exact_matches": 0
+    },
+    "Incorrect Type Conversion or Cast": {
+      "count": 1,
+      "avg_bleu_4": 0.9428,
+      "avg_token_jaccard": 0.9247,
+      "avg_char_ratio": 0.9172,
+      "avg_bertscore_f1": 0.8017,
+      "avg_rougeL_f1": 0.9778,
+      "exact_matches": 0
+    },
+    "Integer Overflow or Wraparound": {
+      "count": 10,
+      "avg_bleu_4": 0.7024,
+      "avg_token_jaccard": 0.7779,
+      "avg_char_ratio": 0.5833,
+      "avg_bertscore_f1": 0.7095,
+      "avg_rougeL_f1": 0.8152,
+      "exact_matches": 0
+    },
+    "Integer Underflow": {
+      "count": 1,
+      "avg_bleu_4": 0.8138,
+      "avg_token_jaccard": 0.9114,
+      "avg_char_ratio": 0.6744,
+      "avg_bertscore_f1": 0.7742,
+      "avg_rougeL_f1": 0.8832,
+      "exact_matches": 0
+    },
+    "Memory Leak": {
+      "count": 2,
+      "avg_bleu_4": 0.9082,
+      "avg_token_jaccard": 0.9804,
+      "avg_char_ratio": 0.7977,
+      "avg_bertscore_f1": 0.9179,
+      "avg_rougeL_f1": 0.9099,
+      "exact_matches": 0
+    },
+    "NULL Pointer Dereference": {
+      "count": 11,
+      "avg_bleu_4": 0.5712,
+      "avg_token_jaccard": 0.7161,
+      "avg_char_ratio": 0.6375,
+      "avg_bertscore_f1": 0.6658,
+      "avg_rougeL_f1": 0.7264,
+      "exact_matches": 0
+    },
+    "Operation on a Resource after Expiration or Release": {
+      "count": 2,
+      "avg_bleu_4": 0.735,
+      "avg_token_jaccard": 0.9297,
+      "avg_char_ratio": 0.5189,
+      "avg_bertscore_f1": 0.7616,
+      "avg_rougeL_f1": 0.8669,
+      "exact_matches": 0
+    },
+    "Out-of-bounds Write": {
+      "count": 1,
+      "avg_bleu_4": 0.4541,
+      "avg_token_jaccard": 0.6094,
+      "avg_char_ratio": 0.0615,
+      "avg_bertscore_f1": 0.0445,
+      "avg_rougeL_f1": 0.6661,
+      "exact_matches": 0
+    },
+    "Race Condition": {
+      "count": 5,
+      "avg_bleu_4": 0.6677,
+      "avg_token_jaccard": 0.8037,
+      "avg_char_ratio": 0.6184,
+      "avg_bertscore_f1": 0.7185,
+      "avg_rougeL_f1": 0.7296,
+      "exact_matches": 0
+    },
+    "Return of Stack Variable Address After Scope": {
+      "count": 1,
+      "avg_bleu_4": 0.7754,
+      "avg_token_jaccard": 0.9054,
+      "avg_char_ratio": 0.7985,
+      "avg_bertscore_f1": 0.8045,
+      "avg_rougeL_f1": 0.8774,
+      "exact_matches": 0
+    },
+    "Unchecked Return Value": {
+      "count": 1,
+      "avg_bleu_4": 0.216,
+      "avg_token_jaccard": 0.5263,
+      "avg_char_ratio": 0.3253,
+      "avg_bertscore_f1": 0.4281,
+      "avg_rougeL_f1": 0.4656,
+      "exact_matches": 0
+    },
+    "Uncontrolled Resource Consumption ('Resource Exhaustion')": {
+      "count": 2,
+      "avg_bleu_4": 0.5163,
+      "avg_token_jaccard": 0.6239,
+      "avg_char_ratio": 0.4851,
+      "avg_bertscore_f1": 0.6421,
+      "avg_rougeL_f1": 0.647,
+      "exact_matches": 0
+    },
+    "Use After Free": {
+      "count": 12,
+      "avg_bleu_4": 0.7967,
+      "avg_token_jaccard": 0.8796,
+      "avg_char_ratio": 0.781,
+      "avg_bertscore_f1": 0.85,
+      "avg_rougeL_f1": 0.8812,
+      "exact_matches": 0
+    },
+    "Use of Uninitialized Variable": {
+      "count": 2,
+      "avg_bleu_4": 0.9095,
+      "avg_token_jaccard": 0.9358,
+      "avg_char_ratio": 0.9287,
+      "avg_bertscore_f1": 0.8547,
+      "avg_rougeL_f1": 0.9577,
+      "exact_matches": 0
+    }
+  },
+  "by_variant": {
+    "augmented": {
+      "count": 14,
+      "avg_bleu_4": 0.6194,
+      "avg_token_jaccard": 0.6926,
+      "avg_char_ratio": 0.5784,
+      "avg_bertscore_f1": 0.7027,
+      "avg_rougeL_f1": 0.7325,
+      "exact_matches": 0
+    },
+    "re_implemented_deepseek": {
+      "count": 16,
+      "avg_bleu_4": 0.5913,
+      "avg_token_jaccard": 0.6982,
+      "avg_char_ratio": 0.547,
+      "avg_bertscore_f1": 0.6727,
+      "avg_rougeL_f1": 0.7244,
+      "exact_matches": 0
+    },
+    "re_implemented_deepseek-r1": {
+      "count": 11,
+      "avg_bleu_4": 0.7493,
+      "avg_token_jaccard": 0.8354,
+      "avg_char_ratio": 0.7431,
+      "avg_bertscore_f1": 0.8267,
+      "avg_rougeL_f1": 0.8563,
+      "exact_matches": 0
+    },
+    "re_implemented_gpt-4o": {
+      "count": 12,
+      "avg_bleu_4": 0.6857,
+      "avg_token_jaccard": 0.7902,
+      "avg_char_ratio": 0.6631,
+      "avg_bertscore_f1": 0.7545,
+      "avg_rougeL_f1": 0.7936,
+      "exact_matches": 0
+    },
+    "re_implemented_llama": {
+      "count": 8,
+      "avg_bleu_4": 0.6447,
+      "avg_token_jaccard": 0.7732,
+      "avg_char_ratio": 0.576,
+      "avg_bertscore_f1": 0.6403,
+      "avg_rougeL_f1": 0.782,
+      "exact_matches": 0
+    },
+    "re_implemented_o3-mini": {
+      "count": 12,
+      "avg_bleu_4": 0.7407,
+      "avg_token_jaccard": 0.832,
+      "avg_char_ratio": 0.6519,
+      "avg_bertscore_f1": 0.7749,
+      "avg_rougeL_f1": 0.8177,
+      "exact_matches": 0
+    }
+  }
+}

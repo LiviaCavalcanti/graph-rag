@@ -1,0 +1,49 @@
+{
+  "training": {
+    "epochs_run": 42,
+    "final_train_loss": 0.15109614003449678,
+    "final_val_loss": 0.18353059329092503,
+    "train_time_s": 186.51911927699985
+  },
+  "cwe_recall": {
+    "macro_avg": 0.21226321658139835,
+    "ranx_recall": 0.13699717329854316,
+    "n_cwes": 22,
+    "n_singletons": 0
+  },
+  "retrieval": {
+    "hit@1": 0.2876712328767123,
+    "hit@5": 0.4794520547945205,
+    "hit@10": 0.5753424657534246,
+    "mrr": 0.37193411611219834,
+    "ndcg@1": 0.2876712328767123,
+    "ndcg@5": 0.18824657321173877,
+    "ndcg@10": 0.2102232382921934,
+    "map@1": 0.0632420091324201,
+    "map@5": 0.10189497716894975,
+    "map@10": 0.11867372824319986,
+    "precision@1": 0.2876712328767123,
+    "precision@5": 0.1315068493150685,
+    "precision@10": 0.09999999999999999,
+    "recall@1": 0.0632420091324201,
+    "recall@5": 0.14357469015003263,
+    "recall@10": 0.21086105675146768,
+    "cve_precision": 0.5407407407407407,
+    "cve_recall": 0.21390476190476188,
+    "cve_f1": 0.29557871327843926,
+    "n": 73,
+    "n_cve_classes": 45
+  },
+  "config": {
+    "hidden_dim": 128,
+    "num_layers": 3,
+    "out_dim": 128,
+    "dropout": 0.3,
+    "margin": 0.3,
+    "lr": 0.001,
+    "n_index": 225,
+    "n_query": 73,
+    "n_classes": 23
+  },
+  "checkpoint_path": "experiments/output/gin_codebert_training/gin_codebert_checkpoint.pt"
+}

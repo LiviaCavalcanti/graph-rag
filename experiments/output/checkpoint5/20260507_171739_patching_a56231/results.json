@@ -1,0 +1,218 @@
+{
+  "run_id": "20260507_171739_patching_a56231",
+  "metadata": {
+    "experiment": "patching",
+    "timestamp": "2026-05-07T17:34:24.626284+00:00",
+    "config": {
+      "data": {
+        "autopatch": {
+          "root": "CVE-list",
+          "graphml_root": "graphml_augmented",
+          "include_variants": true
+        }
+      },
+      "joern": {
+        "workers": 8,
+        "timeout_s": 120,
+        "bin_dir": "/home/z0050s2b/bin/joern/joern-cli"
+      },
+      "graph": {
+        "node_types": [
+          "METHOD",
+          "METHOD_PARAMETER_IN",
+          "METHOD_PARAMETER_OUT",
+          "METHOD_RETURN",
+          "BLOCK",
+          "LOCAL",
+          "CALL",
+          "IDENTIFIER",
+          "LITERAL",
+          "RETURN",
+          "CONTROL_STRUCTURE",
+          "FIELD_IDENTIFIER",
+          "UNKNOWN"
+        ],
+        "edge_types": [
+          "AST",
+          "CFG",
+          "CDG",
+          "REF",
+          "ARGUMENT",
+          "RECEIVER"
+        ]
+      },
+      "embeddings": {
+        "active": [
+          "gin",
+          "combined"
+        ],
+        "dim": 128,
+        "projection": "pca",
+        "l2_normalize": true,
+        "netlsd": {
+          "timescales": 128
+        },
+        "wl": {
+          "num_iterations": 4,
+          "hidden_dim": 64
+        },
+        "gin": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "seed": 42
+        },
+        "rgcn": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "seed": 42
+        },
+        "codebert": {
+          "model_path": "/home/z0050s2b/code/graph-rag/models/codebert-base/"
+        },
+        "gin_codebert": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "dropout": 0.3,
+          "device": "cpu",
+          "cb_batch_size": 32,
+          "node_cache_dir": "workspace/node_codebert_cache",
+          "checkpoint_path": "experiments/output/gin_codebert_training/gin_codebert_checkpoint.pt",
+          "training": {
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "margin": 0.3,
+            "epochs": 50,
+            "batch_size": 16,
+            "triplets_per_epoch": 256,
+            "patience": 10,
+            "mine_every": 5
+          }
+        },
+        "gin_struct": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "dropout": 0.2,
+          "device": "cpu",
+          "checkpoint_path": "experiments/output/gin_struct_training/gin_struct_checkpoint.pt",
+          "training": {
+            "lr": 1e-05,
+            "weight_decay": 0.0001,
+            "margin": 0.3,
+            "epochs": 100,
+            "batch_size": 32,
+            "triplets_per_epoch": 512,
+            "patience": 20,
+            "mine_every": 5,
+            "label_mode": "cve",
+            "warm_start": true
+          }
+        }
+      },
+      "rag": {
+        "index_path": "src/rag/faiss.index",
+        "metadata_path": "src/rag/metadata.json",
+        "top_k": 5,
+        "embedding_variant": "wl",
+        "prompt_variant": "graph"
+      },
+      "experiment": {
+        "split": {
+          "enabled": true,
+          "stratified": true,
+          "seed": 42,
+          "test_ratio": 0.2,
+          "include_real_in_index": true,
+          "augmented_train_ratio": 0.5,
+          "query_source": "graphml_augmented"
+        }
+      }
+    },
+    "axes": [
+      {
+        "name": "retriever_mode",
+        "n_values": 1,
+        "description": "Retrieval strategy"
+      },
+      {
+        "name": "model_name",
+        "n_values": 1,
+        "description": "LLM model/deployment"
+      }
+    ],
+    "data_info": {
+      "n_pairs": 449,
+      "n_index_pairs": 225,
+      "n_query_pairs": 73,
+      "split_info": {
+        "enabled": true,
+        "seed": 42,
+        "stratified": true,
+        "test_ratio": 0.2,
+        "query_source": "graphml_augmented",
+        "include_real_in_index": true,
+        "augmented_train_ratio": 0.5,
+        "counts": {
+          "total": 449,
+          "real_total": 75,
+          "aug_total": 374,
+          "aug_train_total": 301,
+          "aug_train_used": 150,
+          "aug_test_total": 73,
+          "index_total": 225,
+          "query_total": 73
+        }
+      },
+      "cwe_ids": [
+        "Integer Overflow or Wraparound",
+        "Out-of-bounds Write",
+        "Memory Leak",
+        "Incorrect Check of Function Return Value",
+        "Unchecked Return Value",
+        "Improper Validation of Array Index",
+        "Use After Free",
+        "Business Logic Errors",
+        "Improper Control of a Resource Through Its Lifetime",
+        "Race Condition",
+        "NULL Pointer Dereference",
+        "Incorrect Type Conversion or Cast",
+        "Assignment of a Fixed Address to a Pointer",
+        "Improper Input Validation",
+        "Improper Locking",
+        "Use of Uninitialized Variable",
+        "Operation on a Resource after Expiration or Release",
+        "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+        "Integer Underflow",
+        "Access of Resource Using Incompatible Type ('Type Confusion')",
+        "Expired Pointer Dereference",
+        "Return of Stack Variable Address After Scope",
+        "Deadlock"
+      ],
+      "projects": [
+        "autopatch"
+      ]
+    }
+  },
+  "cells": [
+    {
+      "coords": {
+        "retriever_mode": "oracle",
+        "model_name": "gpt-4o"
+      },
+      "metrics": {
+        "retriever_mode": "oracle",
+        "model_name": "gpt-4o",
+        "n_queries": 73,
+        "output_dir": "experiments/output/20260507_171739_patching_a56231/oracle__gpt-4o",
+        "n_success": 73,
+        "avg_similarity": 0.4092,
+        "exact_match_rate": 0.0,
+        "avg_rouge1_f1": 0.6176,
+        "avg_rouge2_f1": 0.5383,
+        "avg_rougeL_f1": 0.5486,
+        "avg_rougeL_precision": 0.6724,
+        "avg_rougeL_recall": 0.4819
+      },
+      "timing_s": 1079.4326420199995
+    }
+  ]
+}
