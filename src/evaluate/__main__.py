@@ -23,7 +23,7 @@ def run_all(
     config_path: str = "config.yaml",
     base_dir: Path | None = None,
     top_k: int = 5,
-    strip_comments: bool = False,
+    strip_comments: bool = True,
 ) -> Path:
     """Execute the full evaluation pipeline and return the patch analysis path."""
     run_dir = results_path.parent
@@ -54,7 +54,7 @@ def run_all(
     return patch_html
 
 
-def _run_patch_eval(results_path: Path, base_dir: Path, *, strip_comments: bool = False) -> None:
+def _run_patch_eval(results_path: Path, base_dir: Path, *, strip_comments: bool = True) -> None:
     """Run patch evaluation programmatically (avoid argparse)."""
     import json
 
