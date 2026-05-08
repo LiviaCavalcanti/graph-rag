@@ -18,6 +18,7 @@ import re
 import time
 from pathlib import Path
 
+from src.agents.graph_context import serialize_graph_context
 from src.agents.patcher import patch_one
 from src.agents.utils import MODEL_NAME, strip_code_fences
 from src.metrics.similarity import code_similarity
@@ -78,6 +79,7 @@ def _run_single_query(
     retriever,
     db_cache: dict,
     model_name: str,
+    prompt_variant: str = "default",
 ) -> dict:
     """
     Execute a single LLM patching query.
@@ -151,6 +153,12 @@ def _run_single_query(
             "retrieval": retrieval_info,
         }
 
+    # serialize graph context for graph-enhanced prompts
+    graph_context = ""
+    if prompt_variant == "graph":
+        G_vuln = getattr(query_pair, "G_vuln", None)
+        graph_context = serialize_graph_context(G_vuln)
+
     # invoke patcher (prompt build → LLM → parse)
     t0 = time.perf_counter()
     try:
@@ -160,6 +168,8 @@ def _run_single_query(
             target_code=target_code,
             target_supplementary=target_supplementary,
             model_name=model_name,
+            prompt_variant=prompt_variant,
+            graph_context=graph_context,
         )
         elapsed = time.perf_counter() - t0
     except Exception as e:
@@ -213,6 +223,7 @@ def _run_single_query(
         "completion_tokens": record.completion_tokens,
         "total_tokens": record.total_tokens,
         "finish_reason": record.finish_reason,
+        "prompt_variant": prompt_variant,
     }
 
 
@@ -229,6 +240,7 @@ def run_batch_inference(
     resume_dir: str | None = None,
     meta_extra: dict | None = None,
     output_dir: Path | None = None,
+    prompt_variant: str = "default",
 ) -> Path:
     """
     Run LLM patching in batches, writing results to JSONL incrementally.
@@ -242,6 +254,7 @@ def run_batch_inference(
         run_tag:      tag for the output directory name
         resume_dir:   path to a previous run dir to resume
         meta_extra:   extra metadata to save in run_meta.json
+        prompt_variant: "default" or "graph"
 
     Returns the path to the run directory.
     """
@@ -260,6 +273,7 @@ def run_batch_inference(
             retriever,
             db_cache,
             resolved_model,
+            prompt_variant=prompt_variant,
         )
         status = result["status"]
         sim = result.get("similarity", "")
@@ -284,6 +298,7 @@ def run_batch_inference(
         meta={
             "model": resolved_model,
             "batch_size": batch_size,
+            "prompt_variant": prompt_variant,
             **(meta_extra or {}),
         },
         abort_on=(ForbiddenError,),
