@@ -1,0 +1,144 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Miss Analysis Dashboard</title>
+  <style>
+    :root {
+      --bg: #f7f4ef;
+      --ink: #1b1b1b;
+      --muted: #5c5c5c;
+      --accent: #0e6b6e;
+      --card: #ffffff;
+      --line: #ddd4c8;
+    }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at 10% 0%, #fff8ec, var(--bg));
+      color: var(--ink);
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 24px auto 56px;
+      padding: 0 16px;
+    }
+    h1 { margin: 0 0 8px; font-size: 2rem; }
+    p.meta { margin: 0 0 18px; color: var(--muted); }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin: 14px 0;
+      box-shadow: 0 8px 28px rgba(10, 20, 30, 0.07);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.93rem; }
+    th, td { border-bottom: 1px solid var(--line); padding: 8px 10px; text-align: left; }
+    th { background: #fff6e8; position: sticky; top: 0; }
+    details > summary { cursor: pointer; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+    ul { margin-top: 6px; }
+    .pill { display: inline-block; padding: 4px 8px; border-radius: 999px; background: #e6f4f4; color: #0e6b6e; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Miss And Uncertainty Dashboard</h1>
+    <p class="meta">Run <span class="pill">20260507_171739_patching_a56231</span> | Generated 2026-05-07T17:47:08.440755+00:00</p>
+
+    <div class="card">
+      <h3>Global Summary</h3>
+      <ul>
+        <li>Cells analyzed: 1</li>
+        <li>Total queries: 0</li>
+        <li>Total top-1 CVE misses: 0</li>
+        <li>Total miss but top-1 CWE correct: 0 (0.0%)</li>
+        <li>Total miss but any top-k CWE correct: 0 (0.0%)</li>
+        <li>Wrong and uncertain: 0 (0.0%)</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Cell Comparison</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>embedder</th>
+            <th>backend</th>
+            <th>variant</th>
+            <th>queries</th>
+            <th>top1_cve_hit</th>
+            <th>miss + top1_cwe_ok</th>
+            <th>miss + any_cwe_topk</th>
+            <th>true_cve_found_on_miss</th>
+            <th>true_rank_median</th>
+            <th>wrong_uncertain</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td>None</td>
+              <td>None</td>
+              <td>None</td>
+              <td>0</td>
+              <td>0.0%</td>
+              <td>0 (0.0%)</td>
+              <td>0 (0.0%)</td>
+              <td>0.0%</td>
+              <td>-</td>
+              <td>0 (0.0%)</td>
+            </tr>
+            
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Per-Cell Details</h3>
+    
+            <details class="card">
+              <summary>None | None | None</summary>
+              <div class="grid">
+                <div>
+                  <h4>Miss Profile</h4>
+                  <ul>
+                    <li>Queries: 0</li>
+                    <li>Top-1 CVE hit: 0.0%</li>
+                    <li>Miss but top-1 CWE correct: 0 (0.0%)</li>
+                    <li>Miss but any top-k CWE correct: 0 (0.0%)</li>
+                    <li>True CVE found in top-k (when missed): 0.0%</li>
+                    <li>Median true CVE rank (miss subset): -</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4>Uncertainty</h4>
+                  <ul>
+                    <li>Wrong and uncertain: 0 (0.0%)</li>
+                    <li>Wrong and confident: 0 (0.0%)</li>
+                    <li>Uncertainty prob threshold: 0.1200</li>
+                    <li>Uncertainty margin threshold: 0.0050</li>
+                  </ul>
+                </div>
+              </div>
+              <h4>True CVE Rank Histogram (Miss Subset)</h4>
+              <ul><li>No missed queries recovered within top-k.</li></ul>
+              <h4>Wrong + Uncertain Examples</h4>
+              <table>
+                <thead>
+                  <tr>
+                    <th>query_cve</th><th>query_cwe</th><th>top1_cve</th><th>top1_cwe</th>
+                    <th>top1_score</th><th>margin</th><th>top1_prob</th><th>true_rank</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan='8'>No examples.</td></tr>
+                </tbody>
+              </table>
+            </details>
+            
+  </div>
+</body>
+</html>
