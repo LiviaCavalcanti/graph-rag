@@ -120,15 +120,14 @@ def run_query(cfg: dict, cve_id: str):
 
 
 def run_batch_query(cfg: dict, args):
-    """Batch query: thin wrapper around experiments.agent_experiment.run_experiment."""
-    from experiments.agent_experiment import run_experiment
+    """Batch query: thin wrapper around retrieval experiment."""
+    from experiments.exp.retrieval_experiment import run_experiment
+    from src.data.autopatch import load_pairs
 
-    return run_experiment(
-        cfg,
-        max_queries=args.max_queries,
-        batch_size=args.batch_size,
-        resume=args.resume,
-    )
+    pairs = load_pairs(cfg)
+    if args.max_queries:
+        pairs = pairs[: args.max_queries]
+    return run_experiment(pairs, cfg)
 
 
 if __name__ == "__main__":
@@ -259,7 +258,7 @@ if __name__ == "__main__":
         run_diagnostics(all_pairs)
 
     elif args.mode == "batch":
-        from experiments.agent_experiment import run_patching_experiment
+        from experiments.exp.patching_experiment import run_patching_experiment
 
         # apply split overrides (same as experiment mode)
         cfg.setdefault("experiment", {})
@@ -287,11 +286,10 @@ if __name__ == "__main__":
         )
 
     elif args.mode == "full":
-        from experiments.agent_experiment import (
-            run_experiment as run_retrieval,
-            run_patching_experiment,
-        )
+        from experiments.exp.retrieval_experiment import run_experiment as run_retrieval_exp
+        from experiments.exp.patching_experiment import run_patching_experiment
         from src.io.read_write import make_run_dir
+        from src.data.autopatch import load_pairs as load_pairs_full
 
         # apply split overrides
         cfg.setdefault("experiment", {})
@@ -316,11 +314,12 @@ if __name__ == "__main__":
         print(f"\n{'━'*60}")
         print(f"  STEP 1/3 — Retrieval (embed + FAISS top-k)")
         print(f"{'━'*60}")
-        run_retrieval(
+        full_pairs = load_pairs_full(cfg)
+        if args.max_queries:
+            full_pairs = full_pairs[: args.max_queries]
+        run_retrieval_exp(
+            full_pairs,
             cfg,
-            mode="retriever",
-            model_name=args.model,
-            max_queries=args.max_queries,
             output_dir=run_dir,
         )
         print(f"\n  ✓ Retrieval complete: {run_dir / 'retrieval_results.jsonl'}")
@@ -345,14 +344,9 @@ if __name__ == "__main__":
         print(f"\n{'━'*60}")
         print(f"  STEP 3/3 — Evaluation & Dashboards")
         print(f"{'━'*60}")
-        from src.evaluate.__main__ import run_all, _run_retrieval_summary
-        from src.evaluate.dashboard import generate_dashboard
+        from src.evaluate.__main__ import run_all
 
-        # 3a. Retrieval metrics from retrieval_results.jsonl
-        if retrieval_jsonl.exists():
-            _run_retrieval_summary(retrieval_jsonl)
-
-        # 3b. Patching evaluation + unified dashboard
+        # 3a. Patching evaluation + patch analysis dashboard
         results_jsonl = run_dir / "results.jsonl"
         dashboard_path = run_all(
             results_path=results_jsonl,
@@ -364,6 +358,5 @@ if __name__ == "__main__":
         print(f"  ALL DONE")
         print(f"{'━'*60}")
         print(f"  Output folder:  {run_dir}")
-        print(f"  Dashboard:      {run_dir / 'evaluation_dashboard.html'}")
         print(f"  Patch analysis: {run_dir / 'patch_analysis.html'}")
         print(f"{'━'*60}")
