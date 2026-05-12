@@ -16,10 +16,10 @@ Default metrics (when using the built-in evaluator):
   • CWE recall:     macro-average               (mean ± std)
 
 Usage:
-    python -m experiments.slicing_repeated [--runs 5] [--config config.yaml]
+    python -m experiments.repeated_experience_runner [--runs 5] [--config config.yaml]
 
 Programmatic:
-    from experiments.slicing_repeated import run_repeated
+    from experiments.repeated_experience_runner import run_repeated
 
     # Use defaults (slicing comparison with VARIANT_DEFS):
     run_repeated(cfg, n_runs=10)
