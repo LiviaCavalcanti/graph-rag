@@ -30,8 +30,15 @@ from statistics import mean, median
 if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from experiments.dashboard_scripts._theme import THEME_CSS, score_color as _score_color
+from experiments.dashboard_scripts._theme import THEME_CSS, score_color as _score_color_raw
 from src.evaluate.preprocessing import extract_function_body
+
+
+def _score_color(value) -> str:
+    """Wrapper that handles None values gracefully."""
+    if value is None:
+        return "#888"
+    return _score_color_raw(value)
 
 
 # ── helpers ──────────────────────────────────────────────────────────
@@ -281,6 +288,52 @@ def analyze(
 # ── HTML rendering ───────────────────────────────────────────────────
 
 
+def _render_llm_summary(llm_summary: dict | None) -> str:
+    """Render the LLM evaluation summary box, or empty string if unavailable."""
+    if not llm_summary:
+        return ""
+
+    verdicts = llm_summary.get("verdicts", {})
+    total = llm_summary.get("total", 0)
+    fix_rate = llm_summary.get("fix_rate", 0)
+    avg_conf = llm_summary.get("avg_confidence", 0)
+
+    verdict_items = ""
+    colors = {"FIXED": "#2e7d32", "PARTIAL": "#f57c00", "NOT_FIXED": "#c62828", "ERROR": "#888"}
+    for v in ["FIXED", "PARTIAL", "NOT_FIXED", "ERROR"]:
+        count = verdicts.get(v, 0)
+        if count > 0:
+            pct = count / total * 100 if total else 0
+            color = colors.get(v, "#888")
+            verdict_items += (
+                f'<div class="llm-stat">'
+                f'<div class="value" style="color:{color}">{count}</div>'
+                f'<div class="label">{v} ({pct:.0f}%)</div>'
+                f'</div>'
+            )
+
+    return f"""
+<div class="llm-summary-box">
+  <h3>LLM Vulnerability Assessment</h3>
+  <div class="llm-summary-stats">
+    <div class="llm-stat">
+      <div class="value">{total}</div>
+      <div class="label">Evaluated</div>
+    </div>
+    <div class="llm-stat">
+      <div class="value" style="color:#1976d2">{fix_rate:.1f}%</div>
+      <div class="label">Fix Rate (FIXED+PARTIAL)</div>
+    </div>
+    <div class="llm-stat">
+      <div class="value">{avg_conf:.2f}</div>
+      <div class="label">Avg Confidence</div>
+    </div>
+    {verdict_items}
+  </div>
+</div>
+"""
+
+
 def _render_html(analysis: dict) -> str:
     records = analysis["records"]
     agg = analysis["aggregates"]
@@ -411,6 +464,7 @@ def _render_html(analysis: dict) -> str:
               BLEU-4={_fmt(scores.get('bleu_4'))}
             </span>
             &nbsp; CWE: {escape(str(rec.get('query_cwe', '')))}
+            &nbsp; {verdict_badge}
           </summary>
           <div class="card-body">
             <div class="retrieval-info">{retrieval_info}</div>
@@ -419,6 +473,7 @@ def _render_html(analysis: dict) -> str:
               &nbsp;|&nbsp; Status: {escape(str(rec.get('status', '')))}
               &nbsp;|&nbsp; Elapsed: {_fmt(rec.get('elapsed_s'), 2)}s
             </div>
+            {llm_box}
             <table class="score-table">
               <tr><th>Metric</th><th>Value</th></tr>
               {score_rows}
@@ -449,6 +504,53 @@ def _render_html(analysis: dict) -> str:
 <style>{THEME_CSS}
   .score-table {{ width: auto; max-width: 400px; }}
   .idx {{ color: var(--muted); font-weight: normal; }}
+  .llm-eval-box {{
+    margin: 0.8rem 0;
+    padding: 0.8rem 1rem;
+    border-left: 4px solid #1976d2;
+    background: #f5f8ff;
+    border-radius: 4px;
+  }}
+  .llm-eval-box h4 {{ margin: 0 0 0.4rem 0; color: #1976d2; font-size: 0.95rem; }}
+  .llm-verdict {{ font-size: 1.1rem; margin-bottom: 0.4rem; }}
+  .llm-confidence {{ font-size: 0.85rem; color: #666; }}
+  .llm-reasoning {{ margin: 0.4rem 0; font-size: 0.9rem; line-height: 1.4; }}
+  .llm-fix-desc {{ margin: 0.3rem 0; font-size: 0.85rem; color: #555; }}
+  .llm-issues {{ margin: 0.3rem 0 0 1.2rem; font-size: 0.85rem; color: #c62828; }}
+  .verdict-badge {{
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 3px;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: bold;
+    vertical-align: middle;
+  }}
+  .llm-summary-box {{
+    margin: 1rem 0;
+    padding: 1rem 1.5rem;
+    border: 2px solid #1976d2;
+    border-radius: 8px;
+    background: #f5f8ff;
+  }}
+  .llm-summary-box h3 {{ margin: 0 0 0.6rem 0; color: #1976d2; }}
+  .llm-summary-stats {{
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }}
+  .llm-stat {{
+    text-align: center;
+  }}
+  .llm-stat .value {{
+    font-size: 1.5rem;
+    font-weight: bold;
+  }}
+  .llm-stat .label {{
+    font-size: 0.8rem;
+    color: #666;
+  }}
 </style>
 </head>
 <body>
@@ -457,6 +559,8 @@ def _render_html(analysis: dict) -> str:
   <h1>Patch Evaluation Analysis</h1>
   <p class="meta">{analysis['total_records']} records from <code>{escape(analysis['source']['results'])}</code></p>
 </div>
+
+{_render_llm_summary(analysis.get('llm_evaluation'))}
 
 <h2>Aggregate Scores</h2>
 <table>
