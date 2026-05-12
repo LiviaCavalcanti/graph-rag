@@ -10,14 +10,8 @@ from pathlib import Path
 
 import numpy as np
 
-from src.data.autopatch import load_pairs, load_pairs_lightweight  # noqa: F401
-from src.data.split import (  # noqa: F401
-    _is_original,
-    _sample_pairs,
-    _split_by_variant,
-    _stratified_split,
-    build_split,
-)
+from src.data.autopatch import load_pairs  # noqa: F401
+from src.data.split import build_split  # noqa: F401
 from src.rag.hnsw import HNSWIndex
 from src.rag.retriever import Retriever
 
@@ -68,4 +62,4 @@ def is_uncertain(prob: float, margin: float, prob_floor: float = 0.12, margin_fl
 
 
 # ── I/O helpers (canonical home: src/io) ─────────────────────────────
-from src.io import load_config, make_run_dir, read_code_file, save_json
+from src.io import load_config, make_run_dir, save_json  # noqa: F401
