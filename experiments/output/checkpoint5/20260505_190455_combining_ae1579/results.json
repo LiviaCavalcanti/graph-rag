@@ -1,0 +1,565 @@
+{
+  "run_id": "20260505_190455_combining_ae1579",
+  "metadata": {
+    "experiment": "combining",
+    "timestamp": "2026-05-05T19:49:51.850454+00:00",
+    "config": {
+      "data": {
+        "autopatch": {
+          "root": "CVE-list",
+          "graphml_root": "graphml_augmented",
+          "include_variants": true
+        }
+      },
+      "joern": {
+        "workers": 8,
+        "timeout_s": 120,
+        "bin_dir": "/home/z0050s2b/bin/joern/joern-cli"
+      },
+      "graph": {
+        "node_types": [
+          "METHOD",
+          "METHOD_PARAMETER_IN",
+          "METHOD_PARAMETER_OUT",
+          "METHOD_RETURN",
+          "BLOCK",
+          "LOCAL",
+          "CALL",
+          "IDENTIFIER",
+          "LITERAL",
+          "RETURN",
+          "CONTROL_STRUCTURE",
+          "FIELD_IDENTIFIER",
+          "UNKNOWN"
+        ],
+        "edge_types": [
+          "AST",
+          "CFG",
+          "CDG",
+          "REF",
+          "ARGUMENT",
+          "RECEIVER"
+        ]
+      },
+      "embeddings": {
+        "active": [
+          "wl",
+          "gin",
+          "netlsd",
+          "combined",
+          "codebert_seq",
+          "codebert_pattern"
+        ],
+        "dim": 128,
+        "projection": "pca",
+        "l2_normalize": true,
+        "netlsd": {
+          "timescales": 128
+        },
+        "wl": {
+          "num_iterations": 4,
+          "hidden_dim": 64
+        },
+        "gin": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "seed": 42
+        },
+        "rgcn": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "seed": 42
+        },
+        "codebert": {
+          "model_path": "/home/z0050s2b/code/graph-rag/models/codebert-base/"
+        }
+      },
+      "rag": {
+        "index_path": "src/rag/faiss.index",
+        "metadata_path": "src/rag/metadata.json",
+        "top_k": 5,
+        "embedding_variant": "wl"
+      },
+      "experiment": {
+        "split": {
+          "enabled": true,
+          "stratified": true,
+          "seed": 42,
+          "test_ratio": 0.2,
+          "include_real_in_index": true,
+          "augmented_train_ratio": 0.5,
+          "query_source": "graphml_augmented"
+        }
+      }
+    },
+    "axes": [
+      {
+        "name": "strategy",
+        "n_values": 6,
+        "description": "Combination strategy"
+      }
+    ],
+    "data_info": {
+      "n_pairs": 449,
+      "n_index_pairs": 225,
+      "n_query_pairs": 73,
+      "split_info": {
+        "enabled": true,
+        "seed": 42,
+        "stratified": true,
+        "test_ratio": 0.2,
+        "query_source": "graphml_augmented",
+        "include_real_in_index": true,
+        "augmented_train_ratio": 0.5,
+        "counts": {
+          "total": 449,
+          "real_total": 75,
+          "aug_total": 374,
+          "aug_train_total": 301,
+          "aug_train_used": 150,
+          "aug_test_total": 73,
+          "index_total": 225,
+          "query_total": 73
+        }
+      },
+      "cwe_ids": [
+        "Improper Validation of Array Index",
+        "NULL Pointer Dereference",
+        "Use of Uninitialized Variable",
+        "Integer Overflow or Wraparound",
+        "Deadlock",
+        "Operation on a Resource after Expiration or Release",
+        "Incorrect Check of Function Return Value",
+        "Assignment of a Fixed Address to a Pointer",
+        "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+        "Improper Locking",
+        "Integer Underflow",
+        "Business Logic Errors",
+        "Access of Resource Using Incompatible Type ('Type Confusion')",
+        "Incorrect Type Conversion or Cast",
+        "Race Condition",
+        "Out-of-bounds Write",
+        "Use After Free",
+        "Memory Leak",
+        "Improper Control of a Resource Through Its Lifetime",
+        "Unchecked Return Value",
+        "Return of Stack Variable Address After Scope",
+        "Improper Input Validation",
+        "Expired Pointer Dereference"
+      ],
+      "projects": [
+        "autopatch"
+      ]
+    }
+  },
+  "cells": [
+    {
+      "coords": {
+        "strategy": "concat_pca"
+      },
+      "metrics": {
+        "strategy": "concat_pca",
+        "n_index": 225,
+        "n_query": 73,
+        "intrinsic": {
+          "dim": 128,
+          "embed_time_s": 236.31968874298036,
+          "space_stats": {
+            "mean_norm": 1.0,
+            "std_norm": 7.715419059195483e-08,
+            "mean_pairwise_sim": 0.07494082301855087,
+            "std_pairwise_sim": 0.7062546610832214,
+            "min_pairwise_sim": -0.9860716462135315,
+            "max_pairwise_sim": 1.0000003576278687,
+            "effective_dim": 2.098435812566143
+          },
+          "isotropy": 3.1842219270446267e-05,
+          "hubness": {
+            "k_occurrence_mean": 10.0,
+            "k_occurrence_std": 11.248308514814324,
+            "k_skewness": 2.0929941903373845,
+            "hub_fraction": 0.13777777777777778
+          },
+          "distance_concentration": {
+            "relative_contrast_mean": 323508.78125,
+            "relative_contrast_std": 2620567.75,
+            "cv_distances": 0.74969881772995
+          }
+        },
+        "retrieval": {
+          "hit@1": 0.6438356164383562,
+          "hit@5": 0.7945205479452054,
+          "hit@10": 0.8493150684931506,
+          "mrr": 0.7074527071102413,
+          "ndcg@1": 0.6438356164383562,
+          "ndcg@5": 0.4517396194426843,
+          "ndcg@10": 0.4521971275712518,
+          "map@1": 0.1690965427266797,
+          "map@5": 0.3211915633833442,
+          "map@10": 0.33550872860559744,
+          "precision@1": 0.6438356164383562,
+          "precision@5": 0.2986301369863013,
+          "precision@10": 0.1684931506849315,
+          "recall@1": 0.1690965427266797,
+          "recall@5": 0.36143183300717546,
+          "recall@10": 0.40940965427266796,
+          "cve_precision": 0.8481481481481481,
+          "cve_recall": 0.4590114638447972,
+          "cve_f1": 0.57537285326759,
+          "n": 73,
+          "n_cve_classes": 45
+        },
+        "class_separation": {
+          "intra_mean": 0.22431241372681182,
+          "inter_mean": 0.14826247096061707,
+          "ratio": 1.5129412876600168
+        },
+        "alignment_uniformity": {
+          "alignment": 1.5746262073516846,
+          "uniformity": -1.4505565166473389
+        }
+      },
+      "timing_s": 253.92114942602348
+    },
+    {
+      "coords": {
+        "strategy": "pca_concat_pca"
+      },
+      "metrics": {
+        "strategy": "pca_concat_pca",
+        "n_index": 225,
+        "n_query": 73,
+        "intrinsic": {
+          "dim": 128,
+          "embed_time_s": 185.13184809399536,
+          "space_stats": {
+            "mean_norm": 1.0,
+            "std_norm": 7.316252492728381e-08,
+            "mean_pairwise_sim": 0.07494089007377625,
+            "std_pairwise_sim": 0.7062547206878662,
+            "min_pairwise_sim": -0.9860717058181763,
+            "max_pairwise_sim": 1.0000005960464478,
+            "effective_dim": 2.0984353688153514
+          },
+          "isotropy": 3.184222238761743e-05,
+          "hubness": {
+            "k_occurrence_mean": 10.0,
+            "k_occurrence_std": 11.249888888340188,
+            "k_skewness": 2.092168437057716,
+            "hub_fraction": 0.13777777777777778
+          },
+          "distance_concentration": {
+            "relative_contrast_mean": 119.95683288574219,
+            "relative_contrast_std": 203.42552185058594,
+            "cv_distances": 0.7492727637290955
+          }
+        },
+        "retrieval": {
+          "hit@1": 0.6438356164383562,
+          "hit@5": 0.7945205479452054,
+          "hit@10": 0.8493150684931506,
+          "mrr": 0.7074527071102413,
+          "ndcg@1": 0.6438356164383562,
+          "ndcg@5": 0.4517396194426843,
+          "ndcg@10": 0.4521971275712518,
+          "map@1": 0.1690965427266797,
+          "map@5": 0.3211915633833442,
+          "map@10": 0.33550872860559744,
+          "precision@1": 0.6438356164383562,
+          "precision@5": 0.2986301369863013,
+          "precision@10": 0.1684931506849315,
+          "recall@1": 0.1690965427266797,
+          "recall@5": 0.36143183300717546,
+          "recall@10": 0.40940965427266796,
+          "cve_precision": 0.8481481481481481,
+          "cve_recall": 0.4590114638447972,
+          "cve_f1": 0.57537285326759,
+          "n": 73,
+          "n_cve_classes": 45
+        },
+        "class_separation": {
+          "intra_mean": 0.22431248778720264,
+          "inter_mean": 0.14826259016990662,
+          "ratio": 1.5129405707140555
+        },
+        "alignment_uniformity": {
+          "alignment": 1.5746262073516846,
+          "uniformity": -1.4505559206008911
+        }
+      },
+      "timing_s": 192.47040348296287
+    },
+    {
+      "coords": {
+        "strategy": "pca_concat"
+      },
+      "metrics": {
+        "strategy": "pca_concat",
+        "n_index": 225,
+        "n_query": 73,
+        "intrinsic": {
+          "dim": 126,
+          "embed_time_s": 145.0062547819689,
+          "space_stats": {
+            "mean_norm": 1.0,
+            "std_norm": 5.226511490263874e-08,
+            "mean_pairwise_sim": 0.07829584181308746,
+            "std_pairwise_sim": 0.7235198616981506,
+            "min_pairwise_sim": -0.9864399433135986,
+            "max_pairwise_sim": 1.0000003576278687,
+            "effective_dim": 1.9924913469923027
+          },
+          "isotropy": 1.583653297783598e-10,
+          "hubness": {
+            "k_occurrence_mean": 10.0,
+            "k_occurrence_std": 9.568931207007628,
+            "k_skewness": 1.548459782485709,
+            "hub_fraction": 0.1288888888888889
+          },
+          "distance_concentration": {
+            "relative_contrast_mean": 197.4927215576172,
+            "relative_contrast_std": 349.8807373046875,
+            "cv_distances": 0.7757961750030518
+          }
+        },
+        "retrieval": {
+          "hit@1": 0.6438356164383562,
+          "hit@5": 0.7808219178082192,
+          "hit@10": 0.8356164383561644,
+          "mrr": 0.7056099151989563,
+          "ndcg@1": 0.6438356164383562,
+          "ndcg@5": 0.45118644410462644,
+          "ndcg@10": 0.44873124660435093,
+          "map@1": 0.16806914546640572,
+          "map@5": 0.3196537290715373,
+          "map@10": 0.33355271332277203,
+          "precision@1": 0.6438356164383562,
+          "precision@5": 0.2986301369863013,
+          "precision@10": 0.16849315068493148,
+          "recall@1": 0.16806914546640572,
+          "recall@5": 0.3581050228310502,
+          "recall@10": 0.4021037181996086,
+          "cve_precision": 0.8259259259259258,
+          "cve_recall": 0.44843121693121696,
+          "cve_f1": 0.5606243110854195,
+          "n": 73,
+          "n_cve_classes": 45
+        },
+        "class_separation": {
+          "intra_mean": 0.23104741975017215,
+          "inter_mean": 0.15257197618484497,
+          "ratio": 1.5143503120799333
+        },
+        "alignment_uniformity": {
+          "alignment": 1.5616097450256348,
+          "uniformity": -1.3826242685317993
+        }
+      },
+      "timing_s": 154.21209477900993
+    },
+    {
+      "coords": {
+        "strategy": "norm_concat_pca"
+      },
+      "metrics": {
+        "strategy": "norm_concat_pca",
+        "n_index": 225,
+        "n_query": 73,
+        "intrinsic": {
+          "dim": 128,
+          "embed_time_s": 572.930694435956,
+          "space_stats": {
+            "mean_norm": 1.0,
+            "std_norm": 5.986896667309338e-08,
+            "mean_pairwise_sim": 0.03416699916124344,
+            "std_pairwise_sim": 0.18096515536308289,
+            "min_pairwise_sim": -0.6362475156784058,
+            "max_pairwise_sim": 1.0000003576278687,
+            "effective_dim": 30.87419599352175
+          },
+          "isotropy": 0.0023405106348966306,
+          "hubness": {
+            "k_occurrence_mean": 10.0,
+            "k_occurrence_std": 6.393746945258313,
+            "k_skewness": 1.3907913438240205,
+            "hub_fraction": 0.057777777777777775
+          },
+          "distance_concentration": {
+            "relative_contrast_mean": 109071.0,
+            "relative_contrast_std": 1085193.625,
+            "cv_distances": 0.1718643605709076
+          }
+        },
+        "retrieval": {
+          "hit@1": 0.8082191780821918,
+          "hit@5": 0.9315068493150684,
+          "hit@10": 0.958904109589041,
+          "mrr": 0.8492389649923898,
+          "ndcg@1": 0.8082191780821918,
+          "ndcg@5": 0.6440782145826653,
+          "ndcg@10": 0.6452116645793751,
+          "map@1": 0.20407697325505544,
+          "map@5": 0.48465563165905634,
+          "map@10": 0.5140316800236077,
+          "precision@1": 0.8082191780821918,
+          "precision@5": 0.4520547945205479,
+          "precision@10": 0.2561643835616439,
+          "recall@1": 0.20407697325505544,
+          "recall@5": 0.5580560991519896,
+          "recall@10": 0.6398238747553816,
+          "cve_precision": 0.9444444444444444,
+          "cve_recall": 0.6691552028218695,
+          "cve_f1": 0.7629732703839093,
+          "n": 73,
+          "n_cve_classes": 45
+        },
+        "class_separation": {
+          "intra_mean": 0.22553472283660717,
+          "inter_mean": 0.1079939603805542,
+          "ratio": 2.088401259124652
+        },
+        "alignment_uniformity": {
+          "alignment": 1.8409035205841064,
+          "uniformity": -3.5715293884277344
+        }
+      },
+      "timing_s": 594.5661776370252
+    },
+    {
+      "coords": {
+        "strategy": "4way_concat_pca"
+      },
+      "metrics": {
+        "strategy": "4way_concat_pca",
+        "n_index": 225,
+        "n_query": 73,
+        "intrinsic": {
+          "dim": 128,
+          "embed_time_s": 1314.833467689983,
+          "space_stats": {
+            "mean_norm": 1.0,
+            "std_norm": 7.507977528575793e-08,
+            "mean_pairwise_sim": 0.07494013011455536,
+            "std_pairwise_sim": 0.7062499523162842,
+            "min_pairwise_sim": -0.9860707521438599,
+            "max_pairwise_sim": 1.0000003576278687,
+            "effective_dim": 2.098465549468666
+          },
+          "isotropy": 3.183146076616884e-05,
+          "hubness": {
+            "k_occurrence_mean": 10.0,
+            "k_occurrence_std": 11.244751862288666,
+            "k_skewness": 2.0906484005616406,
+            "hub_fraction": 0.13777777777777778
+          },
+          "distance_concentration": {
+            "relative_contrast_mean": 215710.515625,
+            "relative_contrast_std": 2145089.0,
+            "cv_distances": 0.7494142055511475
+          }
+        },
+        "retrieval": {
+          "hit@1": 0.6438356164383562,
+          "hit@5": 0.7945205479452054,
+          "hit@10": 0.8493150684931506,
+          "mrr": 0.7074527071102413,
+          "ndcg@1": 0.6438356164383562,
+          "ndcg@5": 0.4517396194426843,
+          "ndcg@10": 0.4521971275712518,
+          "map@1": 0.1690965427266797,
+          "map@5": 0.3211915633833442,
+          "map@10": 0.33550872860559744,
+          "precision@1": 0.6438356164383562,
+          "precision@5": 0.2986301369863013,
+          "precision@10": 0.1684931506849315,
+          "recall@1": 0.1690965427266797,
+          "recall@5": 0.36143183300717546,
+          "recall@10": 0.40940965427266796,
+          "cve_precision": 0.8481481481481481,
+          "cve_recall": 0.4590114638447972,
+          "cve_f1": 0.57537285326759,
+          "n": 73,
+          "n_cve_classes": 45
+        },
+        "class_separation": {
+          "intra_mean": 0.22431513545629772,
+          "inter_mean": 0.14825978875160217,
+          "ratio": 1.5129870165410826
+        },
+        "alignment_uniformity": {
+          "alignment": 1.57462739944458,
+          "uniformity": -1.4505759477615356
+        }
+      },
+      "timing_s": 1342.0006271820166
+    },
+    {
+      "coords": {
+        "strategy": "4way_norm_concat_pca"
+      },
+      "metrics": {
+        "strategy": "4way_norm_concat_pca",
+        "n_index": 225,
+        "n_query": 73,
+        "intrinsic": {
+          "dim": 128,
+          "embed_time_s": 136.01786327001173,
+          "space_stats": {
+            "mean_norm": 1.0,
+            "std_norm": 5.4193264986679424e-08,
+            "mean_pairwise_sim": -0.0036648157984018326,
+            "std_pairwise_sim": 0.218399778008461,
+            "min_pairwise_sim": -0.5835914611816406,
+            "max_pairwise_sim": 1.0000004768371582,
+            "effective_dim": 19.258375709923673
+          },
+          "isotropy": 0.00264753987349572,
+          "hubness": {
+            "k_occurrence_mean": 10.0,
+            "k_occurrence_std": 4.2957343182898695,
+            "k_skewness": 0.5964378936134221,
+            "hub_fraction": 0.013333333333333334
+          },
+          "distance_concentration": {
+            "relative_contrast_mean": 336.489013671875,
+            "relative_contrast_std": 2640.626708984375,
+            "cv_distances": 0.21360132098197937
+          }
+        },
+        "retrieval": {
+          "hit@1": 0.726027397260274,
+          "hit@5": 0.863013698630137,
+          "hit@10": 0.8767123287671232,
+          "mrr": 0.7732115677321156,
+          "ndcg@1": 0.726027397260274,
+          "ndcg@5": 0.5640440674619317,
+          "ndcg@10": 0.5686939476953855,
+          "map@1": 0.18830724070450097,
+          "map@5": 0.4082213524679278,
+          "map@10": 0.4403916871162468,
+          "precision@1": 0.726027397260274,
+          "precision@5": 0.4,
+          "precision@10": 0.2465753424657534,
+          "recall@1": 0.18830724070450097,
+          "recall@5": 0.452136333985649,
+          "recall@10": 0.5165688193085454,
+          "cve_precision": 0.8888888888888888,
+          "cve_recall": 0.5368112874779541,
+          "cve_f1": 0.6521964030010008,
+          "n": 73,
+          "n_cve_classes": 45
+        },
+        "class_separation": {
+          "intra_mean": 0.23974460278354262,
+          "inter_mean": -0.03647008165717125,
+          "ratio": -6.573733643845592
+        },
+        "alignment_uniformity": {
+          "alignment": 1.8343615531921387,
+          "uniformity": -3.5528998374938965
+        }
+      },
+      "timing_s": 162.87404938100372
+    }
+  ]
+}
