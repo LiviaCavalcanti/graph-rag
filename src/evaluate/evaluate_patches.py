@@ -24,7 +24,6 @@ from pathlib import Path
 from src.data.autopatch import AutoPatchDataset
 from src.evaluate.preprocessing import extract_function_body
 from src.metrics.similarity import (bertscore_pair, bleu_score,
-                                    codebleu_weighted,
                                     compute_diff_details, exact_match,
                                     line_level_ratio, normalised_edit_distance,
                                     normalised_exact_match, rouge_scores,
@@ -102,7 +101,6 @@ def evaluate_one(record: dict, base_dir: Path, strip_comments: bool = False) -> 
         "bleu_1": round(bleu_score(generated, gt_body, max_n=1), 4),
         "bleu_2": round(bleu_score(generated, gt_body, max_n=2), 4),
         "bleu_4": round(bleu_score(generated, gt_body, max_n=4), 4),
-        "codebleu_proxy": round(codebleu_weighted(generated, gt_body), 4),
         **bertscore_pair(generated, gt_body),
         **{k: round(v, 4) for k, v in rouge_scores(generated, gt_body).items()},
     }
@@ -181,7 +179,6 @@ def aggregate(results: list[dict]) -> dict:
         "avg_bleu_1": _avg("bleu_1"),
         "avg_bleu_2": _avg("bleu_2"),
         "avg_bleu_4": _avg("bleu_4"),
-        "avg_codebleu_proxy": _avg("codebleu_proxy"),
         "avg_bertscore_precision": _avg("bertscore_precision"),
         "avg_bertscore_recall": _avg("bertscore_recall"),
         "avg_bertscore_f1": _avg("bertscore_f1"),
@@ -213,10 +210,6 @@ def _aggregate_by_field(evaluated: list[dict], field: str) -> dict:
             "avg_char_ratio": round(
                 sum(r["metrics_vs_function_body"]["char_sequence_ratio"] for r in recs)
                 / n,
-                4,
-            ),
-            "avg_codebleu_proxy": round(
-                sum(r["metrics_vs_function_body"]["codebleu_proxy"] for r in recs) / n,
                 4,
             ),
             "avg_bertscore_f1": round(
@@ -337,7 +330,6 @@ def main():
     print(f"  Avg BLEU-4:        {agg.get('avg_bleu_4', 'N/A')}")
     print(f"  Avg Token Jaccard: {agg.get('avg_token_jaccard', 'N/A')}")
     print(f"  Avg Char Ratio:    {agg.get('avg_char_sequence_ratio', 'N/A')}")
-    print(f"  Avg CodeBLEU*:     {agg.get('avg_codebleu_proxy', 'N/A')}")
     print(f"  Avg BERTScore F1:  {agg.get('avg_bertscore_f1', 'N/A')}")
     print(f"  Avg Edit Dist:     {agg.get('avg_normalised_edit_distance', 'N/A')}")
     print(f"{'═'*60}")
