@@ -57,6 +57,18 @@ _VARIANTS: dict[str, list[tuple[str, str]]] = {
         ("assistant", _load_prompt("assistant.txt")),
         ("user", _load_prompt("graph_user_target.txt")),
     ],
+    "graph_v2": [
+        ("system", _load_prompt("graph_system_v2.txt")),
+        ("user", _load_prompt("user_example.txt")),
+        ("assistant", _load_prompt("assistant_v2.txt")),
+        ("user", _load_prompt("graph_user_target_v2.txt")),
+    ],
+    "default_v2": [
+        ("system", _load_prompt("system_v2.txt")),
+        ("user", _load_prompt("user_example.txt")),
+        ("assistant", _load_prompt("assistant.txt")),
+        ("user", _load_prompt("user_target.txt")),
+    ],
 }
 
 
