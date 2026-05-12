@@ -489,11 +489,15 @@
     \end{column}
   \end{columns}
 \end{frame}
+
+\begin{frame}
+  \includegraphics[width=\textwidth]{../../experiments/output/checkpoint5/gin_struct_raw_vs_pca.png}
+\end{frame}
 % ══════════════════════════════════════════════════════════════════════
 \section{Agent Baseline}
 % ══════════════════════════════════════════════════════════════════════
 
-\begin{frame}{Agent Baseline: Experiment Design}
+\begin{frame}{[RECAP] Agent Baseline: Experiment Design}
 \begin{columns}[T]
 \begin{column}{0.52\textwidth}
 
@@ -519,7 +523,7 @@
 \end{frame}
 
 
-\begin{frame}{Agent Baseline: Per-CWE Oracle vs.\ Embedding (BERTScore \& ROUGE-L)}
+\begin{frame}{[RECAP] Agent Baseline: Per-CWE Oracle vs.\ Embedding (BERTScore \& ROUGE-L)}
 
   \centering
   \vspace{-0.2em}
@@ -584,7 +588,7 @@
 \section{LLM Semantic Evaluation}
 % ══════════════════════════════════════════════════════════════════════
 
-\begin{frame}{LLM Semantic Evaluation: Experiment Design}
+\begin{frame}{[RECAP] LLM Semantic Evaluation: Experiment Design}
 \begin{columns}[T]
 \begin{column}{0.50\textwidth}
 
@@ -639,7 +643,7 @@
 \end{frame}
 
 
-\begin{frame}{LLM Semantic Evaluation: Preliminary Results ($n{=}73$)}
+\begin{frame}{[RECAP] LLM Semantic Evaluation: Preliminary Results ($n{=}73$)}
 
   \begin{columns}[T]
   \begin{column}{0.45\textwidth}
@@ -718,7 +722,7 @@
 \end{frame}
 
 
-\begin{frame}{LLM Semantic Evaluation: Per-CWE Breakdown}
+\begin{frame}{[RECAP] LLM Semantic Evaluation: Per-CWE Breakdown}
 
   \centering
   \vspace{-0.4em}
@@ -781,111 +785,6 @@
   \end{tabular}}
 
 \end{frame}
-
-
-\begin{frame}{LLM Semantic Evaluation: Analysis vs.\ Text Metrics}
-
-  \begin{columns}[T]
-  \begin{column}{0.48\textwidth}
-
-    \textbf{Comparing evaluation signals}
-
-    \vspace{0.4em}
-    {\scriptsize
-    \renewcommand{\arraystretch}{1.35}
-    \begin{tabular}{l c c}
-      \toprule
-      \textbf{Metric} & \textbf{Score} & \textbf{Interpretation} \\
-      \midrule
-      hit@1 (retrieval)          & 89.0\% & retrieves correct analogy \\
-      BLEU-4 (oracle, stripped)  & .655   & surface token overlap \\
-      ROUGE-L (oracle, stripped) & .766   & longest common subseq. \\
-      BERTScore (oracle)         & .716   & contextual similarity \\
-      \midrule
-      \rowcolor{c1!8}
-      \textbf{LLM fix rate}     & \textbf{61.6\%} & \textbf{vulnerability fixed?} \\
-      \bottomrule
-    \end{tabular}}
-
-    \vspace{0.6em}
-    {\scriptsize\textcolor{c1}{\faIcon{info-circle}}
-    \textbf{The gap matters:} 89\% retrieval $\to$ 61.6\% semantic fix.
-    The pipeline finds good analogies, but the agent fails to
-    transfer the fix correctly $\sim$38\% of the time.}
-
-  \end{column}
-  \begin{column}{0.48\textwidth}
-
-    \textbf{Where metrics disagree}
-
-    \vspace{0.4em}
-    {\scriptsize
-    \begin{itemize}\setlength{\itemsep}{3pt}
-      \item \textbf{High BLEU, NOT\_FIXED:}
-            NULL Pointer Deref often produces ``close'' code
-            that misses the critical NULL check placement ---
-            surface similarity masks semantic failure
-
-      \item \textbf{Low BLEU, FIXED:}
-            Some patches use different variable names or
-            guard structures but correctly address the CVE ---
-            text metrics unfairly penalize valid alternatives
-
-      \item \textbf{PARTIAL verdicts} ($n{=}4$):
-            Patches address the vulnerability \textit{partially}
-            (e.g.\ add one of two required checks).
-            Avg.\ confidence 0.75 vs.\ 0.95 for FIXED --- the LLM
-            is appropriately less certain
-    \end{itemize}}
-
-    \vspace{0.4em}
-    {\scriptsize\textcolor{c3}{\faIcon{lightbulb}}
-    \textbf{Takeaway:} LLM semantic evaluation captures patch
-    correctness that text-similarity metrics miss.
-    It should complement, not replace, automated metrics.}
-
-  \end{column}
-  \end{columns}
-\end{frame}
-
-
-\begin{frame}{LLM Semantic Evaluation: Key Findings}
-
-  \begin{enumerate}\setlength{\itemsep}{0.5em}
-
-    \item[\textcolor{hit}{\faIcon{check-circle}}]
-      \textbf{61.6\% of oracle patches semantically fix the CVE.}
-      41 fully fixed $+$ 4 partial out of 73.
-      High-confidence judgments (avg.\ 0.92) suggest the LLM
-      is decisive, not guessing.
-      \textit{The agent produces meaningful patches for the majority of CWEs.}
-
-    \vspace{0.5em}
-    \item[\textcolor{c1}{\faIcon{chart-bar}}]
-      \textbf{CWE difficulty matches text-metric ranking.}
-      Use After Free (83\%) and Integer Overflow (90\%) are the easiest ---
-      same CWEs where BLEU is highest.
-      NULL Pointer Deref (36\%) and Improper Locking (50\%) remain hard.
-      \textit{Pattern stereotypy predicts both surface and semantic quality.}
-
-    \vspace{0.5em}
-    \item[\textcolor{miss}{\faIcon{exclamation-triangle}}]
-      \textbf{Retrieval $\to$ generation gap: 89\% $\to$ 62\%.}
-      The retrieval pipeline finds correct analogies for 89\% of queries,
-      but only 62\% result in semantically correct patches.
-      The bottleneck is the LLM's ability to \textbf{transfer} the fix pattern,
-      not the retrieval quality.
-
-    \vspace{0.5em}
-    \item[\textcolor{c3}{\faIcon{lightbulb}}]
-      \textbf{LLM-as-judge complements text metrics.}
-      It catches false positives (high BLEU but unfixed) and
-      false negatives (low BLEU but correctly fixed).
-      \textit{Future evaluations should use both.}
-
-  \end{enumerate}
-\end{frame}
-
 % ══════════════════════════════════════════════════════════════════════
 \section{Prompt Variation Experiment}
 % ══════════════════════════════════════════════════════════════════════
@@ -1000,6 +899,60 @@
   \textcolor{c3}{\faIcon{project-diagram}} Dashed arrows = graph context injection \qquad
   \textcolor{hit}{\faIcon{shield-alt}} Green box = explicit verification step \qquad
   Percentages = LLM fix rate}
+\end{frame}
+
+% ── Slide 1c: Key Differences Summary ────────────────────────────────
+\begin{frame}{Prompt Variation: Key Differences Summary}
+  \centering
+  \vspace{0.3em}
+  {\small
+  \renewcommand{\arraystretch}{1.4}
+  \setlength{\tabcolsep}{4pt}
+  \begin{tabular}{l c c c c}
+    \toprule
+    \textbf{Aspect}
+      & \texttt{\textbf{default}}
+      & \texttt{\textbf{graph}}
+      & \texttt{\textbf{graph\_v2}}
+      & \texttt{\textbf{default\_v2}} \\
+    \midrule
+    CoT steps
+      & 3 & 6 & 4 & 3 \\
+    CPG data in prompt
+      & \textcolor{miss}{\faIcon{times}} None
+      & \textcolor{hit}{\faIcon{check}} Full
+      & \textcolor{c5}{\faIcon{minus}} Diff only
+      & \textcolor{miss}{\faIcon{times}} None \\
+    Verification checklist
+      & \textcolor{miss}{\faIcon{times}}
+      & \textcolor{miss}{\faIcon{times}}
+      & \textcolor{hit}{\faIcon{check}}
+      & \textcolor{miss}{\faIcon{times}} \\
+    Root-cause confirmation
+      & \textcolor{miss}{\faIcon{times}}
+      & \textcolor{miss}{\faIcon{times}}
+      & \textcolor{hit}{\faIcon{check}} {\tiny(in verify)}
+      & \textcolor{hit}{\faIcon{check}} {\tiny(1 sentence)} \\
+    Assistant shows verification
+      & \textcolor{miss}{\faIcon{times}}
+      & \textcolor{miss}{\faIcon{times}}
+      & \textcolor{hit}{\faIcon{check}}
+      & \textcolor{miss}{\faIcon{times}} \\
+    \midrule
+    \rowcolor{c1!8}
+    \textbf{LLM fix rate}
+      & 34.1\%
+      & \cmiss{19.5\%}
+      & \chit{41.5\%}
+      & 26.8\% \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.6em}
+  {\scriptsize
+  \textcolor{c1}{\faIcon{info-circle}}
+  \textbf{Full CPG} = Patch Diff + Data Flow + Control Dependencies \qquad
+  \textbf{Diff only} = Patch Diff section (lines changed, AST types)}
 \end{frame}
 
 % ── Slide 2: Results Comparison ───────────────────────────────────────
