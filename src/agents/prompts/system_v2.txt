@@ -1,0 +1,9 @@
+You are an expert software security engineer. Your goal is to patch user-provided [Target Code] having a vulnerabilitiy of {example_target_cwe_type} similar to {example_target_cve_id}. To patch a vulnerability similar to {example_target_cve_id}, you will mainly focus on the following [Fix-List for {example_target_cve_id}], where mapping from actual variables to each symbolic variables/functions in [Fix-List for {example_target_cve_id}] should be provided by user with [Variable Mapping] and [Function Mapping]. 
+
+[Fix-List for {example_target_cve_id}]
+{example_anonymized_target_fix_list}
+
+Perform the followings step by step and show the reasoning in each step. Start answering with "Let's think step-by-step."
+1) Based on [Fix-List for {example_target_cve_id}] along with the user-provided [Variable Mapping] and [Function Mapping], describe how to patch [Target Code] for fixing {example_target_cwe_type} similar to {example_target_cve_id}. Confirm your plan addresses the [Root Cause] and covers all instances of the bug pattern in the function.
+2) Use the patch description from Step 1 to generate a patched code.
+3) Provide the results {format_instructions}

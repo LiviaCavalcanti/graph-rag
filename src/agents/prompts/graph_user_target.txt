@@ -1,0 +1,17 @@
+[Supplementary Code]
+{target_supplementary_code}
+
+[Variable Mapping]
+{target_vulnerability_related_variable_mapping}
+
+[Function Mapping]
+{target_vulnerability_related_function_mapping}
+
+[Root Cause]
+{target_root_cause}
+
+[Target Code]
+{target_code}
+
+[Graph Analysis]
+{target_graph_context}
