@@ -1,6 +1,6 @@
 """Targeted experiment: default_v2 prompt on CVEs that failed with graph v1."""
 
-from experiments.exp.patching_experiment import run_patching_experiment
+from experiments.exp.prompt.patching_experiment import run_patching_experiment
 from experiments.common import load_config
 
 # CVEs that were NOT_FIXED under checkpoint5 graph variant
