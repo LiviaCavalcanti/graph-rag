@@ -228,7 +228,7 @@ if __name__ == "__main__":
             run_batch_query(cfg, args)
     elif args.mode == "experiment":
         from src.data.autopatch import load_pairs
-        from experiments.runner import run_experiment
+        from experiments.exp.retrieval_experiment import RetrievalGridExperiment
 
         cfg.setdefault("experiment", {})
         cfg["experiment"].setdefault("split", {})
@@ -244,11 +244,11 @@ if __name__ == "__main__":
 
         all_pairs = load_pairs(cfg)
 
-        run_experiment(
-            pairs=all_pairs,
-            cfg=cfg,
+        exp = RetrievalGridExperiment(
             run_leave_one_out=args.loo,
+            preloaded_pairs=all_pairs,
         )
+        exp.run(cfg)
     elif args.mode == "diagnostics":
         from src.data.autopatch import load_pairs
         from src.diagnostics import run_diagnostics
@@ -258,7 +258,7 @@ if __name__ == "__main__":
         run_diagnostics(all_pairs)
 
     elif args.mode == "batch":
-        from experiments.exp.patching_experiment import run_patching_experiment
+        from experiments.exp.prompt.patching_experiment import run_patching_experiment
 
         # apply split overrides (same as experiment mode)
         cfg.setdefault("experiment", {})
@@ -287,7 +287,7 @@ if __name__ == "__main__":
 
     elif args.mode == "full":
         from experiments.exp.retrieval_experiment import run_experiment as run_retrieval_exp
-        from experiments.exp.patching_experiment import run_patching_experiment
+        from experiments.exp.prompt.patching_experiment import run_patching_experiment
         from src.io.read_write import make_run_dir
         from src.data.autopatch import load_pairs as load_pairs_full
 
