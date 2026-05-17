@@ -78,18 +78,7 @@ def _summarize(values: list[float]) -> dict[str, Any]:
     }
 
 
-def _softmax(scores: list[float], temperature: float = 1.0) -> list[float]:
-    if not scores:
-        return []
-    if temperature <= 0:
-        temperature = 1.0
-    scaled = [s / temperature for s in scores]
-    m = max(scaled)
-    exps = [math.exp(s - m) for s in scaled]
-    z = sum(exps)
-    if z <= 0:
-        return [0.0 for _ in exps]
-    return [e / z for e in exps]
+from experiments.common import softmax as _softmax
 
 
 def _analyze_query(
