@@ -3,7 +3,6 @@
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
 from pathlib import Path
 from collections import defaultdict
 
