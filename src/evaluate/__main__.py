@@ -39,8 +39,8 @@ def run_all(
     print(f"\n{'━'*60}")
     print(f"  STEP 2/2 — Patch Analysis Dashboard")
     print(f"{'━'*60}")
-    from experiments.dashboard_scripts.analyze_patches import analyze as _analyze_patches
-    from experiments.dashboard_scripts.analyze_patches import _render_html as _render_patch_html
+    from experiments.dashboard_scripts.patch.analyze_patches import analyze as _analyze_patches
+    from experiments.dashboard_scripts.patch.analyze_patches import _render_html as _render_patch_html
 
     eval_jsonl = run_dir / "evaluation.jsonl"
     patch_html = run_dir / "patch_analysis.html"
