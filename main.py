@@ -9,11 +9,12 @@ from tqdm import tqdm
 
 from src.data.autopatch import AutoPatchDataset
 from src.data.base import ExportJob
+from src.data.cvefixes import CVEFixesDataset
 from src.data.pipeline import run_joern_export, write_c_file
 from src.embeddings import build_embedders
 from src.rag.faiss_index import FAISSIndex
 
-DATASETS = {"autopatch": AutoPatchDataset, "cvefixes": None}
+DATASETS = {"autopatch": AutoPatchDataset, "cvefixes": CVEFixesDataset}
 
 
 def _process_job(job: ExportJob, joern_bin_dir: str):
@@ -122,7 +123,7 @@ def run_query(cfg: dict, cve_id: str):
 def run_batch_query(cfg: dict, args):
     """Batch query: thin wrapper around retrieval experiment."""
     from experiments.exp.retrieval_experiment import run_experiment
-    from src.data.autopatch import load_pairs
+    from src.data import load_pairs
 
     pairs = load_pairs(cfg)
     if args.max_queries:
@@ -138,7 +139,7 @@ if __name__ == "__main__":
         choices=["index", "query", "export", "experiment", "diagnostics", "batch", "full"],
         default="export",
     )
-    parser.add_argument("--dataset", choices=["autopatch"], default="autopatch")
+    parser.add_argument("--dataset", choices=["autopatch", "cvefixes"], default="autopatch")
     parser.add_argument("--cve")
     parser.add_argument(
         "--loo",
@@ -227,7 +228,7 @@ if __name__ == "__main__":
                 split_cfg["augmented_train_ratio"] = args.aug_train_ratio
             run_batch_query(cfg, args)
     elif args.mode == "experiment":
-        from src.data.autopatch import load_pairs
+        from src.data import load_pairs
         from experiments.exp.retrieval_experiment import RetrievalGridExperiment
 
         cfg.setdefault("experiment", {})
@@ -250,7 +251,7 @@ if __name__ == "__main__":
         )
         exp.run(cfg)
     elif args.mode == "diagnostics":
-        from src.data.autopatch import load_pairs
+        from src.data import load_pairs
         from src.diagnostics import run_diagnostics
 
         all_pairs = load_pairs(cfg)
@@ -289,7 +290,7 @@ if __name__ == "__main__":
         from experiments.exp.retrieval_experiment import run_experiment as run_retrieval_exp
         from experiments.exp.prompt.patching_experiment import run_patching_experiment
         from src.io.read_write import make_run_dir
-        from src.data.autopatch import load_pairs as load_pairs_full
+        from src.data import load_pairs as load_pairs_full
 
         # apply split overrides
         cfg.setdefault("experiment", {})
