@@ -312,13 +312,13 @@ class TestLoadPairs:
     """Test load_pairs and load_pairs_lightweight with mocked AutoPatchDataset."""
 
     def _cfg(self):
-        return {"data": {"autopatch": {"root": "/fake/path"}}}
+        return {"data": {"active": ["autopatch"], "autopatch": {"root": "/fake/path"}}}
 
     def test_load_pairs_delegates(self):
         sentinel = [MagicMock(), MagicMock()]
         with patch("src.data.autopatch.AutoPatchDataset") as MockDS:
             MockDS.return_value.load_all.return_value = sentinel
-            from src.data.autopatch import load_pairs
+            from src.data import load_pairs
             result = load_pairs(self._cfg())
         MockDS.assert_called_once_with({"root": "/fake/path"})
         MockDS.return_value.load_all.assert_called_once()
@@ -328,7 +328,7 @@ class TestLoadPairs:
         sentinel = [MagicMock()]
         with patch("src.data.autopatch.AutoPatchDataset") as MockDS:
             MockDS.return_value.load_lightweight.return_value = sentinel
-            from src.data.autopatch import load_pairs_lightweight
+            from src.data import load_pairs_lightweight
             result = load_pairs_lightweight(self._cfg())
         MockDS.assert_called_once_with({"root": "/fake/path"})
         MockDS.return_value.load_lightweight.assert_called_once()
