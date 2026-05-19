@@ -31,7 +31,6 @@ def cpg_dir_for(graphml_root: str, cve_id: str, variant: str, version: str) -> s
 
 def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
     root = Path(graph_dir)
-    print(f"Loading CPG from {root}")
     if not (root / "graph").exists() and root.name != "graph":
         root = root / "graph"
 
