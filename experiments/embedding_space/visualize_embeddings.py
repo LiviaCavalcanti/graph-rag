@@ -27,7 +27,7 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.preprocessing import normalize
 
-from src.data.autopatch import load_pairs
+from src.data import load_pairs
 from src.data.split import build_split
 from src.embeddings import REGISTRY
 from src.io.read_write import load_config
