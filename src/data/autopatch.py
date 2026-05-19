@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Iterator
 
 import networkx as nx
+from tqdm import tqdm
 
 from .base import BaseDataset, ExportJob, FunctionPair
 from .pipeline import (compute_graph_diff, cpg_dir_for, load_cpg_dir,
@@ -153,7 +154,8 @@ class AutoPatchDataset(BaseDataset):
         dataset_path = Path(self.cfg["root"])
         root = self.cfg["graphml_root"]
 
-        for cve_dir in sorted(dataset_path.iterdir()):
+        cve_dirs = sorted(d for d in dataset_path.iterdir() if d.is_dir())
+        for cve_dir in tqdm(cve_dirs, desc="Loading pairs", unit="cve"):
             db = self._load_db_entry(cve_dir)
             if db is None:
                 continue
@@ -409,17 +411,3 @@ class AutoPatchDataset(BaseDataset):
                                         source_code=fixed_c_path.read_text(),
                                         out_dir=str(base / variant_name / "after"),
                                     )
-
-
-# ── convenience loaders (used by experiments & main) ─────────────────
-
-def load_pairs(cfg: dict) -> list:
-    """Load all FunctionPair objects from the configured dataset."""
-    ds = AutoPatchDataset(cfg["data"]["autopatch"])
-    return ds.load_all()
-
-
-def load_pairs_lightweight(cfg: dict) -> list:
-    """Load pairs with metadata only — no CPG/graph loading (fast)."""
-    ds = AutoPatchDataset(cfg["data"]["autopatch"])
-    return ds.load_lightweight()
