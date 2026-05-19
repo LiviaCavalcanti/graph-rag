@@ -27,7 +27,9 @@ class NetLSDEmbedder(BaseEmbedder):
         timescales = np.logspace(-2, 2, self.dim)
         desc = netlsd.heat(H, timescales=timescales).astype(np.float32)
 
-        norm = np.linalg.norm(desc)
-        if norm < 1e-8:
-            return np.zeros(self.dim, dtype=np.float32)
-        return self._norm_vec(desc) if self.apply_norm else desc
+        if self.apply_norm:
+            norm = np.linalg.norm(desc)
+            if norm < 1e-8:
+                return np.zeros(self.dim, dtype=np.float32)
+            return self._norm_vec(desc)
+        return desc
