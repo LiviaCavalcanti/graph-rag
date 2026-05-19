@@ -53,7 +53,8 @@ class PatchingExperiment(Experiment):
 
     def load_data(self, cfg: dict) -> dict[str, Any]:
         """Load lightweight pairs (no CPGs), split, and load db_cache."""
-        from src.data.autopatch import AutoPatchDataset, load_pairs_lightweight
+        from src.data.autopatch import AutoPatchDataset
+        from src.data import load_pairs_lightweight
         from experiments.common import build_split
 
         pairs = load_pairs_lightweight(cfg)
