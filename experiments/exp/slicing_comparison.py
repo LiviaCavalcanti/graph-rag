@@ -39,7 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from experiments.common import (build_hnsw, build_split, evaluate_cwe_recall,
                                 evaluate_retrieval, load_config,
                                 make_run_dir, save_json)
-from src.data.autopatch import load_pairs
+from src.data import load_pairs
 from src.embeddings import build_embedders
 from src.metrics.metrics import embedding_space_stats
 
