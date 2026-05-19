@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from experiments.common import load_config
-from src.data.autopatch import load_pairs
+from src.data import load_pairs
 
 
 def main():
@@ -67,7 +67,7 @@ def main():
     # ── Step 3: Crossing analysis ────────────────────────────────────
     print(f"\n{'='*50}\n  Step 3: Crossing analysis\n{'='*50}")
     try:
-        from experiments.verify_crossing import analyze_crossing
+        from experiments.put_aside.verify_crossing import analyze_crossing
         analyze_crossing(str(results_path))
     except Exception as e:
         print(f"  Warning: crossing analysis failed: {e}")
