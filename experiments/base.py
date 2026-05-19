@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from experiments.common import build_split, save_json
-from src.data.autopatch import load_pairs
+from src.data import load_pairs
 from src.io import make_run_dir
 
 OUTPUT_DIR = Path("experiments/output")
