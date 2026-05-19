@@ -52,7 +52,7 @@ from experiments.common import (
     load_config, build_split, make_run_dir,
     evaluate_retrieval, evaluate_cwe_recall, save_json,
 )
-from src.data.autopatch import load_pairs
+from src.data import load_pairs
 from src.rag.hnsw import HNSWIndex
 from src.rag.utils import populate_index
 from experiments.exp.slicing_comparison import (
@@ -159,6 +159,9 @@ def _default_evaluate(
 
 # ── main repeated experiment ─────────────────────────────────────────
 
+_SENTINEL = object()
+
+
 def run_repeated(
     cfg: dict,
     n_runs: int = 5,
@@ -170,8 +173,19 @@ def run_repeated(
     tag: str | None = None,
     pre_variant_hook: Callable[[list], None] | None = _reset_pca,
     evaluate_kw: dict | None = None,
+    embedders: list | None | object = _SENTINEL,
 ) -> dict:
-    """Run a variant × embedder grid *n_runs* times and aggregate.
+    """Run a variant (× embedder) grid *n_runs* times and aggregate.
+
+    Supports two modes:
+
+    1. **variant × embedder** (default / slicing comparison):
+       Pass ``variant_defs`` with a ``"build"`` key and let embedders
+       be auto-built from config (or pass a list).
+
+    2. **variant-only** (combining strategies, custom pipelines):
+       Pass ``embedders=None``.  The embedder loop is skipped and
+       ``evaluate_fn`` receives ``embedder=None``.
 
     Parameters
     ----------
@@ -183,6 +197,7 @@ def run_repeated(
         ``(index_pairs, query_pairs, embedder, variant_name, variant_def,
         run_dir, ks, **evaluate_kw) -> dict``.  Must return a dict whose
         numeric leaf values will be aggregated across runs.
+        When ``embedders=None``, the *embedder* argument is ``None``.
         Defaults to the slicing-comparison evaluator.
     variant_defs : dict, optional
         ``{name: {"build": callable, ...}, ...}``.  Defaults to
@@ -198,6 +213,11 @@ def run_repeated(
         Defaults to PCA-state reset.  Pass ``None`` to skip.
     evaluate_kw : dict, optional
         Extra keyword arguments forwarded to *evaluate_fn*.
+    embedders : list | None, optional
+        Explicit list of embedder objects to iterate over.
+        - *Not passed* (default): auto-build from ``cfg``.
+        - ``None``: no embedder axis — grid is variants only.
+        - List: use the provided embedders directly.
     """
     if evaluate_fn is None:
         evaluate_fn = _default_evaluate
@@ -217,12 +237,25 @@ def run_repeated(
     if query_variant:
         print(f"Query variant override: {query_variant}")
 
-    embedders = build_embedders(cfg)
+    # ── resolve embedders ─────────────────────────────────────────
+    if embedders is _SENTINEL:
+        # default: auto-build from config
+        embedders_list = build_embedders(cfg)
+    elif embedders is None:
+        # variant-only mode (no embedder axis)
+        embedders_list = None
+    else:
+        embedders_list = list(embedders)
+
     ks = [1, 5, 10]
     variant_names = list(variant_defs.keys())
-    embedder_names = [e.name for e in embedders]
 
-    # collector: (variant, embedder) → list of per-run dicts
+    if embedders_list is not None:
+        embedder_names = [e.name for e in embedders_list]
+    else:
+        embedder_names = ["_"]  # single-column placeholder
+
+    # collector: (variant, embedder_name) → list of per-run dicts
     all_runs: dict[tuple[str, str], list[dict]] = defaultdict(list)
 
     for run_idx in range(n_runs):
@@ -241,14 +274,39 @@ def run_repeated(
 
         for variant_name in variant_names:
             variant_def = variant_defs[variant_name]
-            if pre_variant_hook is not None:
-                pre_variant_hook(embedders)
-            for embedder in embedders:
-                print(f"  [{run_idx+1}/{n_runs}] {embedder.name} / {variant_name} ... ",
+
+            if embedders_list is not None:
+                # ── variant × embedder mode ──────────────────────
+                if pre_variant_hook is not None:
+                    pre_variant_hook(embedders_list)
+                for embedder in embedders_list:
+                    print(f"  [{run_idx+1}/{n_runs}] {embedder.name} / {variant_name} ... ",
+                          end="", flush=True)
+                    try:
+                        result = evaluate_fn(
+                            index_pairs, query_pairs, embedder,
+                            variant_name, variant_def, sub_dir, ks,
+                            **extra_kw,
+                        )
+                        print("  ".join(
+                            f"{k}={v:.3f}" for k, v in result.items()
+                            if isinstance(v, (int, float))
+                        ) or "ok")
+                    except Exception as e:
+                        print(f"ERROR: {e}")
+                        result = {
+                            "variant": variant_name,
+                            "embedder": embedder.name,
+                            "error": str(e),
+                        }
+                    all_runs[(variant_name, embedder.name)].append(result)
+            else:
+                # ── variant-only mode ────────────────────────────
+                print(f"  [{run_idx+1}/{n_runs}] {variant_name} ... ",
                       end="", flush=True)
                 try:
                     result = evaluate_fn(
-                        index_pairs, query_pairs, embedder,
+                        index_pairs, query_pairs, None,
                         variant_name, variant_def, sub_dir, ks,
                         **extra_kw,
                     )
@@ -260,10 +318,9 @@ def run_repeated(
                     print(f"ERROR: {e}")
                     result = {
                         "variant": variant_name,
-                        "embedder": embedder.name,
                         "error": str(e),
                     }
-                all_runs[(variant_name, embedder.name)].append(result)
+                all_runs[(variant_name, "_")].append(result)
 
     # ── aggregate ─────────────────────────────────────────────────
     aggregated = []
@@ -272,10 +329,11 @@ def run_repeated(
             runs = all_runs[(variant_name, emb_name)]
             row = {
                 "variant": variant_name,
-                "embedder": emb_name,
                 "n_runs": len(runs),
                 **_aggregate_runs(runs),
             }
+            if emb_name != "_":
+                row["embedder"] = emb_name
             aggregated.append(row)
 
     report = {
@@ -287,7 +345,7 @@ def run_repeated(
         "n_pairs": len(pairs),
         "query_variant": query_variant,
         "variants": variant_names,
-        "embedders": embedder_names,
+        "embedders": [n for n in embedder_names if n != "_"] or None,
         "aggregated": aggregated,
     }
 
