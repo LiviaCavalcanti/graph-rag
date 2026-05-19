@@ -90,7 +90,7 @@ class SpaceAnalysisExperiment(Experiment):
     def load_data(self, cfg: dict) -> dict[str, Any]:
         """Load pairs + split, precompute labels."""
         from experiments.common import build_split
-        from src.data.autopatch import load_pairs
+        from src.data import load_pairs
 
         pairs = load_pairs(cfg)
         index_pairs, query_pairs, split_info = build_split(pairs, cfg)
