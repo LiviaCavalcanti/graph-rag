@@ -34,7 +34,7 @@ from pathlib import Path
 
 import numpy as np
 
-from src.data.autopatch import load_pairs
+from src.data import load_pairs
 from src.io.read_write import load_config
 from src.data.split import build_split
 from src.data.pipeline import (compute_graph_diff, load_cpg_dir,
