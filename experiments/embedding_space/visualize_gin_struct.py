@@ -15,7 +15,7 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import normalize
 from torch_geometric.data import Batch
 
-from src.data.autopatch import load_pairs
+from src.data import load_pairs
 from src.data.split import build_split
 from src.embeddings.gin_struct_model import GINStructModel
 from src.embeddings.wl import nx_to_pyg
