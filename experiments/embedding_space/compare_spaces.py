@@ -21,7 +21,7 @@ from collections import defaultdict
 from sklearn.metrics import silhouette_score
 from sklearn.metrics.pairwise import cosine_distances, cosine_similarity
 
-from src.data.autopatch import load_pairs
+from src.data import load_pairs
 from src.data.split import build_split
 from src.embeddings import REGISTRY
 from src.embeddings.gin_struct_model import GINStructModel
