@@ -53,5 +53,13 @@ class BaseDataset(ABC):
     def load_all(self):
         return list(self.stream())
 
+    def load_lightweight(self) -> list["FunctionPair"]:
+        """Load pairs with metadata only — no CPG/graph loading.
+
+        Default falls back to load_all(). Override for faster
+        metadata-only loading when graphs aren't needed.
+        """
+        return self.load_all()
+
     @abstractmethod
     def export_jobs(self, graphml_root: str) -> Iterator[ExportJob]: ...
