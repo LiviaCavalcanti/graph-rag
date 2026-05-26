@@ -85,9 +85,9 @@
 \begin{column}{0.50\textwidth}
 
   \textbf{Goal}\\[3pt]
-  {\small Extract method-level vulnerable/patched pairs from Integrate CVEfixes database
-  (Zenodo DOI: 10.5281/zenodo.4476563) into our graph-RAG pipeline and verify the reprocibility of the results process on this new datase.}
-  
+  {\small Integrate the CVEfixes database into our pipeline to
+  obtain a large-scale knowledge base of historical vulnerability fixes.
+  Verify that our CPG+embedding approach generalises beyond the 70-sample AutoPatch corpus.}
 
   \vspace{0.6em}
   \textbf{Database Scale}
@@ -181,8 +181,9 @@
   \end{tabular}}
 
   \vspace{0.5em}
-  {\small\textcolor{c1}{\faIcon{info-circle}} No CVE IDs overlap between AutoPatch
-  and CVEfixes — the two datasets are fully complementary.}
+  {\small\textcolor{c1}{\faIcon{info-circle}} Zero CVE overlap — purely temporal:
+  CVEfixes ends July 2024; AutoPatch CVEs are from late 2024--2025.
+  The datasets are fully complementary (same CWE families, disjoint time periods).}
 
 \end{column}
 \end{columns}
@@ -224,22 +225,33 @@
 \begin{column}{0.50\textwidth}
 
   \textbf{Goal}\\[3pt]
-  {\small Validate that our Joern CPG generation + graph-diff pipeline works correctly
-  on CVEfixes entries. Generate CPGs for 10 diverse CVEs, compute vulnerability slices,
-  and compare with ground-truth line-level diffs.}
+  {\small Validate that our Joern CPG generation + graph-diff pipeline
+  works on CVEfixes data. Question: does the diff-based slicing algorithm
+  produce meaningful vulnerability subgraphs on this new dataset?}
 
   \vspace{0.6em}
   \textbf{Setup}
   \begin{description}[\textbf{Diversity}]
-    \item[\textbf{N}] 10 examples, diverse CWEs
-    \item[\textbf{Size}] 10–50 lines per function
-    \item[\textbf{Diversity}] 10 Different CWE types (randomly chosen): CWE-190, 362, 125, 285, 20, 367, 1284, 401, 264, 416
+    \item[\textbf{N}] 10 examples, 10–50 lines each
+    \item[\textbf{CWEs}] 190, 362, 125, 285, 20, 367, 1284, 401, 264, 416
+    \item[\textbf{Pipeline}] Joern export $\to$ load CPG $\to$ compute\_graph\_diff
   \end{description}
 
 \end{column}
 \begin{column}{0.47\textwidth}
 
-  TODO: ADD findings (overall conclusion)
+  \textbf{Key Result}\\[4pt]
+  {\small\textcolor{hit}{\faIcon{check-circle}} 8/10 produce valid slices.
+  Pipeline generalises to CVEfixes without modification.}
+
+  \vspace{0.5em}
+  {\small\textcolor{warn}{\faIcon{exclamation-triangle}} Slices are large
+  (60--90\% of CPG). Fix-adjacent nodes dominate.}
+
+  \vspace{0.5em}
+  {\small\textcolor{miss}{\faIcon{times-circle}} 2/10 fail: very small functions
+  (7 nodes) where Joern produces trivial graphs. These have no semantic content
+  to slice.}
 \end{column}
 \end{columns}
 \end{frame}
@@ -252,21 +264,23 @@
   {\scriptsize
   \renewcommand{\arraystretch}{1.3}
   \setlength{\tabcolsep}{3.5pt}
-  \begin{tabular}{llrrrrrr}
+  \begin{tabular}{llrr|rrrr}
     \toprule
-    \textbf{\#} & \textbf{CVE / CWE} & \textbf{Before} & \textbf{After} & \textbf{Slice}
-      & \textbf{Removed} & \textbf{Fix-adj} & \textbf{GT changed} \\
+    & & \multicolumn{2}{c|}{\textit{nodes}} & \multicolumn{4}{c}{\textit{unique source lines}} \\
+    \cmidrule(lr){3-4} \cmidrule(lr){5-8}
+    \textbf{\#} & \textbf{CVE / CWE} & \textbf{Before} & \textbf{After}
+      & \textbf{Slice} & \textbf{Removed} & \textbf{Fix-adj} & \textbf{GT} \\
     \midrule
-    1 & CVE-2024-22862 / CWE-190 & 265 & 281 & 231 & 3 & 154 & 2 \\
+    1 & CVE-2024-22862 / CWE-190 & 265 & 281 & 33 & 3 & 24 & 2 \\
     2 & CVE-2020-12652 / CWE-362 & 7 & 7 & 0 & 0 & 0 & 2 \\
-    3 & CVE-2018-8789 / CWE-125  & 106 & 107 & 38 & 1 & 37 & 2 \\
+    3 & CVE-2018-8789 / CWE-125  & 106 & 107 & 9 & 1 & 9 & 2 \\
     4 & CVE-2016-7097 / CWE-285  & 7 & 7 & 0 & 0 & 0 & 12 \\
-    5 & CVE-2013-7271 / CWE-20   & 287 & 275 & 145 & 77 & 68 & 5 \\
-    6 & CVE-2022-1974 / CWE-367  & 264 & 256 & 239 & 75 & 136 & 2 \\
-    7 & CVE-2022-25375 / CWE-1284 & 194 & 231 & 177 & 95 & 82 & 3 \\
-    8 & CVE-2019-19079 / CWE-401 & 151 & 160 & 135 & 23 & 112 & 5 \\
-    9 & CVE-2016-3841 / CWE-264  & 284 & 302 & 259 & 50 & 209 & 5 \\
-    10 & CVE-2017-16939 / CWE-416 & 202 & 121 & 183 & 155 & 24 & 8 \\
+    5 & CVE-2013-7271 / CWE-20   & 287 & 275 & 32 & 21 & 20 & 5 \\
+    6 & CVE-2022-1974 / CWE-367  & 264 & 256 & 32 & 3 & 31 & 2 \\
+    7 & CVE-2022-25375 / CWE-1284 & 194 & 231 & 22 & 17 & 7 & 3 \\
+    8 & CVE-2019-19079 / CWE-401 & 151 & 160 & 15 & 6 & 12 & 5 \\
+    9 & CVE-2016-3841 / CWE-264  & 284 & 302 & 29 & 11 & 24 & 5 \\
+    10 & CVE-2017-16939 / CWE-416 & 202 & 121 & 17 & 14 & 7 & 8 \\
     \bottomrule
   \end{tabular}}
 
@@ -309,23 +323,22 @@
 \begin{column}{0.50\textwidth}
 
   \textbf{Goal}\\[3pt]
-  {\small 
-  Very long graphs were being retrieved. Look for performance improvements when shrinking the graph: reduce the search depth. 
-  Compare 6 graph slicing configurations to determine how much flow-context
-  around changed nodes is optimal for vulnerability retrieval on CVEfixes.}
+  {\small The preliminary study showed slices are 60--90\% of the full CPG —
+  too large, diluting the vulnerability signal. Question: how much
+  flow context around changed nodes is actually needed?}
 
   \vspace{0.5em}
   \textbf{Metrics}
   \begin{description}[\textbf{CWE recall}]
-    \item[\textbf{hit@K}] Query's CWE family found in top-K results
-    \item[\textbf{MRR}] Mean reciprocal rank (same-CWE match)
-    \item[\textbf{CWE recall}] Fraction of known CWE families retrieved
+    \item[\textbf{hit@K}] Query's CWE family in top-K retrieved results
+    \item[\textbf{MRR}] Mean reciprocal rank of first same-CWE hit
+    \item[\textbf{CWE recall}] Fraction of CWE families covered in top-K
   \end{description}
 
   \vspace{0.5em}
-  \textbf{Rationale}\\[3pt]
-  {\small Deeper slices retain more flow context but dilute the change signal.
-  Do tighter slices improve embedder discrimination?}
+  \textbf{Hypothesis}\\[3pt]
+  {\small Tighter slices (fewer context nodes) should improve embedder
+  discrimination by concentrating the change signal.}
 
 \end{column}
 \begin{column}{0.47\textwidth}
@@ -467,10 +480,9 @@
 \begin{column}{0.50\textwidth}
 
   \textbf{Goal}\\[3pt]
-  {\small So far the results are really bad. tey to get graph knowledge to improve performance.
-  Train the GNNReGVD model with triplet loss on 695 CVEfixes graphs
-  grouped into 5 CWE families, to learn embeddings where same-family
-  vulnerabilities cluster together.}
+  {\small Previous experiments show near-random clustering (NMI$\approx$0.02).
+  Hypothesis: supervised training with triplet loss on CWE family labels
+  can teach the GNN to produce embeddings that separate vulnerability types.}
 
   \vspace{0.5em}
   \textbf{CWE Families (5 classes)}
@@ -605,9 +617,10 @@
 \begin{column}{0.50\textwidth}
 
   \textbf{Goal}\\[3pt]
-  {\small as last resort, i looked for string matching using the concept of sink from the graph model paper reference.Test whether using discriminative tokens (from TF-IDF + LinearSVC)
-  to guide graph slicing produces better vulnerability embeddings
-  than standard diff-based or random slicing.}
+  {\small Since graph structure alone fails to discriminate CWE families,
+  try a simpler approach: use discriminative code tokens (identified via
+  TF-IDF + LinearSVC) to guide which CPG nodes to include in the slice.
+  Inspired by ``sink'' concept from VulChecker.}
 
   \vspace{0.5em}
   \textbf{Slicing Strategies}
@@ -674,28 +687,22 @@
 
   \vspace{0.4em}
   \begin{columns}[T]
-  \begin{column}{0.32\textwidth}
-    {\scriptsize\textbf{\textcolor{hit}{Token-guided}}}
+  \begin{column}{0.48\textwidth}
+    {\scriptsize\textbf{\textcolor{miss}{Bottom line}}}
     \begin{itemize}\itemsep1pt
       {\scriptsize
-      \item Best when paired with CodeBERT
-      \item Smaller slices (106 nodes avg)}
+      \item All NMI $\leq$ 0.154, all ARI $\leq$ 0.068 — \textbf{near-random}
+      \item No strategy produces meaningful CWE-family clusters
+      \item Random slicing matches or beats guided approaches}
     \end{itemize}
   \end{column}
-  \begin{column}{0.32\textwidth}
-    {\scriptsize\textbf{\textcolor{c3}{Diff-based}}}
+  \begin{column}{0.48\textwidth}
+    {\scriptsize\textbf{\textcolor{warn}{Implication}}}
     \begin{itemize}\itemsep1pt
       {\scriptsize
-      \item More consistent across embedders
-      \item GIN benefits most from diff context}
-    \end{itemize}
-  \end{column}
-  \begin{column}{0.32\textwidth}
-    {\scriptsize\textbf{\textcolor{warn}{Random}}}
-    \begin{itemize}\itemsep1pt
-      {\scriptsize
-      \item Surprisingly competitive (CodeBERT)
-      \item Suggests code text dominates}
+      \item Neither graph structure nor token heuristics are sufficient
+      \item The embedding space does not separate CWE families
+      \item Slicing strategy is irrelevant if the embedder cannot discriminate}
     \end{itemize}
   \end{column}
   \end{columns}
@@ -752,19 +759,19 @@
 \begin{columns}[T]
 \begin{column}{0.50\textwidth}
 
-  \textbf{Goal}\\[3pt]
-  {\small Verify whether regex-based ``sink'' patterns (from \texttt{vuln\_pattern.py})
-  applied to Joern CPG nodes can locate the actual vulnerability site —
-  i.e., do the matched nodes overlap with the ground-truth changed lines?}
+  \textbf{Motivation}\\[3pt]
+  {\small The structural embeddings fail to discriminate CWE families
+  (NMI$\approx$0.02--0.15). One hypothesis: the slices include too many
+  irrelevant nodes. If we could identify the actual vulnerability
+  \emph{site} (the ``sink''), we could slice around it and produce
+  tighter, more discriminative subgraphs.}
 
-  \vspace{0.5em}
-  \textbf{Setup}
-  \begin{description}[\textbf{Patterns}]
-    \item[\textbf{N}] 100 entries (stratified by CWE)
-    \item[\textbf{Source}] \texttt{cvefixes\_filtered\_by\_cwe.json}
-    \item[\textbf{Patterns}] CWE-specific regex (free, deref, lock, arith, \ldots)
-    \item[\textbf{Metric}] Overlap: sink node code $\cap$ changed lines
-  \end{description}
+  \vspace{0.4em}
+  \textbf{Goal}\\[3pt]
+  {\small Test whether CWE-specific regex patterns can reliably
+  locate the vulnerable operation in the CPG. If yes, these become
+  anchors for a better slicing strategy.}
+
 
 \end{column}
 \begin{column}{0.47\textwidth}
@@ -786,6 +793,14 @@
     Others (12 CWEs) & 16 \\
     \bottomrule
   \end{tabular}}
+  
+  \vspace{0.4em}
+  \textbf{Setup}
+  \begin{description}[\textbf{Metric}]
+    \item[\textbf{N}] 100 entries (stratified by CWE)
+    \item[\textbf{Patterns}] CWE-specific regex (free, deref, lock, arith, \ldots)
+    \item[\textbf{Metric}] Hit rate: does any sink node overlap with the ground-truth fix?
+  \end{description}
 
   \vspace{0.3em}
   {\scriptsize Stratified proportional sampling, seed=42}
@@ -942,7 +957,7 @@
   \textbf{Protocol}
   \begin{description}[\textbf{Rank}]
     \item[\textbf{Label}] For each entry: find ALL sink nodes, label TRUE/FALSE by overlap with ground-truth fix
-    \item[\textbf{Embed}] Extract 2-hop subgraph around each sink, embed into 36-dim vector
+    \item[\textbf{Embed}] Extract 2-hop subgraph around each sink, embed via two approaches
     \item[\textbf{Rank}] Leave-one-out: score = max cosine similarity to KB of known-TRUE subgraphs
     \item[\textbf{Eval}] AUC-ROC: can this score separate TRUE from FALSE sinks?
   \end{description}
@@ -950,62 +965,60 @@
 \end{column}
 \begin{column}{0.47\textwidth}
 
-  {\small\textbf{Embedding: 36-dim Structural Vector}}\\[4pt]
+  {\small\textbf{Two Embedding Approaches}}\\[4pt]
   {\scriptsize
   \renewcommand{\arraystretch}{1.25}
   \begin{tabular}{p{2.5cm}p{2.8cm}}
     \toprule
-    \textbf{Feature Group} & \textbf{Dims} \\
+    \textbf{Embedder} & \textbf{Description} \\
     \midrule
-    Node-type histogram & 13 \\
-    Edge-type histogram & 8 \\
-    Code-pattern density & 10 \\
-    Structural stats & 5 \\
+    Structural (36d) & Node/edge-type histograms + code-pattern density + stats \\
     \midrule
-    \textbf{Total} & \textbf{36} \\
+    CodeBERT (768d) & Concatenate node code, encode with pretrained CodeBERT [CLS] \\
     \bottomrule
   \end{tabular}}
 
   \vspace{0.4em}
   {\scriptsize\textbf{Config:} k-hop=2, leave-one-out, 87 verified entries\\
   \textbf{Script:} \texttt{experiments/exp\_pattern\_matching.py}\\
-  \textbf{Seed:} 42 (same stratified subset)}
+  \textbf{Seed:} 42 (same stratified subset)\\
+  \textbf{Reproducible:} \texttt{EMBEDDER=\{structural\_36d, codebert\}}}
 
 \end{column}
 \end{columns}
 \end{frame}
 
 
-\begin{frame}{KB-Guided Sink Ranking: Results}
+\begin{frame}{KB-Guided Sink Ranking: Results (Structural vs.\ CodeBERT)}
 
   \centering
   \vspace{0.2em}
   \begin{columns}[T]
   \begin{column}{0.45\textwidth}
-    {\small\textbf{Overall Metrics}}\\[6pt]
+    {\small\textbf{Head-to-Head Comparison}}\\[6pt]
     {\scriptsize
     \renewcommand{\arraystretch}{1.3}
-    \begin{tabular}{lr}
+    \begin{tabular}{lrr}
       \toprule
-      \textbf{Metric} & \textbf{Value} \\
+      \textbf{Metric} & \textbf{Structural} & \textbf{CodeBERT} \\
       \midrule
-      Entries evaluated & 77 \\
-      Total sink candidates & 5,130 \\
-      TRUE sinks (actual vuln) & 682 (13.3\%) \\
-      FALSE sinks & 4,448 (86.7\%) \\
+      Embedding dim & 36 & 768 \\
       \midrule
-      Baseline precision & \cmiss{13.3\%} \\
+      Mean AUC-ROC & \cwarn{0.532} & \cmiss{0.502} \\
+      Mean Avg Precision & 0.288 & 0.213 \\
+      Precision@1 & 0.234 & 0.169 \\
+      Precision@3 & 0.189 & 0.167 \\
+      Precision@5 & 0.221 & 0.187 \\
       \midrule
-      Mean AUC-ROC & \cwarn{0.532} \\
-      Mean Avg Precision & 0.288 \\
-      Precision@1 & 0.234 \\
-      Precision@3 & 0.189 \\
-      Precision@5 & 0.221 \\
+      Baseline (random) & \multicolumn{2}{c}{0.133} \\
       \bottomrule
     \end{tabular}}
+
+    \vspace{0.5em}
+    {\scriptsize\textbf{Data:} 77 entries, 5,130 sink candidates\\682 TRUE (13.3\%) vs 4,448 FALSE (86.7\%)}
   \end{column}
   \begin{column}{0.50\textwidth}
-    {\small\textbf{Per-CWE AUC-ROC}}\\[6pt]
+    {\small\textbf{Per-CWE AUC-ROC (Structural)}}\\[6pt]
     {\scriptsize
     \renewcommand{\arraystretch}{1.3}
     \begin{tabular}{llr}
@@ -1024,6 +1037,9 @@
       \textcolor{miss}{\texttimes} & CWE-362 (Race Condition) & 0.456 \\
       \bottomrule
     \end{tabular}}
+
+    \vspace{0.3em}
+    {\scriptsize\textcolor{miss}{\faIcon{times-circle}} CodeBERT: \emph{all} CWEs at 0.500 (random)}
   \end{column}
   \end{columns}
 
@@ -1033,30 +1049,30 @@
 \begin{frame}{KB-Guided Sink Ranking: Key Findings}
   \begin{enumerate}
     \item[\textcolor{miss}{\faIcon{chart-bar}}]
-      \textbf{Overall AUC=0.532 $\approx$ random} — the lightweight 36-dim structural
-      embedding cannot reliably distinguish true vulnerability sinks from false positives
-      at the aggregate level.
-      \textit{Node/edge-type histograms lose too much topological information.}
+      \textbf{CodeBERT (AUC=0.502) performs \emph{worse} than structural (0.532)} —
+      768-dim semantic embeddings are perfectly random for within-function sink ranking.
+      \textit{True and false sinks in the same function share identical lexical context.}
 
     \vspace{0.3em}
     \item[\textcolor{hit}{\faIcon{lightbulb}}]
-      \textbf{Per-CWE signal exists for specific types} — CWE-252 (0.805),
-      CWE-190 (0.696), CWE-476 (0.618) show the KB \emph{can} help
-      when vulnerability patterns are structurally distinctive.
-      \textit{Not all CWEs are equally amenable to structural fingerprinting.}
+      \textbf{Structural embedding captures weak topological signal for some CWEs} —
+      CWE-252 (0.805), CWE-190 (0.696), CWE-476 (0.618) benefit from
+      distinct graph connectivity patterns around true sinks.
+      \textit{CodeBERT washes out this signal into bag-of-tokens similarity.}
 
     \vspace{0.3em}
-    \item[\textcolor{warn}{\faIcon{exclamation-triangle}}]
-      \textbf{Precision@1 improves from 13.3\% → 23.4\%} — the KB provides
-      some ranking value (+76\% relative gain), but absolute precision remains low.
-      \textit{Useful as a weak signal in an ensemble, not standalone.}
+    \item[\textcolor{c1}{\faIcon{exclamation-triangle}}]
+      \textbf{Fundamental architectural insight} — KB retrieval answers
+      ``does this code \emph{look like} known vulnerable code?'' but the real question is
+      ``is this node \emph{unprotected} in this function's control/data flow?''
+      \textit{This is a program-analysis question, not a similarity-search question.}
 
     \vspace{0.3em}
-    \item[\textcolor{c1}{\faIcon{arrow-right}}]
-      \textbf{Bottleneck: embedder lacks semantic code understanding} —
-      the discriminating signal likely lives in dataflow paths and identifier semantics,
-      not in type/edge distributions.
-      \textit{Next: replace with CodeBERT-based subgraph embedding.}
+    \item[\textcolor{c3}{\faIcon{arrow-right}}]
+      \textbf{Where KB retrieval \emph{can} help} — at the \emph{function level}
+      (identifying CWE family, retrieving similar vulnerability patterns),
+      not for within-function sink discrimination.
+      \textit{Sink ranking needs flow-sensitive analysis, not nearest-neighbour search.}
   \end{enumerate}
 \end{frame}
 
@@ -1097,8 +1113,8 @@
     Text classification & 27.5\% accuracy (5-class, random=20\%)
       & Text alone insufficient \\
     \midrule
-    KB-guided sink ranking & AUC=0.532 overall; P@1=23.4\% vs 13.3\% baseline
-      & Structural embedding too weak alone; needs CodeBERT \\
+    KB-guided sink ranking & Structural AUC=0.532; CodeBERT AUC=0.502 (random)
+      & Retrieval fails for within-function ranking; needs flow analysis \\
     \bottomrule
   \end{tabular}}
 
@@ -1107,26 +1123,26 @@
 
 \begin{frame}{Next Steps}
   \begin{enumerate}
-    \item[\textcolor{c1}{\faIcon{brain}}]
-      \textbf{CodeBERT-based KB ranking} — replace the 36-dim structural embedding with
-      CodeBERT encodings of sink-neighbourhood code sequences. The structural embedding
-      lacks semantic understanding; CodeBERT should capture identifier/dataflow semantics
-      that distinguish true sinks from false positives.
+    \item[\textcolor{c1}{\faIcon{project-diagram}}]
+      \textbf{Flow-sensitive sink scoring} — instead of KB similarity,
+      use reachability features along REACHING\_DEF/CDG edges: is the sink
+      on a taint path without a guard? Directly encodes the program-analysis insight.
 
     \vspace{0.4em}
     \item[\textcolor{c3}{\faIcon{expand-arrows-alt}}]
-      \textbf{Scale evaluation} — run retrieval experiments on full 1,618 CWE-filtered set
-      with larger index (1,000+) and query (200+) splits for statistical significance.
+      \textbf{Function-level KB retrieval} — use KB at the granularity where
+      it \emph{does} work: retrieve similar vulnerable functions from CVEfixes,
+      then apply sink-specific analysis within the retrieved context.
 
     \vspace{0.4em}
     \item[\textcolor{c5}{\faIcon{crosshairs}}]
       \textbf{Sink-guided slicing} — use verified CWE-aware sink patterns (87\% hit rate)
-      as the anchor for graph slicing. Slice from sink nodes outward along data/control flow.
+      as anchor for graph slicing. Slice from sink nodes outward along data/control flow.
 
     \vspace{0.4em}
     \item[\textcolor{hit}{\faIcon{search}}]
       \textbf{Cross-dataset retrieval} — use CVEfixes as KB and AutoPatch as queries
-      to evaluate real-world RAG performance.
+      to evaluate real-world RAG performance at the function level.
 
     \vspace{0.4em}
     \item[\textcolor{warn}{\faIcon{code}}]
