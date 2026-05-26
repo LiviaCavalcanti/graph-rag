@@ -1,0 +1,219 @@
+[
+  {
+    "example": 1,
+    "cve": "CVE-2024-22862",
+    "cwe": "CWE-190",
+    "func": "skip_boxes",
+    "before_nodes": 265,
+    "before_edges": 2452,
+    "after_nodes": 281,
+    "after_edges": 2642,
+    "vuln_slice_nodes": 231,
+    "vuln_slice_edges": 2195,
+    "diff_labels": {
+      "fix_adjacent": 154,
+      "context": 74,
+      "removed": 3
+    },
+    "ground_truth": {
+      "removed_lines": 1,
+      "added_lines": 1,
+      "total_changed": 2
+    },
+    "status": "success"
+  },
+  {
+    "example": 2,
+    "cve": "CVE-2020-12652",
+    "cwe": "CWE-362",
+    "func": "compat_mptfwxfer_ioctl",
+    "before_nodes": 7,
+    "before_edges": 11,
+    "after_nodes": 7,
+    "after_edges": 11,
+    "vuln_slice_nodes": 0,
+    "vuln_slice_edges": 0,
+    "diff_labels": {},
+    "ground_truth": {
+      "removed_lines": 1,
+      "added_lines": 1,
+      "total_changed": 2
+    },
+    "status": "success"
+  },
+  {
+    "example": 3,
+    "cve": "CVE-2018-8789",
+    "cwe": "CWE-125",
+    "func": "ntlm_print_negotiate_flags",
+    "before_nodes": 106,
+    "before_edges": 746,
+    "after_nodes": 107,
+    "after_edges": 748,
+    "vuln_slice_nodes": 38,
+    "vuln_slice_edges": 535,
+    "diff_labels": {
+      "fix_adjacent": 37,
+      "removed": 1
+    },
+    "ground_truth": {
+      "removed_lines": 1,
+      "added_lines": 1,
+      "total_changed": 2
+    },
+    "status": "success"
+  },
+  {
+    "example": 4,
+    "cve": "CVE-2016-7097",
+    "cwe": "CWE-285",
+    "func": "ext2_set_acl",
+    "before_nodes": 7,
+    "before_edges": 11,
+    "after_nodes": 7,
+    "after_edges": 11,
+    "vuln_slice_nodes": 0,
+    "vuln_slice_edges": 0,
+    "diff_labels": {},
+    "ground_truth": {
+      "removed_lines": 8,
+      "added_lines": 4,
+      "total_changed": 12
+    },
+    "status": "success"
+  },
+  {
+    "example": 5,
+    "cve": "CVE-2013-7271",
+    "cwe": "CWE-20",
+    "func": "bt_sock_recvmsg",
+    "before_nodes": 287,
+    "before_edges": 2576,
+    "after_nodes": 275,
+    "after_edges": 2400,
+    "vuln_slice_nodes": 145,
+    "vuln_slice_edges": 2139,
+    "diff_labels": {
+      "fix_adjacent": 68,
+      "removed": 77
+    },
+    "ground_truth": {
+      "removed_lines": 4,
+      "added_lines": 1,
+      "total_changed": 5
+    },
+    "status": "success"
+  },
+  {
+    "example": 6,
+    "cve": "CVE-2022-1974",
+    "cwe": "CWE-367",
+    "func": "nfc_dep_link_up",
+    "before_nodes": 264,
+    "before_edges": 2512,
+    "after_nodes": 256,
+    "after_edges": 2416,
+    "vuln_slice_nodes": 239,
+    "vuln_slice_edges": 2349,
+    "diff_labels": {
+      "fix_adjacent": 136,
+      "removed": 75,
+      "context": 28
+    },
+    "ground_truth": {
+      "removed_lines": 1,
+      "added_lines": 1,
+      "total_changed": 2
+    },
+    "status": "success"
+  },
+  {
+    "example": 7,
+    "cve": "CVE-2022-25375",
+    "cwe": "CWE-1284",
+    "func": "rndis_set_response",
+    "before_nodes": 194,
+    "before_edges": 1810,
+    "after_nodes": 231,
+    "after_edges": 2120,
+    "vuln_slice_nodes": 177,
+    "vuln_slice_edges": 1693,
+    "diff_labels": {
+      "fix_adjacent": 82,
+      "removed": 95
+    },
+    "ground_truth": {
+      "removed_lines": 0,
+      "added_lines": 3,
+      "total_changed": 3
+    },
+    "status": "success"
+  },
+  {
+    "example": 8,
+    "cve": "CVE-2019-19079",
+    "cwe": "CWE-401",
+    "func": "qrtr_tun_write_iter",
+    "before_nodes": 151,
+    "before_edges": 1162,
+    "after_nodes": 160,
+    "after_edges": 1242,
+    "vuln_slice_nodes": 135,
+    "vuln_slice_edges": 1022,
+    "diff_labels": {
+      "fix_adjacent": 112,
+      "removed": 23
+    },
+    "ground_truth": {
+      "removed_lines": 1,
+      "added_lines": 4,
+      "total_changed": 5
+    },
+    "status": "success"
+  },
+  {
+    "example": 9,
+    "cve": "CVE-2016-3841",
+    "cwe": "CWE-264",
+    "func": "inet6_sk_rebuild_header",
+    "before_nodes": 284,
+    "before_edges": 3014,
+    "after_nodes": 302,
+    "after_edges": 3100,
+    "vuln_slice_nodes": 259,
+    "vuln_slice_edges": 2749,
+    "diff_labels": {
+      "fix_adjacent": 209,
+      "removed": 50
+    },
+    "ground_truth": {
+      "removed_lines": 1,
+      "added_lines": 4,
+      "total_changed": 5
+    },
+    "status": "success"
+  },
+  {
+    "example": 10,
+    "cve": "CVE-2017-16939",
+    "cwe": "CWE-416",
+    "func": "xfrm_dump_policy",
+    "before_nodes": 202,
+    "before_edges": 1710,
+    "after_nodes": 121,
+    "after_edges": 1056,
+    "vuln_slice_nodes": 183,
+    "vuln_slice_edges": 1534,
+    "diff_labels": {
+      "fix_adjacent": 24,
+      "removed": 155,
+      "context": 4
+    },
+    "ground_truth": {
+      "removed_lines": 7,
+      "added_lines": 1,
+      "total_changed": 8
+    },
+    "status": "success"
+  }
+]

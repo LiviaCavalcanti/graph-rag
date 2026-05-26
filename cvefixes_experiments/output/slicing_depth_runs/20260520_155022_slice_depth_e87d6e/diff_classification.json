@@ -1,0 +1,115 @@
+{
+  "n_samples": 91,
+  "n_classes": 5,
+  "class_names": [
+    "integer_issues",
+    "memory_corruption",
+    "null_ptr_deref",
+    "race_condition",
+    "use_after_free"
+  ],
+  "classification": {
+    "accuracy": 0.2747,
+    "macro_f1": 0.2745,
+    "weighted_f1": 0.2709,
+    "per_class": {
+      "integer_issues": {
+        "precision": 0.4545,
+        "recall": 0.3125,
+        "f1": 0.3704,
+        "support": 16.0
+      },
+      "memory_corruption": {
+        "precision": 0.3125,
+        "recall": 0.3125,
+        "f1": 0.3125,
+        "support": 16.0
+      },
+      "null_ptr_deref": {
+        "precision": 0.1786,
+        "recall": 0.25,
+        "f1": 0.2083,
+        "support": 20.0
+      },
+      "race_condition": {
+        "precision": 0.3913,
+        "recall": 0.45,
+        "f1": 0.4186,
+        "support": 20.0
+      },
+      "use_after_free": {
+        "precision": 0.0769,
+        "recall": 0.0526,
+        "f1": 0.0625,
+        "support": 19.0
+      }
+    }
+  },
+  "clustering": {
+    "n_clusters": 5,
+    "adjusted_rand_index": 0.0268,
+    "homogeneity": 0.0869
+  },
+  "top_features": {
+    "integer_issues": [
+      "max_actions_bufsize",
+      "<",
+      "int",
+      "long",
+      "= sizeof",
+      "+ =",
+      "+",
+      "sma",
+      "u64",
+      "val"
+    ],
+    "memory_corruption": [
+      "maxlen",
+      ">=",
+      "einval",
+      "- einval",
+      "+ +",
+      "rc",
+      "str_len",
+      "> data",
+      "+",
+      "einval return"
+    ],
+    "null_ptr_deref": [
+      "> uar",
+      "dmn",
+      "uar",
+      "!=",
+      "more",
+      "flags &",
+      "||",
+      "mapping",
+      "ppmu",
+      "ret"
+    ],
+    "race_condition": [
+      "kfree",
+      "*",
+      "opt -",
+      "vcpu",
+      "name",
+      "> shutting_down",
+      "shutting_down",
+      "dev -",
+      "dev",
+      "opt"
+    ],
+    "use_after_free": [
+      "fence -",
+      "> error",
+      "fence",
+      "new_len",
+      "unregister_netdev",
+      "sp",
+      "sp -",
+      "unregister_netdev sp",
+      "out2",
+      "local"
+    ]
+  }
+}

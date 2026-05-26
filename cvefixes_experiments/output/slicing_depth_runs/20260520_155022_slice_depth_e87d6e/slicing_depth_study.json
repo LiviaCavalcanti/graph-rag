@@ -1,0 +1,786 @@
+{
+  "run_id": "20260520_155022_slice_depth_e87d6e",
+  "timestamp": "2026-05-20 17:57:20",
+  "config": {
+    "n_index_target": 74,
+    "n_query_target": 20,
+    "seed": 42,
+    "slice_configs": {
+      "depth_1": {
+        "depth": 1,
+        "weight_threshold": null
+      },
+      "depth_2": {
+        "depth": 2,
+        "weight_threshold": null
+      },
+      "depth_3": {
+        "depth": 3,
+        "weight_threshold": null
+      },
+      "changed_only": {
+        "depth": 0,
+        "weight_threshold": 0.3
+      },
+      "removed_only": {
+        "depth": 0,
+        "weight_threshold": 0.9
+      },
+      "tight_1hop": {
+        "depth": 1,
+        "weight_threshold": 0.5
+      }
+    },
+    "embedders": [
+      "gin",
+      "combined",
+      "codebert_pattern"
+    ]
+  },
+  "results": [
+    {
+      "slice_config": "depth_1",
+      "slice_depth": 1,
+      "weight_threshold": null,
+      "embedder": "gin",
+      "hit@1": 0.0,
+      "hit@5": 0.0588,
+      "hit@10": 0.0588,
+      "mrr": 0.0196,
+      "cve_precision": 0.0588,
+      "cve_recall": 0.0441,
+      "cve_f1": 0.0504,
+      "cwe_recall": 0.2383,
+      "effective_dim": 7.8,
+      "mean_pairwise_sim": 0.9942,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 0.2,
+      "slice_stats": {
+        "mean_slice_nodes": 168.1,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.732,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 631
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "depth_1",
+      "slice_depth": 1,
+      "weight_threshold": null,
+      "embedder": "combined",
+      "hit@1": 0.1176,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.1176,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.1029,
+      "cve_f1": 0.1092,
+      "cwe_recall": 0.2367,
+      "effective_dim": 4.4,
+      "mean_pairwise_sim": 0.0472,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 5.2,
+      "slice_stats": {
+        "mean_slice_nodes": 168.1,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.732,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 631
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "depth_1",
+      "slice_depth": 1,
+      "weight_threshold": null,
+      "embedder": "codebert_pattern",
+      "hit@1": 0.1176,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.1176,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.1029,
+      "cve_f1": 0.1092,
+      "cwe_recall": 0.2367,
+      "effective_dim": 15.4,
+      "mean_pairwise_sim": -0.0071,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 6.6,
+      "slice_stats": {
+        "mean_slice_nodes": 168.1,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.732,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 631
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "depth_2",
+      "slice_depth": 2,
+      "weight_threshold": null,
+      "embedder": "gin",
+      "hit@1": 0.0,
+      "hit@5": 0.0588,
+      "hit@10": 0.0588,
+      "mrr": 0.0196,
+      "cve_precision": 0.0588,
+      "cve_recall": 0.0441,
+      "cve_f1": 0.0504,
+      "cwe_recall": 0.2317,
+      "effective_dim": 7.8,
+      "mean_pairwise_sim": 0.9942,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 0.2,
+      "slice_stats": {
+        "mean_slice_nodes": 171.0,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.744,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 894
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "depth_2",
+      "slice_depth": 2,
+      "weight_threshold": null,
+      "embedder": "combined",
+      "hit@1": 0.0588,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.0882,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.0882,
+      "cve_f1": 0.098,
+      "cwe_recall": 0.2417,
+      "effective_dim": 4.1,
+      "mean_pairwise_sim": 0.0569,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 4.5,
+      "slice_stats": {
+        "mean_slice_nodes": 171.0,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.744,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 894
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "depth_2",
+      "slice_depth": 2,
+      "weight_threshold": null,
+      "embedder": "codebert_pattern",
+      "hit@1": 0.1176,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.1176,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.1029,
+      "cve_f1": 0.1092,
+      "cwe_recall": 0.2367,
+      "effective_dim": 15.5,
+      "mean_pairwise_sim": -0.0071,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 4.0,
+      "slice_stats": {
+        "mean_slice_nodes": 171.0,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.744,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 894
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "depth_3",
+      "slice_depth": 3,
+      "weight_threshold": null,
+      "embedder": "gin",
+      "hit@1": 0.0,
+      "hit@5": 0.0588,
+      "hit@10": 0.0588,
+      "mrr": 0.0196,
+      "cve_precision": 0.0588,
+      "cve_recall": 0.0441,
+      "cve_f1": 0.0504,
+      "cwe_recall": 0.2317,
+      "effective_dim": 7.8,
+      "mean_pairwise_sim": 0.9942,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 0.2,
+      "slice_stats": {
+        "mean_slice_nodes": 171.0,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.744,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 894
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "depth_3",
+      "slice_depth": 3,
+      "weight_threshold": null,
+      "embedder": "combined",
+      "hit@1": 0.0588,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.0882,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.0882,
+      "cve_f1": 0.098,
+      "cwe_recall": 0.2417,
+      "effective_dim": 4.1,
+      "mean_pairwise_sim": 0.0569,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 4.5,
+      "slice_stats": {
+        "mean_slice_nodes": 171.0,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.744,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 894
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "depth_3",
+      "slice_depth": 3,
+      "weight_threshold": null,
+      "embedder": "codebert_pattern",
+      "hit@1": 0.1176,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.1176,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.1029,
+      "cve_f1": 0.1092,
+      "cwe_recall": 0.2367,
+      "effective_dim": 15.5,
+      "mean_pairwise_sim": -0.0071,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 4.0,
+      "slice_stats": {
+        "mean_slice_nodes": 171.0,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.744,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 894
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "changed_only",
+      "slice_depth": 0,
+      "weight_threshold": 0.3,
+      "embedder": "gin",
+      "hit@1": 0.0588,
+      "hit@5": 0.0588,
+      "hit@10": 0.0588,
+      "mrr": 0.0588,
+      "cve_precision": 0.0588,
+      "cve_recall": 0.0294,
+      "cve_f1": 0.0392,
+      "cwe_recall": 0.225,
+      "effective_dim": 8.0,
+      "mean_pairwise_sim": 0.9942,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 0.2,
+      "slice_stats": {
+        "mean_slice_nodes": 161.3,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.708,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "changed_only",
+      "slice_depth": 0,
+      "weight_threshold": 0.3,
+      "embedder": "combined",
+      "hit@1": 0.1176,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.1176,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.0735,
+      "cve_f1": 0.0824,
+      "cwe_recall": 0.2267,
+      "effective_dim": 4.4,
+      "mean_pairwise_sim": 0.045,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 3.5,
+      "slice_stats": {
+        "mean_slice_nodes": 161.3,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.708,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "changed_only",
+      "slice_depth": 0,
+      "weight_threshold": 0.3,
+      "embedder": "codebert_pattern",
+      "hit@1": 0.1176,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.1176,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.1029,
+      "cve_f1": 0.1092,
+      "cwe_recall": 0.255,
+      "effective_dim": 15.0,
+      "mean_pairwise_sim": -0.006,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 4.0,
+      "slice_stats": {
+        "mean_slice_nodes": 161.3,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.708,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "removed_only",
+      "slice_depth": 0,
+      "weight_threshold": 0.9,
+      "embedder": "gin",
+      "hit@1": 0.0588,
+      "hit@5": 0.0588,
+      "hit@10": 0.0588,
+      "mrr": 0.0588,
+      "cve_precision": 0.0588,
+      "cve_recall": 0.0441,
+      "cve_f1": 0.0504,
+      "cwe_recall": 0.1917,
+      "effective_dim": 2.2,
+      "mean_pairwise_sim": 0.9324,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 0.1,
+      "slice_stats": {
+        "mean_slice_nodes": 62.5,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.26,
+        "diff_distribution": {
+          "removed": 5747
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "removed_only",
+      "slice_depth": 0,
+      "weight_threshold": 0.9,
+      "embedder": "combined",
+      "hit@1": 0.1176,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.1176,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.1029,
+      "cve_f1": 0.1092,
+      "cwe_recall": 0.15,
+      "effective_dim": 13.3,
+      "mean_pairwise_sim": -0.0113,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 1.2,
+      "slice_stats": {
+        "mean_slice_nodes": 62.5,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.26,
+        "diff_distribution": {
+          "removed": 5747
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "removed_only",
+      "slice_depth": 0,
+      "weight_threshold": 0.9,
+      "embedder": "codebert_pattern",
+      "hit@1": 0.1176,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.1176,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.1029,
+      "cve_f1": 0.1092,
+      "cwe_recall": 0.175,
+      "effective_dim": 11.3,
+      "mean_pairwise_sim": 0.0054,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 3.6,
+      "slice_stats": {
+        "mean_slice_nodes": 62.5,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.26,
+        "diff_distribution": {
+          "removed": 5747
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "tight_1hop",
+      "slice_depth": 1,
+      "weight_threshold": 0.5,
+      "embedder": "gin",
+      "hit@1": 0.0588,
+      "hit@5": 0.0588,
+      "hit@10": 0.0588,
+      "mrr": 0.0588,
+      "cve_precision": 0.0588,
+      "cve_recall": 0.0294,
+      "cve_f1": 0.0392,
+      "cwe_recall": 0.225,
+      "effective_dim": 8.0,
+      "mean_pairwise_sim": 0.9942,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 0.2,
+      "slice_stats": {
+        "mean_slice_nodes": 161.3,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.708,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "tight_1hop",
+      "slice_depth": 1,
+      "weight_threshold": 0.5,
+      "embedder": "combined",
+      "hit@1": 0.1176,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.1176,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.0735,
+      "cve_f1": 0.0824,
+      "cwe_recall": 0.2267,
+      "effective_dim": 4.4,
+      "mean_pairwise_sim": 0.045,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 3.9,
+      "slice_stats": {
+        "mean_slice_nodes": 161.3,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.708,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "tight_1hop",
+      "slice_depth": 1,
+      "weight_threshold": 0.5,
+      "embedder": "codebert_pattern",
+      "hit@1": 0.1176,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.1176,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.1029,
+      "cve_f1": 0.1092,
+      "cwe_recall": 0.26,
+      "effective_dim": 15.0,
+      "mean_pairwise_sim": -0.006,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 4.0,
+      "slice_stats": {
+        "mean_slice_nodes": 161.3,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.708,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747
+        },
+        "n_pairs_valid": 92
+      }
+    }
+  ],
+  "diff_classification": {
+    "n_samples": 91,
+    "n_classes": 5,
+    "class_names": [
+      "integer_issues",
+      "memory_corruption",
+      "null_ptr_deref",
+      "race_condition",
+      "use_after_free"
+    ],
+    "classification": {
+      "accuracy": 0.2747,
+      "macro_f1": 0.2745,
+      "weighted_f1": 0.2709,
+      "per_class": {
+        "integer_issues": {
+          "precision": 0.4545,
+          "recall": 0.3125,
+          "f1": 0.3704,
+          "support": 16.0
+        },
+        "memory_corruption": {
+          "precision": 0.3125,
+          "recall": 0.3125,
+          "f1": 0.3125,
+          "support": 16.0
+        },
+        "null_ptr_deref": {
+          "precision": 0.1786,
+          "recall": 0.25,
+          "f1": 0.2083,
+          "support": 20.0
+        },
+        "race_condition": {
+          "precision": 0.3913,
+          "recall": 0.45,
+          "f1": 0.4186,
+          "support": 20.0
+        },
+        "use_after_free": {
+          "precision": 0.0769,
+          "recall": 0.0526,
+          "f1": 0.0625,
+          "support": 19.0
+        }
+      }
+    },
+    "clustering": {
+      "n_clusters": 5,
+      "adjusted_rand_index": 0.0268,
+      "homogeneity": 0.0869
+    },
+    "top_features": {
+      "integer_issues": [
+        "max_actions_bufsize",
+        "<",
+        "int",
+        "long",
+        "= sizeof",
+        "+ =",
+        "+",
+        "sma",
+        "u64",
+        "val"
+      ],
+      "memory_corruption": [
+        "maxlen",
+        ">=",
+        "einval",
+        "- einval",
+        "+ +",
+        "rc",
+        "str_len",
+        "> data",
+        "+",
+        "einval return"
+      ],
+      "null_ptr_deref": [
+        "> uar",
+        "dmn",
+        "uar",
+        "!=",
+        "more",
+        "flags &",
+        "||",
+        "mapping",
+        "ppmu",
+        "ret"
+      ],
+      "race_condition": [
+        "kfree",
+        "*",
+        "opt -",
+        "vcpu",
+        "name",
+        "> shutting_down",
+        "shutting_down",
+        "dev -",
+        "dev",
+        "opt"
+      ],
+      "use_after_free": [
+        "fence -",
+        "> error",
+        "fence",
+        "new_len",
+        "unregister_netdev",
+        "sp",
+        "sp -",
+        "unregister_netdev sp",
+        "out2",
+        "local"
+      ]
+    }
+  },
+  "token_guided_slicing": {
+    "token_hit_rate": 1.0,
+    "n_total": 94,
+    "strategy_counts": {
+      "token_guided": 94,
+      "diff_based": 92,
+      "random": 70
+    },
+    "clustering_results": [
+      {
+        "strategy": "token_guided",
+        "embedder": "gin",
+        "n_samples": 94,
+        "n_clusters": 5,
+        "mean_slice_nodes": 105.7,
+        "ari": 0.0153,
+        "homogeneity": 0.0636,
+        "nmi": 0.071
+      },
+      {
+        "strategy": "token_guided",
+        "embedder": "combined",
+        "n_samples": 94,
+        "n_clusters": 5,
+        "mean_slice_nodes": 105.7,
+        "ari": -0.017,
+        "homogeneity": 0.0327,
+        "nmi": 0.0328
+      },
+      {
+        "strategy": "token_guided",
+        "embedder": "codebert_pattern",
+        "n_samples": 94,
+        "n_clusters": 5,
+        "mean_slice_nodes": 105.7,
+        "ari": 0.0236,
+        "homogeneity": 0.0932,
+        "nmi": 0.0936
+      },
+      {
+        "strategy": "diff_based",
+        "embedder": "gin",
+        "n_samples": 92,
+        "n_clusters": 5,
+        "mean_slice_nodes": 171.0,
+        "ari": 0.0294,
+        "homogeneity": 0.1082,
+        "nmi": 0.1114
+      },
+      {
+        "strategy": "diff_based",
+        "embedder": "combined",
+        "n_samples": 92,
+        "n_clusters": 5,
+        "mean_slice_nodes": 171.0,
+        "ari": 0.0346,
+        "homogeneity": 0.1088,
+        "nmi": 0.1244
+      },
+      {
+        "strategy": "diff_based",
+        "embedder": "codebert_pattern",
+        "n_samples": 92,
+        "n_clusters": 5,
+        "mean_slice_nodes": 171.0,
+        "ari": 0.0113,
+        "homogeneity": 0.0894,
+        "nmi": 0.0899
+      },
+      {
+        "strategy": "random",
+        "embedder": "gin",
+        "n_samples": 70,
+        "n_clusters": 5,
+        "mean_slice_nodes": 64.7,
+        "ari": -0.0113,
+        "homogeneity": 0.0729,
+        "nmi": 0.0797
+      },
+      {
+        "strategy": "random",
+        "embedder": "combined",
+        "n_samples": 70,
+        "n_clusters": 5,
+        "mean_slice_nodes": 64.7,
+        "ari": -0.0203,
+        "homogeneity": 0.0524,
+        "nmi": 0.0534
+      },
+      {
+        "strategy": "random",
+        "embedder": "codebert_pattern",
+        "n_samples": 70,
+        "n_clusters": 5,
+        "mean_slice_nodes": 64.7,
+        "ari": 0.0226,
+        "homogeneity": 0.1158,
+        "nmi": 0.1276
+      }
+    ]
+  }
+}
