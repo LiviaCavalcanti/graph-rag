@@ -17,24 +17,29 @@ from .pipeline import compute_graph_diff, cpg_dir_for, load_cpg_dir
 
 _QUERY_METHODS = """\
 SELECT
-    m.method_change_id,
-    m.name AS func_name,
-    m.code AS code_after,
-    m.before_change AS code_before,
+    m_after.method_change_id,
+    m_after.name AS func_name,
+    m_after.code AS code_after,
+    m_before.code AS code_before,
     f.programming_language,
     cv.cve_id,
     cc.cwe_id,
     f.filename,
     c.repo_url
-FROM method_change m
-JOIN file_change f ON m.file_change_id = f.file_change_id
+FROM method_change m_after
+JOIN method_change m_before
+    ON m_before.file_change_id = m_after.file_change_id
+    AND m_before.name = m_after.name
+    AND m_before.before_change = 'True'
+JOIN file_change f ON m_after.file_change_id = f.file_change_id
 JOIN commits c ON f.hash = c.hash
 JOIN fixes fx ON c.hash = fx.hash
 JOIN cve cv ON fx.cve_id = cv.cve_id
 LEFT JOIN cwe_classification cc ON cv.cve_id = cc.cve_id
-WHERE f.programming_language IN ({lang_placeholders})
-  AND m.before_change IS NOT NULL AND m.before_change != ''
-  AND m.code IS NOT NULL AND m.code != ''
+WHERE m_after.before_change = 'False'
+  AND f.programming_language IN ({lang_placeholders})
+  AND m_before.code IS NOT NULL AND m_before.code != ''
+  AND m_after.code IS NOT NULL AND m_after.code != ''
 """
 
 
