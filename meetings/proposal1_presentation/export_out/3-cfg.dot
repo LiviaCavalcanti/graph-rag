@@ -1,0 +1,6 @@
+digraph "sock_init" {  
+node [shape="rect"];  
+"107374182403" [label = <METHOD, 8<BR/>sock_init> ]
+"124554051587" [label = <METHOD_RETURN, 8<BR/>void> ]
+  "107374182403" -> "124554051587" 
+}

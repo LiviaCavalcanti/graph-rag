@@ -1,0 +1,52 @@
+digraph "alloc_socket — CPG (CVE-2024-56605)" {
+  rankdir=TB;
+  fontname="Courier";
+  node [shape="box", fontname="Courier", fontsize=10, style="filled"];
+  edge [fontname="Courier", fontsize=9];
+
+  // --- Nodes ---
+  entry [label="ENTRY\nalloc_socket(sock)", fillcolor="#e8e8e8"];
+  alloc [label="[L14] sk = sk_alloc()", fillcolor="#d4edda"];
+  check_sk [label="[L15] if (!sk)", fillcolor="#fff3cd"];
+  ret_null1 [label="[L15] return NULL", fillcolor="#f8d7da"];
+  assign_alias [label="[L17] sock->sk = sk", fillcolor="#d4edda", penwidth=2, color="red"];
+  alloc_ch [label="[L19] ch = chan_create()", fillcolor="#d4edda"];
+  check_ch [label="[L20] if (!ch)", fillcolor="#fff3cd"];
+  free_sk [label="[L21] sk_free(sk)", fillcolor="#f8d7da", penwidth=2, color="red"];
+  ret_null2 [label="[L22] return NULL\n⚠ sock->sk DANGLING", fillcolor="#f5c6cb", penwidth=2, color="red"];
+  ret_sk [label="[L24] return sk", fillcolor="#d4edda"];
+  exit [label="METHOD_RETURN", fillcolor="#e8e8e8"];
+
+  // --- CFG edges (black, solid) ---
+  entry -> alloc [label="CFG", color="black"];
+  alloc -> check_sk [label="CFG", color="black"];
+  check_sk -> ret_null1 [label="CFG (true)", color="black", style="dashed"];
+  check_sk -> assign_alias [label="CFG (false)", color="black"];
+  assign_alias -> alloc_ch [label="CFG", color="black"];
+  alloc_ch -> check_ch [label="CFG", color="black"];
+  check_ch -> free_sk [label="CFG (true)", color="black", style="dashed"];
+  check_ch -> ret_sk [label="CFG (false)", color="black"];
+  free_sk -> ret_null2 [label="CFG", color="black"];
+  ret_null1 -> exit [label="CFG", color="black"];
+  ret_null2 -> exit [label="CFG", color="black"];
+  ret_sk -> exit [label="CFG", color="black"];
+
+  // --- DDG edges (blue, showing data flow of 'sk') ---
+  alloc -> check_sk [label="DDG: sk", color="blue", style="bold", constraint=false];
+  alloc -> assign_alias [label="DDG: sk", color="blue", style="bold", constraint=false];
+  alloc -> free_sk [label="DDG: sk", color="blue", style="bold", constraint=false];
+  alloc -> ret_sk [label="DDG: sk", color="blue", style="bold", constraint=false];
+
+  // --- The vulnerability pattern (red, dashed) ---
+  assign_alias -> ret_null2 [label="ALIAS: sock->sk\n(not nullified!)", color="red", style="dashed", constraint=false, penwidth=2];
+
+  // --- Legend ---
+  subgraph cluster_legend {
+    label="Legend";
+    style="dashed";
+    fontsize=9;
+    l1 [label="→ CFG edge", shape=none, fillcolor=white];
+    l2 [label="→ DDG edge (data dep.)", shape=none, fillcolor=white, fontcolor="blue"];
+    l3 [label="→ Missing nullification", shape=none, fillcolor=white, fontcolor="red"];
+  }
+}

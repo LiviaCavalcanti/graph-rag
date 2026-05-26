@@ -1,0 +1,8 @@
+digraph "&lt;global&gt;" {  
+node [shape="rect"];  
+"107374182400" [label = <METHOD, 1<BR/>&lt;global&gt;> ]
+"176093659136" [label = <TYPE_REF, 2<BR/>struct socket { struct sock *sk; }> ]
+"120259084288" [label = <METHOD_REF, 10<BR/>alloc_socket<BR/>&lt;empty&gt;> ]
+  "107374182400" -> "176093659136" 
+  "107374182400" -> "120259084288" 
+}
