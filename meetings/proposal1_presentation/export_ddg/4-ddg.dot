@@ -1,0 +1,8 @@
+digraph "sk_free" {  
+node [shape="rect"];  
+"107374182404" [label = <METHOD, 6<BR/>sk_free> ]
+"124554051588" [label = <METHOD_RETURN, 6<BR/>void> ]
+"111669149699" [label = <PARAM, 6<BR/>struct sock *sk> ]
+  "111669149699" -> "124554051588"  [ label = "sk"] 
+  "107374182404" -> "111669149699" 
+}

@@ -1,0 +1,55 @@
+digraph "alloc_socket" {  
+node [shape="rect"];  
+"107374182401" [label = <METHOD, 10<BR/>alloc_socket> ]
+"124554051584" [label = <METHOD_RETURN, 10<BR/>sock> ]
+"111669149696" [label = <PARAM, 10<BR/>struct socket *sock> ]
+"30064771072" [label = <&lt;operator&gt;.assignment, 14<BR/>sk = sk_alloc()> ]
+"30064771075" [label = <&lt;operator&gt;.assignment, 17<BR/>sock-&gt;sk = sk> ]
+"30064771077" [label = <&lt;operator&gt;.assignment, 19<BR/>ch = chan_create()> ]
+"141733920770" [label = <RETURN, 24<BR/>return sk;> ]
+"30064771072" [label = <&lt;operator&gt;.assignment, 14<BR/>sk = sk_alloc()> ]
+"30064771072" [label = <&lt;operator&gt;.assignment, 14<BR/>sk = sk_alloc()> ]
+"30064771074" [label = <&lt;operator&gt;.logicalNot, 15<BR/>!sk> ]
+"30064771075" [label = <&lt;operator&gt;.assignment, 17<BR/>sock-&gt;sk = sk> ]
+"30064771075" [label = <&lt;operator&gt;.assignment, 17<BR/>sock-&gt;sk = sk> ]
+"30064771077" [label = <&lt;operator&gt;.assignment, 19<BR/>ch = chan_create()> ]
+"30064771077" [label = <&lt;operator&gt;.assignment, 19<BR/>ch = chan_create()> ]
+"30064771079" [label = <&lt;operator&gt;.logicalNot, 20<BR/>!ch> ]
+"68719476745" [label = <IDENTIFIER, 24<BR/>sk<BR/>return sk;> ]
+"30064771074" [label = <&lt;operator&gt;.logicalNot, 15<BR/>!sk> ]
+"141733920768" [label = <RETURN, 15<BR/>return NULL;> ]
+"30064771079" [label = <&lt;operator&gt;.logicalNot, 20<BR/>!ch> ]
+"30064771080" [label = <sk_free, 21<BR/>sk_free(sk)> ]
+"141733920769" [label = <RETURN, 22<BR/>return NULL;> ]
+"68719476738" [label = <IDENTIFIER, 15<BR/>&lt;unknown&gt; NULL<BR/>return NULL;> ]
+"30064771080" [label = <sk_free, 21<BR/>sk_free(sk)> ]
+"68719476744" [label = <IDENTIFIER, 22<BR/>&lt;unknown&gt; NULL<BR/>return NULL;> ]
+  "141733920768" -> "124554051584"  [ label = "&lt;RET&gt;"] 
+  "141733920770" -> "124554051584"  [ label = "&lt;RET&gt;"] 
+  "141733920769" -> "124554051584"  [ label = "&lt;RET&gt;"] 
+  "111669149696" -> "124554051584"  [ label = "sock"] 
+  "30064771072" -> "124554051584"  [ label = "sk_alloc()"] 
+  "30064771072" -> "124554051584"  [ label = "sk = sk_alloc()"] 
+  "30064771074" -> "124554051584"  [ label = "sk"] 
+  "30064771074" -> "124554051584"  [ label = "!sk"] 
+  "107374182401" -> "111669149696" 
+  "107374182401" -> "30064771072" 
+  "30064771074" -> "30064771075"  [ label = "sk"] 
+  "107374182401" -> "30064771075" 
+  "107374182401" -> "30064771077" 
+  "68719476745" -> "141733920770"  [ label = "sk"] 
+  "107374182401" -> "68719476745" 
+  "30064771074" -> "68719476745"  [ label = "sk"] 
+  "30064771072" -> "30064771074"  [ label = "sk"] 
+  "107374182401" -> "30064771074" 
+  "68719476738" -> "141733920768"  [ label = "&lt;unknown&gt; NULL"] 
+  "107374182401" -> "141733920768" 
+  "30064771077" -> "30064771079"  [ label = "ch"] 
+  "107374182401" -> "30064771079" 
+  "68719476744" -> "141733920769"  [ label = "&lt;unknown&gt; NULL"] 
+  "107374182401" -> "141733920769" 
+  "107374182401" -> "68719476738" 
+  "107374182401" -> "30064771080" 
+  "30064771074" -> "30064771080"  [ label = "sk"] 
+  "107374182401" -> "68719476744" 
+}
