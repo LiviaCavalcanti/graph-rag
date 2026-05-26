@@ -1,0 +1,312 @@
+{
+  "run_id": "20260520_122208_slice_depth_ce85a8",
+  "timestamp": "2026-05-20 14:30:50",
+  "config": {
+    "n_index_target": 74,
+    "n_query_target": 20,
+    "seed": 42,
+    "slice_configs": {
+      "depth_1": {
+        "depth": 1,
+        "weight_threshold": null
+      },
+      "depth_2": {
+        "depth": 2,
+        "weight_threshold": null
+      },
+      "depth_3": {
+        "depth": 3,
+        "weight_threshold": null
+      },
+      "changed_only": {
+        "depth": 0,
+        "weight_threshold": 0.3
+      }
+    },
+    "embedders": [
+      "gin",
+      "combined",
+      "codebert_pattern"
+    ]
+  },
+  "results": [
+    {
+      "slice_config": "depth_1",
+      "slice_depth": 1,
+      "weight_threshold": null,
+      "embedder": "gin",
+      "hit@1": 0.0,
+      "hit@5": 0.0588,
+      "hit@10": 0.0588,
+      "mrr": 0.0196,
+      "cve_precision": 0.0588,
+      "cve_recall": 0.0441,
+      "cve_f1": 0.0504,
+      "cwe_recall": 0.2383,
+      "effective_dim": 7.8,
+      "mean_pairwise_sim": 0.9942,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 0.2,
+      "slice_stats": {
+        "mean_slice_nodes": 168.1,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.732,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 631
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "depth_1",
+      "embedder": "combined",
+      "error": "n_components=128 must be between 0 and min(n_samples, n_features)=75 with svd_solver='full'",
+      "hit@1": 0,
+      "hit@5": 0,
+      "hit@10": 0,
+      "mrr": 0,
+      "cwe_recall": 0
+    },
+    {
+      "slice_config": "depth_1",
+      "slice_depth": 1,
+      "weight_threshold": null,
+      "embedder": "codebert_pattern",
+      "hit@1": 0.1176,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.1176,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.1029,
+      "cve_f1": 0.1092,
+      "cwe_recall": 0.2417,
+      "effective_dim": 15.5,
+      "mean_pairwise_sim": -0.0071,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 6.3,
+      "slice_stats": {
+        "mean_slice_nodes": 168.1,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.732,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 631
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "depth_2",
+      "slice_depth": 2,
+      "weight_threshold": null,
+      "embedder": "gin",
+      "hit@1": 0.0,
+      "hit@5": 0.0588,
+      "hit@10": 0.0588,
+      "mrr": 0.0196,
+      "cve_precision": 0.0588,
+      "cve_recall": 0.0441,
+      "cve_f1": 0.0504,
+      "cwe_recall": 0.2317,
+      "effective_dim": 7.8,
+      "mean_pairwise_sim": 0.9942,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 0.2,
+      "slice_stats": {
+        "mean_slice_nodes": 171.0,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.744,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 894
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "depth_2",
+      "embedder": "combined",
+      "error": "n_components=128 must be between 0 and min(n_samples, n_features)=75 with svd_solver='full'",
+      "hit@1": 0,
+      "hit@5": 0,
+      "hit@10": 0,
+      "mrr": 0,
+      "cwe_recall": 0
+    },
+    {
+      "slice_config": "depth_2",
+      "slice_depth": 2,
+      "weight_threshold": null,
+      "embedder": "codebert_pattern",
+      "hit@1": 0.1176,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.1176,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.1029,
+      "cve_f1": 0.1092,
+      "cwe_recall": 0.2367,
+      "effective_dim": 15.5,
+      "mean_pairwise_sim": -0.0071,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 3.8,
+      "slice_stats": {
+        "mean_slice_nodes": 171.0,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.744,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 894
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "depth_3",
+      "slice_depth": 3,
+      "weight_threshold": null,
+      "embedder": "gin",
+      "hit@1": 0.0,
+      "hit@5": 0.0588,
+      "hit@10": 0.0588,
+      "mrr": 0.0196,
+      "cve_precision": 0.0588,
+      "cve_recall": 0.0441,
+      "cve_f1": 0.0504,
+      "cwe_recall": 0.2317,
+      "effective_dim": 7.8,
+      "mean_pairwise_sim": 0.9942,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 0.2,
+      "slice_stats": {
+        "mean_slice_nodes": 171.0,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.744,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 894
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "depth_3",
+      "embedder": "combined",
+      "error": "n_components=128 must be between 0 and min(n_samples, n_features)=75 with svd_solver='full'",
+      "hit@1": 0,
+      "hit@5": 0,
+      "hit@10": 0,
+      "mrr": 0,
+      "cwe_recall": 0
+    },
+    {
+      "slice_config": "depth_3",
+      "slice_depth": 3,
+      "weight_threshold": null,
+      "embedder": "codebert_pattern",
+      "hit@1": 0.1176,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.1176,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.1029,
+      "cve_f1": 0.1092,
+      "cwe_recall": 0.2367,
+      "effective_dim": 15.5,
+      "mean_pairwise_sim": -0.0071,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 3.7,
+      "slice_stats": {
+        "mean_slice_nodes": 171.0,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.744,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747,
+          "context": 894
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "changed_only",
+      "slice_depth": 0,
+      "weight_threshold": 0.3,
+      "embedder": "gin",
+      "hit@1": 0.0588,
+      "hit@5": 0.0588,
+      "hit@10": 0.0588,
+      "mrr": 0.0588,
+      "cve_precision": 0.0588,
+      "cve_recall": 0.0294,
+      "cve_f1": 0.0392,
+      "cwe_recall": 0.225,
+      "effective_dim": 8.0,
+      "mean_pairwise_sim": 0.9942,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 0.1,
+      "slice_stats": {
+        "mean_slice_nodes": 161.3,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.708,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747
+        },
+        "n_pairs_valid": 92
+      }
+    },
+    {
+      "slice_config": "changed_only",
+      "embedder": "combined",
+      "error": "n_components=128 must be between 0 and min(n_samples, n_features)=75 with svd_solver='full'",
+      "hit@1": 0,
+      "hit@5": 0,
+      "hit@10": 0,
+      "mrr": 0,
+      "cwe_recall": 0
+    },
+    {
+      "slice_config": "changed_only",
+      "slice_depth": 0,
+      "weight_threshold": 0.3,
+      "embedder": "codebert_pattern",
+      "hit@1": 0.1176,
+      "hit@5": 0.1176,
+      "hit@10": 0.1176,
+      "mrr": 0.1176,
+      "cve_precision": 0.1176,
+      "cve_recall": 0.1029,
+      "cve_f1": 0.1092,
+      "cwe_recall": 0.255,
+      "effective_dim": 15.0,
+      "mean_pairwise_sim": -0.006,
+      "n_index": 75,
+      "n_query": 17,
+      "embed_time_s": 4.9,
+      "slice_stats": {
+        "mean_slice_nodes": 161.3,
+        "mean_before_nodes": 228.5,
+        "mean_slice_ratio": 0.708,
+        "diff_distribution": {
+          "fix_adjacent": 9090,
+          "removed": 5747
+        },
+        "n_pairs_valid": 92
+      }
+    }
+  ]
+}

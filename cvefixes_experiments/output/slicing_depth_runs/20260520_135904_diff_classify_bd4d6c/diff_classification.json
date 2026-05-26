@@ -1,0 +1,115 @@
+{
+  "n_samples": 356,
+  "n_classes": 5,
+  "class_names": [
+    "integer_issues",
+    "memory_corruption",
+    "null_ptr_deref",
+    "race_condition",
+    "use_after_free"
+  ],
+  "classification": {
+    "accuracy": 0.6404,
+    "macro_f1": 0.6394,
+    "weighted_f1": 0.6408,
+    "per_class": {
+      "integer_issues": {
+        "precision": 0.6415,
+        "recall": 0.5862,
+        "f1": 0.6126,
+        "support": 58.0
+      },
+      "memory_corruption": {
+        "precision": 0.5875,
+        "recall": 0.6351,
+        "f1": 0.6104,
+        "support": 74.0
+      },
+      "null_ptr_deref": {
+        "precision": 0.5909,
+        "recall": 0.6933,
+        "f1": 0.638,
+        "support": 75.0
+      },
+      "race_condition": {
+        "precision": 0.7429,
+        "recall": 0.6933,
+        "f1": 0.7172,
+        "support": 75.0
+      },
+      "use_after_free": {
+        "precision": 0.6615,
+        "recall": 0.5811,
+        "f1": 0.6187,
+        "support": 74.0
+      }
+    }
+  },
+  "clustering": {
+    "n_clusters": 5,
+    "adjusted_rand_index": 0.0354,
+    "homogeneity": 0.0852
+  },
+  "top_features": {
+    "integer_issues": [
+      "string",
+      "> it_overrun",
+      "it_overrun",
+      "val",
+      "+",
+      "scale",
+      "sma",
+      "<",
+      "int",
+      "acl_len"
+    ],
+    "memory_corruption": [
+      "ptr",
+      "+",
+      "buf",
+      "size_t",
+      "buffer",
+      "s",
+      "ndo",
+      "nd_tcheck",
+      "str_len",
+      ">="
+    ],
+    "null_ptr_deref": [
+      "unlock",
+      "if",
+      "syscall_nr",
+      "||",
+      "fs_uuid",
+      "!",
+      "* name",
+      "true",
+      "page",
+      "dir"
+    ],
+    "race_condition": [
+      "sk",
+      "shutting_down",
+      "> shutting_down",
+      "with",
+      "*",
+      "arg",
+      "get_block =",
+      "get_block",
+      "struct",
+      "opt"
+    ],
+    "use_after_free": [
+      "bfqq",
+      "bfq_idle_slice_timer_body",
+      "return retval",
+      "free",
+      "size2",
+      "head",
+      "create_spnego_ctx",
+      "out2",
+      "sc",
+      "local"
+    ]
+  }
+}

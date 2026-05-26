@@ -1,0 +1,221 @@
+{
+  "token_hit_rate": 1.0,
+  "n_total": 94,
+  "strategy_counts": {
+    "token_guided": 94,
+    "diff_based": 92,
+    "random": 70
+  },
+  "clustering_results": [
+    {
+      "strategy": "token_guided",
+      "embedder": "gin",
+      "n_samples": 94,
+      "n_clusters": 5,
+      "mean_slice_nodes": 105.7,
+      "ari": 0.0153,
+      "homogeneity": 0.0636,
+      "nmi": 0.071
+    },
+    {
+      "strategy": "token_guided",
+      "embedder": "gin_enriched",
+      "n_samples": 94,
+      "n_clusters": 5,
+      "mean_slice_nodes": 105.7,
+      "ari": -0.0127,
+      "homogeneity": 0.0371,
+      "nmi": 0.046
+    },
+    {
+      "strategy": "token_guided",
+      "embedder": "combined",
+      "n_samples": 94,
+      "n_clusters": 5,
+      "mean_slice_nodes": 105.7,
+      "ari": -0.0012,
+      "homogeneity": 0.0569,
+      "nmi": 0.0571
+    },
+    {
+      "strategy": "token_guided",
+      "embedder": "combined_enriched",
+      "n_samples": 94,
+      "n_clusters": 5,
+      "mean_slice_nodes": 105.7,
+      "ari": -0.0012,
+      "homogeneity": 0.0569,
+      "nmi": 0.0571
+    },
+    {
+      "strategy": "token_guided",
+      "embedder": "codebert_pattern",
+      "n_samples": 94,
+      "n_clusters": 5,
+      "mean_slice_nodes": 105.7,
+      "ari": 0.0682,
+      "homogeneity": 0.1536,
+      "nmi": 0.1542
+    },
+    {
+      "strategy": "token_guided",
+      "embedder": "codebert_flow",
+      "n_samples": 94,
+      "n_clusters": 5,
+      "mean_slice_nodes": 105.7,
+      "ari": 0.0113,
+      "homogeneity": 0.0763,
+      "nmi": 0.0771
+    },
+    {
+      "strategy": "token_guided",
+      "embedder": "codebert_flow_pattern",
+      "n_samples": 94,
+      "n_clusters": 5,
+      "mean_slice_nodes": 105.7,
+      "ari": 0.0504,
+      "homogeneity": 0.1146,
+      "nmi": 0.1156
+    },
+    {
+      "strategy": "diff_based",
+      "embedder": "gin",
+      "n_samples": 92,
+      "n_clusters": 5,
+      "mean_slice_nodes": 171.0,
+      "ari": 0.0294,
+      "homogeneity": 0.1082,
+      "nmi": 0.1114
+    },
+    {
+      "strategy": "diff_based",
+      "embedder": "gin_enriched",
+      "n_samples": 92,
+      "n_clusters": 5,
+      "mean_slice_nodes": 171.0,
+      "ari": 0.0377,
+      "homogeneity": 0.0896,
+      "nmi": 0.0928
+    },
+    {
+      "strategy": "diff_based",
+      "embedder": "combined",
+      "n_samples": 92,
+      "n_clusters": 5,
+      "mean_slice_nodes": 171.0,
+      "ari": 0.026,
+      "homogeneity": 0.0908,
+      "nmi": 0.0959
+    },
+    {
+      "strategy": "diff_based",
+      "embedder": "combined_enriched",
+      "n_samples": 92,
+      "n_clusters": 5,
+      "mean_slice_nodes": 171.0,
+      "ari": 0.0354,
+      "homogeneity": 0.101,
+      "nmi": 0.1089
+    },
+    {
+      "strategy": "diff_based",
+      "embedder": "codebert_pattern",
+      "n_samples": 92,
+      "n_clusters": 5,
+      "mean_slice_nodes": 171.0,
+      "ari": 0.017,
+      "homogeneity": 0.0992,
+      "nmi": 0.0995
+    },
+    {
+      "strategy": "diff_based",
+      "embedder": "codebert_flow",
+      "n_samples": 92,
+      "n_clusters": 5,
+      "mean_slice_nodes": 171.0,
+      "ari": 0.018,
+      "homogeneity": 0.0936,
+      "nmi": 0.0944
+    },
+    {
+      "strategy": "diff_based",
+      "embedder": "codebert_flow_pattern",
+      "n_samples": 92,
+      "n_clusters": 5,
+      "mean_slice_nodes": 171.0,
+      "ari": -0.0015,
+      "homogeneity": 0.0739,
+      "nmi": 0.0743
+    },
+    {
+      "strategy": "random",
+      "embedder": "gin",
+      "n_samples": 70,
+      "n_clusters": 5,
+      "mean_slice_nodes": 64.7,
+      "ari": -0.0113,
+      "homogeneity": 0.0729,
+      "nmi": 0.0797
+    },
+    {
+      "strategy": "random",
+      "embedder": "gin_enriched",
+      "n_samples": 70,
+      "n_clusters": 5,
+      "mean_slice_nodes": 64.7,
+      "ari": -0.0177,
+      "homogeneity": 0.0752,
+      "nmi": 0.0804
+    },
+    {
+      "strategy": "random",
+      "embedder": "combined",
+      "n_samples": 70,
+      "n_clusters": 5,
+      "mean_slice_nodes": 64.7,
+      "ari": -0.0033,
+      "homogeneity": 0.087,
+      "nmi": 0.0907
+    },
+    {
+      "strategy": "random",
+      "embedder": "combined_enriched",
+      "n_samples": 70,
+      "n_clusters": 5,
+      "mean_slice_nodes": 64.7,
+      "ari": -0.0033,
+      "homogeneity": 0.087,
+      "nmi": 0.0907
+    },
+    {
+      "strategy": "random",
+      "embedder": "codebert_pattern",
+      "n_samples": 70,
+      "n_clusters": 5,
+      "mean_slice_nodes": 64.7,
+      "ari": 0.0187,
+      "homogeneity": 0.1133,
+      "nmi": 0.125
+    },
+    {
+      "strategy": "random",
+      "embedder": "codebert_flow",
+      "n_samples": 70,
+      "n_clusters": 5,
+      "mean_slice_nodes": 64.7,
+      "ari": 0.0239,
+      "homogeneity": 0.1135,
+      "nmi": 0.1245
+    },
+    {
+      "strategy": "random",
+      "embedder": "codebert_flow_pattern",
+      "n_samples": 70,
+      "n_clusters": 5,
+      "mean_slice_nodes": 64.7,
+      "ari": 0.0195,
+      "homogeneity": 0.1069,
+      "nmi": 0.1178
+    }
+  ]
+}

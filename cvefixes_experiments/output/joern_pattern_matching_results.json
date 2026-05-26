@@ -1,0 +1,1326 @@
+{
+  "config": {
+    "sink_hop_radius": 2,
+    "n_entries": 87,
+    "n_cwe_classes": 19,
+    "n_families": 8
+  },
+  "metadata": [
+    {
+      "cve_id": "CVE-2016-3120",
+      "cwe_id": "CWE-476",
+      "family": "null_ptr",
+      "method_name": "validate_as_request",
+      "full_nodes": 437,
+      "sink_nodes": 306,
+      "n_sinks": 56
+    },
+    {
+      "cve_id": "CVE-2018-12232",
+      "cwe_id": "CWE-362",
+      "family": "race_condition",
+      "method_name": "sockfs_setattr",
+      "full_nodes": 101,
+      "sink_nodes": 44,
+      "n_sinks": 14
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "family": "resource_mgmt",
+      "method_name": "perf_event_read_event",
+      "full_nodes": 225,
+      "sink_nodes": 104,
+      "n_sinks": 24
+    },
+    {
+      "cve_id": "CVE-2015-5706",
+      "cwe_id": "CWE-416",
+      "family": "memory_safety",
+      "method_name": "path_openat",
+      "full_nodes": 425,
+      "sink_nodes": 227,
+      "n_sinks": 26
+    },
+    {
+      "cve_id": "CVE-2015-8767",
+      "cwe_id": "CWE-362",
+      "family": "race_condition",
+      "method_name": "sctp_generate_heartbeat_event",
+      "full_nodes": 256,
+      "sink_nodes": 117,
+      "n_sinks": 37
+    },
+    {
+      "cve_id": "CVE-2022-2318",
+      "cwe_id": "CWE-416",
+      "family": "memory_safety",
+      "method_name": "rose_stop_heartbeat",
+      "full_nodes": 36,
+      "sink_nodes": 12,
+      "n_sinks": 5
+    },
+    {
+      "cve_id": "CVE-2019-19815",
+      "cwe_id": "CWE-476",
+      "family": "null_ptr",
+      "method_name": "f2fs_force_buffered_io",
+      "full_nodes": 138,
+      "sink_nodes": 66,
+      "n_sinks": 8
+    },
+    {
+      "cve_id": "CVE-2022-2318",
+      "cwe_id": "CWE-416",
+      "family": "memory_safety",
+      "method_name": "rose_start_t3timer",
+      "full_nodes": 97,
+      "sink_nodes": 42,
+      "n_sinks": 18
+    },
+    {
+      "cve_id": "CVE-2019-12111",
+      "cwe_id": "CWE-476",
+      "family": "null_ptr",
+      "method_name": "copyIPv6IfDifferent",
+      "full_nodes": 49,
+      "sink_nodes": 21,
+      "n_sinks": 2
+    },
+    {
+      "cve_id": "CVE-2016-9685",
+      "cwe_id": "CWE-400",
+      "family": "resource_mgmt",
+      "method_name": "xfs_attr_shortform_list",
+      "full_nodes": 734,
+      "sink_nodes": 503,
+      "n_sinks": 135
+    },
+    {
+      "cve_id": "CVE-2017-15951",
+      "cwe_id": "CWE-20",
+      "family": "input_validation",
+      "method_name": "__key_instantiate_and_link",
+      "full_nodes": 281,
+      "sink_nodes": 152,
+      "n_sinks": 43
+    },
+    {
+      "cve_id": "CVE-2021-33815",
+      "cwe_id": "CWE-129",
+      "family": "input_validation",
+      "method_name": "dwa_uncompress",
+      "full_nodes": 1305,
+      "sink_nodes": 982,
+      "n_sinks": 325
+    },
+    {
+      "cve_id": "CVE-2019-11599",
+      "cwe_id": "CWE-667",
+      "family": "race_condition",
+      "method_name": "find_extend_vma",
+      "full_nodes": 171,
+      "sink_nodes": 68,
+      "n_sinks": 13
+    },
+    {
+      "cve_id": "CVE-2014-9653",
+      "cwe_id": "CWE-20",
+      "family": "input_validation",
+      "method_name": "dophn_exec",
+      "full_nodes": 487,
+      "sink_nodes": 305,
+      "n_sinks": 16
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "family": "resource_mgmt",
+      "method_name": "armv7pmu_handle_irq",
+      "full_nodes": 264,
+      "sink_nodes": 123,
+      "n_sinks": 23
+    },
+    {
+      "cve_id": "CVE-2018-16435",
+      "cwe_id": "CWE-787",
+      "family": "memory_safety",
+      "method_name": "AllocateDataSet",
+      "full_nodes": 163,
+      "sink_nodes": 75,
+      "n_sinks": 29
+    },
+    {
+      "cve_id": "CVE-2016-8650",
+      "cwe_id": "CWE-20",
+      "family": "input_validation",
+      "method_name": "mpi_powm",
+      "full_nodes": 1163,
+      "sink_nodes": 829,
+      "n_sinks": 106
+    },
+    {
+      "cve_id": "CVE-2015-3212",
+      "cwe_id": "CWE-362",
+      "family": "race_condition",
+      "method_name": "sctp_close",
+      "full_nodes": 405,
+      "sink_nodes": 174,
+      "n_sinks": 43
+    },
+    {
+      "cve_id": "CVE-2020-14147",
+      "cwe_id": "CWE-787",
+      "family": "memory_safety",
+      "method_name": "optsize",
+      "full_nodes": 140,
+      "sink_nodes": 95,
+      "n_sinks": 5
+    },
+    {
+      "cve_id": "CVE-2018-12458",
+      "cwe_id": "CWE-20",
+      "family": "input_validation",
+      "method_name": "mpeg4_encode_gop_header",
+      "full_nodes": 266,
+      "sink_nodes": 172,
+      "n_sinks": 61
+    },
+    {
+      "cve_id": "CVE-2018-12453",
+      "cwe_id": "CWE-704",
+      "family": "other",
+      "method_name": "xgroupCommand",
+      "full_nodes": 609,
+      "sink_nodes": 375,
+      "n_sinks": 121
+    },
+    {
+      "cve_id": "CVE-2023-6546",
+      "cwe_id": "CWE-362",
+      "family": "race_condition",
+      "method_name": "gsm_cleanup_mux",
+      "full_nodes": 339,
+      "sink_nodes": 180,
+      "n_sinks": 68
+    },
+    {
+      "cve_id": "CVE-2018-7492",
+      "cwe_id": "CWE-476",
+      "family": "null_ptr",
+      "method_name": "__rds_rdma_map",
+      "full_nodes": 727,
+      "sink_nodes": 432,
+      "n_sinks": 116
+    },
+    {
+      "cve_id": "CVE-2019-18885",
+      "cwe_id": "CWE-476",
+      "family": "null_ptr",
+      "method_name": "verify_one_dev_extent",
+      "full_nodes": 468,
+      "sink_nodes": 278,
+      "n_sinks": 66
+    },
+    {
+      "cve_id": "CVE-2014-9710",
+      "cwe_id": "CWE-362",
+      "family": "race_condition",
+      "method_name": "btrfs_match_dir_item_name",
+      "full_nodes": 235,
+      "sink_nodes": 111,
+      "n_sinks": 20
+    },
+    {
+      "cve_id": "CVE-2013-7271",
+      "cwe_id": "CWE-20",
+      "family": "input_validation",
+      "method_name": "mISDN_sock_recvmsg",
+      "full_nodes": 445,
+      "sink_nodes": 251,
+      "n_sinks": 64
+    },
+    {
+      "cve_id": "CVE-1999-0199",
+      "cwe_id": "CWE-252",
+      "family": "input_validation",
+      "method_name": "_dl_dst_substitute",
+      "full_nodes": 369,
+      "sink_nodes": 241,
+      "n_sinks": 67
+    },
+    {
+      "cve_id": "CVE-2023-31436",
+      "cwe_id": "CWE-787",
+      "family": "memory_safety",
+      "method_name": "qfq_change_class",
+      "full_nodes": 860,
+      "sink_nodes": 521,
+      "n_sinks": 159
+    },
+    {
+      "cve_id": "CVE-2018-1066",
+      "cwe_id": "CWE-476",
+      "family": "null_ptr",
+      "method_name": "build_ntlmssp_auth_blob",
+      "full_nodes": 736,
+      "sink_nodes": 543,
+      "n_sinks": 201
+    },
+    {
+      "cve_id": "CVE-2010-1155",
+      "cwe_id": "CWE-20",
+      "family": "input_validation",
+      "method_name": "irssi_ssl_verify",
+      "full_nodes": 354,
+      "sink_nodes": 179,
+      "n_sinks": 7
+    },
+    {
+      "cve_id": "CVE-2023-39355",
+      "cwe_id": "CWE-416",
+      "family": "memory_safety",
+      "method_name": "planar_decompress",
+      "full_nodes": 1834,
+      "sink_nodes": 1440,
+      "n_sinks": 41
+    },
+    {
+      "cve_id": "CVE-2019-18885",
+      "cwe_id": "CWE-476",
+      "family": "null_ptr",
+      "method_name": "btrfs_find_device",
+      "full_nodes": 124,
+      "sink_nodes": 56,
+      "n_sinks": 20
+    },
+    {
+      "cve_id": "CVE-2013-7019",
+      "cwe_id": "CWE-20",
+      "family": "input_validation",
+      "method_name": "get_cox",
+      "full_nodes": 449,
+      "sink_nodes": 287,
+      "n_sinks": 112
+    },
+    {
+      "cve_id": "CVE-2016-7914",
+      "cwe_id": "CWE-125",
+      "family": "memory_safety",
+      "method_name": "assoc_array_insert_into_terminal_node",
+      "full_nodes": 1478,
+      "sink_nodes": 1222,
+      "n_sinks": 428
+    },
+    {
+      "cve_id": "CVE-2016-3841",
+      "cwe_id": "CWE-264",
+      "family": "access_control",
+      "method_name": "tcp_v6_send_synack",
+      "full_nodes": 276,
+      "sink_nodes": 131,
+      "n_sinks": 47
+    },
+    {
+      "cve_id": "CVE-2019-19056",
+      "cwe_id": "CWE-401",
+      "family": "resource_mgmt",
+      "method_name": "mwifiex_pcie_alloc_cmdrsp_buf",
+      "full_nodes": 117,
+      "sink_nodes": 54,
+      "n_sinks": 18
+    },
+    {
+      "cve_id": "CVE-2019-18811",
+      "cwe_id": "CWE-401",
+      "family": "resource_mgmt",
+      "method_name": "sof_set_get_large_ctrl_data",
+      "full_nodes": 367,
+      "sink_nodes": 220,
+      "n_sinks": 60
+    },
+    {
+      "cve_id": "CVE-2011-2491",
+      "cwe_id": "CWE-400",
+      "family": "resource_mgmt",
+      "method_name": "nlmclnt_unlock_callback",
+      "full_nodes": 144,
+      "sink_nodes": 63,
+      "n_sinks": 13
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "family": "resource_mgmt",
+      "method_name": "armv6pmu_handle_irq",
+      "full_nodes": 270,
+      "sink_nodes": 124,
+      "n_sinks": 23
+    },
+    {
+      "cve_id": "CVE-2016-5195",
+      "cwe_id": "CWE-362",
+      "family": "race_condition",
+      "method_name": "follow_page_pte",
+      "full_nodes": 613,
+      "sink_nodes": 337,
+      "n_sinks": 26
+    },
+    {
+      "cve_id": "CVE-2017-18221",
+      "cwe_id": "CWE-20",
+      "family": "input_validation",
+      "method_name": "__munlock_pagevec",
+      "full_nodes": 340,
+      "sink_nodes": 152,
+      "n_sinks": 17
+    },
+    {
+      "cve_id": "CVE-2023-23006",
+      "cwe_id": "CWE-476",
+      "family": "null_ptr",
+      "method_name": "dr_domain_init_resources",
+      "full_nodes": 272,
+      "sink_nodes": 165,
+      "n_sinks": 47
+    },
+    {
+      "cve_id": "CVE-2022-47942",
+      "cwe_id": "CWE-787",
+      "family": "memory_safety",
+      "method_name": "build_sec_desc",
+      "full_nodes": 502,
+      "sink_nodes": 318,
+      "n_sinks": 105
+    },
+    {
+      "cve_id": "CVE-2018-12896",
+      "cwe_id": "CWE-190",
+      "family": "integer_issues",
+      "method_name": "SYSCALL_DEFINE1",
+      "full_nodes": 88,
+      "sink_nodes": 42,
+      "n_sinks": 10
+    },
+    {
+      "cve_id": "CVE-2021-33624",
+      "cwe_id": "CWE-843",
+      "family": "other",
+      "method_name": "sanitize_ptr_alu",
+      "full_nodes": 422,
+      "sink_nodes": 255,
+      "n_sinks": 75
+    },
+    {
+      "cve_id": "CVE-2016-5094",
+      "cwe_id": "CWE-190",
+      "family": "integer_issues",
+      "method_name": "traverse_for_entities",
+      "full_nodes": 530,
+      "sink_nodes": 335,
+      "n_sinks": 70
+    },
+    {
+      "cve_id": "CVE-2018-8788",
+      "cwe_id": "CWE-787",
+      "family": "memory_safety",
+      "method_name": "nsc_encode_subsampling",
+      "full_nodes": 297,
+      "sink_nodes": 198,
+      "n_sinks": 90
+    },
+    {
+      "cve_id": "CVE-2016-8630",
+      "cwe_id": "CWE-284",
+      "family": "access_control",
+      "method_name": "x86_decode_insn",
+      "full_nodes": 1347,
+      "sink_nodes": 1111,
+      "n_sinks": 324
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "family": "resource_mgmt",
+      "method_name": "swp_handler",
+      "full_nodes": 297,
+      "sink_nodes": 154,
+      "n_sinks": 25
+    },
+    {
+      "cve_id": "CVE-2013-0178",
+      "cwe_id": "CWE-20",
+      "family": "input_validation",
+      "method_name": "addReply",
+      "full_nodes": 173,
+      "sink_nodes": 78,
+      "n_sinks": 20
+    },
+    {
+      "cve_id": "CVE-2016-9540",
+      "cwe_id": "CWE-119",
+      "family": "memory_safety",
+      "method_name": "DECLAREreadFunc",
+      "full_nodes": 389,
+      "sink_nodes": 204,
+      "n_sinks": 32
+    },
+    {
+      "cve_id": "CVE-2019-11487",
+      "cwe_id": "CWE-416",
+      "family": "memory_safety",
+      "method_name": "get_page",
+      "full_nodes": 63,
+      "sink_nodes": 20,
+      "n_sinks": 2
+    },
+    {
+      "cve_id": "CVE-2017-17806",
+      "cwe_id": "CWE-787",
+      "family": "memory_safety",
+      "method_name": "hmac_create",
+      "full_nodes": 448,
+      "sink_nodes": 275,
+      "n_sinks": 83
+    },
+    {
+      "cve_id": "CVE-2014-3673",
+      "cwe_id": "CWE-20",
+      "family": "input_validation",
+      "method_name": "sctp_sf_do_asconf",
+      "full_nodes": 517,
+      "sink_nodes": 288,
+      "n_sinks": 58
+    },
+    {
+      "cve_id": "CVE-2020-11810",
+      "cwe_id": "CWE-362",
+      "family": "race_condition",
+      "method_name": "multi_process_incoming_link",
+      "full_nodes": 851,
+      "sink_nodes": 565,
+      "n_sinks": 158
+    },
+    {
+      "cve_id": "CVE-2017-8924",
+      "cwe_id": "CWE-191",
+      "family": "integer_issues",
+      "method_name": "edge_bulk_in_callback",
+      "full_nodes": 386,
+      "sink_nodes": 238,
+      "n_sinks": 91
+    },
+    {
+      "cve_id": "CVE-2019-11338",
+      "cwe_id": "CWE-476",
+      "family": "null_ptr",
+      "method_name": "decode_nal_unit",
+      "full_nodes": 1055,
+      "sink_nodes": 812,
+      "n_sinks": 255
+    },
+    {
+      "cve_id": "CVE-2016-9084",
+      "cwe_id": "CWE-190",
+      "family": "integer_issues",
+      "method_name": "vfio_msi_enable",
+      "full_nodes": 228,
+      "sink_nodes": 121,
+      "n_sinks": 37
+    },
+    {
+      "cve_id": "CVE-2019-18885",
+      "cwe_id": "CWE-476",
+      "family": "null_ptr",
+      "method_name": "read_one_dev",
+      "full_nodes": 563,
+      "sink_nodes": 319,
+      "n_sinks": 91
+    },
+    {
+      "cve_id": "CVE-2016-9754",
+      "cwe_id": "CWE-190",
+      "family": "integer_issues",
+      "method_name": "ring_buffer_resize",
+      "full_nodes": 620,
+      "sink_nodes": 390,
+      "n_sinks": 150
+    },
+    {
+      "cve_id": "CVE-2014-5472",
+      "cwe_id": "CWE-20",
+      "family": "input_validation",
+      "method_name": "parse_rock_ridge_inode",
+      "full_nodes": 98,
+      "sink_nodes": 44,
+      "n_sinks": 10
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "family": "race_condition",
+      "method_name": "cipso_v4_req_delattr",
+      "full_nodes": 99,
+      "sink_nodes": 39,
+      "n_sinks": 13
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "family": "resource_mgmt",
+      "method_name": "handle_stdfmna",
+      "full_nodes": 358,
+      "sink_nodes": 178,
+      "n_sinks": 16
+    },
+    {
+      "cve_id": "CVE-2022-42703",
+      "cwe_id": "CWE-416",
+      "family": "memory_safety",
+      "method_name": "anon_vma_alloc",
+      "full_nodes": 91,
+      "sink_nodes": 44,
+      "n_sinks": 11
+    },
+    {
+      "cve_id": "CVE-2017-18017",
+      "cwe_id": "CWE-416",
+      "family": "memory_safety",
+      "method_name": "tcpmss_mangle_packet",
+      "full_nodes": 697,
+      "sink_nodes": 401,
+      "n_sinks": 44
+    },
+    {
+      "cve_id": "CVE-2017-15951",
+      "cwe_id": "CWE-20",
+      "family": "input_validation",
+      "method_name": "user_update",
+      "full_nodes": 191,
+      "sink_nodes": 89,
+      "n_sinks": 24
+    },
+    {
+      "cve_id": "CVE-2014-8321",
+      "cwe_id": "CWE-787",
+      "family": "memory_safety",
+      "method_name": "gps_tracker",
+      "full_nodes": 945,
+      "sink_nodes": 646,
+      "n_sinks": 94
+    },
+    {
+      "cve_id": "CVE-2014-4652",
+      "cwe_id": "CWE-362",
+      "family": "race_condition",
+      "method_name": "snd_ctl_elem_user_put",
+      "full_nodes": 101,
+      "sink_nodes": 50,
+      "n_sinks": 20
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "family": "race_condition",
+      "method_name": "dccp_v4_request_recv_sock",
+      "full_nodes": 319,
+      "sink_nodes": 171,
+      "n_sinks": 32
+    },
+    {
+      "cve_id": "CVE-2013-7271",
+      "cwe_id": "CWE-20",
+      "family": "input_validation",
+      "method_name": "verify_iovec",
+      "full_nodes": 255,
+      "sink_nodes": 132,
+      "n_sinks": 22
+    },
+    {
+      "cve_id": "CVE-2017-15951",
+      "cwe_id": "CWE-20",
+      "family": "input_validation",
+      "method_name": "wait_for_key_construction",
+      "full_nodes": 124,
+      "sink_nodes": 51,
+      "n_sinks": 11
+    },
+    {
+      "cve_id": "CVE-2017-2584",
+      "cwe_id": "CWE-200",
+      "family": "other",
+      "method_name": "em_fxsave",
+      "full_nodes": 118,
+      "sink_nodes": 57,
+      "n_sinks": 15
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "family": "resource_mgmt",
+      "method_name": "perf_swevent_overflow",
+      "full_nodes": 148,
+      "sink_nodes": 77,
+      "n_sinks": 29
+    },
+    {
+      "cve_id": "CVE-2016-10200",
+      "cwe_id": "CWE-264",
+      "family": "access_control",
+      "method_name": "l2tp_ip_bind",
+      "full_nodes": 401,
+      "sink_nodes": 217,
+      "n_sinks": 62
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "family": "race_condition",
+      "method_name": "tcp_v4_syn_recv_sock",
+      "full_nodes": 428,
+      "sink_nodes": 236,
+      "n_sinks": 59
+    },
+    {
+      "cve_id": "CVE-2019-19815",
+      "cwe_id": "CWE-476",
+      "family": "null_ptr",
+      "method_name": "F2FS_P_SB",
+      "full_nodes": 32,
+      "sink_nodes": 13,
+      "n_sinks": 5
+    },
+    {
+      "cve_id": "CVE-2017-16525",
+      "cwe_id": "CWE-416",
+      "family": "memory_safety",
+      "method_name": "usb_serial_console_disconnect",
+      "full_nodes": 67,
+      "sink_nodes": 22,
+      "n_sinks": 6
+    },
+    {
+      "cve_id": "CVE-2019-19053",
+      "cwe_id": "CWE-401",
+      "family": "resource_mgmt",
+      "method_name": "rpmsg_eptdev_write_iter",
+      "full_nodes": 234,
+      "sink_nodes": 121,
+      "n_sinks": 26
+    },
+    {
+      "cve_id": "CVE-2022-3424",
+      "cwe_id": "CWE-416",
+      "family": "memory_safety",
+      "method_name": "gru_set_context_option",
+      "full_nodes": 304,
+      "sink_nodes": 169,
+      "n_sinks": 12
+    },
+    {
+      "cve_id": "CVE-2018-12896",
+      "cwe_id": "CWE-190",
+      "family": "integer_issues",
+      "method_name": "common_hrtimer_rearm",
+      "full_nodes": 116,
+      "sink_nodes": 49,
+      "n_sinks": 22
+    },
+    {
+      "cve_id": "CVE-2016-3841",
+      "cwe_id": "CWE-264",
+      "family": "access_control",
+      "method_name": "cookie_v6_check",
+      "full_nodes": 840,
+      "sink_nodes": 501,
+      "n_sinks": 150
+    },
+    {
+      "cve_id": "CVE-2019-19922",
+      "cwe_id": "CWE-400",
+      "family": "resource_mgmt",
+      "method_name": "do_sched_cfs_period_timer",
+      "full_nodes": 239,
+      "sink_nodes": 140,
+      "n_sinks": 49
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "family": "race_condition",
+      "method_name": "icmp_reply",
+      "full_nodes": 353,
+      "sink_nodes": 201,
+      "n_sinks": 53
+    },
+    {
+      "cve_id": "CVE-2012-4508",
+      "cwe_id": "CWE-362",
+      "family": "race_condition",
+      "method_name": "ext4_ext_handle_uninitialized_extents",
+      "full_nodes": 582,
+      "sink_nodes": 326,
+      "n_sinks": 65
+    },
+    {
+      "cve_id": "CVE-2017-2647",
+      "cwe_id": "CWE-476",
+      "family": "null_ptr",
+      "method_name": "keyring_search",
+      "full_nodes": 219,
+      "sink_nodes": 130,
+      "n_sinks": 19
+    },
+    {
+      "cve_id": "CVE-2022-47942",
+      "cwe_id": "CWE-787",
+      "family": "memory_safety",
+      "method_name": "smb2_get_info_sec",
+      "full_nodes": 478,
+      "sink_nodes": 275,
+      "n_sinks": 77
+    },
+    {
+      "cve_id": "CVE-2023-6039",
+      "cwe_id": "CWE-416",
+      "family": "memory_safety",
+      "method_name": "lan78xx_disconnect",
+      "full_nodes": 269,
+      "sink_nodes": 115,
+      "n_sinks": 35
+    }
+  ],
+  "cwe_distribution": {
+    "CWE-476": 12,
+    "CWE-362": 13,
+    "CWE-400": 9,
+    "CWE-416": 10,
+    "CWE-20": 14,
+    "CWE-129": 1,
+    "CWE-667": 1,
+    "CWE-787": 8,
+    "CWE-704": 1,
+    "CWE-252": 1,
+    "CWE-125": 1,
+    "CWE-264": 3,
+    "CWE-401": 3,
+    "CWE-190": 5,
+    "CWE-843": 1,
+    "CWE-284": 1,
+    "CWE-119": 1,
+    "CWE-191": 1,
+    "CWE-200": 1
+  },
+  "family_distribution": {
+    "null_ptr": 12,
+    "race_condition": 14,
+    "resource_mgmt": 12,
+    "memory_safety": 20,
+    "input_validation": 16,
+    "other": 3,
+    "access_control": 4,
+    "integer_issues": 6
+  },
+  "results": {
+    "vuln_pattern": {
+      "sink_subgraph": {
+        "cwe_level": {
+          "n": 87,
+          "mrr": 0.28807149926452347,
+          "hit@1": 0.16091954022988506,
+          "hit@3": 0.3103448275862069,
+          "hit@5": 0.42528735632183906,
+          "hit@10": 0.5862068965517241,
+          "per_class_p@1": {
+            "CWE-119": 0.0,
+            "CWE-125": 0.0,
+            "CWE-129": 0.0,
+            "CWE-190": 0.0,
+            "CWE-191": 0.0,
+            "CWE-20": 0.14285714285714285,
+            "CWE-200": 0.0,
+            "CWE-252": 0.0,
+            "CWE-264": 0.0,
+            "CWE-284": 0.0,
+            "CWE-362": 0.3076923076923077,
+            "CWE-400": 0.3333333333333333,
+            "CWE-401": 0.0,
+            "CWE-416": 0.2,
+            "CWE-476": 0.0,
+            "CWE-667": 0.0,
+            "CWE-704": 0.0,
+            "CWE-787": 0.375,
+            "CWE-843": 0.0
+          }
+        },
+        "family_level": {
+          "n": 87,
+          "mrr": 0.35889476615751775,
+          "hit@1": 0.19540229885057472,
+          "hit@3": 0.42528735632183906,
+          "hit@5": 0.5747126436781609,
+          "hit@10": 0.7586206896551724,
+          "per_class_p@1": {
+            "access_control": 0.0,
+            "input_validation": 0.125,
+            "integer_issues": 0.0,
+            "memory_safety": 0.3,
+            "null_ptr": 0.0,
+            "other": 0.0,
+            "race_condition": 0.2857142857142857,
+            "resource_mgmt": 0.4166666666666667
+          }
+        }
+      },
+      "full_graph": {
+        "cwe_level": {
+          "n": 87,
+          "mrr": 0.2646042563435206,
+          "hit@1": 0.12643678160919541,
+          "hit@3": 0.2988505747126437,
+          "hit@5": 0.42528735632183906,
+          "hit@10": 0.5977011494252874,
+          "per_class_p@1": {
+            "CWE-119": 0.0,
+            "CWE-125": 0.0,
+            "CWE-129": 0.0,
+            "CWE-190": 0.0,
+            "CWE-191": 0.0,
+            "CWE-20": 0.07142857142857142,
+            "CWE-200": 0.0,
+            "CWE-252": 0.0,
+            "CWE-264": 0.0,
+            "CWE-284": 0.0,
+            "CWE-362": 0.23076923076923078,
+            "CWE-400": 0.3333333333333333,
+            "CWE-401": 0.0,
+            "CWE-416": 0.2,
+            "CWE-476": 0.08333333333333333,
+            "CWE-667": 0.0,
+            "CWE-704": 0.0,
+            "CWE-787": 0.125,
+            "CWE-843": 0.0
+          }
+        },
+        "family_level": {
+          "n": 87,
+          "mrr": 0.3683643409436976,
+          "hit@1": 0.21839080459770116,
+          "hit@3": 0.41379310344827586,
+          "hit@5": 0.5862068965517241,
+          "hit@10": 0.7586206896551724,
+          "per_class_p@1": {
+            "access_control": 0.0,
+            "input_validation": 0.1875,
+            "integer_issues": 0.0,
+            "memory_safety": 0.2,
+            "null_ptr": 0.08333333333333333,
+            "other": 0.0,
+            "race_condition": 0.35714285714285715,
+            "resource_mgmt": 0.5
+          }
+        }
+      }
+    },
+    "node_type_hist": {
+      "sink_subgraph": {
+        "cwe_level": {
+          "n": 87,
+          "mrr": 0.31527742572906226,
+          "hit@1": 0.1839080459770115,
+          "hit@3": 0.3333333333333333,
+          "hit@5": 0.4827586206896552,
+          "hit@10": 0.6436781609195402,
+          "per_class_p@1": {
+            "CWE-119": 0.0,
+            "CWE-125": 0.0,
+            "CWE-129": 0.0,
+            "CWE-190": 0.0,
+            "CWE-191": 0.0,
+            "CWE-20": 0.35714285714285715,
+            "CWE-200": 0.0,
+            "CWE-252": 0.0,
+            "CWE-264": 0.0,
+            "CWE-284": 0.0,
+            "CWE-362": 0.23076923076923078,
+            "CWE-400": 0.4444444444444444,
+            "CWE-401": 0.0,
+            "CWE-416": 0.1,
+            "CWE-476": 0.25,
+            "CWE-667": 0.0,
+            "CWE-704": 0.0,
+            "CWE-787": 0.0,
+            "CWE-843": 0.0
+          }
+        },
+        "family_level": {
+          "n": 87,
+          "mrr": 0.38597791151553645,
+          "hit@1": 0.21839080459770116,
+          "hit@3": 0.42528735632183906,
+          "hit@5": 0.6551724137931034,
+          "hit@10": 0.7816091954022989,
+          "per_class_p@1": {
+            "access_control": 0.0,
+            "input_validation": 0.3125,
+            "integer_issues": 0.0,
+            "memory_safety": 0.15,
+            "null_ptr": 0.25,
+            "other": 0.0,
+            "race_condition": 0.21428571428571427,
+            "resource_mgmt": 0.4166666666666667
+          }
+        }
+      },
+      "full_graph": {
+        "cwe_level": {
+          "n": 87,
+          "mrr": 0.3394349574829424,
+          "hit@1": 0.21839080459770116,
+          "hit@3": 0.367816091954023,
+          "hit@5": 0.4482758620689655,
+          "hit@10": 0.632183908045977,
+          "per_class_p@1": {
+            "CWE-119": 0.0,
+            "CWE-125": 0.0,
+            "CWE-129": 0.0,
+            "CWE-190": 0.0,
+            "CWE-191": 0.0,
+            "CWE-20": 0.2857142857142857,
+            "CWE-200": 0.0,
+            "CWE-252": 0.0,
+            "CWE-264": 0.0,
+            "CWE-284": 0.0,
+            "CWE-362": 0.38461538461538464,
+            "CWE-400": 0.4444444444444444,
+            "CWE-401": 0.0,
+            "CWE-416": 0.3,
+            "CWE-476": 0.25,
+            "CWE-667": 0.0,
+            "CWE-704": 0.0,
+            "CWE-787": 0.0,
+            "CWE-843": 0.0
+          }
+        },
+        "family_level": {
+          "n": 87,
+          "mrr": 0.40630453147209483,
+          "hit@1": 0.25287356321839083,
+          "hit@3": 0.45977011494252873,
+          "hit@5": 0.5862068965517241,
+          "hit@10": 0.7931034482758621,
+          "per_class_p@1": {
+            "access_control": 0.0,
+            "input_validation": 0.25,
+            "integer_issues": 0.0,
+            "memory_safety": 0.3,
+            "null_ptr": 0.25,
+            "other": 0.0,
+            "race_condition": 0.35714285714285715,
+            "resource_mgmt": 0.3333333333333333
+          }
+        }
+      }
+    },
+    "edge_type_hist": {
+      "sink_subgraph": {
+        "cwe_level": {
+          "n": 87,
+          "mrr": 0.24178435257091274,
+          "hit@1": 0.10344827586206896,
+          "hit@3": 0.22988505747126436,
+          "hit@5": 0.4482758620689655,
+          "hit@10": 0.5862068965517241,
+          "per_class_p@1": {
+            "CWE-119": 0.0,
+            "CWE-125": 0.0,
+            "CWE-129": 0.0,
+            "CWE-190": 0.2,
+            "CWE-191": 0.0,
+            "CWE-20": 0.0,
+            "CWE-200": 0.0,
+            "CWE-252": 0.0,
+            "CWE-264": 0.0,
+            "CWE-284": 0.0,
+            "CWE-362": 0.15384615384615385,
+            "CWE-400": 0.2222222222222222,
+            "CWE-401": 0.0,
+            "CWE-416": 0.2,
+            "CWE-476": 0.16666666666666666,
+            "CWE-667": 0.0,
+            "CWE-704": 0.0,
+            "CWE-787": 0.0,
+            "CWE-843": 0.0
+          }
+        },
+        "family_level": {
+          "n": 87,
+          "mrr": 0.33078985521018817,
+          "hit@1": 0.16091954022988506,
+          "hit@3": 0.3448275862068966,
+          "hit@5": 0.5747126436781609,
+          "hit@10": 0.7931034482758621,
+          "per_class_p@1": {
+            "access_control": 0.0,
+            "input_validation": 0.0625,
+            "integer_issues": 0.16666666666666666,
+            "memory_safety": 0.3,
+            "null_ptr": 0.16666666666666666,
+            "other": 0.0,
+            "race_condition": 0.14285714285714285,
+            "resource_mgmt": 0.16666666666666666
+          }
+        }
+      },
+      "full_graph": {
+        "cwe_level": {
+          "n": 87,
+          "mrr": 0.2375229598412157,
+          "hit@1": 0.11494252873563218,
+          "hit@3": 0.22988505747126436,
+          "hit@5": 0.3563218390804598,
+          "hit@10": 0.5517241379310345,
+          "per_class_p@1": {
+            "CWE-119": 0.0,
+            "CWE-125": 0.0,
+            "CWE-129": 0.0,
+            "CWE-190": 0.0,
+            "CWE-191": 0.0,
+            "CWE-20": 0.0,
+            "CWE-200": 0.0,
+            "CWE-252": 0.0,
+            "CWE-264": 0.0,
+            "CWE-284": 0.0,
+            "CWE-362": 0.15384615384615385,
+            "CWE-400": 0.2222222222222222,
+            "CWE-401": 0.0,
+            "CWE-416": 0.2,
+            "CWE-476": 0.16666666666666666,
+            "CWE-667": 0.0,
+            "CWE-704": 0.0,
+            "CWE-787": 0.25,
+            "CWE-843": 0.0
+          }
+        },
+        "family_level": {
+          "n": 87,
+          "mrr": 0.3144371467732419,
+          "hit@1": 0.16091954022988506,
+          "hit@3": 0.3103448275862069,
+          "hit@5": 0.4827586206896552,
+          "hit@10": 0.7471264367816092,
+          "per_class_p@1": {
+            "access_control": 0.0,
+            "input_validation": 0.0625,
+            "integer_issues": 0.0,
+            "memory_safety": 0.35,
+            "null_ptr": 0.16666666666666666,
+            "other": 0.0,
+            "race_condition": 0.14285714285714285,
+            "resource_mgmt": 0.16666666666666666
+          }
+        }
+      }
+    },
+    "code_pattern_counts": {
+      "sink_subgraph": {
+        "cwe_level": {
+          "n": 87,
+          "mrr": 0.3089444101739307,
+          "hit@1": 0.1724137931034483,
+          "hit@3": 0.3333333333333333,
+          "hit@5": 0.42528735632183906,
+          "hit@10": 0.6666666666666666,
+          "per_class_p@1": {
+            "CWE-119": 0.0,
+            "CWE-125": 0.0,
+            "CWE-129": 0.0,
+            "CWE-190": 0.0,
+            "CWE-191": 0.0,
+            "CWE-20": 0.2857142857142857,
+            "CWE-200": 0.0,
+            "CWE-252": 0.0,
+            "CWE-264": 0.0,
+            "CWE-284": 0.0,
+            "CWE-362": 0.15384615384615385,
+            "CWE-400": 0.3333333333333333,
+            "CWE-401": 0.0,
+            "CWE-416": 0.4,
+            "CWE-476": 0.16666666666666666,
+            "CWE-667": 0.0,
+            "CWE-704": 0.0,
+            "CWE-787": 0.0,
+            "CWE-843": 0.0
+          }
+        },
+        "family_level": {
+          "n": 87,
+          "mrr": 0.38929318926017564,
+          "hit@1": 0.21839080459770116,
+          "hit@3": 0.4367816091954023,
+          "hit@5": 0.5632183908045977,
+          "hit@10": 0.8275862068965517,
+          "per_class_p@1": {
+            "access_control": 0.0,
+            "input_validation": 0.25,
+            "integer_issues": 0.0,
+            "memory_safety": 0.35,
+            "null_ptr": 0.16666666666666666,
+            "other": 0.0,
+            "race_condition": 0.14285714285714285,
+            "resource_mgmt": 0.3333333333333333
+          }
+        }
+      },
+      "full_graph": {
+        "cwe_level": {
+          "n": 87,
+          "mrr": 0.32826359727146404,
+          "hit@1": 0.21839080459770116,
+          "hit@3": 0.3218390804597701,
+          "hit@5": 0.42528735632183906,
+          "hit@10": 0.6666666666666666,
+          "per_class_p@1": {
+            "CWE-119": 0.0,
+            "CWE-125": 0.0,
+            "CWE-129": 0.0,
+            "CWE-190": 0.0,
+            "CWE-191": 0.0,
+            "CWE-20": 0.2857142857142857,
+            "CWE-200": 0.0,
+            "CWE-252": 0.0,
+            "CWE-264": 0.0,
+            "CWE-284": 0.0,
+            "CWE-362": 0.38461538461538464,
+            "CWE-400": 0.3333333333333333,
+            "CWE-401": 0.0,
+            "CWE-416": 0.4,
+            "CWE-476": 0.16666666666666666,
+            "CWE-667": 0.0,
+            "CWE-704": 0.0,
+            "CWE-787": 0.125,
+            "CWE-843": 0.0
+          }
+        },
+        "family_level": {
+          "n": 87,
+          "mrr": 0.4051403380257337,
+          "hit@1": 0.26436781609195403,
+          "hit@3": 0.42528735632183906,
+          "hit@5": 0.5747126436781609,
+          "hit@10": 0.8045977011494253,
+          "per_class_p@1": {
+            "access_control": 0.0,
+            "input_validation": 0.25,
+            "integer_issues": 0.0,
+            "memory_safety": 0.4,
+            "null_ptr": 0.16666666666666666,
+            "other": 0.0,
+            "race_condition": 0.35714285714285715,
+            "resource_mgmt": 0.3333333333333333
+          }
+        }
+      }
+    },
+    "combined_fingerprint": {
+      "sink_subgraph": {
+        "cwe_level": {
+          "n": 87,
+          "mrr": 0.24634279284102845,
+          "hit@1": 0.11494252873563218,
+          "hit@3": 0.27586206896551724,
+          "hit@5": 0.40229885057471265,
+          "hit@10": 0.5862068965517241,
+          "per_class_p@1": {
+            "CWE-119": 0.0,
+            "CWE-125": 0.0,
+            "CWE-129": 0.0,
+            "CWE-190": 0.0,
+            "CWE-191": 0.0,
+            "CWE-20": 0.07142857142857142,
+            "CWE-200": 0.0,
+            "CWE-252": 0.0,
+            "CWE-264": 0.0,
+            "CWE-284": 0.0,
+            "CWE-362": 0.23076923076923078,
+            "CWE-400": 0.2222222222222222,
+            "CWE-401": 0.0,
+            "CWE-416": 0.2,
+            "CWE-476": 0.0,
+            "CWE-667": 0.0,
+            "CWE-704": 0.0,
+            "CWE-787": 0.25,
+            "CWE-843": 0.0
+          }
+        },
+        "family_level": {
+          "n": 87,
+          "mrr": 0.2996760545181152,
+          "hit@1": 0.13793103448275862,
+          "hit@3": 0.3333333333333333,
+          "hit@5": 0.4942528735632184,
+          "hit@10": 0.735632183908046,
+          "per_class_p@1": {
+            "access_control": 0.0,
+            "input_validation": 0.125,
+            "integer_issues": 0.0,
+            "memory_safety": 0.25,
+            "null_ptr": 0.0,
+            "other": 0.0,
+            "race_condition": 0.21428571428571427,
+            "resource_mgmt": 0.16666666666666666
+          }
+        }
+      },
+      "full_graph": {
+        "cwe_level": {
+          "n": 87,
+          "mrr": 0.2858986368416711,
+          "hit@1": 0.16091954022988506,
+          "hit@3": 0.28735632183908044,
+          "hit@5": 0.42528735632183906,
+          "hit@10": 0.5977011494252874,
+          "per_class_p@1": {
+            "CWE-119": 0.0,
+            "CWE-125": 0.0,
+            "CWE-129": 0.0,
+            "CWE-190": 0.0,
+            "CWE-191": 0.0,
+            "CWE-20": 0.2857142857142857,
+            "CWE-200": 0.0,
+            "CWE-252": 0.0,
+            "CWE-264": 0.0,
+            "CWE-284": 0.0,
+            "CWE-362": 0.23076923076923078,
+            "CWE-400": 0.2222222222222222,
+            "CWE-401": 0.0,
+            "CWE-416": 0.2,
+            "CWE-476": 0.16666666666666666,
+            "CWE-667": 0.0,
+            "CWE-704": 0.0,
+            "CWE-787": 0.125,
+            "CWE-843": 0.0
+          }
+        },
+        "family_level": {
+          "n": 87,
+          "mrr": 0.35888262475144095,
+          "hit@1": 0.20689655172413793,
+          "hit@3": 0.367816091954023,
+          "hit@5": 0.5517241379310345,
+          "hit@10": 0.7701149425287356,
+          "per_class_p@1": {
+            "access_control": 0.0,
+            "input_validation": 0.3125,
+            "integer_issues": 0.0,
+            "memory_safety": 0.3,
+            "null_ptr": 0.16666666666666666,
+            "other": 0.0,
+            "race_condition": 0.21428571428571427,
+            "resource_mgmt": 0.16666666666666666
+          }
+        }
+      }
+    }
+  }
+}
