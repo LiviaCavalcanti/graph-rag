@@ -6,7 +6,7 @@ from torch_geometric.data import Data
 from torch_geometric.nn import GINConv, global_add_pool, global_mean_pool
 
 from .base import BaseEmbedder
-from .wl import NODE_TYPES, nx_to_pyg
+from .wl import DIFF_LABELS, NODE_TYPES, nx_to_pyg, nx_to_pyg_enriched
 
 
 class GINEmbedder(BaseEmbedder):
@@ -64,6 +64,82 @@ class GINEmbedder(BaseEmbedder):
 
         # one-hot from integer colour
         x = F.one_hot(data.x, num_classes=len(NODE_TYPES)).float()
+        x = F.relu(self.input_proj(x))
+
+        for conv, bn in zip(self.convs, self.bns):
+            x = F.relu(bn(conv(x, data.edge_index)))
+
+        out = torch.cat(
+            [
+                global_add_pool(x, data.batch),
+                global_mean_pool(x, data.batch),
+            ],
+            dim=1,
+        )
+        out = self.readout(out).detach().numpy()[0]
+
+        return self._norm_vec(out) if self.apply_norm else out
+
+
+class GINEnrichedEmbedder(BaseEmbedder):
+    """
+    GIN with enriched node features: [labelV(11) || diff(4) || diff_weight(1) || token_entry(1)]
+
+    Unlike the standard GIN which only sees node types, this variant
+    can distinguish entry-point nodes from context, enabling it to learn
+    that token-matched nodes form discriminative neighborhoods.
+    """
+
+    # enriched feature dim: 11 (node types) + 5 (diff labels) + 1 (weight) = 17
+    IN_DIM = len(NODE_TYPES) + len(DIFF_LABELS) + 1
+
+    def __init__(self, cfg: dict, apply_norm: bool = True):
+        super().__init__(cfg, apply_norm)
+        in_dim = self.IN_DIM
+        hidden_dim = cfg.get("gin", {}).get("hidden_dim", 128)
+        num_layers = cfg.get("gin", {}).get("num_layers", 3)
+
+        seed = cfg.get("gin", {}).get("seed", 42)
+        torch.manual_seed(seed)
+
+        self.input_proj = torch.nn.Linear(in_dim, hidden_dim)
+        self.convs = torch.nn.ModuleList()
+        self.bns = torch.nn.ModuleList()
+        for _ in range(num_layers):
+            mlp = torch.nn.Sequential(
+                torch.nn.Linear(hidden_dim, hidden_dim),
+                torch.nn.ReLU(),
+                torch.nn.Linear(hidden_dim, hidden_dim),
+            )
+            self.convs.append(GINConv(mlp, train_eps=False))
+            self.bns.append(torch.nn.BatchNorm1d(hidden_dim))
+
+        self.readout = torch.nn.Linear(hidden_dim * 2, self.dim)
+
+        for p in self.parameters():
+            p.requires_grad_(False)
+
+    def parameters(self):
+        return (
+            list(self.input_proj.parameters())
+            + list(self.convs.parameters())
+            + list(self.bns.parameters())
+            + list(self.readout.parameters())
+        )
+
+    @property
+    def name(self) -> str:
+        return "gin_enriched"
+
+    def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
+        data = nx_to_pyg_enriched(G)
+        if data is None or data.x.shape[0] < 2:
+            return np.zeros(self.dim, dtype=np.float32)
+
+        data.batch = torch.zeros(data.x.shape[0], dtype=torch.long)
+
+        # features are already continuous floats from nx_to_pyg_enriched
+        x = data.x
         x = F.relu(self.input_proj(x))
 
         for conv, bn in zip(self.convs, self.bns):
