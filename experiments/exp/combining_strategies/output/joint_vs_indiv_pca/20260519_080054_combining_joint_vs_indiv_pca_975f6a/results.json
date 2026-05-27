@@ -1,0 +1,339 @@
+{
+  "run_id": "20260519_080054_combining_joint_vs_indiv_pca_975f6a",
+  "metadata": {
+    "experiment": "combining_joint_vs_indiv_pca",
+    "timestamp": "2026-05-19T08:08:03.693599+00:00",
+    "config": {
+      "data": {
+        "autopatch": {
+          "root": "CVE-list",
+          "graphml_root": "graphml_augmented",
+          "include_variants": true
+        },
+        "cvefixes": {
+          "db_path": "data/cvefixes/CVEfixes.db",
+          "graphml_root": "graphml_cvefixes",
+          "languages": [
+            "C",
+            "C++"
+          ],
+          "level": "method",
+          "max_lines": 500,
+          "sample_limit": 0
+        }
+      },
+      "joern": {
+        "workers": 8,
+        "timeout_s": 120,
+        "bin_dir": "/home/z0050s2b/bin/joern/joern-cli"
+      },
+      "graph": {
+        "node_types": [
+          "METHOD",
+          "METHOD_PARAMETER_IN",
+          "METHOD_PARAMETER_OUT",
+          "METHOD_RETURN",
+          "BLOCK",
+          "LOCAL",
+          "CALL",
+          "IDENTIFIER",
+          "LITERAL",
+          "RETURN",
+          "CONTROL_STRUCTURE",
+          "FIELD_IDENTIFIER",
+          "UNKNOWN"
+        ],
+        "edge_types": [
+          "AST",
+          "CFG",
+          "CDG",
+          "REF",
+          "ARGUMENT",
+          "RECEIVER"
+        ]
+      },
+      "embeddings": {
+        "active": [
+          "gin",
+          "combined"
+        ],
+        "dim": 128,
+        "projection": "pca",
+        "l2_normalize": true,
+        "netlsd": {
+          "timescales": 128
+        },
+        "wl": {
+          "num_iterations": 4,
+          "hidden_dim": 64
+        },
+        "gin": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "seed": 42
+        },
+        "rgcn": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "seed": 42
+        },
+        "codebert": {
+          "model_path": "/home/z0050s2b/code/graph-rag/models/codebert-base/"
+        },
+        "gin_codebert": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "dropout": 0.3,
+          "device": "cpu",
+          "cb_batch_size": 32,
+          "node_cache_dir": "workspace/node_codebert_cache",
+          "checkpoint_path": "experiments/output/gin_codebert_training/gin_codebert_checkpoint.pt",
+          "training": {
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "margin": 0.3,
+            "epochs": 50,
+            "batch_size": 16,
+            "triplets_per_epoch": 256,
+            "patience": 10,
+            "mine_every": 5
+          }
+        },
+        "gin_struct": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "dropout": 0.2,
+          "device": "cpu",
+          "checkpoint_path": "experiments/output/gin_struct_training/gin_struct_checkpoint.pt",
+          "training": {
+            "lr": 1e-05,
+            "weight_decay": 0.0001,
+            "margin": 0.3,
+            "epochs": 100,
+            "batch_size": 32,
+            "triplets_per_epoch": 512,
+            "patience": 20,
+            "mine_every": 5,
+            "label_mode": "cve",
+            "warm_start": true
+          }
+        }
+      },
+      "rag": {
+        "index_path": "src/rag/faiss.index",
+        "metadata_path": "src/rag/metadata.json",
+        "top_k": 5,
+        "embedding_variant": "wl",
+        "prompt_variant": "graph"
+      },
+      "experiment": {
+        "split": {
+          "enabled": true,
+          "stratified": true,
+          "seed": 42,
+          "test_ratio": 0.2,
+          "include_real_in_index": true,
+          "augmented_train_ratio": 0.5,
+          "query_source": "graphml_augmented"
+        }
+      }
+    },
+    "axes": [
+      {
+        "name": "strategy",
+        "n_values": 2,
+        "description": "PCA placement"
+      }
+    ],
+    "data_info": {
+      "n_pairs": 449,
+      "n_index_pairs": 225,
+      "n_query_pairs": 73,
+      "split_info": {
+        "enabled": true,
+        "seed": 42,
+        "stratified": true,
+        "test_ratio": 0.2,
+        "query_source": "graphml_augmented",
+        "include_real_in_index": true,
+        "augmented_train_ratio": 0.5,
+        "counts": {
+          "total": 449,
+          "real_total": 75,
+          "aug_total": 374,
+          "aug_train_total": 301,
+          "aug_train_used": 150,
+          "aug_test_total": 73,
+          "index_total": 225,
+          "query_total": 73
+        }
+      },
+      "cwe_ids": [
+        "Expired Pointer Dereference",
+        "Integer Underflow",
+        "Use of Uninitialized Variable",
+        "NULL Pointer Dereference",
+        "Return of Stack Variable Address After Scope",
+        "Use After Free",
+        "Integer Overflow or Wraparound",
+        "Incorrect Check of Function Return Value",
+        "Improper Validation of Array Index",
+        "Operation on a Resource after Expiration or Release",
+        "Incorrect Type Conversion or Cast",
+        "Improper Input Validation",
+        "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+        "Improper Control of a Resource Through Its Lifetime",
+        "Improper Locking",
+        "Out-of-bounds Write",
+        "Business Logic Errors",
+        "Assignment of a Fixed Address to a Pointer",
+        "Race Condition",
+        "Memory Leak",
+        "Unchecked Return Value",
+        "Access of Resource Using Incompatible Type ('Type Confusion')",
+        "Deadlock"
+      ],
+      "projects": [
+        "autopatch"
+      ]
+    }
+  },
+  "cells": [
+    {
+      "coords": {
+        "strategy": "norm_concat_pca"
+      },
+      "metrics": {
+        "strategy": "norm_concat_pca",
+        "n_index": 225,
+        "n_query": 73,
+        "intrinsic": {
+          "dim": 128,
+          "embed_time_s": 154.81109372599894,
+          "space_stats": {
+            "mean_norm": 1.0,
+            "std_norm": 5.4047387010314196e-08,
+            "mean_pairwise_sim": 0.03422336280345917,
+            "std_pairwise_sim": 0.17952747642993927,
+            "min_pairwise_sim": -0.6318429708480835,
+            "max_pairwise_sim": 1.0000005960464478,
+            "effective_dim": 31.218375740693684
+          },
+          "isotropy": 0.002386679641302789,
+          "hubness": {
+            "k_occurrence_mean": 10.0,
+            "k_occurrence_std": 6.06043636126054,
+            "k_skewness": 1.0925765751474301,
+            "hub_fraction": 0.06222222222222222
+          },
+          "distance_concentration": {
+            "relative_contrast_mean": 109458.7421875,
+            "relative_contrast_std": 1089052.0,
+            "cv_distances": 0.17048881947994232
+          }
+        },
+        "retrieval": {
+          "hit@1": 0.8904109589041096,
+          "hit@5": 0.958904109589041,
+          "hit@10": 0.9726027397260274,
+          "mrr": 0.9240867579908677,
+          "ndcg@1": 0.8801369863013698,
+          "ndcg@5": 0.8728830781205185,
+          "ndcg@10": 0.9080768090118831,
+          "map@1": 0.8904109589041096,
+          "map@5": 0.6056735159817352,
+          "map@10": 0.5869140030441401,
+          "precision@1": 0.8904109589041096,
+          "precision@5": 0.4602739726027397,
+          "precision@10": 0.26301369863013696,
+          "recall@1": 0.26161121983039787,
+          "recall@5": 0.5789791258969341,
+          "recall@10": 0.6455316373124592,
+          "cve_precision": 0.9666666666666667,
+          "cve_recall": 0.6711922398589064,
+          "cve_f1": 0.7722474536509623,
+          "n": 73,
+          "n_cve_classes": 45
+        },
+        "class_separation": {
+          "intra_mean": 0.22467078215888012,
+          "inter_mean": 0.10879479348659515,
+          "ratio": 2.065087629276692
+        },
+        "alignment_uniformity": {
+          "alignment": 1.8368346691131592,
+          "uniformity": -3.575857162475586
+        }
+      },
+      "timing_s": 162.17191210199962
+    },
+    {
+      "coords": {
+        "strategy": "norm_pca_concat"
+      },
+      "metrics": {
+        "strategy": "norm_pca_concat",
+        "n_index": 225,
+        "n_query": 73,
+        "intrinsic": {
+          "dim": 126,
+          "embed_time_s": 89.80704886899912,
+          "space_stats": {
+            "mean_norm": 1.0,
+            "std_norm": 5.4193264986679424e-08,
+            "mean_pairwise_sim": 0.0462275855243206,
+            "std_pairwise_sim": 0.2112824022769928,
+            "min_pairwise_sim": -0.6875931620597839,
+            "max_pairwise_sim": 1.000000238418579,
+            "effective_dim": 23.286525263291324
+          },
+          "isotropy": 4.715393011528428e-09,
+          "hubness": {
+            "k_occurrence_mean": 10.0,
+            "k_occurrence_std": 5.550575545732973,
+            "k_skewness": 0.8493996029596662,
+            "hub_fraction": 0.035555555555555556
+          },
+          "distance_concentration": {
+            "relative_contrast_mean": 252232.8125,
+            "relative_contrast_std": 2509609.5,
+            "cv_distances": 0.20436756312847137
+          }
+        },
+        "retrieval": {
+          "hit@1": 0.8356164383561644,
+          "hit@5": 0.9452054794520548,
+          "hit@10": 0.9726027397260274,
+          "mrr": 0.8803816046966731,
+          "ndcg@1": 0.8253424657534246,
+          "ndcg@5": 0.8435047480682842,
+          "ndcg@10": 0.8787388212537115,
+          "map@1": 0.8356164383561644,
+          "map@5": 0.5625875190258752,
+          "map@10": 0.5415878451837356,
+          "precision@1": 0.8356164383561644,
+          "precision@5": 0.4520547945205479,
+          "precision@10": 0.25342465753424664,
+          "recall@1": 0.22462491846053487,
+          "recall@5": 0.5600130463144162,
+          "recall@10": 0.628962818003914,
+          "cve_precision": 0.9666666666666667,
+          "cve_recall": 0.6540352733686068,
+          "cve_f1": 0.7613606725609292,
+          "n": 73,
+          "n_cve_classes": 45
+        },
+        "class_separation": {
+          "intra_mean": 0.2567646660558555,
+          "inter_mean": 0.13872230052947998,
+          "ratio": 1.850925662822974
+        },
+        "alignment_uniformity": {
+          "alignment": 1.8032829761505127,
+          "uniformity": -3.4361772537231445
+        }
+      },
+      "timing_s": 96.32241041299858
+    }
+  ]
+}
