@@ -70,6 +70,98 @@ def collect_changed_code(
     return " ".join(parts)
 
 
+def collect_flow_ordered_code(
+    G: nx.MultiDiGraph,
+    max_tokens: int = 400,
+    dw_thresh: float = _CHANGED_THRESH,
+) -> str:
+    """
+    Concatenate CODE from nodes ordered by graph data-flow traversal.
+
+    Instead of sorting by line number, follows REACHING_DEF and CFG edges
+    from high-importance seed nodes outward. This makes adjacent tokens in
+    the sequence flow-connected in the graph, so CodeBERT's self-attention
+    implicitly captures data-flow relationships.
+
+    Traversal order:
+      1. Start from highest diff_weight nodes (removed > fix_adjacent > context)
+      2. Follow outgoing REACHING_DEF edges (data flows FROM here)
+      3. Then outgoing CFG edges (control flows FROM here)
+      4. BFS expansion until max_tokens reached
+    """
+    FLOW_EDGES = {"REACHING_DEF", "CFG", "CDG"}
+
+    # Collect all nodes with code
+    node_info = {}  # node_id → (code, diff_weight)
+    for nd in G.nodes():
+        attr = G.nodes[nd]
+        code = (attr.get("CODE", "") or "").strip()
+        if not code:
+            continue
+        dw = float(attr.get("diff_weight", 0.2))
+        node_info[nd] = (code, dw)
+
+    if not node_info:
+        return ""
+
+    # Seed nodes: those above threshold, sorted by importance
+    seeds = [(nd, dw) for nd, (code, dw) in node_info.items() if dw > dw_thresh]
+    if not seeds:
+        # Fallback: use all nodes, pick highest-degree as seeds
+        seeds = [(nd, dw) for nd, (code, dw) in node_info.items()]
+    seeds.sort(key=lambda x: -x[1])
+
+    # BFS from seeds following flow edges (REACHING_DEF preferred over CFG)
+    visited_order = []
+    visited = set()
+
+    def _flow_successors(n):
+        """Get successors ordered: REACHING_DEF first, then CFG, then CDG."""
+        by_type = {"REACHING_DEF": [], "CFG": [], "CDG": []}
+        for _, tgt, d in G.out_edges(n, data=True):
+            et = d.get("labelE") or d.get("label", "")
+            if et in by_type and tgt in node_info and tgt not in visited:
+                by_type[et].append(tgt)
+        return by_type["REACHING_DEF"] + by_type["CFG"] + by_type["CDG"]
+
+    # Start BFS from each seed
+    from collections import deque
+    queue = deque()
+    for nd, _ in seeds:
+        if nd not in visited:
+            visited.add(nd)
+            visited_order.append(nd)
+            queue.append(nd)
+
+    while queue:
+        n = queue.popleft()
+        for succ in _flow_successors(n):
+            if succ not in visited:
+                visited.add(succ)
+                visited_order.append(succ)
+                queue.append(succ)
+
+    # Also add unvisited nodes (disconnected from flow) at the end
+    for nd in node_info:
+        if nd not in visited:
+            visited_order.append(nd)
+
+    # Build text sequence in traversal order
+    parts, tok_count = [], 0
+    for nd in visited_order:
+        code, _ = node_info[nd]
+        words = code.split()
+        if tok_count + len(words) > max_tokens:
+            remaining = max_tokens - tok_count
+            if remaining > 0:
+                parts.append(" ".join(words[:remaining]))
+            break
+        parts.append(code)
+        tok_count += len(words)
+
+    return " ".join(parts)
+
+
 # ── CodeBERT-only embedder ─────────────────────────────────────────────
 
 
@@ -209,6 +301,82 @@ class CodeBERTSeqEmbedder(BaseEmbedder):
             expl = self._pca.explained_variance_ratio_.sum()
             print(
                 f"    [codebert_seq] PCA fitted — {n_comp} comp, "
+                f"explained variance: {expl:.2%}"
+            )
+
+        projected = self._pca.transform(raw).astype(np.float32)
+        if projected.shape[1] < self.dim:
+            padded = np.zeros((projected.shape[0], self.dim), dtype=np.float32)
+            padded[:, : projected.shape[1]] = projected
+            projected = padded
+        projected = self._norm_mat(projected)
+        projected[~valid] = 0.0
+        return projected
+
+
+class CodeBERTFlowEmbedder(CodeBERTSeqEmbedder):
+    """
+    CodeBERT with graph-flow-ordered code sequencing.
+
+    Instead of sorting code by line number, follows REACHING_DEF → CFG → CDG
+    edges from seed nodes. This makes adjacent tokens in the input sequence
+    data-flow-connected, so CodeBERT's self-attention implicitly captures
+    structural relationships between statements.
+
+    Inspired by GraphFVD's use of graph-aware code representation.
+    """
+
+    @property
+    def name(self) -> str:
+        return "codebert_flow"
+
+    def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
+        if self.projection != "none" and not self._fitted:
+            raise RuntimeError("Call embed_many() first to fit PCA")
+        self._load_codebert()
+        code = collect_flow_ordered_code(G)
+        raw = self.encode_batch([code])
+
+        if self.projection == "none":
+            return self._norm_vec(raw[0]) if self.apply_norm else raw[0]
+
+        projected = self._pca.transform(raw)[0].astype(np.float32)
+        if projected.shape[0] < self.dim:
+            padded = np.zeros(self.dim, dtype=np.float32)
+            padded[: projected.shape[0]] = projected
+            projected = padded
+        return self._norm_vec(projected) if self.apply_norm else projected
+
+    def embed_many(self, graphs: list) -> np.ndarray:
+        self._load_codebert()
+
+        code_strings = [collect_flow_ordered_code(G) for G in graphs]
+        raw = self.encode_batch(code_strings)
+
+        valid = np.linalg.norm(raw, axis=1) > 1e-8
+
+        if self.projection == "none":
+            self.dim = raw.shape[1]
+            out = self._norm_mat(raw)
+            out[~valid] = 0.0
+            print(f"    [codebert_flow] no projection — dim={self.dim}")
+            return out
+
+        from sklearn.decomposition import PCA
+
+        out = np.zeros((len(graphs), self.dim), dtype=np.float32)
+        if not valid.any():
+            return out
+
+        if not self._fitted:
+            valid_raw = raw[valid]
+            n_comp = min(self.dim, valid_raw.shape[0] - 1, valid_raw.shape[1])
+            self._pca = PCA(n_components=n_comp, random_state=42)
+            self._pca.fit(valid_raw)
+            self._fitted = True
+            expl = self._pca.explained_variance_ratio_.sum()
+            print(
+                f"    [codebert_flow] PCA fitted — {n_comp} comp, "
                 f"explained variance: {expl:.2%}"
             )
 
