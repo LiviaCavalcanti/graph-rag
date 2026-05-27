@@ -186,7 +186,7 @@ class TestSerializeGraphContext:
     def test_contains_all_sections(self):
         G = _make_graph()
         result = serialize_graph_context(G)
-        assert "[Vulnerability Diff]" in result
+        assert "[Patch Diff]" in result
         assert "[Data Flow]" in result
         assert "[Control Dependencies]" in result
 
