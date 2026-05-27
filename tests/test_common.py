@@ -316,23 +316,27 @@ class TestLoadPairs:
 
     def test_load_pairs_delegates(self):
         sentinel = [MagicMock(), MagicMock()]
-        with patch("src.data.autopatch.AutoPatchDataset") as MockDS:
-            MockDS.return_value.load_all.return_value = sentinel
+        MockDS = MagicMock()
+        MockDS.return_value.load_all.return_value = sentinel
+        MockDS.return_value.name.return_value = "autopatch"
+        with patch.dict("src.data.REGISTRY", {"autopatch": MockDS}):
             from src.data import load_pairs
             result = load_pairs(self._cfg())
         MockDS.assert_called_once_with({"root": "/fake/path"})
         MockDS.return_value.load_all.assert_called_once()
-        assert result is sentinel
+        assert result == sentinel
 
     def test_load_pairs_lightweight_delegates(self):
         sentinel = [MagicMock()]
-        with patch("src.data.autopatch.AutoPatchDataset") as MockDS:
-            MockDS.return_value.load_lightweight.return_value = sentinel
+        MockDS = MagicMock()
+        MockDS.return_value.load_lightweight.return_value = sentinel
+        MockDS.return_value.name.return_value = "autopatch"
+        with patch.dict("src.data.REGISTRY", {"autopatch": MockDS}):
             from src.data import load_pairs_lightweight
             result = load_pairs_lightweight(self._cfg())
         MockDS.assert_called_once_with({"root": "/fake/path"})
         MockDS.return_value.load_lightweight.assert_called_once()
-        assert result is sentinel
+        assert result == sentinel
 
 
 # ── evaluate_retrieval (ranx-backed) ────────────────────────────────
