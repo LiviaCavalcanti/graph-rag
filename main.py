@@ -72,10 +72,11 @@ def run_export(cfg: str, dataset_name: str | None = None):
 
 
 def run_pipeline(cfg):
-    active_datasets = [name for name in DATASETS if cfg["data"].get(name)]
+    active_datasets = [name for name in DATASETS if name in cfg["data"]["active"]]
     rag_cfg = cfg["rag"]
     variant = rag_cfg["embedding_variant"]
     embedders = build_embedders(cfg)
+    
     indexer = next(e for e in embedders if e.name == variant)
     index = FAISSIndex(
         dim=cfg["embeddings"]["dim"],
