@@ -1,0 +1,20 @@
+PYTHONHASHSEED=0 OMP_NUM_THREADS=1 uv run python -m experiments.exp.combining_norm_vs_pca --config config.yaml
+{
+  "comparison": [
+    {
+      "strategy": "norm_concat_pca",
+      "hit@1": 0.863013698630137,
+      "hit@5": 0.9452054794520548,
+      "hit@10": 0.958904109589041,
+      "mrr": 0.8980756686236139,
+      "ndcg@10": 0.8784003670526852,
+      "map@10": 0.5831895520765384,
+      "eff_dim": 31.053527709393855,
+      "mean_sim": 0.034251146018505096,
+      "isotropy": 0.0022510873879068157,
+      "hub_skew": 1.2017519747359164,
+      "intra_inter": 2.0908137470586463,
+      "embed_time_s": 155.69376831199952
+    }
+  ]
+}

@@ -1,0 +1,429 @@
+{
+  "run_id": "20260503_161334_combining_bedf72",
+  "metadata": {
+    "experiment": "combining",
+    "timestamp": "2026-05-03T16:22:46.154874+00:00",
+    "config": {
+      "data": {
+        "autopatch": {
+          "root": "CVE-list",
+          "graphml_root": "graphml_augmented",
+          "include_variants": true
+        }
+      },
+      "joern": {
+        "workers": 8,
+        "timeout_s": 120,
+        "bin_dir": "/home/z0050s2b/bin/joern/joern-cli"
+      },
+      "graph": {
+        "node_types": [
+          "METHOD",
+          "METHOD_PARAMETER_IN",
+          "METHOD_PARAMETER_OUT",
+          "METHOD_RETURN",
+          "BLOCK",
+          "LOCAL",
+          "CALL",
+          "IDENTIFIER",
+          "LITERAL",
+          "RETURN",
+          "CONTROL_STRUCTURE",
+          "FIELD_IDENTIFIER",
+          "UNKNOWN"
+        ],
+        "edge_types": [
+          "AST",
+          "CFG",
+          "CDG",
+          "REF",
+          "ARGUMENT",
+          "RECEIVER"
+        ]
+      },
+      "embeddings": {
+        "active": [
+          "wl",
+          "gin",
+          "netlsd",
+          "combined",
+          "codebert_seq",
+          "codebert_pattern"
+        ],
+        "dim": 128,
+        "projection": "pca",
+        "l2_normalize": true,
+        "netlsd": {
+          "timescales": 128
+        },
+        "wl": {
+          "num_iterations": 4,
+          "hidden_dim": 64
+        },
+        "gin": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "seed": 42
+        },
+        "rgcn": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "seed": 42
+        },
+        "codebert": {
+          "model_path": "/home/z0050s2b/code/graph-rag/models/codebert-base/"
+        }
+      },
+      "rag": {
+        "index_path": "src/rag/faiss.index",
+        "metadata_path": "src/rag/metadata.json",
+        "top_k": 5,
+        "embedding_variant": "wl"
+      },
+      "experiment": {
+        "split": {
+          "enabled": true,
+          "stratified": true,
+          "seed": 42,
+          "test_ratio": 0.2,
+          "include_real_in_index": true,
+          "augmented_train_ratio": 0.5,
+          "query_source": "graphml_augmented"
+        }
+      }
+    },
+    "axes": [
+      {
+        "name": "strategy",
+        "n_values": 4,
+        "description": "Combination strategy"
+      }
+    ],
+    "data_info": {
+      "n_pairs": 449,
+      "n_index_pairs": 225,
+      "n_query_pairs": 73,
+      "split_info": {
+        "enabled": true,
+        "seed": 42,
+        "stratified": true,
+        "test_ratio": 0.2,
+        "query_source": "graphml_augmented",
+        "include_real_in_index": true,
+        "augmented_train_ratio": 0.5,
+        "counts": {
+          "total": 449,
+          "real_total": 75,
+          "aug_total": 374,
+          "aug_train_total": 301,
+          "aug_train_used": 150,
+          "aug_test_total": 73,
+          "index_total": 225,
+          "query_total": 73
+        }
+      },
+      "cwe_ids": [
+        "NULL Pointer Dereference",
+        "Deadlock",
+        "Race Condition",
+        "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+        "Assignment of a Fixed Address to a Pointer",
+        "Incorrect Type Conversion or Cast",
+        "Integer Overflow or Wraparound",
+        "Improper Locking",
+        "Memory Leak",
+        "Improper Validation of Array Index",
+        "Use After Free",
+        "Integer Underflow",
+        "Access of Resource Using Incompatible Type ('Type Confusion')",
+        "Unchecked Return Value",
+        "Business Logic Errors",
+        "Return of Stack Variable Address After Scope",
+        "Operation on a Resource after Expiration or Release",
+        "Out-of-bounds Write",
+        "Incorrect Check of Function Return Value",
+        "Improper Control of a Resource Through Its Lifetime",
+        "Expired Pointer Dereference",
+        "Improper Input Validation",
+        "Use of Uninitialized Variable"
+      ],
+      "projects": [
+        "autopatch"
+      ]
+    }
+  },
+  "cells": [
+    {
+      "coords": {
+        "strategy": "concat_pca"
+      },
+      "metrics": {
+        "strategy": "concat_pca",
+        "n_index": 225,
+        "n_query": 73,
+        "intrinsic": {
+          "dim": 128,
+          "embed_time_s": 52.807956364995334,
+          "space_stats": {
+            "mean_norm": 1.0,
+            "std_norm": 5.619579823701315e-08,
+            "mean_pairwise_sim": 0.03367442265152931,
+            "std_pairwise_sim": 0.18052919209003448,
+            "min_pairwise_sim": -0.6513749361038208,
+            "max_pairwise_sim": 1.0000003576278687,
+            "effective_dim": 30.89875685340301
+          },
+          "isotropy": 0.00237779437630051,
+          "hubness": {
+            "k_occurrence_mean": 10.0,
+            "k_occurrence_std": 6.29779502859709,
+            "k_skewness": 1.3985386166577471,
+            "hub_fraction": 0.057777777777777775
+          },
+          "distance_concentration": {
+            "relative_contrast_mean": 344655.84375,
+            "relative_contrast_std": 2529809.75,
+            "cv_distances": 0.1713959127664566
+          }
+        },
+        "retrieval": {
+          "hit@1": 0.8904109589041096,
+          "hit@5": 0.958904109589041,
+          "hit@10": 0.9726027397260274,
+          "mrr": 0.9148401826484018,
+          "ndcg@1": 0.8904109589041096,
+          "ndcg@5": 0.6979497035511567,
+          "ndcg@10": 0.6869956501680373,
+          "map@1": 0.2661774298760601,
+          "map@5": 0.5482909328114808,
+          "map@10": 0.566622363557295,
+          "precision@1": 0.8904109589041096,
+          "precision@5": 0.4657534246575342,
+          "precision@10": 0.2561643835616439,
+          "recall@1": 0.2661774298760601,
+          "recall@5": 0.5877364644487932,
+          "recall@10": 0.6351435094585779,
+          "cve_precision": 0.9666666666666667,
+          "cve_recall": 0.6575687830687831,
+          "cve_f1": 0.7612217846588163,
+          "n": 73,
+          "n_cve_classes": 45
+        },
+        "class_separation": {
+          "intra_mean": 0.2237081355617746,
+          "inter_mean": 0.107979416847229,
+          "ratio": 2.071766472662845
+        },
+        "alignment_uniformity": {
+          "alignment": 1.8386200666427612,
+          "uniformity": -3.575002431869507
+        }
+      },
+      "timing_s": 60.56903568695998
+    },
+    {
+      "coords": {
+        "strategy": "pca_concat_pca"
+      },
+      "metrics": {
+        "strategy": "pca_concat_pca",
+        "n_index": 225,
+        "n_query": 73,
+        "intrinsic": {
+          "dim": 128,
+          "embed_time_s": 47.985522105998825,
+          "space_stats": {
+            "mean_norm": 1.0,
+            "std_norm": 5.345989961824671e-08,
+            "mean_pairwise_sim": 0.033674392849206924,
+            "std_pairwise_sim": 0.18052718043327332,
+            "min_pairwise_sim": -0.6511244773864746,
+            "max_pairwise_sim": 1.000000238418579,
+            "effective_dim": 30.899493886381833
+          },
+          "isotropy": 0.002295535172477102,
+          "hubness": {
+            "k_occurrence_mean": 10.0,
+            "k_occurrence_std": 6.3027330932258625,
+            "k_skewness": 1.395147502841903,
+            "hub_fraction": 0.057777777777777775
+          },
+          "distance_concentration": {
+            "relative_contrast_mean": 4.866016864776611,
+            "relative_contrast_std": 10.691892623901367,
+            "cv_distances": 0.1710815578699112
+          }
+        },
+        "retrieval": {
+          "hit@1": 0.8904109589041096,
+          "hit@5": 0.958904109589041,
+          "hit@10": 0.9726027397260274,
+          "mrr": 0.9148401826484018,
+          "ndcg@1": 0.8904109589041096,
+          "ndcg@5": 0.6979497035511567,
+          "ndcg@10": 0.6869956501680373,
+          "map@1": 0.2661774298760601,
+          "map@5": 0.5482909328114808,
+          "map@10": 0.566622363557295,
+          "precision@1": 0.8904109589041096,
+          "precision@5": 0.4657534246575342,
+          "precision@10": 0.2561643835616439,
+          "recall@1": 0.2661774298760601,
+          "recall@5": 0.5877364644487932,
+          "recall@10": 0.6351435094585779,
+          "cve_precision": 0.9666666666666667,
+          "cve_recall": 0.6575687830687831,
+          "cve_f1": 0.7612217846588163,
+          "n": 73,
+          "n_cve_classes": 45
+        },
+        "class_separation": {
+          "intra_mean": 0.2236929554897158,
+          "inter_mean": 0.10797633975744247,
+          "ratio": 2.071684926459061
+        },
+        "alignment_uniformity": {
+          "alignment": 1.8386151790618896,
+          "uniformity": -3.5750107765197754
+        }
+      },
+      "timing_s": 53.29550633695908
+    },
+    {
+      "coords": {
+        "strategy": "pca_concat"
+      },
+      "metrics": {
+        "strategy": "pca_concat",
+        "n_index": 225,
+        "n_query": 73,
+        "intrinsic": {
+          "dim": 126,
+          "embed_time_s": 64.37468489696039,
+          "space_stats": {
+            "mean_norm": 1.0,
+            "std_norm": 5.390111468273062e-08,
+            "mean_pairwise_sim": 0.0455927774310112,
+            "std_pairwise_sim": 0.21247325837612152,
+            "min_pairwise_sim": -0.7079373598098755,
+            "max_pairwise_sim": 1.0000003576278687,
+            "effective_dim": 23.03754288790092
+          },
+          "isotropy": 4.551033020316155e-09,
+          "hubness": {
+            "k_occurrence_mean": 10.0,
+            "k_occurrence_std": 5.751135153650586,
+            "k_skewness": 1.086730297025369,
+            "hub_fraction": 0.04888888888888889
+          },
+          "distance_concentration": {
+            "relative_contrast_mean": 429824.09375,
+            "relative_contrast_std": 3483016.0,
+            "cv_distances": 0.2057018280029297
+          }
+        },
+        "retrieval": {
+          "hit@1": 0.8356164383561644,
+          "hit@5": 0.958904109589041,
+          "hit@10": 0.9726027397260274,
+          "mrr": 0.8824200913242007,
+          "ndcg@1": 0.8356164383561644,
+          "ndcg@5": 0.6698759803076221,
+          "ndcg@10": 0.6647959815276268,
+          "map@1": 0.22462491846053492,
+          "map@5": 0.5128294194390085,
+          "map@10": 0.5381762339639052,
+          "precision@1": 0.8356164383561644,
+          "precision@5": 0.45753424657534253,
+          "precision@10": 0.25342465753424664,
+          "recall@1": 0.22462491846053492,
+          "recall@5": 0.5765655577299412,
+          "recall@10": 0.6387964774951076,
+          "cve_precision": 0.9666666666666667,
+          "cve_recall": 0.6655440917107585,
+          "cve_f1": 0.7660738734845123,
+          "n": 73,
+          "n_cve_classes": 45
+        },
+        "class_separation": {
+          "intra_mean": 0.2558779534681336,
+          "inter_mean": 0.1366739720106125,
+          "ratio": 1.8721776334141011
+        },
+        "alignment_uniformity": {
+          "alignment": 1.8045192956924438,
+          "uniformity": -3.4342358112335205
+        }
+      },
+      "timing_s": 70.5572621350293
+    },
+    {
+      "coords": {
+        "strategy": "norm_concat_pca"
+      },
+      "metrics": {
+        "strategy": "norm_concat_pca",
+        "n_index": 225,
+        "n_query": 73,
+        "intrinsic": {
+          "dim": 128,
+          "embed_time_s": 59.69683252600953,
+          "space_stats": {
+            "mean_norm": 1.0,
+            "std_norm": 5.1504301268323616e-08,
+            "mean_pairwise_sim": 0.03367406874895096,
+            "std_pairwise_sim": 0.1805274933576584,
+            "min_pairwise_sim": -0.6513224840164185,
+            "max_pairwise_sim": 1.000000238418579,
+            "effective_dim": 30.8992981036853
+          },
+          "isotropy": 0.0023551676531926723,
+          "hubness": {
+            "k_occurrence_mean": 10.0,
+            "k_occurrence_std": 6.304143258383507,
+            "k_skewness": 1.3955951506229853,
+            "hub_fraction": 0.057777777777777775
+          },
+          "distance_concentration": {
+            "relative_contrast_mean": 415573.6875,
+            "relative_contrast_std": 3367560.0,
+            "cv_distances": 0.17153774201869965
+          }
+        },
+        "retrieval": {
+          "hit@1": 0.8904109589041096,
+          "hit@5": 0.958904109589041,
+          "hit@10": 0.9726027397260274,
+          "mrr": 0.9148401826484018,
+          "ndcg@1": 0.8904109589041096,
+          "ndcg@5": 0.6979497035511567,
+          "ndcg@10": 0.6869956501680373,
+          "map@1": 0.2661774298760601,
+          "map@5": 0.5482909328114808,
+          "map@10": 0.566622363557295,
+          "precision@1": 0.8904109589041096,
+          "precision@5": 0.4657534246575342,
+          "precision@10": 0.2561643835616439,
+          "recall@1": 0.2661774298760601,
+          "recall@5": 0.5877364644487932,
+          "recall@10": 0.6351435094585779,
+          "cve_precision": 0.9666666666666667,
+          "cve_recall": 0.6575687830687831,
+          "cve_f1": 0.7612217846588163,
+          "n": 73,
+          "n_cve_classes": 45
+        },
+        "class_separation": {
+          "intra_mean": 0.2237029277274142,
+          "inter_mean": 0.10797709971666336,
+          "ratio": 2.0717627007432178
+        },
+        "alignment_uniformity": {
+          "alignment": 1.8386203050613403,
+          "uniformity": -3.5750088691711426
+        }
+      },
+      "timing_s": 71.325011917972
+    }
+  ]
+}

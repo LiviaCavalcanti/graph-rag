@@ -1,0 +1,328 @@
+{
+  "run_id": "20260518_203123_combining_norm_vs_pca_e1aa40",
+  "metadata": {
+    "experiment": "combining_norm_vs_pca",
+    "timestamp": "2026-05-18T20:53:37.763225+00:00",
+    "config": {
+      "data": {
+        "autopatch": {
+          "root": "CVE-list",
+          "graphml_root": "graphml_augmented",
+          "include_variants": true
+        }
+      },
+      "joern": {
+        "workers": 8,
+        "timeout_s": 120,
+        "bin_dir": "/home/z0050s2b/bin/joern/joern-cli"
+      },
+      "graph": {
+        "node_types": [
+          "METHOD",
+          "METHOD_PARAMETER_IN",
+          "METHOD_PARAMETER_OUT",
+          "METHOD_RETURN",
+          "BLOCK",
+          "LOCAL",
+          "CALL",
+          "IDENTIFIER",
+          "LITERAL",
+          "RETURN",
+          "CONTROL_STRUCTURE",
+          "FIELD_IDENTIFIER",
+          "UNKNOWN"
+        ],
+        "edge_types": [
+          "AST",
+          "CFG",
+          "CDG",
+          "REF",
+          "ARGUMENT",
+          "RECEIVER"
+        ]
+      },
+      "embeddings": {
+        "active": [
+          "gin",
+          "combined"
+        ],
+        "dim": 128,
+        "projection": "pca",
+        "l2_normalize": true,
+        "netlsd": {
+          "timescales": 128
+        },
+        "wl": {
+          "num_iterations": 4,
+          "hidden_dim": 64
+        },
+        "gin": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "seed": 42
+        },
+        "rgcn": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "seed": 42
+        },
+        "codebert": {
+          "model_path": "/home/z0050s2b/code/graph-rag/models/codebert-base/"
+        },
+        "gin_codebert": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "dropout": 0.3,
+          "device": "cpu",
+          "cb_batch_size": 32,
+          "node_cache_dir": "workspace/node_codebert_cache",
+          "checkpoint_path": "experiments/output/gin_codebert_training/gin_codebert_checkpoint.pt",
+          "training": {
+            "lr": 0.001,
+            "weight_decay": 0.0001,
+            "margin": 0.3,
+            "epochs": 50,
+            "batch_size": 16,
+            "triplets_per_epoch": 256,
+            "patience": 10,
+            "mine_every": 5
+          }
+        },
+        "gin_struct": {
+          "hidden_dim": 128,
+          "num_layers": 3,
+          "dropout": 0.2,
+          "device": "cpu",
+          "checkpoint_path": "experiments/output/gin_struct_training/gin_struct_checkpoint.pt",
+          "training": {
+            "lr": 1e-05,
+            "weight_decay": 0.0001,
+            "margin": 0.3,
+            "epochs": 100,
+            "batch_size": 32,
+            "triplets_per_epoch": 512,
+            "patience": 20,
+            "mine_every": 5,
+            "label_mode": "cve",
+            "warm_start": true
+          }
+        }
+      },
+      "rag": {
+        "index_path": "src/rag/faiss.index",
+        "metadata_path": "src/rag/metadata.json",
+        "top_k": 5,
+        "embedding_variant": "wl",
+        "prompt_variant": "graph"
+      },
+      "experiment": {
+        "split": {
+          "enabled": true,
+          "stratified": true,
+          "seed": 42,
+          "test_ratio": 0.2,
+          "include_real_in_index": true,
+          "augmented_train_ratio": 0.5,
+          "query_source": "graphml_augmented"
+        }
+      }
+    },
+    "axes": [
+      {
+        "name": "strategy",
+        "n_values": 2,
+        "description": "Pre-processing method"
+      }
+    ],
+    "data_info": {
+      "n_pairs": 449,
+      "n_index_pairs": 225,
+      "n_query_pairs": 73,
+      "split_info": {
+        "enabled": true,
+        "seed": 42,
+        "stratified": true,
+        "test_ratio": 0.2,
+        "query_source": "graphml_augmented",
+        "include_real_in_index": true,
+        "augmented_train_ratio": 0.5,
+        "counts": {
+          "total": 449,
+          "real_total": 75,
+          "aug_total": 374,
+          "aug_train_total": 301,
+          "aug_train_used": 150,
+          "aug_test_total": 73,
+          "index_total": 225,
+          "query_total": 73
+        }
+      },
+      "cwe_ids": [
+        "Operation on a Resource after Expiration or Release",
+        "Expired Pointer Dereference",
+        "Deadlock",
+        "Assignment of a Fixed Address to a Pointer",
+        "Out-of-bounds Write",
+        "Memory Leak",
+        "Access of Resource Using Incompatible Type ('Type Confusion')",
+        "Improper Control of a Resource Through Its Lifetime",
+        "Incorrect Type Conversion or Cast",
+        "Unchecked Return Value",
+        "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+        "Return of Stack Variable Address After Scope",
+        "Improper Input Validation",
+        "Business Logic Errors",
+        "Integer Overflow or Wraparound",
+        "Improper Locking",
+        "Integer Underflow",
+        "Improper Validation of Array Index",
+        "Use of Uninitialized Variable",
+        "Use After Free",
+        "NULL Pointer Dereference",
+        "Incorrect Check of Function Return Value",
+        "Race Condition"
+      ],
+      "projects": [
+        "autopatch"
+      ]
+    }
+  },
+  "cells": [
+    {
+      "coords": {
+        "strategy": "norm_concat_pca"
+      },
+      "metrics": {
+        "strategy": "norm_concat_pca",
+        "n_index": 225,
+        "n_query": 73,
+        "intrinsic": {
+          "dim": 128,
+          "embed_time_s": 207.9500019570005,
+          "space_stats": {
+            "mean_norm": 1.0,
+            "std_norm": 5.1809966095106574e-08,
+            "mean_pairwise_sim": 0.03479538857936859,
+            "std_pairwise_sim": 0.18259163200855255,
+            "min_pairwise_sim": -0.637275755405426,
+            "max_pairwise_sim": 1.0000003576278687,
+            "effective_dim": 30.375682636367262
+          },
+          "isotropy": 0.002142276072856195,
+          "hubness": {
+            "k_occurrence_mean": 10.0,
+            "k_occurrence_std": 6.381918903346304,
+            "k_skewness": 1.3914597569396001,
+            "hub_fraction": 0.06222222222222222
+          },
+          "distance_concentration": {
+            "relative_contrast_mean": 4.8630805015563965,
+            "relative_contrast_std": 10.441557884216309,
+            "cv_distances": 0.1735704392194748
+          }
+        },
+        "retrieval": {
+          "hit@1": 0.821917808219178,
+          "hit@5": 0.9452054794520548,
+          "hit@10": 0.9726027397260274,
+          "mrr": 0.8714611872146117,
+          "ndcg@1": 0.8116438356164384,
+          "ndcg@5": 0.8249328259265648,
+          "ndcg@10": 0.869741738671597,
+          "map@1": 0.821917808219178,
+          "map@5": 0.5607039573820396,
+          "map@10": 0.5439046531854751,
+          "precision@1": 0.821917808219178,
+          "precision@5": 0.45753424657534253,
+          "precision@10": 0.26027397260273977,
+          "recall@1": 0.20909980430528374,
+          "recall@5": 0.5734670580560992,
+          "recall@10": 0.6457599478147423,
+          "cve_precision": 0.9666666666666667,
+          "cve_recall": 0.677068783068783,
+          "cve_f1": 0.776237092437349,
+          "n": 73,
+          "n_cve_classes": 45
+        },
+        "class_separation": {
+          "intra_mean": 0.22010851498951367,
+          "inter_mean": 0.11322198808193207,
+          "ratio": 1.9440438974648115
+        },
+        "alignment_uniformity": {
+          "alignment": 1.838449239730835,
+          "uniformity": -3.56508469581604
+        }
+      },
+      "timing_s": 221.1518664109999
+    },
+    {
+      "coords": {
+        "strategy": "pca_concat_pca"
+      },
+      "metrics": {
+        "strategy": "pca_concat_pca",
+        "n_index": 225,
+        "n_query": 73,
+        "intrinsic": {
+          "dim": 126,
+          "embed_time_s": 920.1534514759996,
+          "space_stats": {
+            "mean_norm": 1.0,
+            "std_norm": 6.065502589081007e-08,
+            "mean_pairwise_sim": 0.07792104780673981,
+            "std_pairwise_sim": 0.7238197922706604,
+            "min_pairwise_sim": -0.9865739345550537,
+            "max_pairwise_sim": 1.000000238418579,
+            "effective_dim": 1.9893971949595382
+          },
+          "isotropy": 7.673096220698991e-10,
+          "hubness": {
+            "k_occurrence_mean": 10.0,
+            "k_occurrence_std": 9.5214377999217,
+            "k_skewness": 1.4502444777387624,
+            "hub_fraction": 0.13333333333333333
+          },
+          "distance_concentration": {
+            "relative_contrast_mean": 201.3436737060547,
+            "relative_contrast_std": 361.1732482910156,
+            "cv_distances": 0.776009738445282
+          }
+        },
+        "retrieval": {
+          "hit@1": 0.6438356164383562,
+          "hit@5": 0.7671232876712328,
+          "hit@10": 0.8493150684931506,
+          "mrr": 0.705512067840835,
+          "ndcg@1": 0.6335616438356164,
+          "ndcg@5": 0.6682809096917682,
+          "ndcg@10": 0.7219297921296868,
+          "map@1": 0.6438356164383562,
+          "map@5": 0.3573744292237443,
+          "map@10": 0.3451986844966297,
+          "precision@1": 0.6438356164383562,
+          "precision@5": 0.3013698630136986,
+          "precision@10": 0.1780821917808219,
+          "recall@1": 0.16785714285714287,
+          "recall@5": 0.3587247227658186,
+          "recall@10": 0.41906392694063926,
+          "cve_precision": 0.8333333333333334,
+          "cve_recall": 0.4625405643738977,
+          "cve_f1": 0.5736987610019748,
+          "n": 73,
+          "n_cve_classes": 45
+        },
+        "class_separation": {
+          "intra_mean": 0.2304110324577145,
+          "inter_mean": 0.15187522768974304,
+          "ratio": 1.517107404299058
+        },
+        "alignment_uniformity": {
+          "alignment": 1.5596476793289185,
+          "uniformity": -1.3835927248001099
+        }
+      },
+      "timing_s": 942.0917497350001
+    }
+  ]
+}
