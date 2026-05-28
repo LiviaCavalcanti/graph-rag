@@ -55,7 +55,7 @@ from experiments.common import (
 from src.data import load_pairs
 from src.rag.hnsw import HNSWIndex
 from src.rag.utils import populate_index
-from experiments.exp.slicing_comparison import (
+from experiments.exp.graph_slicing.scripts.slicing_comparison import (
     VARIANT_DEFS, _resolve_query_build_fn,
     _strip_diff_attrs, _add_labels_from_vuln,
 )
