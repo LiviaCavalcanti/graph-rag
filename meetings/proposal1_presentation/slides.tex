@@ -10,7 +10,7 @@
 \usepackage{multirow}
 \usepackage{listings}
 \usepackage[most]{tcolorbox}
-\usetikzlibrary{arrows.meta,shadows,positioning,fit,shapes.geometric,calc, backgrounds}
+\usetikzlibrary{arrows.meta,shadows,positioning,fit,shapes.geometric,calc, shadows.blur, backgrounds}
 
 \lstdefinestyle{ccode}{
   language=C,
@@ -312,101 +312,281 @@ struct sock *alloc_socket(
 % =====================================================================
 % CPG VISUALIZATION — Simplified vulnerable vs. patched
 % =====================================================================
-\begin{frame}{Structure Reveals the Vulnerability}
-  \begin{columns}
-    % --- Vulnerable graph ---
+\begin{frame}[fragile]{Structure Reveals the Vulnerability}
+
+  % -----------------------------------------------------------
+  %  Shared colour / style definitions (if not already global)
+  % -----------------------------------------------------------
+  % Assumes these are already defined from the pipeline slide:
+  %   shadowcol, notecol, labelcol, headcol, slidebg
+  %   ccode, ccpg, csub, ckb, crank
+  %   borderoff / borderon
+  % Plus two semantic colours for this slide:
+  \colorlet{miss}{ccode}          % red  — vulnerable side
+  \colorlet{hit}{borderon}        % emerald — patched side
+
+  \begin{columns}[T]
+
+    % ===========================================================
+    %  LEFT COLUMN — Vulnerable
+    % ===========================================================
     \column{0.48\textwidth}
-    \centering
-    \textbf{\textcolor{miss}{Vulnerable}}
-    \vspace{0.2cm}
+    \begin{center}
 
-    \begin{tikzpicture}[
-      node distance=0.7cm,
-      n/.style={draw, rounded corners=2pt, font=\tiny\ttfamily,
-        minimum width=2.2cm, minimum height=0.5cm, align=center},
-      cfg/.style={-{Stealth[length=4pt]}, thick, black!70},
-      ddg/.style={-{Stealth[length=4pt]}, thick, c1, dashed},
-      every node/.append style={inner sep=2pt}
-    ]
-      \node[n, fill=hit!20] (alloc) {sk = sk\_alloc()};
-      \node[n, fill=warn!20, below=of alloc] (alias) {sock->sk = sk};
-      \node[n, fill=black!5, below=of alias] (branch) {if (!chan\_create())};
-      \node[n, fill=miss!20, below left=0.7cm and -0.3cm of branch] (free) {sk\_free(sk)};
-      \node[n, fill=black!5, below right=0.7cm and -0.3cm of branch] (ret) {return sk};
-      \node[n, fill=miss!15, below=of free] (retnull) {return NULL};
+      % Column header badge
+      \tikz{
+        \node[
+          fill=miss, text=white,
+          rounded corners=4pt,
+          font=\scriptsize\sffamily\bfseries,
+          inner xsep=6pt, inner ysep=2pt,
+          drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.35, fill=shadowcol}
+        ]{$\times$ \ Vulnerable};
+      }
 
-      % CFG edges
-      \draw[cfg] (alloc) -- (alias);
-      \draw[cfg] (alias) -- (branch);
-      \draw[cfg] (branch) -- node[left, font=\tiny, text=black!60]{T} (free);
-      \draw[cfg] (branch) -- node[right, font=\tiny, text=black!60]{F} (ret);
-      \draw[cfg] (free) -- (retnull);
+      \vspace{0.1cm}
 
-      % DDG edges
-      \draw[ddg] (alloc) -- (alias);
-      \draw[ddg] (alloc.east) to[bend left=50] (free.east);
+      \begin{tikzpicture}[
+  node distance=0.35cm,
+  n/.style={
+    draw=none,
+    rounded corners=6pt,
+    minimum width=2.3cm,
+    minimum height=0.45cm,
+    font=\tiny\sffamily\bfseries,
+    align=center,
+    text=white,
+    drop shadow={shadow xshift=1.5pt, shadow yshift=-2pt, opacity=0.38, fill=shadowcol}
+  },
+  cfg/.style={
+    -{Stealth[length=4pt, width=4pt]},
+    line width=1.1pt,
+    color=notecol!80
+  },
+  ddg/.style={
+    -{Stealth[length=3.5pt, width=3.5pt]},
+    line width=0.9pt,
+    color=ccpg!50,
+    dashed,
+    dash pattern=on 3pt off 2pt
+  },
+  blbl/.style={
+    font=\tiny\sffamily\bfseries,
+    text=notecol,
+    inner sep=1.5pt,
+    fill=slidebg,
+    rounded corners=2pt
+  },
+  every node/.append style={inner sep=3pt}
+]
 
-      % Missing edge annotation
-      \draw[miss, very thick, dotted, -{Stealth[length=4pt]}]
-        (free.west) to[bend right=60]
-        node[left, font=\tiny\bfseries, text=miss]{missing!} (alias.west);
-    \end{tikzpicture}
+  \node[n, fill=csub]    (alloc)  {sk = sk\_alloc()};
+  \node[n, fill=ckb,
+        below=of alloc]  (alias)  {sock->sk = sk};
+  \node[n, fill=ccpg!80,
+        below=of alias]  (branch) {if (!chan\_create())};
 
-    \vspace{0.2cm}
-    \footnotesize\textcolor{miss}{No nullification of alias after free}
+  \node[n, fill=ccode,
+        below left=0.4cm and 0.0cm of branch]  (free)    {sk\_free(sk)};
+  \node[n, fill=ccpg!55,
+        below right=0.4cm and 0.0cm of branch] (ret)     {return sk};
 
-    % --- Patched graph ---
+  \node[n, fill=ccode!70,
+        below=of free]   (retnull){return NULL};
+
+  \draw[cfg] (alloc)  -- (alias);
+  \draw[cfg] (alias)  -- (branch);
+  \draw[cfg] (branch) -- node[blbl, left=1pt]{T} (free);
+  \draw[cfg] (branch) -- node[blbl, right=1pt]{F} (ret);
+  \draw[cfg] (free)   -- (retnull);
+
+  \draw[ddg] (alloc) -- (alias);
+  \draw[ddg] (alloc.east) to[bend left=45] (free.east);
+
+  \draw[
+    miss!80, line width=1.8pt, dotted,
+    -{Stealth[length=4.5pt, width=4.5pt]}
+  ]
+    (free.west) to[bend left=30] (alias.west);
+
+  \node[
+    fill=miss!15, draw=miss, line width=0.5pt,
+    rounded corners=3pt,
+    font=\tiny\sffamily\bfseries,
+    text=miss,
+    inner xsep=3pt, inner ysep=1.5pt
+  ] at (-2.8cm, -1cm) {missing!};
+
+  \begin{scope}[on background layer]
+    \node[
+      fill=trackoff,
+      draw=borderoff, line width=0.6pt,
+      rounded corners=9pt,
+      fit=(alloc)(retnull)(ret),
+      inner xsep=10pt, inner ysep=8pt,
+      opacity=0.45
+    ] {};
+  \end{scope}
+
+\end{tikzpicture}
+
+      \vspace{0.05cm}
+      \tikz{
+        \node[
+          fill=miss!8, draw=miss, line width=0.5pt,
+          rounded corners=4pt,
+          font=\tiny\sffamily,
+          text=miss,
+          inner xsep=6pt, inner ysep=2pt,
+          drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+        ]{No nullification of alias after free};
+      }
+
+    \end{center}
+
+    % ===========================================================
+    %  RIGHT COLUMN — Patched
+    % ===========================================================
     \column{0.48\textwidth}
-    \centering
-    \textbf{\textcolor{hit}{Patched}}
-    \vspace{0.2cm}
+    \begin{center}
 
-    \begin{tikzpicture}[
-      node distance=0.7cm,
-      n/.style={draw, rounded corners=2pt, font=\tiny\ttfamily,
-        minimum width=2.2cm, minimum height=0.5cm, align=center},
-      cfg/.style={-{Stealth[length=4pt]}, thick, black!70},
-      ddg/.style={-{Stealth[length=4pt]}, thick, c1, dashed},
-      every node/.append style={inner sep=2pt}
-    ]
-      \node[n, fill=hit!20] (alloc) {sk = sk\_alloc()};
-      \node[n, fill=warn!20, below=of alloc] (alias) {sock->sk = sk};
-      \node[n, fill=black!5, below=of alias] (branch) {if (!chan\_create())};
-      \node[n, fill=miss!20, below left=0.7cm and -0.3cm of branch] (free) {sk\_free(sk)};
-      \node[n, fill=black!5, below right=0.7cm and -0.3cm of branch] (ret) {return sk};
-      \node[n, fill=hit!25, below=of free] (null) {sock->sk = NULL};
-      \node[n, fill=black!5, below=of null] (retnull) {return NULL};
+      % Column header badge
+      \tikz{
+        \node[
+          fill=hit, text=white,
+          rounded corners=4pt,
+          font=\scriptsize\sffamily\bfseries,
+          inner xsep=6pt, inner ysep=2pt,
+          drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.35, fill=shadowcol}
+        ]{$\checkmark$ \ Patched};
+      }
 
-      % CFG edges
-      \draw[cfg] (alloc) -- (alias);
-      \draw[cfg] (alias) -- (branch);
-      \draw[cfg] (branch) -- node[left, font=\tiny, text=black!60]{T} (free);
-      \draw[cfg] (branch) -- node[right, font=\tiny, text=black!60]{F} (ret);
-      \draw[cfg] (free) -- (null);
-      \draw[cfg] (null) -- (retnull);
+      \vspace{0.1cm}
 
-      % DDG edges
-      \draw[ddg] (alloc) -- (alias);
-      \draw[ddg] (alloc.east) to[bend left=50] (free.east);
+\begin{tikzpicture}[
+  node distance=0.35cm,
+  n/.style={
+    draw=none,
+    rounded corners=6pt,
+    minimum width=2.3cm,
+    minimum height=0.45cm,
+    font=\tiny\sffamily\bfseries,
+    align=center,
+    text=white,
+    drop shadow={shadow xshift=1.5pt, shadow yshift=-2pt, opacity=0.38, fill=shadowcol}
+  },
+  cfg/.style={
+    -{Stealth[length=4pt, width=4pt]},
+    line width=1.1pt,
+    color=notecol!80
+  },
+  ddg/.style={
+    -{Stealth[length=3.5pt, width=3.5pt]},
+    line width=0.9pt,
+    color=ccpg!50,
+    dashed,
+    dash pattern=on 3pt off 2pt
+  },
+  blbl/.style={
+    font=\tiny\sffamily\bfseries,
+    text=notecol,
+    inner sep=1.5pt,
+    fill=slidebg,
+    rounded corners=2pt
+  },
+  every node/.append style={inner sep=3pt}
+]
 
-      % Safety edge
-      \draw[hit, very thick, -{Stealth[length=4pt]}]
-        (free.west) to[bend right=40]
-        node[left, font=\tiny\bfseries, text=hit]{safety} (null.west);
-    \end{tikzpicture}
+  \node[n, fill=csub]    (alloc)  {sk = sk\_alloc()};
+  \node[n, fill=ckb,
+        below=of alloc]  (alias)  {sock->sk = sk};
+  \node[n, fill=ccpg!80,
+        below=of alias]  (branch) {if (!chan\_create())};
 
-    \vspace{0.2cm}
-    \footnotesize\textcolor{hit}{Alias nullified $\Rightarrow$ no dangling pointer}
+  \node[n, fill=ccode,
+        below left=0.4cm and 0.0cm of branch]  (free)    {sk\_free(sk)};
+  \node[n, fill=ccpg!55,
+        below right=0.4cm and 0.0cm of branch] (ret)     {return sk};
+
+  \node[n, fill=csub!85,
+        below=of free]   (null)   {sock->sk = NULL};
+  \node[n, fill=ccpg!55,
+        below=of null]   (retnull){return NULL};
+
+  \draw[cfg] (alloc)  -- (alias);
+  \draw[cfg] (alias)  -- (branch);
+  \draw[cfg] (branch) -- node[blbl, left=1pt]{T} (free);
+  \draw[cfg] (branch) -- node[blbl, right=1pt]{F} (ret);
+  \draw[cfg] (free)   -- (null);
+  \draw[cfg] (null)   -- (retnull);
+
+  \draw[ddg] (alloc) -- (alias);
+  \draw[ddg] (alloc.east) to[bend left=45] (free.east);
+
+  \draw[
+    hit!80, line width=1.8pt,
+    -{Stealth[length=4.5pt, width=4.5pt]}
+  ]
+    (free.west) to[bend right=42] (null.west);
+
+  \node[
+    fill=hit!15, draw=hit, line width=0.5pt,
+    rounded corners=3pt,
+    font=\tiny\sffamily\bfseries,
+    text=hit,
+    inner xsep=3pt, inner ysep=1.5pt
+  ] at (-1.8cm, -2.85cm) {safety};
+
+  \begin{scope}[on background layer]
+    \node[
+      fill=trackon,
+      draw=borderon, line width=0.6pt,
+      rounded corners=9pt,
+      fit=(alloc)(retnull)(ret),
+      inner xsep=10pt, inner ysep=8pt,
+      opacity=0.45
+    ] {};
+  \end{scope}
+
+\end{tikzpicture}
+      \vspace{0.05cm}
+      \tikz{
+        \node[
+          fill=hit!8, draw=hit, line width=0.5pt,
+          rounded corners=4pt,
+          font=\tiny\sffamily,
+          text=hit,
+          inner xsep=6pt, inner ysep=2pt,
+          drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+        ]{Alias nullified $\Rightarrow$ no dangling pointer};
+      }
+
+    \end{center}
   \end{columns}
 
-  \vspace{0.4cm}
+  % =============================================================
+  %  TAKEAWAY STRIP
+  % =============================================================
+  \vspace{0.08cm}
   \begin{center}
-    \small
-    \textbf{Takeaway:} The \emph{structural difference} between vulnerable and patched code is a single edge/node.\\[0.15cm]
-    Vulnerabilities leave fingerprints in the graph — prior work (Yamaguchi et al., 2014 — \textit{Joern}) exploits this for detection.
+    \begin{tikzpicture}
+      \node[
+        fill=slidebg,
+        draw=labelcol!20, line width=0.5pt,
+        rounded corners=5pt,
+        font=\tiny\sffamily,
+        text=labelcol,
+        inner xsep=8pt, inner ysep=3pt,
+        align=center,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+      ]{
+        \textbf{Takeaway:} The structural difference between vulnerable and
+        patched code is a single edge/node --- vulnerabilities leave fingerprints in the graph.
+      };
+    \end{tikzpicture}
   \end{center}
-\end{frame}
 
+\end{frame}
 
 % =====================================================================
 % MOTIVATION: PRIOR WORK LIMITATIONS
