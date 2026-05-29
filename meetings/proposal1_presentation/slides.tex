@@ -10,7 +10,7 @@
 \usepackage{multirow}
 \usepackage{listings}
 \usepackage[most]{tcolorbox}
-\usetikzlibrary{arrows.meta,shadows,positioning,fit,shapes.geometric,calc}
+\usetikzlibrary{arrows.meta,shadows,positioning,fit,shapes.geometric,calc, backgrounds}
 
 \lstdefinestyle{ccode}{
   language=C,
@@ -44,6 +44,32 @@
 \newcommand{\cmiss}[1]{\cellcolor{miss!25} #1}
 \newcommand{\cwarn}[1]{\cellcolor{warn!30} #1}
 \newcommand{\czero}{\cellcolor{black!4} }
+
+\definecolor{slidebg}{RGB}{248, 250, 252}
+\definecolor{trackoff}{RGB}{238, 242, 255}
+\definecolor{trackon}{RGB}{236, 253, 245}
+\definecolor{borderoff}{RGB}{99, 102, 241}
+\definecolor{borderon}{RGB}{16, 185, 129}
+
+% Node chips
+\definecolor{ccode}{RGB}{239, 68,  68}
+\definecolor{ccpg}{RGB}{59,  130, 246}
+\definecolor{csub}{RGB}{16,  185, 129}
+\definecolor{cemb}{RGB}{168, 85,  247}
+\definecolor{ckb}{RGB}{245, 158, 11}
+\definecolor{crank}{RGB}{236, 72,  153}
+
+% Text / labels
+\definecolor{labelcol}{RGB}{30,  41,  59}
+\definecolor{notecol}{RGB}{100, 116, 139}
+\definecolor{headcol}{RGB}{15,  23,  42}
+
+% Shadow color
+\definecolor{shadowcol}{RGB}{101, 67, 33}     % warm brown
+
+\setbeamercolor{background canvas}{bg=slidebg}
+% \setbeamercolor{frametitle}{fg=headcol}
+% \setbeamerfont{frametitle}{series=\bfseries, size=\large}
 
 
 \title{Retrieval-Augmented Vulnerability Detection via Code Property Graphs}
@@ -430,44 +456,206 @@ struct sock *alloc_socket(
 % =====================================================================
 \begin{frame}[fragile]{System Architecture: Graph-RAG Pipeline}
   \begin{center}
-  \begin{tikzpicture}[
-    node distance=0.6cm and 1.2cm,
-    box/.style={draw, rounded corners=3pt, minimum height=0.7cm,
-      minimum width=2.4cm, font=\scriptsize\bfseries, align=center,
-      fill=#1, text=white, drop shadow={opacity=0.2}},
-    box/.default=c1,
-    arrow/.style={-{Stealth[length=5pt]}, thick, color=black!60},
-    label/.style={font=\tiny\itshape, text=black!70}
-  ]
-    % Row 1: Input
-    \node[box=c6] (source) {Source Code};
-    \node[box=c5, right=of source] (joern) {Joern CPG\\Extraction};
-    \node[box=c1, right=of joern] (graph) {Graph\\Transform};
-
-    % Row 2: Embeddings
-    \node[box=c4, below=1cm of graph] (embed) {Embeddings};
-    
-
-    % Row 3: Retrieval
-    \node[box=c1, below=1cm of embed] (index) {Index};
-
-    % Row 4: Output
-    \node[box=miss, below=0.8cm of index] (rank) {Ranked\\Candidates};
-
+    \begin{tikzpicture}[
+    node distance=0.38cm and 0.85cm,
+    %-----------------------------------------------------------
+    % Chip: coloured pill node
+    %-----------------------------------------------------------
+    chip/.style={
+      draw=none,
+      rounded corners=6pt,
+      minimum height=0.72cm,
+      minimum width=2.25cm,
+      font=\scriptsize\sffamily\bfseries,
+      align=center,
+      fill=#1,
+      text=white,
+      drop shadow={
+        shadow xshift=1.5pt, shadow yshift=-2pt,
+        opacity=0.40, fill=shadowcol
+      }
+    },
+    %-----------------------------------------------------------
+    % KB hub: taller amber chip
+    %-----------------------------------------------------------
+    kbhub/.style={
+      draw=none,
+      rounded corners=8pt,
+      minimum height=1.45cm,
+      minimum width=2.3cm,
+      font=\scriptsize\sffamily\bfseries,
+      align=center,
+      fill=ckb,
+      text=white,
+      drop shadow={
+        shadow xshift=1.5pt, shadow yshift=-2.5pt,
+        opacity=0.42, fill=shadowcol
+      }
+    },
+    %-----------------------------------------------------------
+    % Lane box style (with brownish shadow)
+    %-----------------------------------------------------------
+    lanebox/.style={
+      rounded corners=10pt,
+      line width=0.8pt,
+      drop shadow={
+        shadow xshift=2.5pt, shadow yshift=-3pt,
+        opacity=0.30, fill=shadowcol
+      }
+    },
+    %-----------------------------------------------------------
     % Arrows
-    \draw[arrow] (source) -- (joern);
-    \draw[arrow] (joern) -- (graph);
-    \draw[arrow] (graph) -- (embed);
-    \draw[arrow] (embed) -- node[label, right]{similarity search} (index);
-    \draw[arrow] (index) -- node[label, right]{top-$k$} (rank);
-
+    %-----------------------------------------------------------
+    arr/.style={
+      -{Stealth[length=4.5pt, width=4.5pt]},
+      line width=1.1pt,
+      color=notecol
+    },
+    arrhi/.style={
+      -{Stealth[length=5pt, width=5pt]},
+      line width=1.4pt,
+      color=ckb!70
+    },
+    arrrk/.style={
+      -{Stealth[length=5pt, width=5pt]},
+      line width=1.4pt,
+      color=crank!70
+    },
+    %-----------------------------------------------------------
     % Labels
-    \node[label, above=0.1cm of source] {input};
-    \node[label, above=0.1cm of joern] {\texttt{src/graph}};
-    \node[label, above=0.1cm of graph] {\texttt{src/graph}};
-    \node[label, below=0.1cm of rank] {\texttt{src/rag}};
+    %-----------------------------------------------------------
+    note/.style={
+      font=\tiny\sffamily,
+      text=notecol
+    },
+    phaselbl/.style={
+      font=\scriptsize\sffamily\bfseries,
+      text=labelcol,
+      anchor=west
+    }
+  ]
+
+  % ===========================================================
+  %  OFFLINE TRACK
+  % ===========================================================
+  \node[phaselbl] (offlbl) at (0, 2.5)
+        {\textcolor{borderoff}{$\blacktriangleright$}\enspace
+         \textcolor{borderoff}{OFFLINE} \textcolor{labelcol}{— Build Knowledge Base}};
+
+  \node[chip=ccode,
+        below=0.28cm of offlbl.south west,
+        anchor=north west] (kvuln)
+        {Known Vuln.\\{\tiny CVE patches}};
+
+  \node[chip=ccpg,  right=of kvuln]  (kcpg)   {Joern\\CPG};
+  \node[chip=csub,  right=of kcpg]   (kslice) {Vuln-Centered\\Subgraph};
+  \node[chip=cemb,  right=of kslice] (kemb)   {Graph\\Embedding};
+
+  % KB hub
+  \node[kbhub, right=1.1cm of kemb, yshift=-0.82cm] (kb)
+        {Vector\\Index\\{\tiny (KB)}};
+
+  % Offline arrows
+  \draw[arr]   (kvuln)  -- node[note, above]{\strut parse}  (kcpg);
+  \draw[arr]   (kcpg)   -- node[note, above]{\strut slice}  (kslice);
+  \draw[arr]   (kslice) -- node[note, above]{\strut encode} (kemb);
+  \draw[arrhi] (kemb)   --
+        node[note, above, sloped, yshift=1pt]{\strut store}
+        (kb.north west);
+
+  % ===========================================================
+  %  ONLINE TRACK
+  % ===========================================================
+  \node[phaselbl] (onlbl) at (0, 0.05)
+        {\textcolor{borderon}{$\blacktriangleright$}\enspace
+         \textcolor{borderon}{ONLINE} \textcolor{labelcol}{— Query \& Rank}};
+
+  \node[chip=ccode,
+        below=0.28cm of onlbl.south west,
+        anchor=north west] (qcode)
+        {New Code\\{\tiny candidate}};
+
+  \node[chip=ccpg,  right=of qcode]  (qcpg)   {Joern\\CPG};
+  \node[chip=csub,  right=of qcpg]   (qslice) {Sink-Centered\\Subgraph};
+  \node[chip=cemb,  right=of qslice] (qemb)   {Graph\\Embedding};
+
+  % Online arrows
+  \draw[arr]   (qcode)  -- node[note, above]{\strut parse}      (qcpg);
+  \draw[arr]   (qcpg)   -- node[note, above]{\strut slice}      (qslice);
+  \draw[arr]   (qslice) -- node[note, above]{\strut encode}     (qemb);
+  \draw[arrhi] (qemb)   --
+        node[note, below, sloped, yshift=-1pt]{\strut cosine sim.}
+        (kb.south west);
+
+  % ===========================================================
+  %  OUTPUT
+  % ===========================================================
+  \node[chip=crank, below=0.85cm of kb] (rank)
+        {Ranked\\Matches};
+  \draw[arrrk] (kb) --
+        node[note, right, xshift=3pt]{top-$k$} (rank);
+
+  % ===========================================================
+  %  BACKGROUND LANE BOXES (with brownish drop shadow)
+  % ===========================================================
+  \begin{scope}[on background layer]
+
+    % Offline lane shadow (manual warm brown rectangle, slightly offset)
+    \node[
+      fill=shadowcol, opacity=0.18,
+      rounded corners=10pt,
+      fit=(offlbl)(kvuln)(kemb),
+      inner xsep=10pt, inner ysep=9pt,
+      xshift=3pt, yshift=-3.5pt
+    ] {};
+
+    % Offline lane
+    \node[
+      fill=trackoff,
+      draw=borderoff, line width=0.8pt,
+      rounded corners=10pt,
+      fit=(offlbl)(kvuln)(kemb),
+      inner xsep=10pt, inner ysep=9pt
+    ] (offbox) {};
+
+    % Online lane shadow
+    \node[
+      fill=shadowcol, opacity=0.18,
+      rounded corners=10pt,
+      fit=(onlbl)(qcode)(qemb),
+      inner xsep=10pt, inner ysep=9pt,
+      xshift=3pt, yshift=-3.5pt
+    ] {};
+
+    % Online lane
+    \node[
+      fill=trackon,
+      draw=borderon, line width=0.8pt,
+      rounded corners=10pt,
+      fit=(onlbl)(qcode)(qemb),
+      inner xsep=10pt, inner ysep=9pt
+    ] (onbox) {};
+
+  \end{scope}
+
   \end{tikzpicture}
   \end{center}
+
+  % ----------------------------------------------------------
+  %  Footer key-idea strip
+  % ----------------------------------------------------------
+  \vspace{0.1cm}
+  \begin{beamercolorbox}[
+      wd=\textwidth, ht=0.62cm, dp=0.2cm,
+      leftskip=0.4cm, rightskip=0.4cm
+  ]{block body}
+    \color{notecol}\scriptsize\sffamily
+    \textcolor{headcol}{\textbf{Key idea:}}\ 
+    Identical pipeline for both tracks — only the \emph{input} differs.\enspace
+    \textcolor{borderoff}{\textbf{Offline}} indexes \emph{known} vulnerability
+    patterns;\enspace
+    \textcolor{borderon}{\textbf{Online}} queries \emph{unseen} code against them.
+  \end{beamercolorbox}
 \end{frame}
 
 \begin{frame}{}
