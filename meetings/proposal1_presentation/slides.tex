@@ -620,7 +620,7 @@ struct sock *alloc_socket(
     \textbf{But these approaches hit a wall:}
     \begin{itemize}
       \item Require large labeled datasets (expensive to curate)
-      \item Struggle to generalize to \emph{unseen} vulnerability types
+      \item Require retraining to \emph{unseen} vulnerability types
       \item Treat each vulnerability independently — no knowledge reuse
     \end{itemize}
     
@@ -1277,7 +1277,7 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
 \begin{columns}[T]
 \begin{column}{0.48\textwidth}
 
-  \textbf{Goal}\\[3pt]
+  \textbf{Real-World Dataset}\\[3pt]
   {\small CVEFixes datasets is large dataset with real-world CVEs collected from the U.S. National Vulnerability Database, patches, and code changes.\\}
   
   \vspace{0.5em}
