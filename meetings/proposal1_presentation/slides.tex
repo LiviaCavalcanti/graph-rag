@@ -1161,12 +1161,14 @@ struct sock *alloc_socket(
       GIN & 0.7260 & 0.8767 & 0.7879 & 0.4427 \\
       WL & 0.6986 & 0.7945 & 0.7363 & 0.4386 \\
       \midrule
-      \multicolumn{5}{c}{\textit{CodeBERT (Baseline)}} \\
+      \multicolumn{5}{c}{\textit{CodeBERT pretrained}} \\
       \midrule
+      CodeBERT (baseline)\\
       CodeBERT (seq) & 0.7534 & 0.8630 & 0.7927 & 0.4121 \\
-      CodeBERT (pat) & 0.7462 & 0.8498 & 0.7815 & 0.4056 \\
-      \bottomrule
+CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
     \end{tabular}
+    \\[2pt]
+    {\tiny\textcolor{notecol}{Source: \texttt{experiments/output/checkpoint5/20260505\_141347\_experiment\_f59ab1/results.json}}}
   \end{table}
 
   \vspace{0.3cm}
@@ -1177,30 +1179,74 @@ struct sock *alloc_socket(
 
 \begin{frame}{CodeBERT Embeddings — Sequence vs. Pattern}
 
-  \textbf{Observation:} CodeBERT performs better on sequence-based linearized code than on pattern-based graph representations.
+  % \textbf{Observation:} CodeBERT performs better on sequence-based linearized code than on pattern-based graph representations.
 
-  \vspace{0.3cm}
-  \begin{center}
-    \begin{tcolorbox}[colback=warn!5, colframe=warn!60!black, boxrule=0.4pt,
-      left=4pt, right=4pt, top=3pt, bottom=3pt, arc=3pt,
-      title={\scriptsize\bfseries Interpretation}]
-      \scriptsize
-      \begin{itemize}
-        \setlength\itemsep{2pt}
-        \item CodeBERT is pretrained on natural code sequences, so it may struggle to encode graph-structured inputs without fine-tuning.
-        \item The performance gap suggests that CodeBERT's semantic understanding does not fully compensate for the loss of structural information in the pattern-based representation.
-        \item Highlights the importance of choosing embeddings that align with the input format and task requirements.
-      \end{itemize}
-    \end{tcolorbox}
-  \end{center}
+  % \vspace{0.3cm}
+  % \begin{center}
+  %   \begin{tcolorbox}[colback=warn!5, colframe=warn!60!black, boxrule=0.4pt,
+  %     left=4pt, right=4pt, top=3pt, bottom=3pt, arc=3pt,
+  %     title={\scriptsize\bfseries Interpretation}]
+  %     \scriptsize
+  %     \begin{itemize}
+  %       \setlength\itemsep{2pt}
+  %       \item CodeBERT is pretrained on natural code sequences, so it may struggle to encode graph-structured inputs without fine-tuning.
+  %       \item The performance gap suggests that CodeBERT's semantic understanding does not fully compensate for the loss of structural information in the pattern-based representation.
+  %       \item Highlights the importance of choosing embeddings that align with the input format and task requirements.
+  %     \end{itemize}
+  %   \end{tcolorbox}
+  % \end{center}
 
-  \begin{columns}
-     \begin{column}{0.5\textwidth}
-      CodeBERT (seq) — linearized code input
-     \end{column}
-     \begin{column}{0.5\textwidth}
-      CodeBERT (pat) — graph-based pattern input
-     \end{column}
+  \vspace{0.2cm}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{center}
+      \textbf{\small CodeBERT (seq)}\\[4pt]
+      \begin{tikzpicture}[
+        node distance=0.28cm,
+        box/.style={draw=c1!60, fill=c1!8, rounded corners=3pt,
+          minimum width=3.2cm, minimum height=0.4cm,
+          font=\tiny\sffamily\bfseries, align=center},
+        arr/.style={-{Stealth[length=3pt, width=3pt]}, line width=0.7pt, color=notecol}
+      ]
+        \node[box] (cpg) {CPG (Joern)};
+        \node[box, below=of cpg] (collect) {Collect changed code\\{\tiny diff\_weight $>$ 0.3, sort by line}};
+        \node[box, below=of collect] (tok) {Tokenize as flat sequence\\{\tiny ``sk = sk\_alloc(); sock->sk = sk; ...''}};
+        \node[box, draw=c3!60, fill=c3!8, below=of tok] (bert) {CodeBERT [CLS]\\{\tiny 768d}};
+        \node[box, draw=hit!60, fill=hit!8, below=of bert] (out) {L2 Normalize\\{\tiny 768d embedding}};
+        \draw[arr] (cpg) -- (collect);
+        \draw[arr] (collect) -- (tok);
+        \draw[arr] (tok) -- (bert);
+        \draw[arr] (bert) -- (out);
+      \end{tikzpicture}
+      \end{center}
+      {\scriptsize\centering Text-only: structure is \textbf{discarded}.\par}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{center}
+      \textbf{\small CodeBERT (pat)}\\[4pt]
+      \begin{tikzpicture}[
+        node distance=0.28cm,
+        box/.style={draw=c1!60, fill=c1!8, rounded corners=3pt,
+          minimum width=3.2cm, minimum height=0.4cm,
+          font=\tiny\sffamily\bfseries, align=center},
+        arr/.style={-{Stealth[length=3pt, width=3pt]}, line width=0.7pt, color=notecol}
+      ]
+        \node[box] (cpg) {CPG (Joern)};
+        \node[box, below=of cpg, xshift=-2cm] (pat) {Vuln Pattern Features\\{\tiny 34d: UAF/NPD/race/\ldots}};
+        \node[box, below=of cpg, xshift=2cm] (code) {Changed Code\\{\tiny CodeBERT [CLS] 768d}};
+        \node[box, draw=c5!60, fill=c5!8, below=0.45cm of cpg, yshift=-0.7cm] (cat) {Concatenate\\{\tiny [pattern $\|$ CodeBERT] = 802d}};
+        \node[box, draw=c3!60, fill=c3!8, below=of cat] (pca) {PCA reduce\\{\tiny 128d}};
+        \node[box, draw=hit!60, fill=hit!8, below=of pca] (out) {L2 Normalize\\{\tiny 128d embedding}};
+        \draw[arr] (cpg) -- (pat);
+        \draw[arr] (cpg) -- (code);
+        \draw[arr] (pat) |- (cat);
+        \draw[arr] (code) |- (cat);
+        \draw[arr] (cat) -- (pca);
+        \draw[arr] (pca) -- (out);
+      \end{tikzpicture}
+      \end{center}
+      {\scriptsize\centering Fuses \textbf{graph structure} with semantics.\par}
+    \end{column}
   \end{columns}
   
 \end{frame}
@@ -1294,7 +1340,10 @@ struct sock *alloc_socket(
     \end{tabular}
   }
 
-  \vspace{0.6em}
+  \vspace{0.3em}
+  {\tiny\textcolor{notecol}{Source: \texttt{cvefixes\_experiments/output/pipeline\_verification/results.json}}}
+
+  \vspace{0.3em}
   \begin{tcolorbox}[colback=hit!5, colframe=hit!60!black, boxrule=0.3pt,
     left=3pt, right=2pt, top=2pt, bottom=1pt, arc=2pt, width=0.7\linewidth]
     \scriptsize
@@ -1327,7 +1376,10 @@ struct sock *alloc_socket(
     \bottomrule
   \end{tabular}}
 
-  \vspace{0.4em}
+  \vspace{0.2em}
+  {\tiny\textcolor{notecol}{Source: same file (CodeBERT Pattern cell)}}
+
+  \vspace{0.2em}
   {\scriptsize\textcolor{notecol}{Highlights areas for improvement in embedding design or slicing strategy.}}
   \end{center}
     \end{column}
