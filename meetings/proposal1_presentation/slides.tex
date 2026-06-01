@@ -1189,6 +1189,17 @@ struct sock *alloc_socket(
   {\small End-to-end verification of the retrieval pipeline on 13 sink-related
   CWEs from CVEfixes (250 samples, 201 index / 49 query, stratified split).}
 
+  \begin{tabular}{lr}
+    \toprule
+    \textbf{Metric} & \textbf{Value} \\
+    \midrule
+    CVEs & 11,873 \\
+    Fix commits & 12,107 \\
+    File changes & 51,342 \\
+    Method changes & 277,948 \\
+    Repositories & 4,249 \\
+    \bottomrule
+  \end{tabular}
   \vspace{0.5em}
   {\small\textbf{Configuration}}\\[4pt]
   {\scriptsize
@@ -1209,6 +1220,14 @@ struct sock *alloc_socket(
 
 \end{column}
 \begin{column}{0.50\textwidth}
+
+
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{Pipeline Verification: Per-CWE Breakdown (CodeBERT+Pattern)}
 
   {\small\textbf{Same-CWE Retrieval Results}}\\[6pt]
   {\scriptsize
@@ -1238,13 +1257,6 @@ struct sock *alloc_socket(
     \bottomrule
   \end{tabular}}
 
-\end{column}
-\end{columns}
-\end{frame}
-
-
-\begin{frame}{Pipeline Verification: Per-CWE Breakdown (CodeBERT+Pattern)}
-
   \centering
   \vspace{0.2em}
   {\scriptsize
@@ -1252,21 +1264,21 @@ struct sock *alloc_socket(
   \setlength{\tabcolsep}{4pt}
   \begin{tabular}{l l r rrr}
     \toprule
-    \textbf{CWE} & \textbf{Name} & \textbf{N} & \textbf{hit@1} & \textbf{hit@5} & \textbf{hit@10} \\
+    \textbf{Name} & \textbf{N} & \textbf{hit@1} & \textbf{hit@5} & \textbf{hit@10} \\
     \midrule
-    CWE-125 & Out-of-bounds Read & 4 & \chit{75\%} & 75\% & 100\% \\
-    CWE-190 & Integer Overflow & 4 & \chit{75\%} & 75\% & 75\% \\
-    CWE-122 & Heap Buffer Overflow & 3 & \chit{67\%} & 100\% & 100\% \\
-    CWE-200 & Information Exposure & 6 & \chit{67\%} & 83\% & 100\% \\
-    CWE-843 & Type Confusion & 3 & \chit{67\%} & 100\% & 100\% \\
-    CWE-264 & Permissions & 5 & 60\% & 100\% & 100\% \\
-    CWE-129 & Array Index Validation & 2 & 50\% & 50\% & 100\% \\
-    CWE-284 & Improper Access Control & 6 & 50\% & 50\% & 50\% \\
-    CWE-415 & Double Free & 2 & 50\% & 100\% & 100\% \\
-    CWE-476 & NULL Ptr Deref & 2 & 50\% & 100\% & 100\% \\
-    CWE-787 & Out-of-bounds Write & 4 & \cwarn{25\%} & 75\% & 75\% \\
-    CWE-416 & Use After Free & 6 & \cmiss{17\%} & 50\% & 67\% \\
-    CWE-121 & Stack Buffer Overflow & 2 & \cmiss{0\%} & 100\% & 100\% \\
+    Out-of-bounds Read & 4 & \chit{75\%} & 75\% & 100\% \\
+    Integer Overflow & 4 & \chit{75\%} & 75\% & 75\% \\
+    Heap Buffer Overflow & 3 & \chit{67\%} & 100\% & 100\% \\
+    Information Exposure & 6 & \chit{67\%} & 83\% & 100\% \\
+    Type Confusion & 3 & \chit{67\%} & 100\% & 100\% \\
+    Permissions & 5 & 60\% & 100\% & 100\% \\
+    Array Index Validation & 2 & 50\% & 50\% & 100\% \\
+    Improper Access Control & 6 & 50\% & 50\% & 50\% \\
+    Double Free & 2 & 50\% & 100\% & 100\% \\
+    NULL Ptr Deref & 2 & 50\% & 100\% & 100\% \\
+    Out-of-bounds Write & 4 & \cwarn{25\%} & 75\% & 75\% \\
+    Use After Free & 6 & \cmiss{17\%} & 50\% & 67\% \\
+    Stack Buffer Overflow & 2 & \cmiss{0\%} & 100\% & 100\% \\
     \midrule
     \textbf{Overall} & & \textbf{49} & \textbf{46.9\%} & \textbf{63.3\%} & \textbf{71.4\%} \\
     \bottomrule
