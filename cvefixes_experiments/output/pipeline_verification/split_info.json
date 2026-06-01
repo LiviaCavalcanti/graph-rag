@@ -1,0 +1,709 @@
+{
+  "seed": 42,
+  "n_index": 109,
+  "n_query": 27,
+  "index_cwe_dist": {
+    "CWE-400": 17,
+    "CWE-20": 16,
+    "CWE-787": 16,
+    "CWE-416": 16,
+    "CWE-476": 15,
+    "CWE-362": 17,
+    "CWE-190": 12
+  },
+  "query_cwe_dist": {
+    "CWE-400": 3,
+    "CWE-787": 4,
+    "CWE-20": 4,
+    "CWE-362": 3,
+    "CWE-416": 4,
+    "CWE-476": 5,
+    "CWE-190": 4
+  },
+  "index_cve_unique": 60,
+  "query_cve_unique": 25,
+  "index_entries": [
+    {
+      "cve_id": "CVE-2019-19922",
+      "cwe_id": "CWE-400",
+      "func_name": "do_sched_cfs_period_timer"
+    },
+    {
+      "cve_id": "CVE-2013-0178",
+      "cwe_id": "CWE-20",
+      "func_name": "initServerConfig"
+    },
+    {
+      "cve_id": "CVE-2020-1916",
+      "cwe_id": "CWE-787",
+      "func_name": "HPHP::string_crypt"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "__perf_sw_event"
+    },
+    {
+      "cve_id": "CVE-2019-11487",
+      "cwe_id": "CWE-416",
+      "func_name": "gup_huge_pmd"
+    },
+    {
+      "cve_id": "CVE-2015-2672",
+      "cwe_id": "CWE-20",
+      "func_name": "xsave_state"
+    },
+    {
+      "cve_id": "CVE-2013-4129",
+      "cwe_id": "CWE-20",
+      "func_name": "br_multicast_del_pg"
+    },
+    {
+      "cve_id": "CVE-2013-7271",
+      "cwe_id": "CWE-20",
+      "func_name": "rose_recvmsg"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "kernel_unaligned_trap"
+    },
+    {
+      "cve_id": "CVE-2019-19815",
+      "cwe_id": "CWE-476",
+      "func_name": "f2fs_set_data_page_dirty"
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "func_name": "icmp_reply"
+    },
+    {
+      "cve_id": "CVE-2022-1205",
+      "cwe_id": "CWE-476",
+      "func_name": "ax25_kill_by_device"
+    },
+    {
+      "cve_id": "CVE-2013-4119",
+      "cwe_id": "CWE-476",
+      "func_name": "sspi_SecureHandleGetUpperPointer"
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "func_name": "cipso_v4_sock_setattr"
+    },
+    {
+      "cve_id": "CVE-2014-4653",
+      "cwe_id": "CWE-416",
+      "func_name": "snd_ctl_elem_write"
+    },
+    {
+      "cve_id": "CVE-2014-7826",
+      "cwe_id": "CWE-476",
+      "func_name": "ftrace_syscall_enter"
+    },
+    {
+      "cve_id": "CVE-2019-13233",
+      "cwe_id": "CWE-362",
+      "func_name": "insn_get_code_seg_params"
+    },
+    {
+      "cve_id": "CVE-2013-0216",
+      "cwe_id": "CWE-20",
+      "func_name": "netbk_count_requests"
+    },
+    {
+      "cve_id": "CVE-2019-18885",
+      "cwe_id": "CWE-476",
+      "func_name": "read_one_chunk"
+    },
+    {
+      "cve_id": "CVE-2017-6874",
+      "cwe_id": "CWE-362",
+      "func_name": "get_ucounts"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "record_and_restart"
+    },
+    {
+      "cve_id": "CVE-2018-8788",
+      "cwe_id": "CWE-787",
+      "func_name": "nsc_encode_sse2"
+    },
+    {
+      "cve_id": "CVE-2022-2318",
+      "cwe_id": "CWE-416",
+      "func_name": "rose_start_t1timer"
+    },
+    {
+      "cve_id": "CVE-2013-0871",
+      "cwe_id": "CWE-362",
+      "func_name": "compat_sys_ptrace"
+    },
+    {
+      "cve_id": "CVE-2016-5094",
+      "cwe_id": "CWE-190",
+      "func_name": "determine_entity_table"
+    },
+    {
+      "cve_id": "CVE-2016-5094",
+      "cwe_id": "CWE-190",
+      "func_name": "process_numeric_entity"
+    },
+    {
+      "cve_id": "CVE-2019-11811",
+      "cwe_id": "CWE-416",
+      "func_name": "ipmi_si_mem_setup"
+    },
+    {
+      "cve_id": "CVE-2019-11487",
+      "cwe_id": "CWE-416",
+      "func_name": "fuse_dev_splice_write"
+    },
+    {
+      "cve_id": "CVE-2013-1848",
+      "cwe_id": "CWE-20",
+      "func_name": "ext3_blkdev_get"
+    },
+    {
+      "cve_id": "CVE-2017-18200",
+      "cwe_id": "CWE-20",
+      "func_name": "f2fs_trim_fs"
+    },
+    {
+      "cve_id": "CVE-2022-2153",
+      "cwe_id": "CWE-476",
+      "func_name": "stimer_set_config"
+    },
+    {
+      "cve_id": "CVE-2023-3863",
+      "cwe_id": "CWE-416",
+      "func_name": "nfc_llcp_send_symm"
+    },
+    {
+      "cve_id": "CVE-2017-15951",
+      "cwe_id": "CWE-20",
+      "func_name": "keyctl_chown_key"
+    },
+    {
+      "cve_id": "CVE-2017-1000251",
+      "cwe_id": "CWE-787",
+      "func_name": "l2cap_parse_conf_req"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "intel_pmu_handle_irq"
+    },
+    {
+      "cve_id": "CVE-2012-4508",
+      "cwe_id": "CWE-362",
+      "func_name": "ext4_split_unwritten_extents"
+    },
+    {
+      "cve_id": "CVE-2016-3070",
+      "cwe_id": "CWE-476",
+      "func_name": "migrate_page_move_mapping"
+    },
+    {
+      "cve_id": "CVE-2016-2069",
+      "cwe_id": "CWE-362",
+      "func_name": "switch_mm"
+    },
+    {
+      "cve_id": "CVE-2017-2647",
+      "cwe_id": "CWE-476",
+      "func_name": "keyring_search"
+    },
+    {
+      "cve_id": "CVE-2020-1916",
+      "cwe_id": "CWE-787",
+      "func_name": "HPHP::HHVM_METHOD"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "handle_stdfmna"
+    },
+    {
+      "cve_id": "CVE-2017-7374",
+      "cwe_id": "CWE-476",
+      "func_name": "validate_user_key"
+    },
+    {
+      "cve_id": "CVE-2023-3863",
+      "cwe_id": "CWE-416",
+      "func_name": "nfc_genl_llc_get_params"
+    },
+    {
+      "cve_id": "CVE-2017-15951",
+      "cwe_id": "CWE-20",
+      "func_name": "keyring_describe"
+    },
+    {
+      "cve_id": "CVE-2023-3863",
+      "cwe_id": "CWE-416",
+      "func_name": "llcp_sock_bind"
+    },
+    {
+      "cve_id": "CVE-2018-8788",
+      "cwe_id": "CWE-787",
+      "func_name": "nsc_encode_subsampling"
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "func_name": "ip_options_get"
+    },
+    {
+      "cve_id": "CVE-2017-11142",
+      "cwe_id": "CWE-400",
+      "func_name": "add_post_var"
+    },
+    {
+      "cve_id": "CVE-2017-15951",
+      "cwe_id": "CWE-20",
+      "func_name": "big_key_describe"
+    },
+    {
+      "cve_id": "CVE-2022-47942",
+      "cwe_id": "CWE-787",
+      "func_name": "set_ntacl_dacl"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "perf_event_mmap_output"
+    },
+    {
+      "cve_id": "CVE-2021-24025",
+      "cwe_id": "CWE-190",
+      "func_name": "HPHP::serialize_impl"
+    },
+    {
+      "cve_id": "CVE-2018-8788",
+      "cwe_id": "CWE-787",
+      "func_name": "nsc_rle_decompress_data"
+    },
+    {
+      "cve_id": "CVE-2019-20636",
+      "cwe_id": "CWE-787",
+      "func_name": "input_default_setkeycode"
+    },
+    {
+      "cve_id": "CVE-2023-0266",
+      "cwe_id": "CWE-416",
+      "func_name": "snd_ctl_elem_read"
+    },
+    {
+      "cve_id": "CVE-2016-5094",
+      "cwe_id": "CWE-190",
+      "func_name": "unicode_cp_is_allowed"
+    },
+    {
+      "cve_id": "CVE-2018-11219",
+      "cwe_id": "CWE-190",
+      "func_name": "b_unpack"
+    },
+    {
+      "cve_id": "CVE-2021-24025",
+      "cwe_id": "CWE-190",
+      "func_name": "HPHP::logToUSDT"
+    },
+    {
+      "cve_id": "CVE-2019-19815",
+      "cwe_id": "CWE-476",
+      "func_name": "f2fs_mpage_readpages"
+    },
+    {
+      "cve_id": "CVE-2022-3424",
+      "cwe_id": "CWE-416",
+      "func_name": "gru_handle_user_call_os"
+    },
+    {
+      "cve_id": "CVE-2022-47942",
+      "cwe_id": "CWE-787",
+      "func_name": "build_sec_desc"
+    },
+    {
+      "cve_id": "CVE-2010-1152",
+      "cwe_id": "CWE-20",
+      "func_name": "try_read_network"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "__intel_pmu_pebs_event"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "perf_swevent_event"
+    },
+    {
+      "cve_id": "CVE-2022-1199",
+      "cwe_id": "CWE-416",
+      "func_name": "ax25_kill_by_device"
+    },
+    {
+      "cve_id": "CVE-2019-11487",
+      "cwe_id": "CWE-416",
+      "func_name": "gup_pte_range"
+    },
+    {
+      "cve_id": "CVE-2012-0879",
+      "cwe_id": "CWE-400",
+      "func_name": "exit_io_context"
+    },
+    {
+      "cve_id": "CVE-2008-7316",
+      "cwe_id": "CWE-20",
+      "func_name": "__iov_iter_advance_iov"
+    },
+    {
+      "cve_id": "CVE-2019-19815",
+      "cwe_id": "CWE-476",
+      "func_name": "f2fs_read_single_page"
+    },
+    {
+      "cve_id": "CVE-2021-3640",
+      "cwe_id": "CWE-362",
+      "func_name": "sco_sock_sendmsg"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "simulate_llsc"
+    },
+    {
+      "cve_id": "CVE-2017-1000251",
+      "cwe_id": "CWE-787",
+      "func_name": "l2cap_build_conf_req"
+    },
+    {
+      "cve_id": "CVE-2015-7613",
+      "cwe_id": "CWE-362",
+      "func_name": "newseg"
+    },
+    {
+      "cve_id": "CVE-2017-18216",
+      "cwe_id": "CWE-476",
+      "func_name": "o2nm_node_num_store"
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "func_name": "ip_options_echo"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "watchdog_overflow_callback"
+    },
+    {
+      "cve_id": "CVE-2018-8788",
+      "cwe_id": "CWE-787",
+      "func_name": "nsc_decode"
+    },
+    {
+      "cve_id": "CVE-2021-24025",
+      "cwe_id": "CWE-190",
+      "func_name": "HPHP::set_sockaddr"
+    },
+    {
+      "cve_id": "CVE-2014-2523",
+      "cwe_id": "CWE-20",
+      "func_name": "dccp_packet"
+    },
+    {
+      "cve_id": "CVE-2018-12896",
+      "cwe_id": "CWE-190",
+      "func_name": "common_hrtimer_rearm"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "simulate_sync"
+    },
+    {
+      "cve_id": "CVE-2022-42703",
+      "cwe_id": "CWE-416",
+      "func_name": "anon_vma_fork"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "ptrace_hbptriggered"
+    },
+    {
+      "cve_id": "CVE-2023-45898",
+      "cwe_id": "CWE-416",
+      "func_name": "ext4_es_insert_extent"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "perf_event_comm_output"
+    },
+    {
+      "cve_id": "CVE-2017-6346",
+      "cwe_id": "CWE-362",
+      "func_name": "fanout_release"
+    },
+    {
+      "cve_id": "CVE-2010-1155",
+      "cwe_id": "CWE-20",
+      "func_name": "irssi_ssl_get_iochannel"
+    },
+    {
+      "cve_id": "CVE-2018-8788",
+      "cwe_id": "CWE-787",
+      "func_name": "nsc_process_message"
+    },
+    {
+      "cve_id": "CVE-2018-12232",
+      "cwe_id": "CWE-362",
+      "func_name": "sock_release"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "ptrace_triggered"
+    },
+    {
+      "cve_id": "CVE-2016-2546",
+      "cwe_id": "CWE-362",
+      "func_name": "snd_timer_user_ioctl"
+    },
+    {
+      "cve_id": "CVE-2016-5767",
+      "cwe_id": "CWE-190",
+      "func_name": "gdImageCopyResized"
+    },
+    {
+      "cve_id": "CVE-2011-4914",
+      "cwe_id": "CWE-20",
+      "func_name": "rose_loopback_timer"
+    },
+    {
+      "cve_id": "CVE-2016-5094",
+      "cwe_id": "CWE-190",
+      "func_name": "traverse_for_entities"
+    },
+    {
+      "cve_id": "CVE-2016-5094",
+      "cwe_id": "CWE-190",
+      "func_name": "find_entity_for_char"
+    },
+    {
+      "cve_id": "CVE-2020-1916",
+      "cwe_id": "CWE-787",
+      "func_name": "HPHP::PCRECache::dump"
+    },
+    {
+      "cve_id": "CVE-2015-8839",
+      "cwe_id": "CWE-362",
+      "func_name": "ext4_dax_fault"
+    },
+    {
+      "cve_id": "CVE-2018-11219",
+      "cwe_id": "CWE-190",
+      "func_name": "b_unpack"
+    },
+    {
+      "cve_id": "CVE-2022-42703",
+      "cwe_id": "CWE-416",
+      "func_name": "anon_vma_clone"
+    },
+    {
+      "cve_id": "CVE-2019-18885",
+      "cwe_id": "CWE-476",
+      "func_name": "btrfs_find_device_by_path"
+    },
+    {
+      "cve_id": "CVE-2019-11487",
+      "cwe_id": "CWE-416",
+      "func_name": "gup_huge_pud"
+    },
+    {
+      "cve_id": "CVE-2019-18885",
+      "cwe_id": "CWE-476",
+      "func_name": "btrfs_finish_sprout"
+    },
+    {
+      "cve_id": "CVE-2016-9755",
+      "cwe_id": "CWE-787",
+      "func_name": "nf_ct_frag6_gather"
+    },
+    {
+      "cve_id": "CVE-2022-47942",
+      "cwe_id": "CWE-787",
+      "func_name": "smb2_get_info_sec"
+    },
+    {
+      "cve_id": "CVE-2017-15951",
+      "cwe_id": "CWE-20",
+      "func_name": "proc_keys_show"
+    },
+    {
+      "cve_id": "CVE-2020-1916",
+      "cwe_id": "CWE-787",
+      "func_name": "HPHP::HHVM_FUNCTION"
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "func_name": "dccp_v4_connect"
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "func_name": "icmp_route_lookup"
+    },
+    {
+      "cve_id": "CVE-2019-18885",
+      "cwe_id": "CWE-476",
+      "func_name": "btrfs_scrub_progress"
+    }
+  ],
+  "query_entries": [
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "handle_popc"
+    },
+    {
+      "cve_id": "CVE-2018-8788",
+      "cwe_id": "CWE-787",
+      "func_name": "nsc_rle_encode"
+    },
+    {
+      "cve_id": "CVE-2010-1152",
+      "cwe_id": "CWE-20",
+      "func_name": "try_read_command"
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "func_name": "ip_setup_cork"
+    },
+    {
+      "cve_id": "CVE-2022-3424",
+      "cwe_id": "CWE-416",
+      "func_name": "gru_fault"
+    },
+    {
+      "cve_id": "CVE-2013-0871",
+      "cwe_id": "CWE-362",
+      "func_name": "ptrace_check_attach"
+    },
+    {
+      "cve_id": "CVE-2017-18216",
+      "cwe_id": "CWE-476",
+      "func_name": "o2nm_node_ipv4_address_store"
+    },
+    {
+      "cve_id": "CVE-2018-11219",
+      "cwe_id": "CWE-190",
+      "func_name": "optsize"
+    },
+    {
+      "cve_id": "CVE-2017-1000251",
+      "cwe_id": "CWE-787",
+      "func_name": "l2cap_config_req"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "alpha_perf_event_irq_handler"
+    },
+    {
+      "cve_id": "CVE-2019-18885",
+      "cwe_id": "CWE-476",
+      "func_name": "btrfs_find_device_by_devspec"
+    },
+    {
+      "cve_id": "CVE-2022-42703",
+      "cwe_id": "CWE-416",
+      "func_name": "__anon_vma_prepare"
+    },
+    {
+      "cve_id": "CVE-2013-7271",
+      "cwe_id": "CWE-20",
+      "func_name": "bt_sock_recvmsg"
+    },
+    {
+      "cve_id": "CVE-2019-11487",
+      "cwe_id": "CWE-416",
+      "func_name": "gup_huge_pgd"
+    },
+    {
+      "cve_id": "CVE-2018-12896",
+      "cwe_id": "CWE-190",
+      "func_name": "posix_timer_fn"
+    },
+    {
+      "cve_id": "CVE-2013-0178",
+      "cwe_id": "CWE-20",
+      "func_name": "dsOpen"
+    },
+    {
+      "cve_id": "CVE-2021-24025",
+      "cwe_id": "CWE-190",
+      "func_name": "HPHP::MemFile::readImpl"
+    },
+    {
+      "cve_id": "CVE-2023-3863",
+      "cwe_id": "CWE-416",
+      "func_name": "nfc_genl_llc_set_params"
+    },
+    {
+      "cve_id": "CVE-2017-15951",
+      "cwe_id": "CWE-20",
+      "func_name": "key_reject_and_link"
+    },
+    {
+      "cve_id": "CVE-2018-12232",
+      "cwe_id": "CWE-362",
+      "func_name": "sockfs_setattr"
+    },
+    {
+      "cve_id": "CVE-2019-19815",
+      "cwe_id": "CWE-476",
+      "func_name": "f2fs_force_buffered_io"
+    },
+    {
+      "cve_id": "CVE-2020-1916",
+      "cwe_id": "CWE-787",
+      "func_name": "gdImageCreateTrueColor"
+    },
+    {
+      "cve_id": "CVE-2017-7374",
+      "cwe_id": "CWE-476",
+      "func_name": "fscrypt_setup_filename"
+    },
+    {
+      "cve_id": "CVE-2016-5094",
+      "cwe_id": "CWE-190",
+      "func_name": "unimap_bsearch"
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "func_name": "misaligned_fpu_store"
+    },
+    {
+      "cve_id": "CVE-2022-47942",
+      "cwe_id": "CWE-787",
+      "func_name": "smb2_allocate_rsp_buf"
+    },
+    {
+      "cve_id": "CVE-2013-4119",
+      "cwe_id": "CWE-476",
+      "func_name": "sspi_SecureHandleGetLowerPointer"
+    }
+  ]
+}

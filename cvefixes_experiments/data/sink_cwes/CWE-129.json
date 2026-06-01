@@ -1,0 +1,336 @@
+{
+  "cwe_id": "CWE-129",
+  "cwe_name": "Improper Validation of Array Index",
+  "entry_count": 12,
+  "entries": [
+    {
+      "cve_id": "CVE-2017-8797",
+      "cwe": [
+        {
+          "cwe_id": "CWE-129",
+          "cwe_name": "Improper Validation of Array Index"
+        }
+      ],
+      "cve_description": "[{'lang': 'en', 'value': 'The NFSv4 server in the Linux kernel before 4.11.3 does not properly validate the layout type when processing the NFSv4 pNFS GETDEVICEINFO or LAYOUTGET operand in a UDP packet from a remote attacker. This type value is uninitialized upon encountering certain error conditions. This value is used as an array index for dereferencing, which leads to an OOPS and eventually a DoS of knfsd and a soft-lockup of the whole system.'}]",
+      "cve_severity": "HIGH",
+      "cvss3_base_score": "7.5",
+      "cvss3_base_severity": "HIGH",
+      "published_date": "2017-07-02T17:29Z",
+      "file_change_id": "69358784277443",
+      "filename": "nfs4xdr.c",
+      "programming_language": "C",
+      "method_name": "nfsd4_encode_getdeviceinfo",
+      "method_signature": "nfsd4_encode_getdeviceinfo( struct nfsd4_compoundres * resp , __be32 nfserr , struct nfsd4_getdeviceinfo * gdev)",
+      "code_before": "nfsd4_encode_getdeviceinfo(struct nfsd4_compoundres *resp, __be32 nfserr,\n\t\tstruct nfsd4_getdeviceinfo *gdev)\n{\n\tstruct xdr_stream *xdr = &resp->xdr;\n\tconst struct nfsd4_layout_ops *ops =\n\t\tnfsd4_layout_ops[gdev->gd_layout_type];\n\tu32 starting_len = xdr->buf->len, needed_len;\n\t__be32 *p;\n\n\tdprintk(\"%s: err %d\\n\", __func__, be32_to_cpu(nfserr));\n\tif (nfserr)\n\t\tgoto out;\n\n\tnfserr = nfserr_resource;\n\tp = xdr_reserve_space(xdr, 4);\n\tif (!p)\n\t\tgoto out;\n\n\t*p++ = cpu_to_be32(gdev->gd_layout_type);\n\n\t/* If maxcount is 0 then just update notifications */\n\tif (gdev->gd_maxcount != 0) {\n\t\tnfserr = ops->encode_getdeviceinfo(xdr, gdev);\n\t\tif (nfserr) {\n\t\t\t/*\n\t\t\t * We don't bother to burden the layout drivers with\n\t\t\t * enforcing gd_maxcount, just tell the client to\n\t\t\t * come back with a bigger buffer if it's not enough.\n\t\t\t */\n\t\t\tif (xdr->buf->len + 4 > gdev->gd_maxcount)\n\t\t\t\tgoto toosmall;\n\t\t\tgoto out;\n\t\t}\n\t}\n\n\tnfserr = nfserr_resource;\n\tif (gdev->gd_notify_types) {\n\t\tp = xdr_reserve_space(xdr, 4 + 4);\n\t\tif (!p)\n\t\t\tgoto out;\n\t\t*p++ = cpu_to_be32(1);\t\t\t/* bitmap length */\n\t\t*p++ = cpu_to_be32(gdev->gd_notify_types);\n\t} else {\n\t\tp = xdr_reserve_space(xdr, 4);\n\t\tif (!p)\n\t\t\tgoto out;\n\t\t*p++ = 0;\n\t}\n\n\tnfserr = 0;\nout:\n\tkfree(gdev->gd_device);\n\tdprintk(\"%s: done: %d\\n\", __func__, be32_to_cpu(nfserr));\n\treturn nfserr;\n\ntoosmall:\n\tdprintk(\"%s: maxcount too small\\n\", __func__);\n\tneeded_len = xdr->buf->len + 4 /* notifications */;\n\txdr_truncate_encode(xdr, starting_len);\n\tp = xdr_reserve_space(xdr, 4);\n\tif (!p) {\n\t\tnfserr = nfserr_resource;\n\t} else {\n\t\t*p++ = cpu_to_be32(needed_len);\n\t\tnfserr = nfserr_toosmall;\n\t}\n\tgoto out;\n}",
+      "code_after": "nfsd4_encode_getdeviceinfo(struct nfsd4_compoundres *resp, __be32 nfserr,\n\t\tstruct nfsd4_getdeviceinfo *gdev)\n{\n\tstruct xdr_stream *xdr = &resp->xdr;\n\tconst struct nfsd4_layout_ops *ops;\n\tu32 starting_len = xdr->buf->len, needed_len;\n\t__be32 *p;\n\n\tdprintk(\"%s: err %d\\n\", __func__, be32_to_cpu(nfserr));\n\tif (nfserr)\n\t\tgoto out;\n\n\tnfserr = nfserr_resource;\n\tp = xdr_reserve_space(xdr, 4);\n\tif (!p)\n\t\tgoto out;\n\n\t*p++ = cpu_to_be32(gdev->gd_layout_type);\n\n\t/* If maxcount is 0 then just update notifications */\n\tif (gdev->gd_maxcount != 0) {\n\t\tops = nfsd4_layout_ops[gdev->gd_layout_type];\n\t\tnfserr = ops->encode_getdeviceinfo(xdr, gdev);\n\t\tif (nfserr) {\n\t\t\t/*\n\t\t\t * We don't bother to burden the layout drivers with\n\t\t\t * enforcing gd_maxcount, just tell the client to\n\t\t\t * come back with a bigger buffer if it's not enough.\n\t\t\t */\n\t\t\tif (xdr->buf->len + 4 > gdev->gd_maxcount)\n\t\t\t\tgoto toosmall;\n\t\t\tgoto out;\n\t\t}\n\t}\n\n\tnfserr = nfserr_resource;\n\tif (gdev->gd_notify_types) {\n\t\tp = xdr_reserve_space(xdr, 4 + 4);\n\t\tif (!p)\n\t\t\tgoto out;\n\t\t*p++ = cpu_to_be32(1);\t\t\t/* bitmap length */\n\t\t*p++ = cpu_to_be32(gdev->gd_notify_types);\n\t} else {\n\t\tp = xdr_reserve_space(xdr, 4);\n\t\tif (!p)\n\t\t\tgoto out;\n\t\t*p++ = 0;\n\t}\n\n\tnfserr = 0;\nout:\n\tkfree(gdev->gd_device);\n\tdprintk(\"%s: done: %d\\n\", __func__, be32_to_cpu(nfserr));\n\treturn nfserr;\n\ntoosmall:\n\tdprintk(\"%s: maxcount too small\\n\", __func__);\n\tneeded_len = xdr->buf->len + 4 /* notifications */;\n\txdr_truncate_encode(xdr, starting_len);\n\tp = xdr_reserve_space(xdr, 4);\n\tif (!p) {\n\t\tnfserr = nfserr_resource;\n\t} else {\n\t\t*p++ = cpu_to_be32(needed_len);\n\t\tnfserr = nfserr_toosmall;\n\t}\n\tgoto out;\n}",
+      "changes": {
+        "lines_added": 2,
+        "lines_removed": 2,
+        "lines_before": 68,
+        "lines_after": 68,
+        "similarity_ratio": 0.9722
+      }
+    },
+    {
+      "cve_id": "CVE-2017-8797",
+      "cwe": [
+        {
+          "cwe_id": "CWE-129",
+          "cwe_name": "Improper Validation of Array Index"
+        }
+      ],
+      "cve_description": "[{'lang': 'en', 'value': 'The NFSv4 server in the Linux kernel before 4.11.3 does not properly validate the layout type when processing the NFSv4 pNFS GETDEVICEINFO or LAYOUTGET operand in a UDP packet from a remote attacker. This type value is uninitialized upon encountering certain error conditions. This value is used as an array index for dereferencing, which leads to an OOPS and eventually a DoS of knfsd and a soft-lockup of the whole system.'}]",
+      "cve_severity": "HIGH",
+      "cvss3_base_score": "7.5",
+      "cvss3_base_severity": "HIGH",
+      "published_date": "2017-07-02T17:29Z",
+      "file_change_id": "69358784277443",
+      "filename": "nfs4xdr.c",
+      "programming_language": "C",
+      "method_name": "nfsd4_encode_layoutget",
+      "method_signature": "nfsd4_encode_layoutget( struct nfsd4_compoundres * resp , __be32 nfserr , struct nfsd4_layoutget * lgp)",
+      "code_before": "nfsd4_encode_layoutget(struct nfsd4_compoundres *resp, __be32 nfserr,\n\t\tstruct nfsd4_layoutget *lgp)\n{\n\tstruct xdr_stream *xdr = &resp->xdr;\n\tconst struct nfsd4_layout_ops *ops =\n\t\tnfsd4_layout_ops[lgp->lg_layout_type];\n\t__be32 *p;\n\n\tdprintk(\"%s: err %d\\n\", __func__, nfserr);\n\tif (nfserr)\n\t\tgoto out;\n\n\tnfserr = nfserr_resource;\n\tp = xdr_reserve_space(xdr, 36 + sizeof(stateid_opaque_t));\n\tif (!p)\n\t\tgoto out;\n\n\t*p++ = cpu_to_be32(1);\t/* we always set return-on-close */\n\t*p++ = cpu_to_be32(lgp->lg_sid.si_generation);\n\tp = xdr_encode_opaque_fixed(p, &lgp->lg_sid.si_opaque,\n\t\t\t\t    sizeof(stateid_opaque_t));\n\n\t*p++ = cpu_to_be32(1);\t/* we always return a single layout */\n\tp = xdr_encode_hyper(p, lgp->lg_seg.offset);\n\tp = xdr_encode_hyper(p, lgp->lg_seg.length);\n\t*p++ = cpu_to_be32(lgp->lg_seg.iomode);\n\t*p++ = cpu_to_be32(lgp->lg_layout_type);\n\n\tnfserr = ops->encode_layoutget(xdr, lgp);\nout:\n\tkfree(lgp->lg_content);\n\treturn nfserr;\n}",
+      "code_after": "nfsd4_encode_layoutget(struct nfsd4_compoundres *resp, __be32 nfserr,\n\t\tstruct nfsd4_layoutget *lgp)\n{\n\tstruct xdr_stream *xdr = &resp->xdr;\n\tconst struct nfsd4_layout_ops *ops;\n\t__be32 *p;\n\n\tdprintk(\"%s: err %d\\n\", __func__, nfserr);\n\tif (nfserr)\n\t\tgoto out;\n\n\tnfserr = nfserr_resource;\n\tp = xdr_reserve_space(xdr, 36 + sizeof(stateid_opaque_t));\n\tif (!p)\n\t\tgoto out;\n\n\t*p++ = cpu_to_be32(1);\t/* we always set return-on-close */\n\t*p++ = cpu_to_be32(lgp->lg_sid.si_generation);\n\tp = xdr_encode_opaque_fixed(p, &lgp->lg_sid.si_opaque,\n\t\t\t\t    sizeof(stateid_opaque_t));\n\n\t*p++ = cpu_to_be32(1);\t/* we always return a single layout */\n\tp = xdr_encode_hyper(p, lgp->lg_seg.offset);\n\tp = xdr_encode_hyper(p, lgp->lg_seg.length);\n\t*p++ = cpu_to_be32(lgp->lg_seg.iomode);\n\t*p++ = cpu_to_be32(lgp->lg_layout_type);\n\n\tops = nfsd4_layout_ops[lgp->lg_layout_type];\n\tnfserr = ops->encode_layoutget(xdr, lgp);\nout:\n\tkfree(lgp->lg_content);\n\treturn nfserr;\n}",
+      "changes": {
+        "lines_added": 2,
+        "lines_removed": 2,
+        "lines_before": 33,
+        "lines_after": 33,
+        "similarity_ratio": 0.9406
+      }
+    },
+    {
+      "cve_id": "CVE-2017-8797",
+      "cwe": [
+        {
+          "cwe_id": "CWE-129",
+          "cwe_name": "Improper Validation of Array Index"
+        }
+      ],
+      "cve_description": "[{'lang': 'en', 'value': 'The NFSv4 server in the Linux kernel before 4.11.3 does not properly validate the layout type when processing the NFSv4 pNFS GETDEVICEINFO or LAYOUTGET operand in a UDP packet from a remote attacker. This type value is uninitialized upon encountering certain error conditions. This value is used as an array index for dereferencing, which leads to an OOPS and eventually a DoS of knfsd and a soft-lockup of the whole system.'}]",
+      "cve_severity": "HIGH",
+      "cvss3_base_score": "7.5",
+      "cvss3_base_severity": "HIGH",
+      "published_date": "2017-07-02T17:29Z",
+      "file_change_id": "271977674482854",
+      "filename": "nfs4proc.c",
+      "programming_language": "C",
+      "method_name": "nfsd4_layout_verify",
+      "method_signature": "nfsd4_layout_verify( struct svc_export * exp , unsigned int layout_type)",
+      "code_before": "nfsd4_layout_verify(struct svc_export *exp, unsigned int layout_type)\n{\n\tif (!exp->ex_layout_types) {\n\t\tdprintk(\"%s: export does not support pNFS\\n\", __func__);\n\t\treturn NULL;\n\t}\n\n\tif (!(exp->ex_layout_types & (1 << layout_type))) {\n\t\tdprintk(\"%s: layout type %d not supported\\n\",\n\t\t\t__func__, layout_type);\n\t\treturn NULL;\n\t}\n\n\treturn nfsd4_layout_ops[layout_type];\n}",
+      "code_after": "nfsd4_layout_verify(struct svc_export *exp, unsigned int layout_type)\n{\n\tif (!exp->ex_layout_types) {\n\t\tdprintk(\"%s: export does not support pNFS\\n\", __func__);\n\t\treturn NULL;\n\t}\n\n\tif (layout_type >= LAYOUT_TYPE_MAX ||\n\t    !(exp->ex_layout_types & (1 << layout_type))) {\n\t\tdprintk(\"%s: layout type %d not supported\\n\",\n\t\t\t__func__, layout_type);\n\t\treturn NULL;\n\t}\n\n\treturn nfsd4_layout_ops[layout_type];\n}",
+      "changes": {
+        "lines_added": 2,
+        "lines_removed": 1,
+        "lines_before": 15,
+        "lines_after": 16,
+        "similarity_ratio": 0.9495
+      }
+    },
+    {
+      "cve_id": "CVE-2019-1000016",
+      "cwe": [
+        {
+          "cwe_id": "CWE-129",
+          "cwe_name": "Improper Validation of Array Index"
+        }
+      ],
+      "cve_description": "[{'lang': 'en', 'value': 'FFMPEG version 4.1 contains a CWE-129: Improper Validation of Array Index vulnerability in libavcodec/cbs_av1.c that can result in Denial of service. This attack appears to be exploitable via specially crafted AV1 file has to be provided as input. This vulnerability appears to have been fixed in after commit b97a4b658814b2de8b9f2a3bce491c002d34de31.'}]",
+      "cve_severity": "MEDIUM",
+      "cvss3_base_score": "6.5",
+      "cvss3_base_severity": "MEDIUM",
+      "published_date": "2019-02-04T21:29Z",
+      "file_change_id": "181390798584244",
+      "filename": "cbs_av1.c",
+      "programming_language": "C",
+      "method_name": "cbs_av1_read_uvlc",
+      "method_signature": "cbs_av1_read_uvlc( CodedBitstreamContext * ctx , GetBitContext * gbc , const char * name , uint32_t * write_to , uint32_t range_min , uint32_t range_max)",
+      "code_before": "static int cbs_av1_read_uvlc(CodedBitstreamContext *ctx, GetBitContext *gbc,\n                             const char *name, uint32_t *write_to,\n                             uint32_t range_min, uint32_t range_max)\n{\n    uint32_t value;\n    int position, zeroes, i, j;\n    char bits[65];\n\n    if (ctx->trace_enable)\n        position = get_bits_count(gbc);\n\n    zeroes = i = 0;\n    while (1) {\n        if (get_bits_left(gbc) < zeroes + 1) {\n            av_log(ctx->log_ctx, AV_LOG_ERROR, \"Invalid uvlc code at \"\n                   \"%s: bitstream ended.\\n\", name);\n            return AVERROR_INVALIDDATA;\n        }\n\n        if (get_bits1(gbc)) {\n            bits[i++] = '1';\n            break;\n        } else {\n            bits[i++] = '0';\n            ++zeroes;\n        }\n    }\n\n    if (zeroes >= 32) {\n        value = MAX_UINT_BITS(32);\n    } else {\n        value = get_bits_long(gbc, zeroes);\n\n        for (j = 0; j < zeroes; j++)\n            bits[i++] = (value >> (zeroes - j - 1) & 1) ? '1' : '0';\n\n        value += (1 << zeroes) - 1;\n    }\n\n    if (ctx->trace_enable) {\n        bits[i] = 0;\n        ff_cbs_trace_syntax_element(ctx, position, name, NULL,\n                                    bits, value);\n    }\n\n    if (value < range_min || value > range_max) {\n        av_log(ctx->log_ctx, AV_LOG_ERROR, \"%s out of range: \"\n               \"%\"PRIu32\", but must be in [%\"PRIu32\",%\"PRIu32\"].\\n\",\n               name, value, range_min, range_max);\n        return AVERROR_INVALIDDATA;\n    }\n\n    *write_to = value;\n    return 0;\n}",
+      "code_after": "static int cbs_av1_read_uvlc(CodedBitstreamContext *ctx, GetBitContext *gbc,\n                             const char *name, uint32_t *write_to,\n                             uint32_t range_min, uint32_t range_max)\n{\n    uint32_t zeroes, bits_value, value;\n    int position;\n\n    if (ctx->trace_enable)\n        position = get_bits_count(gbc);\n\n    zeroes = 0;\n    while (1) {\n        if (get_bits_left(gbc) < 1) {\n            av_log(ctx->log_ctx, AV_LOG_ERROR, \"Invalid uvlc code at \"\n                   \"%s: bitstream ended.\\n\", name);\n            return AVERROR_INVALIDDATA;\n        }\n\n        if (get_bits1(gbc))\n            break;\n        ++zeroes;\n    }\n\n    if (zeroes >= 32) {\n        value = MAX_UINT_BITS(32);\n    } else {\n        if (get_bits_left(gbc) < zeroes) {\n            av_log(ctx->log_ctx, AV_LOG_ERROR, \"Invalid uvlc code at \"\n                   \"%s: bitstream ended.\\n\", name);\n            return AVERROR_INVALIDDATA;\n        }\n\n        bits_value = get_bits_long(gbc, zeroes);\n        value = bits_value + (UINT32_C(1) << zeroes) - 1;\n    }\n\n    if (ctx->trace_enable) {\n        char bits[65];\n        int i, j, k;\n\n        if (zeroes >= 32) {\n            while (zeroes > 32) {\n                k = FFMIN(zeroes - 32, 32);\n                for (i = 0; i < k; i++)\n                    bits[i] = '0';\n                bits[i] = 0;\n                ff_cbs_trace_syntax_element(ctx, position, name,\n                                            NULL, bits, 0);\n                zeroes -= k;\n                position += k;\n            }\n        }\n\n        for (i = 0; i < zeroes; i++)\n            bits[i] = '0';\n        bits[i++] = '1';\n\n        if (zeroes < 32) {\n            for (j = 0; j < zeroes; j++)\n                bits[i++] = (bits_value >> (zeroes - j - 1) & 1) ? '1' : '0';\n        }\n\n        bits[i] = 0;\n        ff_cbs_trace_syntax_element(ctx, position, name,\n                                    NULL, bits, value);\n    }\n\n    if (value < range_min || value > range_max) {\n        av_log(ctx->log_ctx, AV_LOG_ERROR, \"%s out of range: \"\n               \"%\"PRIu32\", but must be in [%\"PRIu32\",%\"PRIu32\"].\\n\",\n               name, value, range_min, range_max);\n        return AVERROR_INVALIDDATA;\n    }\n\n    *write_to = value;\n    return 0;\n}",
+      "changes": {
+        "lines_added": 40,
+        "lines_removed": 18,
+        "lines_before": 55,
+        "lines_after": 77,
+        "similarity_ratio": 0.47
+      }
+    },
+    {
+      "cve_id": "CVE-2021-33815",
+      "cwe": [
+        {
+          "cwe_id": "CWE-129",
+          "cwe_name": "Improper Validation of Array Index"
+        }
+      ],
+      "cve_description": "[{'lang': 'en', 'value': 'dwa_uncompress in libavcodec/exr.c in FFmpeg 4.4 allows an out-of-bounds array access because dc_count is not strictly checked.'}]",
+      "cve_severity": "MEDIUM",
+      "cvss3_base_score": "8.8",
+      "cvss3_base_severity": "HIGH",
+      "published_date": "2021-06-03T17:15Z",
+      "file_change_id": "49304406282748",
+      "filename": "exr.c",
+      "programming_language": "C",
+      "method_name": "dwa_uncompress",
+      "method_signature": "dwa_uncompress( EXRContext * s , const uint8_t * src , int compressed_size , int uncompressed_size , EXRThreadData * td)",
+      "code_before": "static int dwa_uncompress(EXRContext *s, const uint8_t *src, int compressed_size,\n                          int uncompressed_size, EXRThreadData *td)\n{\n    int64_t version, lo_usize, lo_size;\n    int64_t ac_size, dc_size, rle_usize, rle_csize, rle_raw_size;\n    int64_t ac_count, dc_count, ac_compression;\n    const int dc_w = td->xsize >> 3;\n    const int dc_h = td->ysize >> 3;\n    GetByteContext gb, agb;\n    int skip, ret;\n\n    if (compressed_size <= 88)\n        return AVERROR_INVALIDDATA;\n\n    version = AV_RL64(src + 0);\n    if (version != 2)\n        return AVERROR_INVALIDDATA;\n\n    lo_usize = AV_RL64(src + 8);\n    lo_size = AV_RL64(src + 16);\n    ac_size = AV_RL64(src + 24);\n    dc_size = AV_RL64(src + 32);\n    rle_csize = AV_RL64(src + 40);\n    rle_usize = AV_RL64(src + 48);\n    rle_raw_size = AV_RL64(src + 56);\n    ac_count = AV_RL64(src + 64);\n    dc_count = AV_RL64(src + 72);\n    ac_compression = AV_RL64(src + 80);\n\n    if (compressed_size < 88LL + lo_size + ac_size + dc_size + rle_csize)\n        return AVERROR_INVALIDDATA;\n\n    bytestream2_init(&gb, src + 88, compressed_size - 88);\n    skip = bytestream2_get_le16(&gb);\n    if (skip < 2)\n        return AVERROR_INVALIDDATA;\n\n    bytestream2_skip(&gb, skip - 2);\n\n    if (lo_size > 0) {\n        if (lo_usize > uncompressed_size)\n            return AVERROR_INVALIDDATA;\n        bytestream2_skip(&gb, lo_size);\n    }\n\n    if (ac_size > 0) {\n        unsigned long dest_len = ac_count * 2LL;\n        GetByteContext agb = gb;\n\n        if (ac_count > 3LL * td->xsize * s->scan_lines_per_block)\n            return AVERROR_INVALIDDATA;\n\n        av_fast_padded_malloc(&td->ac_data, &td->ac_size, dest_len);\n        if (!td->ac_data)\n            return AVERROR(ENOMEM);\n\n        switch (ac_compression) {\n        case 0:\n            ret = huf_uncompress(s, td, &agb, (int16_t *)td->ac_data, ac_count);\n            if (ret < 0)\n                return ret;\n            break;\n        case 1:\n            if (uncompress(td->ac_data, &dest_len, agb.buffer, ac_size) != Z_OK ||\n                dest_len != ac_count * 2LL)\n                return AVERROR_INVALIDDATA;\n            break;\n        default:\n            return AVERROR_INVALIDDATA;\n        }\n\n        bytestream2_skip(&gb, ac_size);\n    }\n\n    if (dc_size > 0) {\n        unsigned long dest_len = dc_count * 2LL;\n        GetByteContext agb = gb;\n\n        if (dc_count > (6LL * td->xsize * td->ysize + 63) / 64)\n            return AVERROR_INVALIDDATA;\n\n        av_fast_padded_malloc(&td->dc_data, &td->dc_size, FFALIGN(dest_len, 64) * 2);\n        if (!td->dc_data)\n            return AVERROR(ENOMEM);\n\n        if (uncompress(td->dc_data + FFALIGN(dest_len, 64), &dest_len, agb.buffer, dc_size) != Z_OK ||\n            (dest_len != dc_count * 2LL))\n            return AVERROR_INVALIDDATA;\n\n        s->dsp.predictor(td->dc_data + FFALIGN(dest_len, 64), dest_len);\n        s->dsp.reorder_pixels(td->dc_data, td->dc_data + FFALIGN(dest_len, 64), dest_len);\n\n        bytestream2_skip(&gb, dc_size);\n    }\n\n    if (rle_raw_size > 0 && rle_csize > 0 && rle_usize > 0) {\n        unsigned long dest_len = rle_usize;\n\n        av_fast_padded_malloc(&td->rle_data, &td->rle_size, rle_usize);\n        if (!td->rle_data)\n            return AVERROR(ENOMEM);\n\n        av_fast_padded_malloc(&td->rle_raw_data, &td->rle_raw_size, rle_raw_size);\n        if (!td->rle_raw_data)\n            return AVERROR(ENOMEM);\n\n        if (uncompress(td->rle_data, &dest_len, gb.buffer, rle_csize) != Z_OK ||\n            (dest_len != rle_usize))\n            return AVERROR_INVALIDDATA;\n\n        ret = rle(td->rle_raw_data, td->rle_data, rle_usize, rle_raw_size);\n        if (ret < 0)\n            return ret;\n        bytestream2_skip(&gb, rle_csize);\n    }\n\n    bytestream2_init(&agb, td->ac_data, ac_count * 2);\n\n    for (int y = 0; y < td->ysize; y += 8) {\n        for (int x = 0; x < td->xsize; x += 8) {\n            memset(td->block, 0, sizeof(td->block));\n\n            for (int j = 0; j < 3; j++) {\n                float *block = td->block[j];\n                const int idx = (x >> 3) + (y >> 3) * dc_w + dc_w * dc_h * j;\n                uint16_t *dc = (uint16_t *)td->dc_data;\n                union av_intfloat32 dc_val;\n\n                dc_val.i = half2float(dc[idx], s->mantissatable,\n                                      s->exponenttable, s->offsettable);\n\n                block[0] = dc_val.f;\n                ac_uncompress(s, &agb, block);\n                dct_inverse(block);\n            }\n\n            {\n                const float scale = s->pixel_type == EXR_FLOAT ? 2.f : 1.f;\n                const int o = s->nb_channels == 4;\n                float *bo = ((float *)td->uncompressed_data) +\n                    y * td->xsize * s->nb_channels + td->xsize * (o + 0) + x;\n                float *go = ((float *)td->uncompressed_data) +\n                    y * td->xsize * s->nb_channels + td->xsize * (o + 1) + x;\n                float *ro = ((float *)td->uncompressed_data) +\n                    y * td->xsize * s->nb_channels + td->xsize * (o + 2) + x;\n                float *yb = td->block[0];\n                float *ub = td->block[1];\n                float *vb = td->block[2];\n\n                for (int yy = 0; yy < 8; yy++) {\n                    for (int xx = 0; xx < 8; xx++) {\n                        const int idx = xx + yy * 8;\n\n                        convert(yb[idx], ub[idx], vb[idx], &bo[xx], &go[xx], &ro[xx]);\n\n                        bo[xx] = to_linear(bo[xx], scale);\n                        go[xx] = to_linear(go[xx], scale);\n                        ro[xx] = to_linear(ro[xx], scale);\n                    }\n\n                    bo += td->xsize * s->nb_channels;\n                    go += td->xsize * s->nb_channels;\n                    ro += td->xsize * s->nb_channels;\n                }\n            }\n        }\n    }\n\n    if (s->nb_channels < 4)\n        return 0;\n\n    for (int y = 0; y < td->ysize && td->rle_raw_data; y++) {\n        uint32_t *ao = ((uint32_t *)td->uncompressed_data) + y * td->xsize * s->nb_channels;\n        uint8_t *ai0 = td->rle_raw_data + y * td->xsize;\n        uint8_t *ai1 = td->rle_raw_data + y * td->xsize + rle_raw_size / 2;\n\n        for (int x = 0; x < td->xsize; x++) {\n            uint16_t ha = ai0[x] | (ai1[x] << 8);\n\n            ao[x] = half2float(ha, s->mantissatable, s->exponenttable, s->offsettable);\n        }\n    }\n\n    return 0;\n}",
+      "code_after": "static int dwa_uncompress(EXRContext *s, const uint8_t *src, int compressed_size,\n                          int uncompressed_size, EXRThreadData *td)\n{\n    int64_t version, lo_usize, lo_size;\n    int64_t ac_size, dc_size, rle_usize, rle_csize, rle_raw_size;\n    int64_t ac_count, dc_count, ac_compression;\n    const int dc_w = td->xsize >> 3;\n    const int dc_h = td->ysize >> 3;\n    GetByteContext gb, agb;\n    int skip, ret;\n\n    if (compressed_size <= 88)\n        return AVERROR_INVALIDDATA;\n\n    version = AV_RL64(src + 0);\n    if (version != 2)\n        return AVERROR_INVALIDDATA;\n\n    lo_usize = AV_RL64(src + 8);\n    lo_size = AV_RL64(src + 16);\n    ac_size = AV_RL64(src + 24);\n    dc_size = AV_RL64(src + 32);\n    rle_csize = AV_RL64(src + 40);\n    rle_usize = AV_RL64(src + 48);\n    rle_raw_size = AV_RL64(src + 56);\n    ac_count = AV_RL64(src + 64);\n    dc_count = AV_RL64(src + 72);\n    ac_compression = AV_RL64(src + 80);\n\n    if (compressed_size < 88LL + lo_size + ac_size + dc_size + rle_csize)\n        return AVERROR_INVALIDDATA;\n\n    bytestream2_init(&gb, src + 88, compressed_size - 88);\n    skip = bytestream2_get_le16(&gb);\n    if (skip < 2)\n        return AVERROR_INVALIDDATA;\n\n    bytestream2_skip(&gb, skip - 2);\n\n    if (lo_size > 0) {\n        if (lo_usize > uncompressed_size)\n            return AVERROR_INVALIDDATA;\n        bytestream2_skip(&gb, lo_size);\n    }\n\n    if (ac_size > 0) {\n        unsigned long dest_len = ac_count * 2LL;\n        GetByteContext agb = gb;\n\n        if (ac_count > 3LL * td->xsize * s->scan_lines_per_block)\n            return AVERROR_INVALIDDATA;\n\n        av_fast_padded_malloc(&td->ac_data, &td->ac_size, dest_len);\n        if (!td->ac_data)\n            return AVERROR(ENOMEM);\n\n        switch (ac_compression) {\n        case 0:\n            ret = huf_uncompress(s, td, &agb, (int16_t *)td->ac_data, ac_count);\n            if (ret < 0)\n                return ret;\n            break;\n        case 1:\n            if (uncompress(td->ac_data, &dest_len, agb.buffer, ac_size) != Z_OK ||\n                dest_len != ac_count * 2LL)\n                return AVERROR_INVALIDDATA;\n            break;\n        default:\n            return AVERROR_INVALIDDATA;\n        }\n\n        bytestream2_skip(&gb, ac_size);\n    }\n\n    {\n        unsigned long dest_len = dc_count * 2LL;\n        GetByteContext agb = gb;\n\n        if (dc_count != dc_w * dc_h * 3)\n            return AVERROR_INVALIDDATA;\n\n        av_fast_padded_malloc(&td->dc_data, &td->dc_size, FFALIGN(dest_len, 64) * 2);\n        if (!td->dc_data)\n            return AVERROR(ENOMEM);\n\n        if (uncompress(td->dc_data + FFALIGN(dest_len, 64), &dest_len, agb.buffer, dc_size) != Z_OK ||\n            (dest_len != dc_count * 2LL))\n            return AVERROR_INVALIDDATA;\n\n        s->dsp.predictor(td->dc_data + FFALIGN(dest_len, 64), dest_len);\n        s->dsp.reorder_pixels(td->dc_data, td->dc_data + FFALIGN(dest_len, 64), dest_len);\n\n        bytestream2_skip(&gb, dc_size);\n    }\n\n    if (rle_raw_size > 0 && rle_csize > 0 && rle_usize > 0) {\n        unsigned long dest_len = rle_usize;\n\n        av_fast_padded_malloc(&td->rle_data, &td->rle_size, rle_usize);\n        if (!td->rle_data)\n            return AVERROR(ENOMEM);\n\n        av_fast_padded_malloc(&td->rle_raw_data, &td->rle_raw_size, rle_raw_size);\n        if (!td->rle_raw_data)\n            return AVERROR(ENOMEM);\n\n        if (uncompress(td->rle_data, &dest_len, gb.buffer, rle_csize) != Z_OK ||\n            (dest_len != rle_usize))\n            return AVERROR_INVALIDDATA;\n\n        ret = rle(td->rle_raw_data, td->rle_data, rle_usize, rle_raw_size);\n        if (ret < 0)\n            return ret;\n        bytestream2_skip(&gb, rle_csize);\n    }\n\n    bytestream2_init(&agb, td->ac_data, ac_count * 2);\n\n    for (int y = 0; y < td->ysize; y += 8) {\n        for (int x = 0; x < td->xsize; x += 8) {\n            memset(td->block, 0, sizeof(td->block));\n\n            for (int j = 0; j < 3; j++) {\n                float *block = td->block[j];\n                const int idx = (x >> 3) + (y >> 3) * dc_w + dc_w * dc_h * j;\n                uint16_t *dc = (uint16_t *)td->dc_data;\n                union av_intfloat32 dc_val;\n\n                dc_val.i = half2float(dc[idx], s->mantissatable,\n                                      s->exponenttable, s->offsettable);\n\n                block[0] = dc_val.f;\n                ac_uncompress(s, &agb, block);\n                dct_inverse(block);\n            }\n\n            {\n                const float scale = s->pixel_type == EXR_FLOAT ? 2.f : 1.f;\n                const int o = s->nb_channels == 4;\n                float *bo = ((float *)td->uncompressed_data) +\n                    y * td->xsize * s->nb_channels + td->xsize * (o + 0) + x;\n                float *go = ((float *)td->uncompressed_data) +\n                    y * td->xsize * s->nb_channels + td->xsize * (o + 1) + x;\n                float *ro = ((float *)td->uncompressed_data) +\n                    y * td->xsize * s->nb_channels + td->xsize * (o + 2) + x;\n                float *yb = td->block[0];\n                float *ub = td->block[1];\n                float *vb = td->block[2];\n\n                for (int yy = 0; yy < 8; yy++) {\n                    for (int xx = 0; xx < 8; xx++) {\n                        const int idx = xx + yy * 8;\n\n                        convert(yb[idx], ub[idx], vb[idx], &bo[xx], &go[xx], &ro[xx]);\n\n                        bo[xx] = to_linear(bo[xx], scale);\n                        go[xx] = to_linear(go[xx], scale);\n                        ro[xx] = to_linear(ro[xx], scale);\n                    }\n\n                    bo += td->xsize * s->nb_channels;\n                    go += td->xsize * s->nb_channels;\n                    ro += td->xsize * s->nb_channels;\n                }\n            }\n        }\n    }\n\n    if (s->nb_channels < 4)\n        return 0;\n\n    for (int y = 0; y < td->ysize && td->rle_raw_data; y++) {\n        uint32_t *ao = ((uint32_t *)td->uncompressed_data) + y * td->xsize * s->nb_channels;\n        uint8_t *ai0 = td->rle_raw_data + y * td->xsize;\n        uint8_t *ai1 = td->rle_raw_data + y * td->xsize + rle_raw_size / 2;\n\n        for (int x = 0; x < td->xsize; x++) {\n            uint16_t ha = ai0[x] | (ai1[x] << 8);\n\n            ao[x] = half2float(ha, s->mantissatable, s->exponenttable, s->offsettable);\n        }\n    }\n\n    return 0;\n}",
+      "changes": {
+        "lines_added": 2,
+        "lines_removed": 2,
+        "lines_before": 185,
+        "lines_after": 185,
+        "similarity_ratio": 0.9951
+      }
+    },
+    {
+      "cve_id": "CVE-2022-1237",
+      "cwe": [
+        {
+          "cwe_id": "CWE-129",
+          "cwe_name": "Improper Validation of Array Index"
+        }
+      ],
+      "cve_severity": "MEDIUM",
+      "cvss3_base_score": "7.8",
+      "published_date": "2022-04-06T10:15Z",
+      "file_change_id": "24533295885080",
+      "filename": "ne.c",
+      "programming_language": "C",
+      "method_name": "__init",
+      "method_signature": "__init( RBuffer * buf , r_bin_ne_obj_t * bin)",
+      "code_before": "void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {\n\tbin->header_offset = r_buf_read_le16_at (buf, 0x3c);\n\tbin->ne_header = R_NEW0 (NE_image_header);\n\tif (!bin->ne_header) {\n\t\treturn;\n\t}\n\tbin->buf = buf;\n\tr_buf_read_at (buf, bin->header_offset, (ut8 *)bin->ne_header, sizeof (NE_image_header));\n\tbin->alignment = 1 << bin->ne_header->FileAlnSzShftCnt;\n\tif (!bin->alignment) {\n\t\tbin->alignment = 1 << 9;\n\t}\n\tbin->os = __get_target_os (bin);\n\n\tut16 offset = bin->ne_header->SegTableOffset + bin->header_offset;\n\tut16 size = bin->ne_header->SegCount * sizeof (NE_image_segment_entry);\n\tbin->segment_entries = calloc (1, size);\n\tif (!bin->segment_entries) {\n\t\treturn;\n\t}\n\tr_buf_read_at (buf, offset, (ut8 *)bin->segment_entries, size);\n\tbin->entry_table = calloc (1, bin->ne_header->EntryTableLength);\n\tr_buf_read_at (buf, (ut64)bin->header_offset + bin->ne_header->EntryTableOffset, bin->entry_table, bin->ne_header->EntryTableLength);\n\tbin->imports = r_bin_ne_get_imports (bin);\n\t__ne_get_resources (bin);\n}",
+      "code_after": "void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {\n\tbin->header_offset = r_buf_read_le16_at (buf, 0x3c);\n\tbin->ne_header = R_NEW0 (NE_image_header);\n\tif (!bin->ne_header) {\n\t\treturn;\n\t}\n\tbin->buf = buf;\n\t// XXX this is endian unsafe\n\tr_buf_read_at (buf, bin->header_offset, (ut8 *)bin->ne_header, sizeof (NE_image_header));\n\tif (bin->ne_header->FileAlnSzShftCnt > 8) {\n\t\tbin->ne_header->FileAlnSzShftCnt = 8;\n\t}\n\tif (bin->ne_header->ModRefs * sizeof (ut16) >= r_buf_size (bin->buf)) {\n\t\tbin->ne_header->ModRefs = r_buf_size (bin->buf) / sizeof (ut16);\n\t}\n\tbin->alignment = 1 << bin->ne_header->FileAlnSzShftCnt;\n\tif (!bin->alignment) {\n\t\tbin->alignment = 1 << 9;\n\t}\n\tbin->os = __get_target_os (bin);\n\n\tut16 offset = bin->ne_header->SegTableOffset + bin->header_offset;\n\tsize_t size = bin->ne_header->SegCount * sizeof (NE_image_segment_entry);\n\tif (offset >= r_buf_size (bin->buf)) {\n\t\treturn;\n\t}\n\tsize_t remaining = r_buf_size (bin->buf) - offset;\n\tsize = R_MIN (remaining, size);\n\tbin->segment_entries = calloc (1, size);\n\tif (size >= remaining) {\n\t\tbin->ne_header->SegCount = size / sizeof (NE_image_segment_entry);\n\t}\n\tif (!bin->segment_entries) {\n\t\treturn;\n\t}\n\tr_buf_read_at (buf, offset, (ut8 *)bin->segment_entries, size);\n\tbin->entry_table = calloc (1, bin->ne_header->EntryTableLength);\n\tr_buf_read_at (buf, (ut64)bin->header_offset + bin->ne_header->EntryTableOffset, bin->entry_table, bin->ne_header->EntryTableLength);\n\tbin->imports = r_bin_ne_get_imports (bin);\n\t__ne_get_resources (bin);\n}",
+      "changes": {
+        "lines_added": 16,
+        "lines_removed": 1,
+        "lines_before": 26,
+        "lines_after": 41,
+        "similarity_ratio": 0.7974
+      },
+      "source": "db_extraction"
+    },
+    {
+      "cve_id": "CVE-2022-1237",
+      "cwe": [
+        {
+          "cwe_id": "CWE-129",
+          "cwe_name": "Improper Validation of Array Index"
+        }
+      ],
+      "cve_severity": "MEDIUM",
+      "cvss3_base_score": "7.8",
+      "published_date": "2022-04-06T10:15Z",
+      "file_change_id": "24533295885080",
+      "filename": "ne.c",
+      "programming_language": "C",
+      "method_name": "r_bin_ne_get_relocs",
+      "method_signature": "r_bin_ne_get_relocs( r_bin_ne_obj_t * bin)",
+      "code_before": "RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {\n\tRList *segments = bin->segments;\n\tif (!segments) {\n\t\treturn NULL;\n\t}\n\tRList *entries = bin->entries;\n\tif (!entries) {\n\t\treturn NULL;\n\t}\n\tRList *symbols = bin->symbols;\n\tif (!symbols) {\n\t\treturn NULL;\n\t}\n\n\tut16 *modref = malloc (bin->ne_header->ModRefs * sizeof (ut16));\n\tif (!modref) {\n\t\treturn NULL;\n\t}\n\tr_buf_read_at (bin->buf, (ut64)bin->ne_header->ModRefTable + bin->header_offset, (ut8 *)modref, bin->ne_header->ModRefs * sizeof (ut16));\n\n\tRList *relocs = r_list_newf (free);\n\tif (!relocs) {\n\t\tfree (modref);\n\t\treturn NULL;\n\t}\n\n\tRListIter *it;\n\tRBinSection *seg;\n\tint index = -1;\n\tr_list_foreach (segments, it, seg) {\n\t\tindex++;\n\t\tif (!(bin->segment_entries[index].flags & RELOCINFO)) {\n\t\t\tcontinue;\n\t\t}\n\t\tut32 off, start = off = seg->paddr + seg->size;\n\t\tut16 length = r_buf_read_le16_at (bin->buf, off);\n\t\tif (!length) {\n\t\t\tcontinue;\n\t\t}\n\t\toff += 2;\n\t\twhile (off < start + length * sizeof (NE_image_reloc_item)) {\n\t\t\tRBinReloc *reloc = R_NEW0 (RBinReloc);\n\t\t\tif (!reloc) {\n\t\t\t\treturn NULL;\n\t\t\t}\n\t\t\tNE_image_reloc_item rel;\n\t\t\tr_buf_read_at (bin->buf, off, (ut8 *)&rel, sizeof (rel));\n\t\t\treloc->paddr = seg->paddr + rel.offset;\n\t\t\tswitch (rel.type) {\n\t\t\tcase LOBYTE:\n\t\t\t\treloc->type = R_BIN_RELOC_8;\n\t\t\t\tbreak;\n\t\t\tcase SEL_16:\n\t\t\tcase OFF_16:\n\t\t\t\treloc->type = R_BIN_RELOC_16;\n\t\t\t\tbreak;\n\t\t\tcase POI_32:\n\t\t\tcase OFF_32:\n\t\t\t\treloc->type = R_BIN_RELOC_32;\n\t\t\t\tbreak;\n\t\t\tcase POI_48:\n\t\t\t\treloc->type = R_BIN_RELOC_64;\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\t\n\t\t\tut32 offset;\n\t\t\tif (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {\n\t\t\t\tRBinImport *imp = R_NEW0 (RBinImport);\n\t\t\t\tif (!imp) {\n\t\t\t\t\tfree (reloc);\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\t\tchar *name;\n\t\t\t\tif (rel.index > bin->ne_header->ModRefs) {\n\t\t\t\t\tname = r_str_newf (\"UnknownModule%d_%x\", rel.index, off); // ????\n\t\t\t\t} else {\n\t\t\t\t\toffset = modref[rel.index - 1] + bin->header_offset + bin->ne_header->ImportNameTable;\n\t\t\t\t\tname = __read_nonnull_str_at (bin->buf, offset);\n\t\t\t\t}\n\t\t\t\tif (rel.flags & IMPORTED_ORD) {\n\t\t\t\t\timp->ordinal = rel.func_ord;\n\t\t\t\t\timp->name = r_str_newf (\"%s.%s\", name, __func_name_from_ord(name, rel.func_ord));\n\t\t\t\t} else {\n\t\t\t\t\toffset = bin->header_offset + bin->ne_header->ImportNameTable + rel.name_off;\n\t\t\t\t\tchar *func = __read_nonnull_str_at (bin->buf, offset);\n\t\t\t\t\timp->name = r_str_newf (\"%s.%s\", name, func);\n\t\t\t\t\tfree (func);\n\t\t\t\t}\n\t\t\t\tfree (name);\n\t\t\t\treloc->import = imp;\n\t\t\t} else if (rel.flags & OSFIXUP) {\n\t\t\t\t// TODO\n\t\t\t} else {\n\t\t\t\tif (strstr (seg->name, \"FIXED\")) {\n\t\t\t\t\tRBinSection *s = r_list_get_n (segments, rel.segnum - 1);\n\t\t\t\t\tif (s) {\n\t\t\t\t\t\toffset = s->paddr + rel.segoff;\n\t\t\t\t\t} else {\n\t\t\t\t\t\toffset = -1;\n\t\t\t\t\t}\n\t\t\t\t} else {\n\t\t\t\t\tRBinAddr *entry = r_list_get_n (entries, rel.entry_ordinal - 1);\n\t\t\t\t\tif (entry) {\n\t\t\t\t\t\toffset = entry->paddr;\n\t\t\t\t\t} else {\n\t\t\t\t\t\toffset = -1;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\treloc->addend = offset;\n\t\t\t\tRBinSymbol *sym = NULL;\n\t\t\t\tRListIter *sit;\n\t\t\t\tr_list_foreach (symbols, sit, sym) {\n\t\t\t\t\tif (sym->paddr == reloc->addend) {\n\t\t\t\t\t\treloc->symbol = sym;\n\t\t\t\t\t\tbreak;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif (rel.flags & ADDITIVE) {\n\t\t\t\treloc->additive = 1;\n\t\t\t\tr_list_append (relocs, reloc);\n\t\t\t} else {\n\t\t\t\tdo {\n\t\t\t\t\tr_list_append (relocs, reloc);\n\t\t\t\t\t\n\t\t\t\t\toffset = r_buf_read_le16_at (bin->buf, reloc->paddr);\n\t\t\t\t\tRBinReloc *tmp = reloc;\n\t\t\t\t\treloc = R_NEW0 (RBinReloc);\n\t\t\t\t\tif (!reloc) {\n\t\t\t\t\t\tbreak;\n\t\t\t\t\t}\n\t\t\t\t\t*reloc = *tmp;\n\t\t\t\t\treloc->paddr = seg->paddr + offset;\n\t\t\t\t} while (offset != 0xFFFF);\n\t\t\t\tfree (reloc);\n\t\t\t}\n\n\t\t\toff += sizeof (NE_image_reloc_item);\n\t\t}\n\t}\n\tfree (modref);\n\treturn relocs;\n}",
+      "code_after": "RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {\n\tRList *segments = bin->segments;\n\tif (!segments) {\n\t\treturn NULL;\n\t}\n\tRList *entries = bin->entries;\n\tif (!entries) {\n\t\treturn NULL;\n\t}\n\tRList *symbols = bin->symbols;\n\tif (!symbols) {\n\t\treturn NULL;\n\t}\n\n\tut16 *modref = calloc (bin->ne_header->ModRefs, sizeof (ut16));\n\tif (!modref) {\n\t\treturn NULL;\n\t}\n\tr_buf_read_at (bin->buf, (ut64)bin->ne_header->ModRefTable + bin->header_offset, (ut8 *)modref, bin->ne_header->ModRefs * sizeof (ut16));\n\n\tRList *relocs = r_list_newf (free);\n\tif (!relocs) {\n\t\tfree (modref);\n\t\treturn NULL;\n\t}\n\n\tRListIter *it;\n\tRBinSection *seg;\n\tint index = -1;\n\tr_list_foreach (segments, it, seg) {\n\t\tindex++;\n\t\tif (!(bin->segment_entries[index].flags & RELOCINFO)) {\n\t\t\tcontinue;\n\t\t}\n\t\tut32 off, start = off = seg->paddr + seg->size;\n\t\tut16 length = r_buf_read_le16_at (bin->buf, off);\n\t\tif (!length) {\n\t\t\tcontinue;\n\t\t}\n\t\toff += 2;\n\t\tsize_t buf_size = r_buf_size (bin->buf);\n\t\twhile (off < start + length * sizeof (NE_image_reloc_item) && off < buf_size) {\n\t\t\tRBinReloc *reloc = R_NEW0 (RBinReloc);\n\t\t\tif (!reloc) {\n\t\t\t\treturn NULL;\n\t\t\t}\n\t\t\tNE_image_reloc_item rel;\n\t\t\tr_buf_read_at (bin->buf, off, (ut8 *)&rel, sizeof (rel));\n\t\t\treloc->paddr = seg->paddr + rel.offset;\n\t\t\tswitch (rel.type) {\n\t\t\tcase LOBYTE:\n\t\t\t\treloc->type = R_BIN_RELOC_8;\n\t\t\t\tbreak;\n\t\t\tcase SEL_16:\n\t\t\tcase OFF_16:\n\t\t\t\treloc->type = R_BIN_RELOC_16;\n\t\t\t\tbreak;\n\t\t\tcase POI_32:\n\t\t\tcase OFF_32:\n\t\t\t\treloc->type = R_BIN_RELOC_32;\n\t\t\t\tbreak;\n\t\t\tcase POI_48:\n\t\t\t\treloc->type = R_BIN_RELOC_64;\n\t\t\t\tbreak;\n\t\t\t}\n\t\t\t\n\t\t\tut32 offset;\n\t\t\tif (rel.flags & (IMPORTED_ORD | IMPORTED_NAME)) {\n\t\t\t\tRBinImport *imp = R_NEW0 (RBinImport);\n\t\t\t\tif (!imp) {\n\t\t\t\t\tfree (reloc);\n\t\t\t\t\tbreak;\n\t\t\t\t}\n\t\t\t\tchar *name;\n\t\t\t\tif (rel.index < 1 || rel.index > bin->ne_header->ModRefs) {\n\t\t\t\t\tname = r_str_newf (\"UnknownModule%d_%x\", rel.index, off); // ????\n\t\t\t\t} else {\n\t\t\t\t\tint index = rel.index;\n\t\t\t\t\toffset = modref[index - 1] + bin->header_offset + bin->ne_header->ImportNameTable;\n\t\t\t\t\tname = __read_nonnull_str_at (bin->buf, offset);\n\t\t\t\t}\n\t\t\t\tif (rel.flags & IMPORTED_ORD) {\n\t\t\t\t\timp->ordinal = rel.func_ord;\n\t\t\t\t\timp->name = r_str_newf (\"%s.%s\", name, __func_name_from_ord(name, rel.func_ord));\n\t\t\t\t} else {\n\t\t\t\t\toffset = bin->header_offset + bin->ne_header->ImportNameTable + rel.name_off;\n\t\t\t\t\tchar *func = __read_nonnull_str_at (bin->buf, offset);\n\t\t\t\t\timp->name = r_str_newf (\"%s.%s\", name, func);\n\t\t\t\t\tfree (func);\n\t\t\t\t}\n\t\t\t\tfree (name);\n\t\t\t\treloc->import = imp;\n\t\t\t} else if (rel.flags & OSFIXUP) {\n\t\t\t\t// TODO\n\t\t\t} else {\n\t\t\t\tif (strstr (seg->name, \"FIXED\")) {\n\t\t\t\t\tRBinSection *s = r_list_get_n (segments, rel.segnum - 1);\n\t\t\t\t\tif (s) {\n\t\t\t\t\t\toffset = s->paddr + rel.segoff;\n\t\t\t\t\t} else {\n\t\t\t\t\t\toffset = -1;\n\t\t\t\t\t}\n\t\t\t\t} else {\n\t\t\t\t\tRBinAddr *entry = r_list_get_n (entries, rel.entry_ordinal - 1);\n\t\t\t\t\tif (entry) {\n\t\t\t\t\t\toffset = entry->paddr;\n\t\t\t\t\t} else {\n\t\t\t\t\t\toffset = -1;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\treloc->addend = offset;\n\t\t\t\tRBinSymbol *sym = NULL;\n\t\t\t\tRListIter *sit;\n\t\t\t\tr_list_foreach (symbols, sit, sym) {\n\t\t\t\t\tif (sym->paddr == reloc->addend) {\n\t\t\t\t\t\treloc->symbol = sym;\n\t\t\t\t\t\tbreak;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif (rel.flags & ADDITIVE) {\n\t\t\t\treloc->additive = 1;\n\t\t\t\tr_list_append (relocs, reloc);\n\t\t\t} else {\n\t\t\t\tdo {\n\t\t\t\t\tr_list_append (relocs, reloc);\n\t\t\t\t\t\n\t\t\t\t\toffset = r_buf_read_le16_at (bin->buf, reloc->paddr);\n\t\t\t\t\tRBinReloc *tmp = reloc;\n\t\t\t\t\treloc = R_NEW0 (RBinReloc);\n\t\t\t\t\tif (!reloc) {\n\t\t\t\t\t\tbreak;\n\t\t\t\t\t}\n\t\t\t\t\t*reloc = *tmp;\n\t\t\t\t\treloc->paddr = seg->paddr + offset;\n\t\t\t\t} while (offset != 0xFFFF);\n\t\t\t\tfree (reloc);\n\t\t\t}\n\n\t\t\toff += sizeof (NE_image_reloc_item);\n\t\t}\n\t}\n\tfree (modref);\n\treturn relocs;\n}",
+      "changes": {
+        "lines_added": 6,
+        "lines_removed": 4,
+        "lines_before": 144,
+        "lines_after": 146,
+        "similarity_ratio": 0.984
+      },
+      "source": "db_extraction"
+    },
+    {
+      "cve_id": "CVE-2022-1237",
+      "cwe": [
+        {
+          "cwe_id": "CWE-129",
+          "cwe_name": "Improper Validation of Array Index"
+        }
+      ],
+      "cve_severity": "MEDIUM",
+      "cvss3_base_score": "7.8",
+      "published_date": "2022-04-06T10:15Z",
+      "file_change_id": "24533295885080",
+      "filename": "ne.c",
+      "programming_language": "C",
+      "method_name": "r_bin_ne_get_segments",
+      "method_signature": "r_bin_ne_get_segments( r_bin_ne_obj_t * bin)",
+      "code_before": "RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {\n\tint i;\n\tif (!bin) {\n\t\treturn NULL;\n\t}\n\tRList *segments = r_list_newf (free);\n\tfor (i = 0; i < bin->ne_header->SegCount; i++) {\n\t\tRBinSection *bs = R_NEW0 (RBinSection);\n\t\tNE_image_segment_entry *se = &bin->segment_entries[i];\n\t\tif (!bs) {\n\t\t\treturn segments;\n\t\t}\n\t\tbs->size = se->length;\n\t\tbs->vsize = se->minAllocSz ? se->minAllocSz : 64000;\n\t\tbs->bits = R_SYS_BITS_16;\n\t\tbs->is_data = se->flags & IS_DATA;\n\t\tbs->perm = __translate_perms (se->flags);\n\t\tbs->paddr = (ut64)se->offset * bin->alignment;\n\t\tbs->name = r_str_newf (\"%s.%\" PFMT64d, se->flags & IS_MOVEABLE ? \"MOVEABLE\" : \"FIXED\", bs->paddr);\n\t\tbs->is_segment = true;\n\t\tr_list_append (segments, bs);\n\t}\n\tbin->segments = segments;\n\treturn segments;\n}",
+      "code_after": "RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {\n\tint i;\n\tif (!bin) {\n\t\treturn NULL;\n\t}\n\tRList *segments = r_list_newf (free);\n\tfor (i = 0; i < bin->ne_header->SegCount; i++) {\n\t\tRBinSection *bs = R_NEW0 (RBinSection);\n\t\tif (!bs) {\n\t\t\treturn segments;\n\t\t}\n\t\tNE_image_segment_entry *se = &bin->segment_entries[i];\n\t\tbs->size = se->length;\n\t\tbs->vsize = se->minAllocSz ? se->minAllocSz : 64000;\n\t\tbs->bits = R_SYS_BITS_16;\n\t\tbs->is_data = se->flags & IS_DATA;\n\t\tbs->perm = __translate_perms (se->flags);\n\t\tbs->paddr = (ut64)se->offset * bin->alignment;\n\t\tbs->name = r_str_newf (\"%s.%\" PFMT64d, se->flags & IS_MOVEABLE ? \"MOVEABLE\" : \"FIXED\", bs->paddr);\n\t\tbs->is_segment = true;\n\t\tr_list_append (segments, bs);\n\t}\n\tbin->segments = segments;\n\treturn segments;\n}",
+      "changes": {
+        "lines_added": 1,
+        "lines_removed": 1,
+        "lines_before": 25,
+        "lines_after": 25,
+        "similarity_ratio": 0.9514
+      },
+      "source": "db_extraction"
+    },
+    {
+      "cve_id": "CVE-2022-31135",
+      "cwe": [
+        {
+          "cwe_id": "CWE-129",
+          "cwe_name": "Improper Validation of Array Index"
+        }
+      ],
+      "cve_severity": "HIGH",
+      "cvss3_base_score": "7.5",
+      "published_date": "2022-07-07T18:15Z",
+      "file_change_id": "10807408755154",
+      "filename": "packets.cpp",
+      "programming_language": "C++",
+      "method_name": "AOClient::pktEditEvidence",
+      "method_signature": "AOClient::pktEditEvidence( AreaData * area , int argc , QStringList argv , AOPacket packet)",
+      "code_before": "void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)\n{\n    if (!checkEvidenceAccess(area))\n        return;\n    bool is_int = false;\n    int idx = argv[0].toInt(&is_int);\n    AreaData::Evidence evi = {argv[1], argv[2], argv[3]};\n    if (is_int && idx <= area->evidence().size() && idx >= 0) {\n        area->replaceEvidence(idx, evi);\n    }\n    sendEvidenceList(area);\n}",
+      "code_after": "void AOClient::pktEditEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)\n{\n    if (!checkEvidenceAccess(area))\n        return;\n    bool is_int = false;\n    int idx = argv[0].toInt(&is_int);\n    AreaData::Evidence evi = {argv[1], argv[2], argv[3]};\n    if (is_int && idx < area->evidence().size() && idx >= 0) {\n        area->replaceEvidence(idx, evi);\n    }\n    sendEvidenceList(area);\n}",
+      "changes": {
+        "lines_added": 1,
+        "lines_removed": 1,
+        "lines_before": 12,
+        "lines_after": 12,
+        "similarity_ratio": 0.9988
+      },
+      "source": "db_extraction"
+    },
+    {
+      "cve_id": "CVE-2022-31135",
+      "cwe": [
+        {
+          "cwe_id": "CWE-129",
+          "cwe_name": "Improper Validation of Array Index"
+        }
+      ],
+      "cve_severity": "HIGH",
+      "cvss3_base_score": "7.5",
+      "published_date": "2022-07-07T18:15Z",
+      "file_change_id": "10807408755154",
+      "filename": "packets.cpp",
+      "programming_language": "C++",
+      "method_name": "AOClient::pktRemoveEvidence",
+      "method_signature": "AOClient::pktRemoveEvidence( AreaData * area , int argc , QStringList argv , AOPacket packet)",
+      "code_before": "void AOClient::pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)\n{\n    if (!checkEvidenceAccess(area))\n        return;\n    bool is_int = false;\n    int idx = argv[0].toInt(&is_int);\n    if (is_int && idx <= area->evidence().size() && idx >= 0) {\n        area->deleteEvidence(idx);\n    }\n    sendEvidenceList(area);\n}",
+      "code_after": "void AOClient::pktRemoveEvidence(AreaData* area, int argc, QStringList argv, AOPacket packet)\n{\n    if (!checkEvidenceAccess(area))\n        return;\n    bool is_int = false;\n    int idx = argv[0].toInt(&is_int);\n    if (is_int && idx < area->evidence().size() && idx >= 0) {\n        area->deleteEvidence(idx);\n    }\n    sendEvidenceList(area);\n}",
+      "changes": {
+        "lines_added": 1,
+        "lines_removed": 1,
+        "lines_before": 11,
+        "lines_after": 11,
+        "similarity_ratio": 0.9985
+      },
+      "source": "db_extraction"
+    },
+    {
+      "cve_id": "CVE-2022-38072",
+      "cwe": [
+        {
+          "cwe_id": "CWE-129",
+          "cwe_name": "Improper Validation of Array Index"
+        }
+      ],
+      "cve_severity": "nan",
+      "cvss3_base_score": "8.8",
+      "published_date": "2023-04-03T16:15Z",
+      "file_change_id": "109598304657211",
+      "filename": "normals.c",
+      "programming_language": "C",
+      "method_name": "stl_fix_normal_directions",
+      "method_signature": "stl_fix_normal_directions( stl_file * stl)",
+      "code_before": "stl_fix_normal_directions(stl_file *stl) {\n  char *norm_sw;\n  /*  int edge_num;*/\n  /*  int vnot;*/\n  int checked = 0;\n  int facet_num;\n  /*  int next_facet;*/\n  int i;\n  int j;\n  struct stl_normal {\n    int               facet_num;\n    struct stl_normal *next;\n  };\n  struct stl_normal *head;\n  struct stl_normal *tail;\n  struct stl_normal *newn;\n  struct stl_normal *temp;\n\n  if (stl->error) return;\n\n  /* Initialize linked list. */\n  head = (struct stl_normal*)malloc(sizeof(struct stl_normal));\n  if(head == NULL) perror(\"stl_fix_normal_directions\");\n  tail = (struct stl_normal*)malloc(sizeof(struct stl_normal));\n  if(tail == NULL) perror(\"stl_fix_normal_directions\");\n  head->next = tail;\n  tail->next = tail;\n\n  /* Initialize list that keeps track of already fixed facets. */\n  norm_sw = (char*)calloc(stl->stats.number_of_facets, sizeof(char));\n  if(norm_sw == NULL) perror(\"stl_fix_normal_directions\");\n\n\n  facet_num = 0;\n  /* If normal vector is not within tolerance and backwards:\n     Arbitrarily starts at face 0.  If this one is wrong, we're screwed.  Thankfully, the chances\n     of it being wrong randomly are low if most of the triangles are right: */\n  if(stl_check_normal_vector(stl, 0, 0) == 2)\n    stl_reverse_facet(stl, 0);\n\n  /* Say that we've fixed this facet: */\n  norm_sw[facet_num] = 1;\n  checked++;\n\n  for(;;) {\n    /* Add neighbors_to_list.\n       Add unconnected neighbors to the list:a  */\n    for(j = 0; j < 3; j++) {\n      /* Reverse the neighboring facets if necessary. */\n      if(stl->neighbors_start[facet_num].which_vertex_not[j] > 2) {\n        /* If the facet has a neighbor that is -1, it means that edge isn't shared by another facet */\n        if(stl->neighbors_start[facet_num].neighbor[j] != -1) {\n          stl_reverse_facet\n          (stl, stl->neighbors_start[facet_num].neighbor[j]);\n        }\n      }\n      /* If this edge of the facet is connected: */\n      if(stl->neighbors_start[facet_num].neighbor[j] != -1) {\n        /* If we haven't fixed this facet yet, add it to the list: */\n        if(norm_sw[stl->neighbors_start[facet_num].neighbor[j]] != 1) {\n          /* Add node to beginning of list. */\n          newn = (struct stl_normal*)malloc(sizeof(struct stl_normal));\n          if(newn == NULL) perror(\"stl_fix_normal_directions\");\n          newn->facet_num = stl->neighbors_start[facet_num].neighbor[j];\n          newn->next = head->next;\n          head->next = newn;\n        }\n      }\n    }\n    /* Get next facet to fix from top of list. */\n    if(head->next != tail) {\n      facet_num = head->next->facet_num;\n      if(norm_sw[facet_num] != 1) { /* If facet is in list mutiple times */\n        norm_sw[facet_num] = 1; /* Record this one as being fixed. */\n        checked++;\n      }\n      temp = head->next;\t/* Delete this facet from the list. */\n      head->next = head->next->next;\n      free(temp);\n    } else { /* if we ran out of facets to fix: */\n      /* All of the facets in this part have been fixed. */\n      stl->stats.number_of_parts += 1;\n      if(checked >= stl->stats.number_of_facets) {\n        /* All of the facets have been checked.  Bail out. */\n        break;\n      } else {\n        /* There is another part here.  Find it and continue. */\n        for(i = 0; i < stl->stats.number_of_facets; i++) {\n          if(norm_sw[i] == 0) {\n            /* This is the first facet of the next part. */\n            facet_num = i;\n            if(stl_check_normal_vector(stl, i, 0) == 2) {\n              stl_reverse_facet(stl, i);\n            }\n\n            norm_sw[facet_num] = 1;\n            checked++;\n            break;\n          }\n        }\n      }\n    }\n  }\n  free(head);\n  free(tail);\n  free(norm_sw);\n}",
+      "code_after": "stl_fix_normal_directions(stl_file *stl) {\n  char *norm_sw;\n  /*  int edge_num;*/\n  /*  int vnot;*/\n  int checked = 0;\n  int facet_num;\n  /*  int next_facet;*/\n  int i;\n  int j;\n  struct stl_normal {\n    int               facet_num;\n    struct stl_normal *next;\n  };\n  struct stl_normal *head;\n  struct stl_normal *tail;\n  struct stl_normal *newn;\n  struct stl_normal *temp;\n\n  if (stl->error) return;\n\n  /* Initialize linked list. */\n  head = (struct stl_normal*)malloc(sizeof(struct stl_normal));\n  if(head == NULL) perror(\"stl_fix_normal_directions\");\n  tail = (struct stl_normal*)malloc(sizeof(struct stl_normal));\n  if(tail == NULL) perror(\"stl_fix_normal_directions\");\n  head->next = tail;\n  tail->next = tail;\n\n  /* Initialize list that keeps track of already fixed facets. */\n  norm_sw = (char*)calloc(stl->stats.number_of_facets, sizeof(char));\n  if(norm_sw == NULL) perror(\"stl_fix_normal_directions\");\n\n\n  facet_num = 0;\n  /* If normal vector is not within tolerance and backwards:\n     Arbitrarily starts at face 0.  If this one is wrong, we're screwed.  Thankfully, the chances\n     of it being wrong randomly are low if most of the triangles are right: */\n  if(stl_check_normal_vector(stl, 0, 0) == 2)\n    stl_reverse_facet(stl, 0);\n\n  /* Say that we've fixed this facet: */\n  norm_sw[facet_num] = 1;\n  checked++;\n\n  for(;;) {\n    /* Add neighbors_to_list.\n       Add unconnected neighbors to the list:a  */\n    for(j = 0; j < 3; j++) {\n      /* Reverse the neighboring facets if necessary. */\n      if(stl->neighbors_start[facet_num].which_vertex_not[j] > 2) {\n        /* If the facet has a neighbor that is -1, it means that edge isn't shared by another facet */\n        if(stl->neighbors_start[facet_num].neighbor[j] != -1) {\n          stl_reverse_facet\n          (stl, stl->neighbors_start[facet_num].neighbor[j]);\n        }\n      }\n      /* If this edge of the facet is connected: */\n      if(stl->neighbors_start[facet_num].neighbor[j] != -1 &&\n         stl->neighbors_start[facet_num].neighbor[j] < stl->stats.number_of_facets*sizeof(char)) {\n        /* If we haven't fixed this facet yet, add it to the list: */\n        if(norm_sw[stl->neighbors_start[facet_num].neighbor[j]] != 1) {\n          /* Add node to beginning of list. */\n          newn = (struct stl_normal*)malloc(sizeof(struct stl_normal));\n          if(newn == NULL) perror(\"stl_fix_normal_directions\");\n          newn->facet_num = stl->neighbors_start[facet_num].neighbor[j];\n          newn->next = head->next;\n          head->next = newn;\n        }\n      }\n    }\n    /* Get next facet to fix from top of list. */\n    if(head->next != tail) {\n      facet_num = head->next->facet_num;\n      if(norm_sw[facet_num] != 1) { /* If facet is in list mutiple times */\n        norm_sw[facet_num] = 1; /* Record this one as being fixed. */\n        checked++;\n      }\n      temp = head->next;\t/* Delete this facet from the list. */\n      head->next = head->next->next;\n      free(temp);\n    } else { /* if we ran out of facets to fix: */\n      /* All of the facets in this part have been fixed. */\n      stl->stats.number_of_parts += 1;\n      if(checked >= stl->stats.number_of_facets) {\n        /* All of the facets have been checked.  Bail out. */\n        break;\n      } else {\n        /* There is another part here.  Find it and continue. */\n        for(i = 0; i < stl->stats.number_of_facets; i++) {\n          if(norm_sw[i] == 0) {\n            /* This is the first facet of the next part. */\n            facet_num = i;\n            if(stl_check_normal_vector(stl, i, 0) == 2) {\n              stl_reverse_facet(stl, i);\n            }\n\n            norm_sw[facet_num] = 1;\n            checked++;\n            break;\n          }\n        }\n      }\n    }\n  }\n  free(head);\n  free(tail);\n  free(norm_sw);\n}",
+      "changes": {
+        "lines_added": 2,
+        "lines_removed": 1,
+        "lines_before": 107,
+        "lines_after": 108,
+        "similarity_ratio": 0.9867
+      },
+      "source": "db_extraction"
+    },
+    {
+      "cve_id": "CVE-2022-46152",
+      "cwe": [
+        {
+          "cwe_id": "CWE-129",
+          "cwe_name": "Improper Validation of Array Index"
+        }
+      ],
+      "cve_severity": "nan",
+      "cvss3_base_score": "8.8",
+      "published_date": "2022-11-29T17:15Z",
+      "file_change_id": "168101705757470",
+      "filename": "entry_std.c",
+      "programming_language": "C",
+      "method_name": "cleanup_shm_refs",
+      "method_signature": "cleanup_shm_refs( const uint64_t * saved_attr , struct tee_ta_param * param , uint32_t num_params)",
+      "code_before": "static void cleanup_shm_refs(const uint64_t *saved_attr,\n\t\t\t     struct tee_ta_param *param, uint32_t num_params)\n{\n\tsize_t n;\n\n\tfor (n = 0; n < num_params; n++) {\n\t\tswitch (saved_attr[n]) {\n\t\tcase OPTEE_MSG_ATTR_TYPE_TMEM_INPUT:\n\t\tcase OPTEE_MSG_ATTR_TYPE_TMEM_OUTPUT:\n\t\tcase OPTEE_MSG_ATTR_TYPE_TMEM_INOUT:\n#ifdef CFG_CORE_DYN_SHM\n\t\tcase OPTEE_MSG_ATTR_TYPE_RMEM_INPUT:\n\t\tcase OPTEE_MSG_ATTR_TYPE_RMEM_OUTPUT:\n\t\tcase OPTEE_MSG_ATTR_TYPE_RMEM_INOUT:\n#endif\n\t\t\tmobj_put(param->u[n].mem.mobj);\n\t\t\tbreak;\n\t\tdefault:\n\t\t\tbreak;\n\t\t}\n\t}\n}",
+      "code_after": "static void cleanup_shm_refs(const uint64_t *saved_attr,\n\t\t\t     struct tee_ta_param *param, uint32_t num_params)\n{\n\tsize_t n;\n\n\tfor (n = 0; n < MIN((unsigned int)TEE_NUM_PARAMS, num_params); n++) {\n\t\tswitch (saved_attr[n]) {\n\t\tcase OPTEE_MSG_ATTR_TYPE_TMEM_INPUT:\n\t\tcase OPTEE_MSG_ATTR_TYPE_TMEM_OUTPUT:\n\t\tcase OPTEE_MSG_ATTR_TYPE_TMEM_INOUT:\n#ifdef CFG_CORE_DYN_SHM\n\t\tcase OPTEE_MSG_ATTR_TYPE_RMEM_INPUT:\n\t\tcase OPTEE_MSG_ATTR_TYPE_RMEM_OUTPUT:\n\t\tcase OPTEE_MSG_ATTR_TYPE_RMEM_INOUT:\n#endif\n\t\t\tmobj_put(param->u[n].mem.mobj);\n\t\t\tbreak;\n\t\tdefault:\n\t\t\tbreak;\n\t\t}\n\t}\n}",
+      "changes": {
+        "lines_added": 1,
+        "lines_removed": 1,
+        "lines_before": 22,
+        "lines_after": 22,
+        "similarity_ratio": 0.95
+      },
+      "source": "db_extraction"
+    }
+  ]
+}
