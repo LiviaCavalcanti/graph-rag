@@ -1164,6 +1164,7 @@ struct sock *alloc_socket(
       \multicolumn{5}{c}{\textit{CodeBERT (Baseline)}} \\
       \midrule
       CodeBERT (seq) & 0.7534 & 0.8630 & 0.7927 & 0.4121 \\
+      CodeBERT (pat) & 0.7462 & 0.8498 & 0.7815 & 0.4056 \\
       \bottomrule
     \end{tabular}
   \end{table}
@@ -1172,6 +1173,36 @@ struct sock *alloc_socket(
   \textbf{Key Finding:} Combined structural embeddings (89\% Hit@1) outperform CodeBERT (75\%).
   
   \textbf{RQ1:} validated — structural \textit{graph} representations are \textit{effective} for vulnerability pattern retrieval in a synthetic dataset.
+\end{frame}
+
+\begin{frame}{CodeBERT Embeddings — Sequence vs. Pattern}
+
+  \textbf{Observation:} CodeBERT performs better on sequence-based linearized code than on pattern-based graph representations.
+
+  \vspace{0.3cm}
+  \begin{center}
+    \begin{tcolorbox}[colback=warn!5, colframe=warn!60!black, boxrule=0.4pt,
+      left=4pt, right=4pt, top=3pt, bottom=3pt, arc=3pt,
+      title={\scriptsize\bfseries Interpretation}]
+      \scriptsize
+      \begin{itemize}
+        \setlength\itemsep{2pt}
+        \item CodeBERT is pretrained on natural code sequences, so it may struggle to encode graph-structured inputs without fine-tuning.
+        \item The performance gap suggests that CodeBERT's semantic understanding does not fully compensate for the loss of structural information in the pattern-based representation.
+        \item Highlights the importance of choosing embeddings that align with the input format and task requirements.
+      \end{itemize}
+    \end{tcolorbox}
+  \end{center}
+
+  \begin{columns}
+     \begin{column}{0.5\textwidth}
+      CodeBERT (seq) — linearized code input
+     \end{column}
+     \begin{column}{0.5\textwidth}
+      CodeBERT (pat) — graph-based pattern input
+     \end{column}
+  \end{columns}
+  
 \end{frame}
 
 % =====================================================================
@@ -1340,8 +1371,78 @@ struct sock *alloc_socket(
 % =====================================================================
 % SUMMARY
 % =====================================================================
-\begin{frame}{Next Steps}
- Integrate agent to fix
+\begin{frame}[fragile]{Next Steps: Research Question 2}
+ \textbf{RQ2: }What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline?
+
+ \begin{columns}
+  \begin{column}{0.5\textwidth}
+    \begin{enumerate}
+            \item Integrate the retrieval layer with a small, open-source LLM and validate the end-to-end patching pipeline.
+            \item Run comparative experiments against baseline approaches, including zero-shot open-source models and AutoPatch.
+            \item Refine the patch generation logic based on experimental results and finalize the implementation.
+        \end{enumerate}
+
+  \end{column}
+
+  \begin{column}{0.5\textwidth}
+    \begin{center}
+    \begin{tikzpicture}[
+      node distance=0.32cm,
+      chip/.style={
+        draw=none,
+        rounded corners=5pt,
+        minimum width=2.6cm,
+        minimum height=0.5cm,
+        font=\tiny\sffamily\bfseries,
+        align=center,
+        fill=#1,
+        text=white,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.35, fill=shadowcol}
+      },
+      arr/.style={
+        -{Stealth[length=3.5pt, width=3.5pt]},
+        line width=0.9pt,
+        color=notecol!80
+      },
+      lbl/.style={font=\tiny\sffamily, text=notecol}
+    ]
+      % --- Done (full saturation) ---
+      \node[chip=ccode]                    (code)  {Vulnerable Code};
+      \node[chip=ccpg, below=of code]      (graph) {Joern CPG};
+      \node[chip=cemb, below=of graph]     (retr)  {Graph-RAG\\Retrieval};
+      % --- TODO (desaturated / 30% opacity fill) ---
+      \node[chip=csub!35, below=of retr]   (agent) {LLM Agent\\{\tiny patch generation}};
+      \node[chip=ckb!35, below=of agent]   (out)   {Candidate Patch};
+      \node[chip=crank!35, below=of out]   (eval)  {Evaluation\\{\tiny LLM-as-judge + human}};
+
+      % Done arrows
+      \draw[arr] (code)  -- node[lbl, right, xshift=2pt]{parse}    (graph);
+      \draw[arr] (graph) -- node[lbl, right, xshift=2pt]{embed}    (retr);
+      % TODO arrows (lighter)
+      \draw[arr, color=notecol!35] (retr)  -- node[lbl, right, xshift=2pt]{top-$k$}  (agent);
+      \draw[arr, color=notecol!35] (agent) -- node[lbl, right, xshift=2pt]{generate} (out);
+      \draw[arr, color=notecol!35] (out)   -- node[lbl, right, xshift=2pt]{score}    (eval);
+
+      % Legend
+      \node[font=\tiny\sffamily, text=labelcol, anchor=north west]
+        at ([yshift=-0.25cm]eval.south west)
+        {\textcolor{cemb}{$\blacksquare$} Done \quad
+         \textcolor{csub!35}{$\blacksquare$} To implement};
+
+      \begin{scope}[on background layer]
+        \node[
+          fill=trackoff, draw=borderoff, line width=0.5pt,
+          rounded corners=8pt,
+          fit=(code)(eval),
+          inner xsep=10pt, inner ysep=8pt,
+          opacity=0.4
+        ] {};
+      \end{scope}
+    \end{tikzpicture}
+    \end{center}
+  \end{column}
+ \end{columns}
+   
 \end{frame}
 
 % =====================================================================
