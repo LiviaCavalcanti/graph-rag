@@ -1,0 +1,119 @@
+{
+  "description": "CVEfixes entries filtered for sink-based vulnerability detection",
+  "rationale": "These CWEs have structurally identifiable sinks (buffer writes, free calls, arithmetic ops) where the vulnerability fix is typically at or near the dangerous operation, making them suitable for Joern CPG-based sink detection.",
+  "target_cwes": {
+    "CWE-190": "Integer Overflow or Wraparound",
+    "CWE-121": "Stack-based Buffer Overflow",
+    "CWE-122": "Heap-based Buffer Overflow",
+    "CWE-415": "Double Free",
+    "CWE-416": "Use After Free",
+    "CWE-787": "Out-of-bounds Write",
+    "CWE-843": "Access of Resource Using Incompatible Type (Type Confusion)",
+    "CWE-129": "Improper Validation of Array Index",
+    "CWE-125": "Out-of-bounds Read",
+    "CWE-200": "Exposure of Sensitive Information to an Unauthorized Actor",
+    "CWE-284": "Improper Access Control",
+    "CWE-264": "Permissions, Privileges, and Access Controls",
+    "CWE-476": "NULL Pointer Dereference"
+  },
+  "total_entries": 3663,
+  "per_cwe": {
+    "CWE-190": {
+      "cwe_name": "Integer Overflow or Wraparound",
+      "entry_count": 582,
+      "unique_cves": 120,
+      "file": "cvefixes_experiments/data/sink_cwes/CWE-190.json"
+    },
+    "CWE-121": {
+      "cwe_name": "Stack-based Buffer Overflow",
+      "entry_count": 15,
+      "unique_cves": 10,
+      "file": "cvefixes_experiments/data/sink_cwes/CWE-121.json"
+    },
+    "CWE-122": {
+      "cwe_name": "Heap-based Buffer Overflow",
+      "entry_count": 71,
+      "unique_cves": 47,
+      "file": "cvefixes_experiments/data/sink_cwes/CWE-122.json"
+    },
+    "CWE-415": {
+      "cwe_name": "Double Free",
+      "entry_count": 129,
+      "unique_cves": 37,
+      "file": "cvefixes_experiments/data/sink_cwes/CWE-415.json"
+    },
+    "CWE-416": {
+      "cwe_name": "Use After Free",
+      "entry_count": 369,
+      "unique_cves": 175,
+      "file": "cvefixes_experiments/data/sink_cwes/CWE-416.json"
+    },
+    "CWE-787": {
+      "cwe_name": "Out-of-bounds Write",
+      "entry_count": 652,
+      "unique_cves": 263,
+      "file": "cvefixes_experiments/data/sink_cwes/CWE-787.json"
+    },
+    "CWE-843": {
+      "cwe_name": "Access of Resource Using Incompatible Type (Type Confusion)",
+      "entry_count": 39,
+      "unique_cves": 10,
+      "file": "cvefixes_experiments/data/sink_cwes/CWE-843.json"
+    },
+    "CWE-129": {
+      "cwe_name": "Improper Validation of Array Index",
+      "entry_count": 12,
+      "unique_cves": 7,
+      "file": "cvefixes_experiments/data/sink_cwes/CWE-129.json"
+    },
+    "CWE-125": {
+      "cwe_name": "Out-of-bounds Read",
+      "entry_count": 1081,
+      "unique_cves": 334,
+      "file": "cvefixes_experiments/data/sink_cwes/CWE-125.json"
+    },
+    "CWE-200": {
+      "cwe_name": "Exposure of Sensitive Information to an Unauthorized Actor",
+      "entry_count": 136,
+      "unique_cves": 71,
+      "file": "cvefixes_experiments/data/sink_cwes/CWE-200.json"
+    },
+    "CWE-284": {
+      "cwe_name": "Improper Access Control",
+      "entry_count": 65,
+      "unique_cves": 14,
+      "file": "cvefixes_experiments/data/sink_cwes/CWE-284.json"
+    },
+    "CWE-264": {
+      "cwe_name": "Permissions, Privileges, and Access Controls",
+      "entry_count": 100,
+      "unique_cves": 44,
+      "file": "cvefixes_experiments/data/sink_cwes/CWE-264.json"
+    },
+    "CWE-476": {
+      "cwe_name": "NULL Pointer Dereference",
+      "entry_count": 412,
+      "unique_cves": 247,
+      "file": "cvefixes_experiments/data/sink_cwes/CWE-476.json"
+    }
+  },
+  "filters_applied": {
+    "languages": [
+      "C++",
+      "C"
+    ],
+    "requires_code_before": true,
+    "requires_code_after": true,
+    "deduplicated_by": [
+      "cve_id",
+      "file_change_id",
+      "method_name"
+    ]
+  },
+  "sources": {
+    "primary": "cvefixes_experiments/data/cvefixes_code_extraction.json",
+    "secondary": "data/cvefixes/CVEfixes.db"
+  },
+  "created_at": "2026-05-28T13:52:57.447635+00:00",
+  "schema_version": "1.0"
+}

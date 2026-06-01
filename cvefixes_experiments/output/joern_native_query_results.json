@@ -1,0 +1,2820 @@
+{
+  "total_entries": 100,
+  "successfully_processed": 98,
+  "joern_failures": 0,
+  "hits": 50,
+  "misses": 48,
+  "hit_rate": 51.02040816326531,
+  "per_cwe": {
+    "CWE-476": {
+      "hits": 9,
+      "total": 14
+    },
+    "CWE-362": {
+      "hits": 8,
+      "total": 15
+    },
+    "CWE-400": {
+      "hits": 0,
+      "total": 9
+    },
+    "CWE-416": {
+      "hits": 7,
+      "total": 12
+    },
+    "CWE-20": {
+      "hits": 9,
+      "total": 17
+    },
+    "CWE-129": {
+      "hits": 1,
+      "total": 1
+    },
+    "CWE-667": {
+      "hits": 0,
+      "total": 1
+    },
+    "CWE-787": {
+      "hits": 7,
+      "total": 8
+    },
+    "CWE-704": {
+      "hits": 0,
+      "total": 1
+    },
+    "CWE-252": {
+      "hits": 0,
+      "total": 1
+    },
+    "CWE-125": {
+      "hits": 1,
+      "total": 1
+    },
+    "CWE-264": {
+      "hits": 2,
+      "total": 3
+    },
+    "CWE-401": {
+      "hits": 1,
+      "total": 3
+    },
+    "CWE-190": {
+      "hits": 2,
+      "total": 7
+    },
+    "CWE-843": {
+      "hits": 1,
+      "total": 1
+    },
+    "CWE-284": {
+      "hits": 1,
+      "total": 1
+    },
+    "CWE-119": {
+      "hits": 0,
+      "total": 1
+    },
+    "CWE-191": {
+      "hits": 0,
+      "total": 1
+    },
+    "CWE-200": {
+      "hits": 1,
+      "total": 1
+    }
+  },
+  "details": [
+    {
+      "cve_id": "CVE-2016-3120",
+      "cwe_id": "CWE-476",
+      "method_name": "validate_as_request",
+      "status": "success",
+      "total_sinks": 34,
+      "hit_count": 4,
+      "hit": true,
+      "removed_lines": [
+        "if (check_anon(kdc_active_realm, request->client, request->server) != 0) {"
+      ],
+      "added_lines": [
+        "if (check_anon(kdc_active_realm, client.princ, request->server) != 0) {"
+      ],
+      "sample_hits": [
+        {
+          "code": "check_anon(kdc_active_realm, request->client, request->server) != 0",
+          "line": 112
+        },
+        {
+          "code": "check_anon(kdc_active_realm, request->client, request->server)",
+          "line": 112
+        },
+        {
+          "code": "request->client",
+          "line": 112
+        },
+        {
+          "code": "request->server",
+          "line": 112
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2018-12232",
+      "cwe_id": "CWE-362",
+      "method_name": "sockfs_setattr",
+      "status": "success",
+      "total_sinks": 8,
+      "hit_count": 4,
+      "hit": true,
+      "removed_lines": [
+        "sock->sk->sk_uid = iattr->ia_uid;"
+      ],
+      "added_lines": [
+        "if (sock->sk)",
+        "else",
+        "err = -ENOENT;",
+        "sock->sk->sk_uid = iattr->ia_uid;"
+      ],
+      "sample_hits": [
+        {
+          "code": "sock->sk->sk_uid = iattr->ia_uid",
+          "line": 17
+        },
+        {
+          "code": "sock->sk->sk_uid",
+          "line": 17
+        },
+        {
+          "code": "sock->sk",
+          "line": 17
+        },
+        {
+          "code": "iattr->ia_uid",
+          "line": 17
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "method_name": "perf_event_read_event",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "ret = perf_output_begin(&handle, event, read_event.header.size, 0, 0);"
+      ],
+      "added_lines": [
+        "ret = perf_output_begin(&handle, event, read_event.header.size, 0);"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2015-5706",
+      "cwe_id": "CWE-416",
+      "method_name": "path_openat",
+      "status": "success",
+      "total_sinks": 16,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "goto out;"
+      ],
+      "added_lines": [
+        "goto out2;",
+        "out2:"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2015-8767",
+      "cwe_id": "CWE-362",
+      "method_name": "sctp_generate_heartbeat_event",
+      "status": "success",
+      "total_sinks": 29,
+      "hit_count": 18,
+      "hit": true,
+      "removed_lines": [
+        "struct net *net = sock_net(asoc->base.sk);",
+        "if (sock_owned_by_user(asoc->base.sk)) {",
+        "bh_lock_sock(asoc->base.sk);",
+        "asoc->base.sk->sk_err = -error;",
+        "bh_unlock_sock(asoc->base.sk);"
+      ],
+      "added_lines": [
+        "struct sock *sk = asoc->base.sk;",
+        "sk->sk_err = -error;",
+        "if (sock_owned_by_user(sk)) {",
+        "bh_lock_sock(sk);",
+        "struct net *net = sock_net(sk);",
+        "bh_unlock_sock(sk);"
+      ],
+      "sample_hits": [
+        {
+          "code": "*net = sock_net(asoc->base.sk)",
+          "line": 15
+        },
+        {
+          "code": "sock_net(asoc->base.sk)",
+          "line": 15
+        },
+        {
+          "code": "asoc->base.sk",
+          "line": 15
+        },
+        {
+          "code": "asoc->base",
+          "line": 15
+        },
+        {
+          "code": "bh_lock_sock(asoc->base.sk)",
+          "line": 17
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2022-2318",
+      "cwe_id": "CWE-416",
+      "method_name": "rose_stop_heartbeat",
+      "status": "success",
+      "total_sinks": 3,
+      "hit_count": 3,
+      "hit": true,
+      "removed_lines": [
+        "del_timer(&sk->sk_timer);"
+      ],
+      "added_lines": [
+        "sk_stop_timer(sk, &sk->sk_timer);"
+      ],
+      "sample_hits": [
+        {
+          "code": "del_timer(&sk->sk_timer)",
+          "line": 12
+        },
+        {
+          "code": "&sk->sk_timer",
+          "line": 12
+        },
+        {
+          "code": "sk->sk_timer",
+          "line": 12
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2019-19815",
+      "cwe_id": "CWE-476",
+      "method_name": "f2fs_force_buffered_io",
+      "status": "success",
+      "total_sinks": 1,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "if (is_sbi_flag_set(F2FS_I_SB(inode), SBI_CP_DISABLED))"
+      ],
+      "added_lines": [
+        "if (is_sbi_flag_set(F2FS_I_SB(inode), SBI_CP_DISABLED) &&",
+        "!(inode->i_flags & S_SWAPFILE))"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2022-2318",
+      "cwe_id": "CWE-416",
+      "method_name": "rose_start_t3timer",
+      "status": "success",
+      "total_sinks": 15,
+      "hit_count": 9,
+      "hit": true,
+      "removed_lines": [
+        "add_timer(&rose->timer);",
+        "del_timer(&rose->timer);"
+      ],
+      "added_lines": [
+        "sk_reset_timer(sk, &rose->timer, rose->timer.expires);",
+        "sk_stop_timer(sk, &rose->timer);"
+      ],
+      "sample_hits": [
+        {
+          "code": "del_timer(&rose->timer)",
+          "line": 14
+        },
+        {
+          "code": "&rose->timer",
+          "line": 14
+        },
+        {
+          "code": "rose->timer",
+          "line": 14
+        },
+        {
+          "code": "rose->timer",
+          "line": 16
+        },
+        {
+          "code": "rose->timer.expires",
+          "line": 17
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2019-12111",
+      "cwe_id": "CWE-476",
+      "method_name": "copyIPv6IfDifferent",
+      "status": "success",
+      "total_sinks": 1,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "if(dest != src) {"
+      ],
+      "added_lines": [
+        "if(dest != src && src != NULL) {"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2016-9685",
+      "cwe_id": "CWE-400",
+      "method_name": "xfs_attr_shortform_list",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "if (error)"
+      ],
+      "added_lines": [
+        "}",
+        "if (error) {",
+        "kmem_free(sbuf);"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2017-15951",
+      "cwe_id": "CWE-20",
+      "method_name": "__key_instantiate_and_link",
+      "status": "success",
+      "total_sinks": 35,
+      "hit_count": 13,
+      "hit": true,
+      "removed_lines": [
+        "if (!test_bit(KEY_FLAG_INSTANTIATED, &key->flags)) {",
+        "set_bit(KEY_FLAG_INSTANTIATED, &key->flags);"
+      ],
+      "added_lines": [
+        "mark_key_instantiated(key, 0);",
+        "if (key->state == KEY_IS_UNINSTANTIATED) {"
+      ],
+      "sample_hits": [
+        {
+          "code": "!test_bit(KEY_FLAG_INSTANTIATED, &key->flags)",
+          "line": 27
+        },
+        {
+          "code": "test_bit(KEY_FLAG_INSTANTIATED, &key->flags)",
+          "line": 27
+        },
+        {
+          "code": "&key->flags",
+          "line": 27
+        },
+        {
+          "code": "key->flags",
+          "line": 27
+        },
+        {
+          "code": "set_bit(KEY_FLAG_INSTANTIATED, &key->flags)",
+          "line": 34
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2021-33815",
+      "cwe_id": "CWE-129",
+      "method_name": "dwa_uncompress",
+      "status": "success",
+      "total_sinks": 74,
+      "hit_count": 5,
+      "hit": true,
+      "removed_lines": [
+        "if (dc_count > (6LL * td->xsize * td->ysize + 63) / 64)",
+        "if (dc_size > 0) {"
+      ],
+      "added_lines": [
+        "{",
+        "if (dc_count != dc_w * dc_h * 3)"
+      ],
+      "sample_hits": [
+        {
+          "code": "(6LL * td->xsize * td->ysize + 63) / 64",
+          "line": 88
+        },
+        {
+          "code": "6LL * td->xsize * td->ysize + 63",
+          "line": 88
+        },
+        {
+          "code": "6LL * td->xsize * td->ysize",
+          "line": 88
+        },
+        {
+          "code": "6LL * td->xsize",
+          "line": 88
+        },
+        {
+          "code": "dc_w * dc_h",
+          "line": 134
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2019-11599",
+      "cwe_id": "CWE-667",
+      "method_name": "find_extend_vma",
+      "status": "success",
+      "total_sinks": 7,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "if (!prev || expand_stack(prev, addr))"
+      ],
+      "added_lines": [
+        "/* don't alter vm_end if the coredump is running */",
+        "if (!prev || !mmget_still_valid(mm) || expand_stack(prev, addr))"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2014-9653",
+      "cwe_id": "CWE-20",
+      "method_name": "dophn_exec",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "if (pread(fd, xph_addr, xph_sizeof, off) == -1) {"
+      ],
+      "added_lines": [
+        "if (pread(fd, xph_addr, xph_sizeof, off) < (ssize_t)xph_sizeof) {"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "method_name": "armv7pmu_handle_irq",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "if (perf_event_overflow(event, 0, &data, regs))"
+      ],
+      "added_lines": [
+        "if (perf_event_overflow(event, &data, regs))"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2018-16435",
+      "cwe_id": "CWE-787",
+      "method_name": "AllocateDataSet",
+      "status": "success",
+      "total_sinks": 23,
+      "hit_count": 18,
+      "hit": true,
+      "removed_lines": [
+        "SynError(it8, \"AllocateDataSet: Unable to allocate data array\");",
+        "if (t->Data == NULL) {",
+        "t-> Data = (char**)AllocChunk (it8, ((cmsUInt32Number) t->nSamples + 1) * ((cmsUInt32Number) t->nPatches + 1) *sizeof (char*));"
+      ],
+      "added_lines": [
+        "t->Data = (char**)AllocChunk(it8, ((cmsUInt32Number)t->nSamples + 1) * ((cmsUInt32Number)t->nPatches + 1) * sizeof(char*));",
+        "SynError(it8, \"AllocateDataSet: Unable to allocate data array\");",
+        "}",
+        "else {",
+        "if (t -> nSamples < 0 || t->nSamples > 0x7ffe || t->nPatches < 0 || t->nPatches > 0x7ffe)",
+        "{",
+        "SynError(it8, \"AllocateDataSet: too much data\");",
+        "if (t->Data == NULL) {"
+      ],
+      "sample_hits": [
+        {
+          "code": "((cmsUInt32Number) t->nSamples + 1) * ((cmsUInt32Number) t->nPatches + 1) *sizeof (char*)",
+          "line": 19
+        },
+        {
+          "code": "((cmsUInt32Number) t->nSamples + 1) * ((cmsUInt32Number) t->nPatches + 1)",
+          "line": 19
+        },
+        {
+          "code": "(cmsUInt32Number) t->nSamples + 1",
+          "line": 19
+        },
+        {
+          "code": "(cmsUInt32Number) t->nPatches + 1",
+          "line": 19
+        },
+        {
+          "code": "t-> Data = (char**)AllocChunk (it8, ((cmsUInt32Number) t->nSamples + 1) * ((cmsUInt32Number) t->nPatches + 1) *sizeof (char*))",
+          "line": 19
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2016-8650",
+      "cwe_id": "CWE-20",
+      "method_name": "mpi_powm",
+      "status": "success",
+      "total_sinks": 62,
+      "hit_count": 13,
+      "hit": true,
+      "removed_lines": [
+        "rp[0] = 1;"
+      ],
+      "added_lines": [
+        "goto enomem;",
+        "}",
+        "if (mpi_resize(res, 1) < 0)",
+        "if (res->nlimbs) {",
+        "rp = res->d;",
+        "rp[0] = 1;"
+      ],
+      "sample_hits": [
+        {
+          "code": "rp = res->d",
+          "line": 32
+        },
+        {
+          "code": "res->d",
+          "line": 32
+        },
+        {
+          "code": "res->nlimbs",
+          "line": 42
+        },
+        {
+          "code": "res->nlimbs",
+          "line": 80
+        },
+        {
+          "code": "rp = res->d",
+          "line": 97
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2015-7550",
+      "cwe_id": "CWE-362",
+      "method_name": "keyctl_read_key",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "ret = key_validate(key);",
+        "if (key->type->read) {",
+        "/* read the data with the semaphore held (since we",
+        "}",
+        "if (ret == 0) {",
+        "down_read(&key->sem);",
+        "up_read(&key->sem);",
+        "ret = -EOPNOTSUPP;",
+        "* might sleep) */"
+      ],
+      "added_lines": [
+        "ret = key_validate(key);",
+        "if (key->type->read) {",
+        "* to protect against the key being updated or revoked.",
+        "down_read(&key->sem);",
+        "*/",
+        "/* Read the data with the semaphore held (since we might sleep)",
+        "up_read(&key->sem);",
+        "ret = -EOPNOTSUPP;",
+        "if (ret == 0)"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2015-3212",
+      "cwe_id": "CWE-362",
+      "method_name": "sctp_close",
+      "status": "success",
+      "total_sinks": 32,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "local_bh_enable();",
+        "local_bh_disable();"
+      ],
+      "added_lines": [
+        "spin_unlock_bh(&net->sctp.addr_wq_lock);",
+        "spin_lock_bh(&net->sctp.addr_wq_lock);",
+        "* held and that should be grabbed before socket lock.",
+        "* Also, sctp_destroy_sock() needs to be called with addr_wq_lock"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2020-14147",
+      "cwe_id": "CWE-787",
+      "method_name": "optsize",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "int sz = getnum(fmt, sizeof(int));",
+        "case 'c': return getnum(fmt, 1);"
+      ],
+      "added_lines": [
+        "case 'c': return getnum(L, fmt, 1);",
+        "int sz = getnum(L, fmt, sizeof(int));"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2018-12458",
+      "cwe_id": "CWE-20",
+      "method_name": "mpeg4_encode_gop_header",
+      "status": "success",
+      "total_sinks": 60,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "int hours, minutes, seconds;"
+      ],
+      "added_lines": [
+        "int64_t hours, minutes, seconds;"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2018-12453",
+      "cwe_id": "CWE-704",
+      "method_name": "xgroupCommand",
+      "status": "success",
+      "total_sinks": 63,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "if (o == NULL) return;"
+      ],
+      "added_lines": [
+        "if (o == NULL || checkType(c,o,OBJ_STREAM)) return;"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2023-6546",
+      "cwe_id": "CWE-362",
+      "method_name": "gsm_cleanup_mux",
+      "status": "success",
+      "total_sinks": 60,
+      "hit_count": 7,
+      "hit": true,
+      "removed_lines": [
+        "struct gsm_dlci *dlci = gsm->dlci[0];"
+      ],
+      "added_lines": [
+        "dlci = gsm->dlci[0];",
+        "struct gsm_dlci *dlci;"
+      ],
+      "sample_hits": [
+        {
+          "code": "*dlci = gsm->dlci[0]",
+          "line": 13
+        },
+        {
+          "code": "gsm->dlci[0]",
+          "line": 13
+        },
+        {
+          "code": "gsm->dlci",
+          "line": 13
+        },
+        {
+          "code": "gsm->dlci",
+          "line": 41
+        },
+        {
+          "code": "gsm->dlci",
+          "line": 42
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2018-7492",
+      "cwe_id": "CWE-476",
+      "method_name": "__rds_rdma_map",
+      "status": "success",
+      "total_sinks": 85,
+      "hit_count": 5,
+      "hit": true,
+      "removed_lines": [
+        "if (rs->rs_bound_addr == 0) {"
+      ],
+      "added_lines": [
+        "if (rs->rs_bound_addr == 0 || !rs->rs_transport) {"
+      ],
+      "sample_hits": [
+        {
+          "code": "rs->rs_bound_addr == 0",
+          "line": 24
+        },
+        {
+          "code": "rs->rs_bound_addr",
+          "line": 24
+        },
+        {
+          "code": "rs->rs_transport",
+          "line": 29
+        },
+        {
+          "code": "rs->rs_transport",
+          "line": 66
+        },
+        {
+          "code": "rs->rs_transport",
+          "line": 109
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2019-18885",
+      "cwe_id": "CWE-476",
+      "method_name": "verify_one_dev_extent",
+      "status": "success",
+      "total_sinks": 47,
+      "hit_count": 7,
+      "hit": true,
+      "removed_lines": [
+        "dev = find_device(fs_info->fs_devices->seed, devid, NULL);",
+        "dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL);"
+      ],
+      "added_lines": [
+        "NULL, false);",
+        "dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);",
+        "dev = btrfs_find_device(fs_info->fs_devices->seed, devid, NULL,"
+      ],
+      "sample_hits": [
+        {
+          "code": "dev = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL)",
+          "line": 69
+        },
+        {
+          "code": "btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL)",
+          "line": 69
+        },
+        {
+          "code": "fs_info->fs_devices",
+          "line": 69
+        },
+        {
+          "code": "dev = find_device(fs_info->fs_devices->seed, devid, NULL)",
+          "line": 78
+        },
+        {
+          "code": "find_device(fs_info->fs_devices->seed, devid, NULL)",
+          "line": 78
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2014-9710",
+      "cwe_id": "CWE-362",
+      "method_name": "btrfs_match_dir_item_name",
+      "status": "success",
+      "total_sinks": 9,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "static struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,",
+        "struct btrfs_path *path,",
+        "const char *name, int name_len)"
+      ],
+      "added_lines": [
+        "struct btrfs_path *path,",
+        "struct btrfs_dir_item *btrfs_match_dir_item_name(struct btrfs_root *root,",
+        "const char *name, int name_len)"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2013-7271",
+      "cwe_id": "CWE-20",
+      "method_name": "mISDN_sock_recvmsg",
+      "status": "success",
+      "total_sinks": 57,
+      "hit_count": 9,
+      "hit": true,
+      "removed_lines": [
+        "msg->msg_namelen = 0;",
+        "if (msg->msg_namelen >= sizeof(struct sockaddr_mISDN)) {",
+        "printk(KERN_WARNING \"%s: too small namelen %d\\n\",",
+        "__func__, msg->msg_namelen);",
+        "maddr = (struct sockaddr_mISDN *)msg->msg_name;",
+        "msg->msg_namelen = sizeof(struct sockaddr_mISDN);",
+        "} else {",
+        "struct sockaddr_mISDN\t*maddr;",
+        "if (msg->msg_namelen)"
+      ],
+      "added_lines": [
+        "msg->msg_namelen = sizeof(*maddr);",
+        "if (msg->msg_name) {",
+        "struct sockaddr_mISDN *maddr = msg->msg_name;"
+      ],
+      "sample_hits": [
+        {
+          "code": "msg->msg_namelen >= sizeof(struct sockaddr_mISDN)",
+          "line": 33
+        },
+        {
+          "code": "msg->msg_namelen",
+          "line": 33
+        },
+        {
+          "code": "msg->msg_namelen = sizeof(struct sockaddr_mISDN)",
+          "line": 34
+        },
+        {
+          "code": "msg->msg_namelen",
+          "line": 34
+        },
+        {
+          "code": "maddr = (struct sockaddr_mISDN *)msg->msg_name",
+          "line": 35
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-1999-0199",
+      "cwe_id": "CWE-252",
+      "method_name": "_dl_dst_substitute",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "|| (strncmp (&name[1], \"PLATFORM\", 8) == 0 && (len = 9) != 0))",
+        "if ((((strncmp (&name[1], \"ORIGIN\", 6) == 0 && (len = 7) != 0)",
+        "? (__libc_enable_secure ? NULL : l->l_origin)"
+      ],
+      "added_lines": [
+        "&& ((name[len] != '\\0'",
+        "|| (strncmp (&name[1], \"PLATFORM}\", 8) == 0 && (len = 9) != 0))",
+        "&& (!is_path || name[-1] != ':')))",
+        "? NULL : l->l_origin)",
+        "if ((((strncmp (&name[1], \"ORIGIN}\", 6) == 0 && (len = 7) != 0)",
+        "? (__libc_enable_secure",
+        "/* Note that it is no bug that the strings in the first two `strncmp'",
+        "&& (!is_path || name[len] != ':'))",
+        "|| (name != start",
+        "calls are longer than the sequence which is actually tested.  */"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2023-31436",
+      "cwe_id": "CWE-787",
+      "method_name": "qfq_change_class",
+      "status": "success",
+      "total_sinks": 74,
+      "hit_count": 1,
+      "hit": true,
+      "removed_lines": [
+        "if (lmax < QFQ_MIN_LMAX || lmax > (1UL << QFQ_MTU_SHIFT)) {",
+        "}",
+        "} else",
+        "if (tb[TCA_QFQ_LMAX]) {",
+        "pr_notice(\"qfq: invalid max length %u\\n\", lmax);",
+        "return -EINVAL;"
+      ],
+      "added_lines": [
+        "if (lmax < QFQ_MIN_LMAX || lmax > (1UL << QFQ_MTU_SHIFT)) {",
+        "if (tb[TCA_QFQ_LMAX])",
+        "}",
+        "else",
+        "pr_notice(\"qfq: invalid max length %u\\n\", lmax);",
+        "return -EINVAL;"
+      ],
+      "sample_hits": [
+        {
+          "code": "1UL << QFQ_MTU_SHIFT",
+          "line": 44
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2019-18885",
+      "cwe_id": "CWE-476",
+      "method_name": "btrfs_ioctl_resize",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "device = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL);"
+      ],
+      "added_lines": [
+        "device = btrfs_find_device(fs_info->fs_devices, devid, NULL, NULL, true);"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2018-1066",
+      "cwe_id": "CWE-476",
+      "method_name": "build_ntlmssp_auth_blob",
+      "status": "success",
+      "total_sinks": 171,
+      "hit_count": 10,
+      "hit": true,
+      "removed_lines": [
+        "if (!ses->server->session_estab ||",
+        "}",
+        "ses->ntlmssp->sesskey_per_smbsess)",
+        "flags |= NTLMSSP_NEGOTIATE_KEY_XCH;",
+        "NTLMSSP_NEGOTIATE_NTLM | NTLMSSP_NEGOTIATE_EXTENDED_SEC;",
+        "if (ses->server->sign) {"
+      ],
+      "added_lines": [
+        "flags |= NTLMSSP_NEGOTIATE_KEY_XCH;",
+        "if (ses->server->sign)",
+        "NTLMSSP_NEGOTIATE_NTLM | NTLMSSP_NEGOTIATE_EXTENDED_SEC |",
+        "if (!ses->server->session_estab || ses->ntlmssp->sesskey_per_smbsess)",
+        "NTLMSSP_NEGOTIATE_SEAL;"
+      ],
+      "sample_hits": [
+        {
+          "code": "ses->server->sign",
+          "line": 36
+        },
+        {
+          "code": "ses->server",
+          "line": 36
+        },
+        {
+          "code": "!ses->server->session_estab",
+          "line": 38
+        },
+        {
+          "code": "ses->server->session_estab",
+          "line": 38
+        },
+        {
+          "code": "ses->server",
+          "line": 38
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2010-1155",
+      "cwe_id": "CWE-20",
+      "method_name": "irssi_ssl_verify",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "static gboolean irssi_ssl_verify(SSL *ssl, SSL_CTX *ctx, X509 *cert)"
+      ],
+      "added_lines": [
+        "return FALSE;",
+        "} else if (! irssi_ssl_verify_hostname(cert, hostname)){",
+        "static gboolean irssi_ssl_verify(SSL *ssl, SSL_CTX *ctx, const char* hostname, X509 *cert)"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2023-39355",
+      "cwe_id": "CWE-416",
+      "method_name": "planar_decompress",
+      "status": "success",
+      "total_sinks": 29,
+      "hit_count": 1,
+      "hit": true,
+      "removed_lines": [
+        "{",
+        "}",
+        "return FALSE;"
+      ],
+      "added_lines": [
+        "return FALSE;",
+        "if (!planar->rlePlanesBuffer)"
+      ],
+      "sample_hits": [
+        {
+          "code": "planar->rlePlanesBuffer",
+          "line": 306
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2019-18885",
+      "cwe_id": "CWE-476",
+      "method_name": "btrfs_find_device",
+      "status": "success",
+      "total_sinks": 5,
+      "hit_count": 2,
+      "hit": true,
+      "removed_lines": [
+        "fs_devices = fs_devices->seed;",
+        "if (device)",
+        "u64 devid, u8 *uuid, u8 *fsid)",
+        "device = find_device(fs_devices, devid, uuid);",
+        "return device;"
+      ],
+      "added_lines": [
+        "fs_devices = fs_devices->seed;",
+        "if (seed)",
+        "BTRFS_UUID_SIZE) == 0))",
+        "dev_list) {",
+        "}",
+        "list_for_each_entry(device, &fs_devices->devices,",
+        "return NULL;",
+        "if (device->devid == devid &&",
+        "else",
+        "u64 devid, u8 *uuid, u8 *fsid,"
+      ],
+      "sample_hits": [
+        {
+          "code": "fs_devices = fs_devices->seed",
+          "line": 22
+        },
+        {
+          "code": "fs_devices->seed",
+          "line": 22
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2013-7019",
+      "cwe_id": "CWE-20",
+      "method_name": "get_cox",
+      "status": "success",
+      "total_sinks": 102,
+      "hit_count": 19,
+      "hit": true,
+      "removed_lines": [
+        "c->nreslevels2decode = 1;",
+        "c->nreslevels2decode = c->nreslevels - s->reduction_factor;",
+        "else",
+        "if (c->nreslevels < s->reduction_factor)"
+      ],
+      "added_lines": [
+        "if (c->nreslevels <= s->reduction_factor) {",
+        "/* we are forced to update reduction_factor as its requested value is",
+        "reinitialization is implemented */",
+        "s->reduction_factor = c->nreslevels - 1;",
+        "}",
+        "not compatible with this bitstream, and as we might have used it",
+        "return AVERROR(EINVAL);",
+        "already in setup earlier we have to fail this frame until",
+        "av_log(s->avctx, AV_LOG_ERROR, \"reduction_factor too large for this bitstream, max is %d\\n\", c->nreslevels - 1);",
+        "c->nreslevels2decode = c->nreslevels - s->reduction_factor;"
+      ],
+      "sample_hits": [
+        {
+          "code": "c->nreslevels",
+          "line": 19
+        },
+        {
+          "code": "c->nreslevels",
+          "line": 20
+        },
+        {
+          "code": "s->avctx",
+          "line": 21
+        },
+        {
+          "code": "c->nreslevels",
+          "line": 21
+        },
+        {
+          "code": "c->nreslevels < s->reduction_factor",
+          "line": 26
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2016-7914",
+      "cwe_id": "CWE-125",
+      "method_name": "assoc_array_insert_into_terminal_node",
+      "status": "success",
+      "total_sinks": 305,
+      "hit_count": 2,
+      "hit": true,
+      "removed_lines": [
+        "if (ops->compare_object(assoc_array_ptr_to_leaf(ptr), index_key)) {"
+      ],
+      "added_lines": [
+        "ops->compare_object(assoc_array_ptr_to_leaf(ptr),",
+        "index_key)) {",
+        "if (assoc_array_ptr_is_leaf(ptr) &&"
+      ],
+      "sample_hits": [
+        {
+          "code": "ops->compare_object(assoc_array_ptr_to_leaf(ptr), index_key)",
+          "line": 46
+        },
+        {
+          "code": "ops->compare_object",
+          "line": 46
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2016-3841",
+      "cwe_id": "CWE-264",
+      "method_name": "tcp_v6_send_synack",
+      "status": "success",
+      "total_sinks": 23,
+      "hit_count": 4,
+      "hit": true,
+      "removed_lines": [
+        "err = ip6_xmit(sk, skb, fl6, np->opt, np->tclass);"
+      ],
+      "added_lines": [
+        "err = ip6_xmit(sk, skb, fl6, rcu_dereference(np->opt),",
+        "np->tclass);"
+      ],
+      "sample_hits": [
+        {
+          "code": "err = ip6_xmit(sk, skb, fl6, np->opt, np->tclass)",
+          "line": 37
+        },
+        {
+          "code": "ip6_xmit(sk, skb, fl6, np->opt, np->tclass)",
+          "line": 37
+        },
+        {
+          "code": "np->opt",
+          "line": 37
+        },
+        {
+          "code": "np->tclass",
+          "line": 37
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2016-5770",
+      "cwe_id": "CWE-190",
+      "method_name": "spl_filesystem_object_get_debug_info",
+      "status": "no_diff"
+    },
+    {
+      "cve_id": "CVE-2019-19056",
+      "cwe_id": "CWE-401",
+      "method_name": "mwifiex_pcie_alloc_cmdrsp_buf",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "PCI_DMA_FROMDEVICE))"
+      ],
+      "added_lines": [
+        "}",
+        "kfree_skb(skb);",
+        "PCI_DMA_FROMDEVICE)) {"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2019-18811",
+      "cwe_id": "CWE-401",
+      "method_name": "sof_set_get_large_ctrl_data",
+      "status": "success",
+      "total_sinks": 2,
+      "hit_count": 1,
+      "hit": true,
+      "removed_lines": [
+        "if (err < 0)"
+      ],
+      "added_lines": [
+        "}",
+        "kfree(partdata);",
+        "if (err < 0) {"
+      ],
+      "sample_hits": [
+        {
+          "code": "kfree(partdata)",
+          "line": 75
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2011-2491",
+      "cwe_id": "CWE-400",
+      "method_name": "nlmclnt_unlock_callback",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "goto retry_rebind;"
+      ],
+      "added_lines": [
+        "goto die;",
+        "switch (task->tk_status) {",
+        "case -EACCES:",
+        "}",
+        "goto retry_rebind;",
+        "case -EIO:",
+        "default:"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "method_name": "armv6pmu_handle_irq",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "if (perf_event_overflow(event, 0, &data, regs))"
+      ],
+      "added_lines": [
+        "if (perf_event_overflow(event, &data, regs))"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2016-5195",
+      "cwe_id": "CWE-362",
+      "method_name": "follow_page_pte",
+      "status": "success",
+      "total_sinks": 14,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "if ((flags & FOLL_WRITE) && !pte_write(pte)) {"
+      ],
+      "added_lines": [
+        "if ((flags & FOLL_WRITE) && !can_follow_write_pte(pte, flags)) {"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2017-18221",
+      "cwe_id": "CWE-20",
+      "method_name": "__munlock_pagevec",
+      "status": "success",
+      "total_sinks": 12,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "delta_munlocked = -nr + pagevec_count(&pvec_putback);",
+        "int delta_munlocked;"
+      ],
+      "added_lines": [
+        "} else {",
+        "delta_munlocked++;",
+        "int delta_munlocked = -nr;"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2012-1108",
+      "cwe_id": "CWE-20",
+      "method_name": "Ogg::XiphComment::parse",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "int commentLength = data.mid(pos, 4).toUInt(false);",
+        "for(int i = 0; i < commentFields; i++) {",
+        "int commentFields = data.mid(pos, 4).toUInt(false);"
+      ],
+      "added_lines": [
+        "if(commentSeparatorPosition == -1) {",
+        "if(pos > data.size()) {",
+        "break;",
+        "}",
+        "uint commentLength = data.mid(pos, 4).toUInt(false);",
+        "uint commentFields = data.mid(pos, 4).toUInt(false);",
+        "if(commentFields > (data.size() - 8) / 4) {",
+        "for(uint i = 0; i < commentFields; i++) {",
+        "return;"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2023-23006",
+      "cwe_id": "CWE-476",
+      "method_name": "dr_domain_init_resources",
+      "status": "success",
+      "total_sinks": 37,
+      "hit_count": 4,
+      "hit": true,
+      "removed_lines": [
+        "ret = -ENOMEM;",
+        "if (!dmn->uar) {"
+      ],
+      "added_lines": [
+        "ret = PTR_ERR(dmn->uar);",
+        "if (IS_ERR(dmn->uar)) {"
+      ],
+      "sample_hits": [
+        {
+          "code": "dmn->uar",
+          "line": 26
+        },
+        {
+          "code": "!dmn->uar",
+          "line": 27
+        },
+        {
+          "code": "dmn->uar",
+          "line": 27
+        },
+        {
+          "code": "dmn->uar",
+          "line": 60
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2022-47942",
+      "cwe_id": "CWE-787",
+      "method_name": "build_sec_desc",
+      "status": "success",
+      "total_sinks": 59,
+      "hit_count": 8,
+      "hit": true,
+      "removed_lines": [
+        "le32_to_cpu(ppntsd->dacloffset));",
+        "nowner_sid_ptr, ngroup_sid_ptr, fattr);",
+        "int addition_info, __u32 *secdesclen,",
+        "goto out;",
+        "ppdacl_ptr = (struct smb_acl *)((char *)ppntsd +",
+        "} else if (!ppntsd->dacloffset) {"
+      ],
+      "added_lines": [
+        "if (ppdacl_size > ntacl_size ||",
+        "ppdacl_size < sizeof(struct smb_acl))",
+        "fattr);",
+        "ppdacl_size = le16_to_cpu(ppdacl_ptr->size);",
+        "(dacl_offset + sizeof(struct smb_acl) > ppntsd_size))",
+        "unsigned int dacl_offset = le32_to_cpu(ppntsd->dacloffset);",
+        "if (!dacl_offset ||",
+        "int ppdacl_size, ntacl_size = ppntsd_size - dacl_offset;",
+        "ntacl_size - sizeof(struct smb_acl),",
+        "goto out;"
+      ],
+      "sample_hits": [
+        {
+          "code": "dacl_ptr->size",
+          "line": 67
+        },
+        {
+          "code": "!ppntsd->dacloffset",
+          "line": 72
+        },
+        {
+          "code": "ppntsd->dacloffset",
+          "line": 72
+        },
+        {
+          "code": "le32_to_cpu(ppntsd->dacloffset)",
+          "line": 78
+        },
+        {
+          "code": "ppntsd->dacloffset",
+          "line": 78
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2018-12896",
+      "cwe_id": "CWE-190",
+      "method_name": "SYSCALL_DEFINE1",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "overrun = timr->it_overrun_last;"
+      ],
+      "added_lines": [
+        "overrun = timer_overrun_to_int(timr, 0);"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2016-6872",
+      "cwe_id": "CWE-190",
+      "method_name": "HPHP::StringUtil::Implode",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "int lenDelim = delim.size();",
+        "int len = 0;"
+      ],
+      "added_lines": [
+        "size_t lenDelim = delim.size();",
+        "size_t len = 0;"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2021-33624",
+      "cwe_id": "CWE-843",
+      "method_name": "sanitize_ptr_alu",
+      "status": "success",
+      "total_sinks": 43,
+      "hit_count": 6,
+      "hit": true,
+      "removed_lines": [
+        "ret = push_stack(env, env->insn_idx + 1, env->insn_idx, true);"
+      ],
+      "added_lines": [
+        "env->insn_idx);",
+        "ret = sanitize_speculative_path(env, NULL, env->insn_idx + 1,"
+      ],
+      "sample_hits": [
+        {
+          "code": "env->insn_idx + 1",
+          "line": 93
+        },
+        {
+          "code": "ret = push_stack(env, env->insn_idx + 1, env->insn_idx, true)",
+          "line": 93
+        },
+        {
+          "code": "push_stack(env, env->insn_idx + 1, env->insn_idx, true)",
+          "line": 93
+        },
+        {
+          "code": "env->insn_idx + 1",
+          "line": 93
+        },
+        {
+          "code": "env->insn_idx",
+          "line": 93
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2016-5770",
+      "cwe_id": "CWE-190",
+      "method_name": "spl_filesystem_file_is_empty_line",
+      "status": "no_diff"
+    },
+    {
+      "cve_id": "CVE-2016-5094",
+      "cwe_id": "CWE-190",
+      "method_name": "traverse_for_entities",
+      "status": "success",
+      "total_sinks": 8,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "* HTML 5 is the only that has a character that cannot be used in"
+      ],
+      "added_lines": [
+        "* HTML 5 is the only that has a character that cannot be used in"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2018-8788",
+      "cwe_id": "CWE-787",
+      "method_name": "nsc_encode_subsampling",
+      "status": "success",
+      "total_sinks": 60,
+      "hit_count": 34,
+      "hit": true,
+      "removed_lines": [
+        "BYTE* co_dst;",
+        "cg_src0 = (INT8*) context->priv->PlaneBuffers[2] + (y << 1) * tempWidth;",
+        "BYTE* cg_dst;",
+        "co_dst = context->priv->PlaneBuffers[1] + y * (tempWidth >> 1);",
+        "co_src0 = (INT8*) context->priv->PlaneBuffers[1] + (y << 1) * tempWidth;",
+        "INT8* cg_src1;",
+        "INT8* co_src1;",
+        "co_src1 = co_src0 + tempWidth;",
+        "cg_dst = context->priv->PlaneBuffers[2] + y * (tempWidth >> 1);",
+        "INT8* cg_src0;"
+      ],
+      "added_lines": [
+        "if (tempHeight == 0)",
+        "if (tempWidth > context->priv->PlaneBuffersLength / tempHeight)",
+        "const INT8* co_src0 = (INT8*) context->priv->PlaneBuffers[1] + (y << 1) * tempWidth;",
+        "const INT8* cg_src0 = (INT8*) context->priv->PlaneBuffers[2] + (y << 1) * tempWidth;",
+        "BYTE* cg_dst = context->priv->PlaneBuffers[2] + y * (tempWidth >> 1);",
+        "return FALSE;",
+        "BYTE* co_dst = context->priv->PlaneBuffers[1] + y * (tempWidth >> 1);",
+        "const INT8* cg_src1 = cg_src0 + tempWidth;",
+        "static BOOL nsc_encode_subsampling(NSC_CONTEXT* context)",
+        "const INT8* co_src1 = co_src0 + tempWidth;"
+      ],
+      "sample_hits": [
+        {
+          "code": "context->priv->PlaneBuffers[1] + y * (tempWidth >> 1)",
+          "line": 27
+        },
+        {
+          "code": "y * (tempWidth >> 1)",
+          "line": 27
+        },
+        {
+          "code": "context->priv->PlaneBuffers[2] + y * (tempWidth >> 1)",
+          "line": 28
+        },
+        {
+          "code": "y * (tempWidth >> 1)",
+          "line": 28
+        },
+        {
+          "code": "(INT8*) context->priv->PlaneBuffers[1] + (y << 1) * tempWidth",
+          "line": 29
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2016-8630",
+      "cwe_id": "CWE-284",
+      "method_name": "x86_decode_insn",
+      "status": "success",
+      "total_sinks": 277,
+      "hit_count": 8,
+      "hit": true,
+      "removed_lines": [
+        "if (ctxt->rip_relative)"
+      ],
+      "added_lines": [
+        "if (ctxt->rip_relative && likely(ctxt->memopp))"
+      ],
+      "sample_hits": [
+        {
+          "code": "ctxt->memop",
+          "line": 19
+        },
+        {
+          "code": "ctxt->memopp",
+          "line": 20
+        },
+        {
+          "code": "ctxt->memop",
+          "line": 237
+        },
+        {
+          "code": "ctxt->memop",
+          "line": 243
+        },
+        {
+          "code": "ctxt->memop",
+          "line": 250
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "method_name": "swp_handler",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "perf_sw_event(PERF_COUNT_SW_EMULATION_FAULTS, 1, 0, regs, regs->ARM_pc);"
+      ],
+      "added_lines": [
+        "perf_sw_event(PERF_COUNT_SW_EMULATION_FAULTS, 1, regs, regs->ARM_pc);"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2013-0178",
+      "cwe_id": "CWE-20",
+      "method_name": "addReply",
+      "status": "success",
+      "total_sinks": 16,
+      "hit_count": 4,
+      "hit": true,
+      "removed_lines": [
+        "redisAssert(!server.vm_enabled || obj->storage == REDIS_VM_MEMORY);"
+      ],
+      "added_lines": [
+        "redisAssert(!server.ds_enabled || obj->storage == REDIS_VM_MEMORY);"
+      ],
+      "sample_hits": [
+        {
+          "code": "redisAssert(!server.vm_enabled || obj->storage == REDIS_VM_MEMORY)",
+          "line": 12
+        },
+        {
+          "code": "!server.vm_enabled || obj->storage == REDIS_VM_MEMORY",
+          "line": 12
+        },
+        {
+          "code": "obj->storage == REDIS_VM_MEMORY",
+          "line": 12
+        },
+        {
+          "code": "obj->storage",
+          "line": 12
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2016-9540",
+      "cwe_id": "CWE-119",
+      "method_name": "DECLAREreadFunc",
+      "status": "success",
+      "total_sinks": 10,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "for (col = 0; col < imagewidth; col += tw) {"
+      ],
+      "added_lines": [
+        "for (col = 0; col < imagewidth && colb < imagew; col += tw) {"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2019-11487",
+      "cwe_id": "CWE-416",
+      "method_name": "get_page",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "VM_BUG_ON_PAGE(page_ref_count(page) <= 0, page);"
+      ],
+      "added_lines": [
+        "VM_BUG_ON_PAGE(page_ref_zero_or_close_to_overflow(page), page);"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2017-17806",
+      "cwe_id": "CWE-787",
+      "method_name": "hmac_create",
+      "status": "success",
+      "total_sinks": 71,
+      "hit_count": 3,
+      "hit": true,
+      "removed_lines": [
+        "alg = &salg->base;"
+      ],
+      "added_lines": [
+        "if (crypto_shash_alg_has_setkey(salg))",
+        "alg = &salg->base;",
+        "/* The underlying hash algorithm must be unkeyed */",
+        "goto out_put_alg;"
+      ],
+      "sample_hits": [
+        {
+          "code": "alg = &salg->base",
+          "line": 30
+        },
+        {
+          "code": "&salg->base",
+          "line": 30
+        },
+        {
+          "code": "salg->base",
+          "line": 30
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2014-3673",
+      "cwe_id": "CWE-20",
+      "method_name": "sctp_sf_do_asconf",
+      "status": "success",
+      "total_sinks": 45,
+      "hit_count": 9,
+      "hit": true,
+      "removed_lines": [
+        "union sctp_addr_param\t*addr_param;",
+        "(void *)chunk->chunk_end,",
+        "int\t\t\tlength;",
+        "if (length < sizeof(sctp_paramhdr_t))",
+        "addr_param = (union sctp_addr_param *)hdr->params;",
+        "return sctp_sf_violation_paramlen(net, ep, asoc, type, arg,",
+        "&err_param))",
+        "(sctp_paramhdr_t *)((void *)addr_param + length),",
+        "(void *)addr_param, commands);",
+        "if (!sctp_verify_asconf(asoc,"
+      ],
+      "added_lines": [
+        "if (!sctp_verify_asconf(asoc, chunk, true, &err_param))"
+      ],
+      "sample_hits": [
+        {
+          "code": "addr_param = (union sctp_addr_param *)hdr->params",
+          "line": 47
+        },
+        {
+          "code": "(union sctp_addr_param *)hdr->params",
+          "line": 47
+        },
+        {
+          "code": "hdr->params",
+          "line": 47
+        },
+        {
+          "code": "length = ntohs(addr_param->p.length)",
+          "line": 48
+        },
+        {
+          "code": "ntohs(addr_param->p.length)",
+          "line": 48
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2020-11810",
+      "cwe_id": "CWE-362",
+      "method_name": "multi_process_incoming_link",
+      "status": "success",
+      "total_sinks": 123,
+      "hit_count": 23,
+      "hit": true,
+      "removed_lines": [
+        "if (floated)"
+      ],
+      "added_lines": [
+        "/* nonzero length means that we have a valid, decrypted packed */",
+        "if (floated && c->c2.buf.len > 0)"
+      ],
+      "sample_hits": [
+        {
+          "code": "c->c2.buf",
+          "line": 48
+        },
+        {
+          "code": "c->c2",
+          "line": 48
+        },
+        {
+          "code": "c->c2",
+          "line": 53
+        },
+        {
+          "code": "c->c2.buf",
+          "line": 57
+        },
+        {
+          "code": "c->c2",
+          "line": 57
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2019-9917",
+      "cwe_id": "CWE-20",
+      "method_name": "CZNC::ForceEncoding",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "if (pSock->GetEncoding().empty()) {",
+        "}",
+        "pSock->SetEncoding(\"UTF-8\");"
+      ],
+      "added_lines": [
+        "pSock->SetEncoding(FixupEncoding(pSock->GetEncoding()));"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2017-8924",
+      "cwe_id": "CWE-191",
+      "method_name": "edge_bulk_in_callback",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "if (edge_port->lsr_event) {"
+      ],
+      "added_lines": [
+        "if (urb->actual_length > 0 && edge_port->lsr_event) {"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2019-11338",
+      "cwe_id": "CWE-476",
+      "method_name": "decode_nal_unit",
+      "status": "success",
+      "total_sinks": 208,
+      "hit_count": 38,
+      "hit": true,
+      "removed_lines": [
+        "av_log(s->avctx, AV_LOG_ERROR, \"Two slices reporting being the first in the same frame.\\n\");",
+        "if (s->ref) {",
+        "}",
+        "goto fail;"
+      ],
+      "added_lines": [
+        "ret = AVERROR_INVALIDDATA;",
+        "}",
+        "goto fail;",
+        "if (ret == 1) {"
+      ],
+      "sample_hits": [
+        {
+          "code": "s->avctx",
+          "line": 22
+        },
+        {
+          "code": "s->avctx",
+          "line": 22
+        },
+        {
+          "code": "s->avctx",
+          "line": 23
+        },
+        {
+          "code": "s->avctx",
+          "line": 23
+        },
+        {
+          "code": "s->avctx",
+          "line": 30
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2016-9084",
+      "cwe_id": "CWE-190",
+      "method_name": "vfio_msi_enable",
+      "status": "success",
+      "total_sinks": 4,
+      "hit_count": 1,
+      "hit": true,
+      "removed_lines": [
+        "vdev->ctx = kzalloc(nvec * sizeof(struct vfio_pci_irq_ctx), GFP_KERNEL);"
+      ],
+      "added_lines": [
+        "vdev->ctx = kcalloc(nvec, sizeof(struct vfio_pci_irq_ctx), GFP_KERNEL);"
+      ],
+      "sample_hits": [
+        {
+          "code": "nvec * sizeof(struct vfio_pci_irq_ctx)",
+          "line": 19
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2019-18885",
+      "cwe_id": "CWE-476",
+      "method_name": "read_one_dev",
+      "status": "success",
+      "total_sinks": 72,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "fs_uuid);"
+      ],
+      "added_lines": [
+        "fs_uuid, true);"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2018-14553",
+      "cwe_id": "CWE-476",
+      "method_name": "gdImageClone",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "dst->styleLength = src->styleLength;",
+        "for (i = 0; i < src->styleLength; i++) {",
+        "}",
+        "if (src->styleLength > 0) {",
+        "dst->style[i] = src->style[i];",
+        "dst->stylePos    = src->stylePos;"
+      ],
+      "added_lines": [
+        "dst->stylePos = src->stylePos;"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2016-9754",
+      "cwe_id": "CWE-190",
+      "method_name": "ring_buffer_resize",
+      "status": "success",
+      "total_sinks": 4,
+      "hit_count": 2,
+      "hit": true,
+      "removed_lines": [
+        "size = DIV_ROUND_UP(size, BUF_PAGE_SIZE);",
+        "size = BUF_PAGE_SIZE * 2;",
+        "nr_pages = DIV_ROUND_UP(size, BUF_PAGE_SIZE);",
+        "size *= BUF_PAGE_SIZE;",
+        "if (size < BUF_PAGE_SIZE * 2)"
+      ],
+      "added_lines": [
+        "nr_pages = DIV_ROUND_UP(size, BUF_PAGE_SIZE);",
+        "nr_pages = 2;",
+        "size = nr_pages * BUF_PAGE_SIZE;",
+        "if (nr_pages < 2)"
+      ],
+      "sample_hits": [
+        {
+          "code": "BUF_PAGE_SIZE * 2",
+          "line": 32
+        },
+        {
+          "code": "BUF_PAGE_SIZE * 2",
+          "line": 33
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2014-5472",
+      "cwe_id": "CWE-20",
+      "method_name": "parse_rock_ridge_inode",
+      "status": "success",
+      "total_sinks": 8,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "int parse_rock_ridge_inode(struct iso_directory_record *de, struct inode *inode)",
+        "result = parse_rock_ridge_inode_internal(de, inode, 14);",
+        "int result = parse_rock_ridge_inode_internal(de, inode, 0);"
+      ],
+      "added_lines": [
+        "result = parse_rock_ridge_inode_internal(de, inode,",
+        "int parse_rock_ridge_inode(struct iso_directory_record *de, struct inode *inode,",
+        "int flags = relocated ? RR_RELOC_DE : 0;",
+        "int relocated)",
+        "int result = parse_rock_ridge_inode_internal(de, inode, flags);",
+        "flags | RR_REGARD_XA);"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "method_name": "cipso_v4_req_delattr",
+      "status": "success",
+      "total_sinks": 8,
+      "hit_count": 3,
+      "hit": true,
+      "removed_lines": [
+        "if (opt == NULL || opt->cipso == 0)",
+        "struct ip_options *opt;"
+      ],
+      "added_lines": [
+        "if (opt == NULL || opt->opt.cipso == 0)",
+        "struct ip_options_rcu *opt;"
+      ],
+      "sample_hits": [
+        {
+          "code": "opt == NULL || opt->cipso == 0",
+          "line": 17
+        },
+        {
+          "code": "opt->cipso == 0",
+          "line": 17
+        },
+        {
+          "code": "opt->cipso",
+          "line": 17
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "method_name": "handle_stdfmna",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "perf_sw_event(PERF_COUNT_SW_ALIGNMENT_FAULTS, 1, 0, regs, sfar);"
+      ],
+      "added_lines": [
+        "perf_sw_event(PERF_COUNT_SW_ALIGNMENT_FAULTS, 1, regs, sfar);"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2023-0266",
+      "cwe_id": "CWE-416",
+      "method_name": "snd_ctl_elem_write_user",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "if (result >= 0)"
+      ],
+      "added_lines": [
+        "}",
+        "if (result >= 0) {",
+        "up_read(&card->controls_rwsem);",
+        "down_read(&card->controls_rwsem);"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2022-42703",
+      "cwe_id": "CWE-416",
+      "method_name": "anon_vma_alloc",
+      "status": "success",
+      "total_sinks": 9,
+      "hit_count": 2,
+      "hit": true,
+      "removed_lines": [
+        "anon_vma->degree = 1;\t/* Reference for first vma */"
+      ],
+      "added_lines": [
+        "anon_vma->num_active_vmas = 0;",
+        "anon_vma->num_children = 0;"
+      ],
+      "sample_hits": [
+        {
+          "code": "anon_vma->degree = 1",
+          "line": 17
+        },
+        {
+          "code": "anon_vma->degree",
+          "line": 17
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2017-18017",
+      "cwe_id": "CWE-416",
+      "method_name": "tcpmss_mangle_packet",
+      "status": "success",
+      "total_sinks": 29,
+      "hit_count": 2,
+      "hit": true,
+      "removed_lines": [
+        "if (len < tcp_hdrlen)"
+      ],
+      "added_lines": [
+        "if (tcp_hdrlen >= 15 * 4)",
+        "/* tcph->doff has 4 bits, do not wrap it to 0 */",
+        "return 0;",
+        "if (len < tcp_hdrlen || tcp_hdrlen < sizeof(struct tcphdr))"
+      ],
+      "sample_hits": [
+        {
+          "code": "tcph->doff",
+          "line": 36
+        },
+        {
+          "code": "tcph->doff",
+          "line": 124
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2017-15951",
+      "cwe_id": "CWE-20",
+      "method_name": "user_update",
+      "status": "success",
+      "total_sinks": 21,
+      "hit_count": 4,
+      "hit": true,
+      "removed_lines": [
+        "if (!test_bit(KEY_FLAG_NEGATIVE, &key->flags))"
+      ],
+      "added_lines": [
+        "if (key_is_positive(key))"
+      ],
+      "sample_hits": [
+        {
+          "code": "!test_bit(KEY_FLAG_NEGATIVE, &key->flags)",
+          "line": 22
+        },
+        {
+          "code": "test_bit(KEY_FLAG_NEGATIVE, &key->flags)",
+          "line": 22
+        },
+        {
+          "code": "&key->flags",
+          "line": 22
+        },
+        {
+          "code": "key->flags",
+          "line": 22
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2014-8321",
+      "cwe_id": "CWE-787",
+      "method_name": "gps_tracker",
+      "status": "success",
+      "total_sinks": 21,
+      "hit_count": 8,
+      "hit": true,
+      "removed_lines": [
+        "if( recv( gpsd_sock, line + pos, sizeof( line ) - 1, 0 ) <= 0 )"
+      ],
+      "added_lines": [
+        "if( recv( gpsd_sock, line + pos, sizeof( line ) - pos - 1, 0 ) <= 0 )"
+      ],
+      "sample_hits": [
+        {
+          "code": "sizeof( line ) - 1",
+          "line": 55
+        },
+        {
+          "code": "sizeof( line ) - 1",
+          "line": 68
+        },
+        {
+          "code": "line + pos",
+          "line": 98
+        },
+        {
+          "code": "sizeof( line ) - 1",
+          "line": 98
+        },
+        {
+          "code": "line + pos",
+          "line": 113
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2014-4652",
+      "cwe_id": "CWE-362",
+      "method_name": "snd_ctl_elem_user_put",
+      "status": "success",
+      "total_sinks": 16,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [],
+      "added_lines": [
+        "mutex_unlock(&ue->card->user_ctl_lock);",
+        "mutex_lock(&ue->card->user_ctl_lock);"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "method_name": "dccp_v4_request_recv_sock",
+      "status": "success",
+      "total_sinks": 21,
+      "hit_count": 4,
+      "hit": true,
+      "removed_lines": [
+        "newinet->opt\t   = ireq->opt;"
+      ],
+      "added_lines": [
+        "newinet->inet_opt\t= ireq->opt;"
+      ],
+      "sample_hits": [
+        {
+          "code": "newinet->opt\t   = ireq->opt",
+          "line": 35
+        },
+        {
+          "code": "newinet->opt",
+          "line": 35
+        },
+        {
+          "code": "ireq->opt",
+          "line": 35
+        },
+        {
+          "code": "ireq->opt",
+          "line": 36
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2013-7271",
+      "cwe_id": "CWE-20",
+      "method_name": "verify_iovec",
+      "status": "success",
+      "total_sinks": 14,
+      "hit_count": 3,
+      "hit": true,
+      "removed_lines": [
+        "m->msg_name = address;"
+      ],
+      "added_lines": [
+        "if (m->msg_name)",
+        "m->msg_name = address;"
+      ],
+      "sample_hits": [
+        {
+          "code": "m->msg_name = address",
+          "line": 23
+        },
+        {
+          "code": "m->msg_name",
+          "line": 23
+        },
+        {
+          "code": "m->msg_name",
+          "line": 25
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2017-15951",
+      "cwe_id": "CWE-20",
+      "method_name": "wait_for_key_construction",
+      "status": "success",
+      "total_sinks": 6,
+      "hit_count": 6,
+      "hit": true,
+      "removed_lines": [
+        "return key->reject_error;",
+        "}",
+        "smp_rmb();",
+        "if (test_bit(KEY_FLAG_NEGATIVE, &key->flags)) {"
+      ],
+      "added_lines": [
+        "if (ret < 0)",
+        "ret = key_read_state(key);",
+        "return ret;"
+      ],
+      "sample_hits": [
+        {
+          "code": "&key->flags",
+          "line": 14
+        },
+        {
+          "code": "key->flags",
+          "line": 14
+        },
+        {
+          "code": "test_bit(KEY_FLAG_NEGATIVE, &key->flags)",
+          "line": 18
+        },
+        {
+          "code": "&key->flags",
+          "line": 18
+        },
+        {
+          "code": "key->flags",
+          "line": 18
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2016-7417",
+      "cwe_id": "CWE-20",
+      "method_name": "spl_array_has_dimension_ex",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "case IS_BOOL:",
+        "case IS_STRING:"
+      ],
+      "added_lines": [
+        "case IS_BOOL:",
+        "case IS_STRING:"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2017-2584",
+      "cwe_id": "CWE-200",
+      "method_name": "em_fxsave",
+      "status": "success",
+      "total_sinks": 10,
+      "hit_count": 4,
+      "hit": true,
+      "removed_lines": [
+        "return segmented_write(ctxt, ctxt->memop.addr.mem, &fx_state, size);"
+      ],
+      "added_lines": [
+        "return segmented_write_std(ctxt, ctxt->memop.addr.mem, &fx_state, size);"
+      ],
+      "sample_hits": [
+        {
+          "code": "segmented_write(ctxt, ctxt->memop.addr.mem, &fx_state, size)",
+          "line": 34
+        },
+        {
+          "code": "ctxt->memop.addr.mem",
+          "line": 34
+        },
+        {
+          "code": "ctxt->memop.addr",
+          "line": 34
+        },
+        {
+          "code": "ctxt->memop",
+          "line": 34
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2011-2918",
+      "cwe_id": "CWE-400",
+      "method_name": "perf_swevent_overflow",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "int nmi, struct perf_sample_data *data,",
+        "if (__perf_event_overflow(event, nmi, throttle,"
+      ],
+      "added_lines": [
+        "struct perf_sample_data *data,",
+        "if (__perf_event_overflow(event, throttle,"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2016-10200",
+      "cwe_id": "CWE-264",
+      "method_name": "l2tp_ip_bind",
+      "status": "success",
+      "total_sinks": 29,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "return -EINVAL;",
+        "if (!sock_flag(sk, SOCK_ZAPPED))"
+      ],
+      "added_lines": [
+        "goto out;",
+        "if (!sock_flag(sk, SOCK_ZAPPED))"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "method_name": "tcp_v4_syn_recv_sock",
+      "status": "success",
+      "total_sinks": 44,
+      "hit_count": 10,
+      "hit": true,
+      "removed_lines": [
+        "inet_csk(newsk)->icsk_ext_hdr_len = newinet->opt->optlen;",
+        "newinet->opt\t      = ireq->opt;",
+        "if (newinet->opt)"
+      ],
+      "added_lines": [
+        "inet_csk(newsk)->icsk_ext_hdr_len = inet_opt->opt.optlen;",
+        "rcu_assign_pointer(newinet->inet_opt, inet_opt);",
+        "if (inet_opt)",
+        "inet_opt\t      = ireq->opt;",
+        "struct ip_options_rcu *inet_opt;"
+      ],
+      "sample_hits": [
+        {
+          "code": "newinet->opt\t      = ireq->opt",
+          "line": 41
+        },
+        {
+          "code": "newinet->opt",
+          "line": 41
+        },
+        {
+          "code": "ireq->opt",
+          "line": 41
+        },
+        {
+          "code": "ireq->opt",
+          "line": 42
+        },
+        {
+          "code": "inet_csk(newsk)->icsk_ext_hdr_len",
+          "line": 45
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2019-19815",
+      "cwe_id": "CWE-476",
+      "method_name": "F2FS_P_SB",
+      "status": "success",
+      "total_sinks": 2,
+      "hit_count": 2,
+      "hit": true,
+      "removed_lines": [
+        "return F2FS_M_SB(page->mapping);"
+      ],
+      "added_lines": [
+        "return F2FS_M_SB(page_file_mapping(page));"
+      ],
+      "sample_hits": [
+        {
+          "code": "F2FS_M_SB(page->mapping)",
+          "line": 12
+        },
+        {
+          "code": "page->mapping",
+          "line": 12
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2017-16525",
+      "cwe_id": "CWE-416",
+      "method_name": "usb_serial_console_disconnect",
+      "status": "success",
+      "total_sinks": 3,
+      "hit_count": 3,
+      "hit": true,
+      "removed_lines": [
+        "if (serial->port[0] == usbcons_info.port) {"
+      ],
+      "added_lines": [
+        "if (serial->port[0] && serial->port[0] == usbcons_info.port) {"
+      ],
+      "sample_hits": [
+        {
+          "code": "serial->port[0] == usbcons_info.port",
+          "line": 12
+        },
+        {
+          "code": "serial->port[0]",
+          "line": 12
+        },
+        {
+          "code": "serial->port",
+          "line": 12
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2019-19053",
+      "cwe_id": "CWE-401",
+      "method_name": "rpmsg_eptdev_write_iter",
+      "status": "success",
+      "total_sinks": 2,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "if (!copy_from_iter_full(kbuf, len, from))",
+        "return -EFAULT;"
+      ],
+      "added_lines": [
+        "ret = -EFAULT;",
+        "}",
+        "if (!copy_from_iter_full(kbuf, len, from)) {",
+        "goto free_kbuf;"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2022-3424",
+      "cwe_id": "CWE-416",
+      "method_name": "gru_set_context_option",
+      "status": "success",
+      "total_sinks": 9,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "gru_check_context_placement(gts);"
+      ],
+      "added_lines": [
+        "}",
+        "gru_unlock_gts(gts);",
+        "gru_unload_context(gts, 1);",
+        "if (gru_check_context_placement(gts)) {",
+        "return ret;"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2018-12896",
+      "cwe_id": "CWE-190",
+      "method_name": "common_hrtimer_rearm",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "timer->base->get_time(),",
+        "timr->it_interval);",
+        "timr->it_overrun += (unsigned int) hrtimer_forward(timer,"
+      ],
+      "added_lines": [
+        "timr->it_overrun += hrtimer_forward(timer, timer->base->get_time(),",
+        "timr->it_interval);"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2016-3841",
+      "cwe_id": "CWE-264",
+      "method_name": "cookie_v6_check",
+      "status": "success",
+      "total_sinks": 113,
+      "hit_count": 3,
+      "hit": true,
+      "removed_lines": [
+        "final_p = fl6_update_dst(&fl6, np->opt, &final);"
+      ],
+      "added_lines": [
+        "final_p = fl6_update_dst(&fl6, rcu_dereference(np->opt), &final);"
+      ],
+      "sample_hits": [
+        {
+          "code": "final_p = fl6_update_dst(&fl6, np->opt, &final)",
+          "line": 99
+        },
+        {
+          "code": "fl6_update_dst(&fl6, np->opt, &final)",
+          "line": 99
+        },
+        {
+          "code": "np->opt",
+          "line": 99
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2019-19922",
+      "cwe_id": "CWE-400",
+      "method_name": "do_sched_cfs_period_timer",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "runtime_expires);",
+        "u64 runtime, runtime_expires;",
+        "runtime = distribute_cfs_runtime(cfs_b, runtime,",
+        "runtime_expires = cfs_b->runtime_expires;"
+      ],
+      "added_lines": [
+        "runtime = distribute_cfs_runtime(cfs_b, runtime);",
+        "u64 runtime;"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2021-24025",
+      "cwe_id": "CWE-190",
+      "method_name": "HPHP::set_sockaddr",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "\"Unix socket path length (%d) is larger than system limit (%lu)\","
+      ],
+      "added_lines": [
+        "\"Unix socket path length (%ld) is larger than system limit (%lu)\","
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2012-3552",
+      "cwe_id": "CWE-362",
+      "method_name": "icmp_reply",
+      "status": "success",
+      "total_sinks": 39,
+      "hit_count": 12,
+      "hit": true,
+      "removed_lines": [
+        "if (icmp_param->replyopts.optlen) {",
+        "daddr = icmp_param->replyopts.faddr;",
+        "if (ipc.opt->srr)",
+        "if (ip_options_echo(&icmp_param->replyopts, skb))",
+        "ipc.opt = &icmp_param->replyopts;"
+      ],
+      "added_lines": [
+        "if (ip_options_echo(&icmp_param->replyopts.opt.opt, skb))",
+        "if (icmp_param->replyopts.opt.opt.optlen) {",
+        "ipc.opt = &icmp_param->replyopts.opt;",
+        "if (ipc.opt->opt.srr)",
+        "daddr = icmp_param->replyopts.opt.opt.faddr;"
+      ],
+      "sample_hits": [
+        {
+          "code": "ip_options_echo(&icmp_param->replyopts, skb)",
+          "line": 19
+        },
+        {
+          "code": "&icmp_param->replyopts",
+          "line": 19
+        },
+        {
+          "code": "icmp_param->replyopts",
+          "line": 19
+        },
+        {
+          "code": "icmp_param->replyopts.optlen",
+          "line": 33
+        },
+        {
+          "code": "icmp_param->replyopts",
+          "line": 33
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2012-4508",
+      "cwe_id": "CWE-362",
+      "method_name": "ext4_ext_handle_uninitialized_extents",
+      "status": "success",
+      "total_sinks": 37,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "ret = ext4_convert_unwritten_extents_endio(handle, inode,"
+      ],
+      "added_lines": [
+        "ret = ext4_convert_unwritten_extents_endio(handle, inode, map,"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2017-2647",
+      "cwe_id": "CWE-476",
+      "method_name": "keyring_search",
+      "status": "success",
+      "total_sinks": 13,
+      "hit_count": 5,
+      "hit": true,
+      "removed_lines": [
+        "if (!ctx.match_data.cmp)",
+        "return ERR_PTR(-ENOKEY);",
+        ".match_data.cmp\t\t= type->match,"
+      ],
+      "added_lines": [
+        ".match_data.cmp\t\t= key_default_cmp,"
+      ],
+      "sample_hits": [
+        {
+          "code": ".match_data.cmp\t\t= type->match",
+          "line": 18
+        },
+        {
+          "code": "type->match",
+          "line": 18
+        },
+        {
+          "code": ".match_data.cmp\t\t= type->match",
+          "line": 18
+        },
+        {
+          "code": "type->match",
+          "line": 18
+        },
+        {
+          "code": "ERR_PTR(-ENOKEY)",
+          "line": 27
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2017-6001",
+      "cwe_id": "CWE-362",
+      "method_name": "SYSCALL_DEFINE5",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "gctx = group_leader->ctx;",
+        "mutex_unlock(&gctx->mutex);",
+        "mutex_lock_double(&gctx->mutex, &ctx->mutex);"
+      ],
+      "added_lines": [
+        "* if this new event wound up on the same ctx, if so",
+        "* moving the software group underneath us.",
+        "move_group = 0;",
+        "perf_event_ctx_unlock(group_leader, gctx);",
+        "/*",
+        "}",
+        "goto err_locked;",
+        "} else {",
+        "gctx = __perf_event_ctx_lock_double(group_leader, ctx);",
+        "*/"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2019-20918",
+      "cwe_id": "CWE-416",
+      "method_name": "SilenceMessage::SilenceMessage",
+      "status": "success",
+      "total_sinks": 0,
+      "hit_count": 0,
+      "hit": false,
+      "removed_lines": [
+        "PushParamRef(flags);"
+      ],
+      "added_lines": [
+        "PushParam(flags);"
+      ],
+      "sample_hits": []
+    },
+    {
+      "cve_id": "CVE-2022-47942",
+      "cwe_id": "CWE-787",
+      "method_name": "smb2_get_info_sec",
+      "status": "success",
+      "total_sinks": 52,
+      "hit_count": 6,
+      "hit": true,
+      "removed_lines": [
+        "int rc;",
+        "__u32 secdesclen;",
+        "rc = build_sec_desc(user_ns, pntsd, ppntsd, addition_info,",
+        "fp->filp->f_path.dentry, &ppntsd);",
+        "&secdesclen, &fattr);",
+        "ksmbd_vfs_get_sd_xattr(work->conn, user_ns,"
+      ],
+      "added_lines": [
+        "ppntsd_size = ksmbd_vfs_get_sd_xattr(work->conn, user_ns,",
+        "int rc = 0, ppntsd_size = 0;",
+        "rc = build_sec_desc(user_ns, pntsd, ppntsd, ppntsd_size,",
+        "if (smb2_resp_buf_len(work, 8) > ppntsd_size)",
+        "addition_info, &secdesclen, &fattr);",
+        "__u32 secdesclen = 0;",
+        "fp->filp->f_path.dentry,",
+        "&ppntsd);",
+        "/* Check if sd buffer size exceeds response buffer size */"
+      ],
+      "sample_hits": [
+        {
+          "code": "fp->filp",
+          "line": 62
+        },
+        {
+          "code": "fp->filp",
+          "line": 63
+        },
+        {
+          "code": "work->conn",
+          "line": 68
+        },
+        {
+          "code": "fp->filp->f_path.dentry",
+          "line": 69
+        },
+        {
+          "code": "fp->filp->f_path",
+          "line": 69
+        }
+      ]
+    },
+    {
+      "cve_id": "CVE-2023-6039",
+      "cwe_id": "CWE-416",
+      "method_name": "lan78xx_disconnect",
+      "status": "success",
+      "total_sinks": 28,
+      "hit_count": 9,
+      "hit": true,
+      "removed_lines": [
+        "set_bit(EVENT_DEV_DISCONNECT, &dev->flags);",
+        "del_timer_sync(&dev->stat_monitor);",
+        "if (timer_pending(&dev->stat_monitor))"
+      ],
+      "added_lines": [
+        "set_bit(EVENT_DEV_DISCONNECT, &dev->flags);",
+        "timer_shutdown_sync(&dev->stat_monitor);"
+      ],
+      "sample_hits": [
+        {
+          "code": "set_bit(EVENT_DEV_DISCONNECT, &dev->flags)",
+          "line": 22
+        },
+        {
+          "code": "&dev->flags",
+          "line": 22
+        },
+        {
+          "code": "dev->flags",
+          "line": 22
+        },
+        {
+          "code": "timer_pending(&dev->stat_monitor)",
+          "line": 45
+        },
+        {
+          "code": "&dev->stat_monitor",
+          "line": 45
+        }
+      ]
+    }
+  ]
+}
