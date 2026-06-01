@@ -1189,7 +1189,8 @@ struct sock *alloc_socket(
   {\small CVEFixes datasets is large dataset with real-world CVEs collected from the U.S. National Vulnerability Database, patches, and code changes.\\}
   
   \vspace{0.5em}
-  
+  \begin{center}
+    
   \scriptsize
   \begin{tabular}{lr}
     \toprule
@@ -1202,12 +1203,19 @@ struct sock *alloc_socket(
     Repositories & 4,249 \\
     \bottomrule
   \end{tabular}
-  
+  \end{center}
 \end{column}
 \begin{column}{0.50\textwidth}
+    {\small\textbf{Sampling criteria}}\\[3pt]
+  {\scriptsize
+  \begin{itemize}\itemsep1pt
+      \setbeamertemplate{itemize item}{}
+    \item Structurally distinshable CWEs (e.g. UAF vs. OOB) to test pattern matching, not just code similarity
+    \item Balanced superclass(CWE) up to 20 entries and subclasses (CVE) to ensure retrieval feasibility
+  \end{itemize}}
+      \vspace{0.5em}
+    \begin{center}
 
-  \vspace{0.5em}
-  {\small\textbf{Configuration}}\\[4pt]
   {\scriptsize
   \renewcommand{\arraystretch}{1.2}
   \begin{tabular}{lr}
@@ -1220,69 +1228,79 @@ struct sock *alloc_socket(
     Unique CVEs (index) & 60 \\
     Unique CVEs (query) & 25 \\
     CWE classes & 7 \\
-    Slice depth & 2-hop \\
-    Min/max lines & 10 / 120 \\
+    % Slice depth & 2-hop \\
+    % Min/max lines & 10 / 120 \\
     \bottomrule
   \end{tabular}}
 
-  \vspace{0.4em}
-  {\small\textbf{Selection Rationale}}\\[3pt]
-  {\scriptsize
-  \begin{itemize}\itemsep1pt
-    \item 7 CWEs with $\geq$2 multi-function CVEs (ensures same-CVE retrieval is feasible)
-    \item Structurally distinshable CWEs (e.g. UAF vs. OOB) to test pattern matching, not just code similarity
-    \item Balanced: up to 20 entries per CWE
-  \end{itemize}}
- 
+    \end{center}
+  
 \end{column}
 \end{columns}
 \end{frame}
 
 
-\begin{frame}{Pipeline Verification: Per-CWE Breakdown (CodeBERT+Pattern)}
+\begin{frame}{Phase 2: Pipeline Verification Results}
 
-  
-  {\small\textbf{Same-CWE Retrieval Results}}\\[6pt]
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+
+  \begin{center}
+    {\small\textbf{Same-CWE Retrieval} {\scriptsize(n=109 index, 27 query)}}\\[6pt]
   {\scriptsize
-  \renewcommand{\arraystretch}{1.3}
-   \centering
-    \tiny
+  \renewcommand{\arraystretch}{1.35}
+  \setlength{\tabcolsep}{3.5pt}
     \begin{tabular}{lrrrr}
       \toprule
-      \textbf{Embedder} & \textbf{CWE Hit@1} & \textbf{CWE Hit@5} & \textbf{MRR} & \textbf{CWE Recall} \\
-      \midrule
-      \multicolumn{5}{c}{\textit{Structure-Only (n=109 index, 27 query, depth-2)}} \\
+      \textbf{Embedder} & \textbf{Hit@1} & \textbf{Hit@5} & \textbf{MRR} & \textbf{CWE Recall} \\
       \midrule
       GIN & 0.259 & 0.778 & 0.315 & 0.202 \\
       Combined & 0.111 & 0.778 & 0.223 & 0.189 \\
-      \midrule
-      \multicolumn{5}{c}{\textit{CodeBERT (Baseline)}} \\
-      \midrule
-      CodeBERT (pat) & 0.519 & 0.889 & 0.549 & 0.276 \\
+      \rowcolor{hit!12}
+      \textbf{CodeBERT (seq)} & \textbf{0.556} & \textbf{0.926} & \textbf{0.555} & \textbf{0.264} \\
+      \textbf{CodeBERT (pat)} & \textbf{0.519} & \textbf{0.889} & \textbf{0.549} & \textbf{0.276} \\
       \bottomrule
     \end{tabular}
- }
+  }
 
+  \vspace{0.6em}
+  \begin{tcolorbox}[colback=hit!5, colframe=hit!60!black, boxrule=0.3pt,
+    left=3pt, right=2pt, top=2pt, bottom=1pt, arc=2pt, width=0.7\linewidth]
+    \scriptsize
+    \textbf{RQ1 validated} on real-world dataset with same-CWE retrieval up to 93\% at $k{=}5$.
+  \end{tcolorbox}
+  
+  \end{center}
+  
+    \end{column}
+    \begin{column}{0.5\textwidth}
 
-  \vspace{0.2em}
+  \begin{center}
+  {\small\textbf{Per-CWE Breakdown} {\scriptsize(CodeBERT Pattern, CWE Hit@$k$)}}\\[6pt]
   {\scriptsize
-  \renewcommand{\arraystretch}{1.3}
-  \setlength{\tabcolsep}{4pt}
+  \renewcommand{\arraystretch}{1.35}
+  \setlength{\tabcolsep}{3.5pt}
   \begin{tabular}{l r rrr}
     \toprule
-    \textbf{CWE} & \textbf{N} & \textbf{hit@1} & \textbf{hit@5} & \textbf{hit@10} \\
+    \textbf{CWE} & \textbf{N} & \textbf{@1} & \textbf{@5} & \textbf{@10} \\
     \midrule
     Integer Overflow (190) & 4 & \chit{75\%} & 100\% & 100\% \\
-    Improper Input Valid.\ (20) & 4 & \chit{75\%} & 75\% & 100\% \\
-    Resource Consumption (400) & 3 & \chit{67\%} & 100\% & 100\% \\
+    Input Validation (20) & 4 & \chit{75\%} & 75\% & 100\% \\
+    Resource Consump.\ (400) & 3 & \chit{67\%} & 100\% & 100\% \\
     Use After Free (416) & 4 & 50\% & 100\% & 100\% \\
     NULL Ptr Deref (476) & 5 & \cwarn{40\%} & 80\% & 80\% \\
     Race Condition (362) & 3 & \cwarn{33\%} & 100\% & 100\% \\
-    Out-of-bounds Write (787) & 4 & \cmiss{25\%} & 75\% & 75\% \\
+    OOB Write (787) & 4 & \cmiss{25\%} & 75\% & 75\% \\
     \midrule
     \textbf{Overall} & \textbf{27} & \textbf{51.9\%} & \textbf{88.9\%} & \textbf{92.6\%} \\
     \bottomrule
   \end{tabular}}
+
+  \vspace{0.4em}
+  {\scriptsize\textcolor{notecol}{Highlights areas for improvement in embedding design or slicing strategy.}}
+  \end{center}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 % \begin{frame}{Phase 2: Generalization — CVEfixes Dataset}
