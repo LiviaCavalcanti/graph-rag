@@ -279,7 +279,21 @@ struct sock *alloc_socket(
     $\Rightarrow$ \textcolor{red}{\textbf{Use-After-Free}}
 
     \vspace{0.3cm}
-    \footnotesize\textit{Key insight: this pattern leaves a structural fingerprint in the code graph.}
+    \begin{tikzpicture}
+      \node[
+        fill=slidebg,
+        draw=labelcol!20, line width=0.5pt,
+        rounded corners=5pt,
+        font=\tiny\sffamily,
+        text=labelcol,
+        inner xsep=8pt, inner ysep=3pt,
+        align=center,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+      ]{
+        \footnotesize{This pattern leaves a structural fingerprint in the code graph.}
+      };
+    \end{tikzpicture}
+    
   \end{columns}
 \end{frame}
 
@@ -1163,7 +1177,7 @@ struct sock *alloc_socket(
       \midrule
       \multicolumn{5}{c}{\textit{CodeBERT pretrained}} \\
       \midrule
-      CodeBERT (baseline)\\
+      CodeBERT (baseline) & 0.1533 & 0.2200 & 0.1826 & 0.2933 \\
       CodeBERT (seq) & 0.7534 & 0.8630 & 0.7927 & 0.4121 \\
 CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
     \end{tabular}
