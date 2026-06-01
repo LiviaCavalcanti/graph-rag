@@ -72,10 +72,10 @@
 % \setbeamerfont{frametitle}{series=\bfseries, size=\large}
 
 
-\title{Retrieval-Augmented Vulnerability Detection via Code Property Graphs}
-% \subtitle{From Graph-Based Patterns to Knowledge-Base Ranking}
-\author{}
-\date{May 2026}
+\title{Vulnerability Patching via Structure-Aware Retrieval-Augmented Generation}
+\subtitle{Master's Thesis Progress}
+\author{Lívia Cavalcanti}
+\date{June 2026}
 
 \begin{document}
 
@@ -84,6 +84,7 @@
 % =====================================================================
 \begin{frame}
   \titlepage
+  
 \end{frame}
 
 % =====================================================================
@@ -1527,12 +1528,6 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
   \end{description}
 
   \vspace{0.5cm}
-  \textbf{For vulnerability detection:}
-  \begin{itemize}
-    \item Look for patterns in DDG (data flow anomalies)
-    \item Combine with CFG to understand execution order
-    \item Use CDG to understand conditional branches (e.g., error handling)
-  \end{itemize}
 
   \vspace{0.5cm}
   Joern exposes all four via traversals; KB retrieval compares the combined structure to find similar vulnerabilities.
