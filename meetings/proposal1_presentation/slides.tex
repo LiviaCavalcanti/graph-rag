@@ -1186,9 +1186,11 @@ struct sock *alloc_socket(
 \begin{column}{0.48\textwidth}
 
   \textbf{Goal}\\[3pt]
-  {\small End-to-end verification of the retrieval pipeline on 13 sink-related
-  CWEs from CVEfixes (250 samples, 201 index / 49 query, stratified split).}
-
+  {\small CVEFixes datasets is large dataset with real-world CVEs collected from the U.S. National Vulnerability Database, patches, and code changes.\\}
+  
+  \vspace{0.5em}
+  
+  \scriptsize
   \begin{tabular}{lr}
     \toprule
     \textbf{Metric} & \textbf{Value} \\
@@ -1200,6 +1202,10 @@ struct sock *alloc_socket(
     Repositories & 4,249 \\
     \bottomrule
   \end{tabular}
+  
+\end{column}
+\begin{column}{0.50\textwidth}
+
   \vspace{0.5em}
   {\small\textbf{Configuration}}\\[4pt]
   {\scriptsize
@@ -1208,20 +1214,26 @@ struct sock *alloc_socket(
     \toprule
     \textbf{Parameter} & \textbf{Value} \\
     \midrule
-    Total pairs & 250 \\
-    Index set & 201 \\
-    Query set & 49 \\
-    Unique CVEs (query) & 44 \\
-    CWE classes & 13 \\
+    Total pairs & 136 \\
+    Index set & 109 \\
+    Query set & 27 \\
+    Unique CVEs (index) & 60 \\
+    Unique CVEs (query) & 25 \\
+    CWE classes & 7 \\
     Slice depth & 2-hop \\
-    Min/max lines & 10 / 300 \\
+    Min/max lines & 10 / 120 \\
     \bottomrule
   \end{tabular}}
 
-\end{column}
-\begin{column}{0.50\textwidth}
-
-
+  \vspace{0.4em}
+  {\small\textbf{Selection Rationale}}\\[3pt]
+  {\scriptsize
+  \begin{itemize}\itemsep1pt
+    \item 7 CWEs with $\geq$2 multi-function CVEs (ensures same-CVE retrieval is feasible)
+    \item Structurally distinshable CWEs (e.g. UAF vs. OOB) to test pattern matching, not just code similarity
+    \item Balanced: up to 20 entries per CWE
+  \end{itemize}}
+ 
 \end{column}
 \end{columns}
 \end{frame}
@@ -1229,82 +1241,48 @@ struct sock *alloc_socket(
 
 \begin{frame}{Pipeline Verification: Per-CWE Breakdown (CodeBERT+Pattern)}
 
+  
   {\small\textbf{Same-CWE Retrieval Results}}\\[6pt]
   {\scriptsize
   \renewcommand{\arraystretch}{1.3}
-  \begin{tabular}{l rrr}
-    \toprule
-    \textbf{Embedder} & \textbf{hit@1} & \textbf{hit@5} & \textbf{MRR} \\
-    \midrule
-    GIN & \cmiss{14.3\%} & 28.6\% & 0.197 \\
-    Combined & 20.4\% & 36.7\% & 0.259 \\
-    \rowcolor{c1!10}
-    CodeBERT+Pattern & \chit{46.9\%} & \chit{63.3\%} & \chit{0.544} \\
-    \bottomrule
-  \end{tabular}}
+   \centering
+    \tiny
+    \begin{tabular}{lrrrr}
+      \toprule
+      \textbf{Embedder} & \textbf{CWE Hit@1} & \textbf{CWE Hit@5} & \textbf{MRR} & \textbf{CWE Recall} \\
+      \midrule
+      \multicolumn{5}{c}{\textit{Structure-Only (n=109 index, 27 query, depth-2)}} \\
+      \midrule
+      GIN & 0.259 & 0.778 & 0.315 & 0.202 \\
+      Combined & 0.111 & 0.778 & 0.223 & 0.189 \\
+      \midrule
+      \multicolumn{5}{c}{\textit{CodeBERT (Baseline)}} \\
+      \midrule
+      CodeBERT (pat) & 0.519 & 0.889 & 0.549 & 0.276 \\
+      \bottomrule
+    \end{tabular}
+ }
 
-  \vspace{0.6em}
-  {\small\textbf{CWE-level hit rate (CodeBERT+Pattern)}}\\[4pt]
-  {\scriptsize
-  \renewcommand{\arraystretch}{1.2}
-  \begin{tabular}{lr}
-    \toprule
-    & \textbf{Value} \\
-    \midrule
-    CWE hit@1 & 51.0\% \\
-    CWE hit@5 & 77.6\% \\
-    CWE hit@10 & \chit{85.7\%} \\
-    \bottomrule
-  \end{tabular}}
 
-  \centering
   \vspace{0.2em}
   {\scriptsize
   \renewcommand{\arraystretch}{1.3}
   \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{l l r rrr}
+  \begin{tabular}{l r rrr}
     \toprule
-    \textbf{Name} & \textbf{N} & \textbf{hit@1} & \textbf{hit@5} & \textbf{hit@10} \\
+    \textbf{CWE} & \textbf{N} & \textbf{hit@1} & \textbf{hit@5} & \textbf{hit@10} \\
     \midrule
-    Out-of-bounds Read & 4 & \chit{75\%} & 75\% & 100\% \\
-    Integer Overflow & 4 & \chit{75\%} & 75\% & 75\% \\
-    Heap Buffer Overflow & 3 & \chit{67\%} & 100\% & 100\% \\
-    Information Exposure & 6 & \chit{67\%} & 83\% & 100\% \\
-    Type Confusion & 3 & \chit{67\%} & 100\% & 100\% \\
-    Permissions & 5 & 60\% & 100\% & 100\% \\
-    Array Index Validation & 2 & 50\% & 50\% & 100\% \\
-    Improper Access Control & 6 & 50\% & 50\% & 50\% \\
-    Double Free & 2 & 50\% & 100\% & 100\% \\
-    NULL Ptr Deref & 2 & 50\% & 100\% & 100\% \\
-    Out-of-bounds Write & 4 & \cwarn{25\%} & 75\% & 75\% \\
-    Use After Free & 6 & \cmiss{17\%} & 50\% & 67\% \\
-    Stack Buffer Overflow & 2 & \cmiss{0\%} & 100\% & 100\% \\
+    Integer Overflow (190) & 4 & \chit{75\%} & 100\% & 100\% \\
+    Improper Input Valid.\ (20) & 4 & \chit{75\%} & 75\% & 100\% \\
+    Resource Consumption (400) & 3 & \chit{67\%} & 100\% & 100\% \\
+    Use After Free (416) & 4 & 50\% & 100\% & 100\% \\
+    NULL Ptr Deref (476) & 5 & \cwarn{40\%} & 80\% & 80\% \\
+    Race Condition (362) & 3 & \cwarn{33\%} & 100\% & 100\% \\
+    Out-of-bounds Write (787) & 4 & \cmiss{25\%} & 75\% & 75\% \\
     \midrule
-    \textbf{Overall} & & \textbf{49} & \textbf{46.9\%} & \textbf{63.3\%} & \textbf{71.4\%} \\
+    \textbf{Overall} & \textbf{27} & \textbf{51.9\%} & \textbf{88.9\%} & \textbf{92.6\%} \\
     \bottomrule
   \end{tabular}}
-
-  \vspace{0.5em}
-  \begin{columns}[T]
-  \begin{column}{0.48\textwidth}
-    {\scriptsize\textbf{\textcolor{hit}{Strengths}}}
-    \begin{itemize}\itemsep1pt
-      {\scriptsize
-      \item 10/13 CWEs have hit@1 $\geq$ 50\%
-      \item hit@10 reaches 85.7\% at CWE level
-      \item MRR=0.544 — correct CWE typically in top 2}
-    \end{itemize}
-  \end{column}
-  \begin{column}{0.48\textwidth}
-    {\scriptsize\textbf{\textcolor{miss}{Weaknesses}}}
-    \begin{itemize}\itemsep1pt
-      {\scriptsize
-      \item CWE-416 (UAF) hardest at hit@1=17\%
-      \item CWE-284 saturates at 50\% even at hit@10
-      \item Small per-CWE N limits significance}
-    \end{itemize}
-  \end{column}
-  \end{columns}
 \end{frame}
 
 % \begin{frame}{Phase 2: Generalization — CVEfixes Dataset}
