@@ -26,8 +26,9 @@
   showstringspaces=false,
   tabsize=2,
 }
-
+\setbeamertemplate{enumerate item}{\arabic{enumi}.}
 \setbeamertemplate{itemize item}{--}
+\setbeamertemplate{itemize subitem}{--}
 
 % ── palette ──────────────────────────────────────────────────────────
 \definecolor{c1}{RGB}{41,128,185}
@@ -1315,7 +1316,7 @@ struct sock *alloc_socket(
 % PHASE 1: AUTOPATCH RESULTS
 % =====================================================================
 \begin{frame}{Phase 1: Feasibility — AutoPatch Dataset (n=225)}
-  \textbf{Goal:} Validate that structural embeddings match CodeBERT performance.
+  % \textbf{Goal:} Validate that structural embeddings match CodeBERT performance.
 
   \vspace{0.3cm}
   \begin{table}
