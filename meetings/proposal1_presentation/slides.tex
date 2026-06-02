@@ -945,8 +945,8 @@ struct sock *alloc_socket(
     \node[chip=ckb, below=0.8cm of llm, minimum width=3.2cm] (total)
           {450 Total Pairs\\{\tiny 75 orig.\ + 375 LLM}};
 
-    \draw[arr] (cve.south) -- ++(0,-0.25) -| (total.north west);
-    \draw[arr] (variants.south) -- ++(0,-0.25) -| (total.north east);
+    \draw[arr] (cve.south) -- ++(0,-0.25) -| ($(total.north west)!0.35!(total.north)$);
+    \draw[arr] (variants.south) -- ++(0,-0.25) -| ($(total.north east)!0.35!(total.north)$);
 
     % --- Row 3: Split ---
     \node[chip=csub, below left=0.6cm and 0.1cm of total] (index)
@@ -979,8 +979,9 @@ struct sock *alloc_socket(
     mcard/.style={
       draw=#1!60, fill=#1!8,
       rounded corners=6pt,
-      minimum width=2.8cm,
+      minimum width=3cm,
       minimum height=2.4cm,
+      inner ysep=8pt,
       font=\scriptsize\sffamily,
       align=center,
       drop shadow={shadow xshift=1.5pt, shadow yshift=-2pt, opacity=0.3, fill=shadowcol}
@@ -997,42 +998,44 @@ struct sock *alloc_socket(
 
     % --- Card 1: Hit@1 ---
     \node[mcard=ccode] (h1) {
-      \textcolor{ccode}{\faBuilding}\\[2pt]
-      {\scriptsize\bfseries\textcolor{ccode!80!black}{Hit@1}}\\[1pt]
-      {\tiny\textit{Success rate at rank 1}}\\[3pt]
-      $\displaystyle\frac{1}{|Q|}\sum_{q} \mathbb{1}[\text{rank}_q = 1]$\\[4pt]
+      \textcolor{ccode}{\faBuilding}\\[4pt]
+      {\scriptsize\bfseries\textcolor{ccode!80!black}{Hit@1}}\\[6pt]
+      {\tiny\textit{Success rate at rank 1}}\\[5pt]
+      $\displaystyle\frac{1}{|Q|}\sum_{q} \mathbb{1}[\text{rank}_q = 1]$\\[6pt]
       {\tiny Fraction of queries where the}\\[-1pt]
       {\tiny correct match is ranked \textbf{first}.}
     };
 
     % --- Card 2: Hit@5 ---
     \node[mcard=ccpg, right=0.8cm of h1] (h5) {
-      \textcolor{ccpg}{\faListOl}\\[2pt]
-      {\scriptsize\bfseries\textcolor{ccpg!80!black}{Hit@5}}\\[1pt]
-      {\tiny\textit{Success rate in top 5}}\\[3pt]
-      $\displaystyle\frac{1}{|Q|}\sum_{q} \mathbb{1}[\text{rank}_q \leq 5]$\\[4pt]
+      \textcolor{ccpg}{\faListOl}\\[4pt]
+      {\scriptsize\bfseries\textcolor{ccpg!80!black}{Hit@5}}\\[6pt]
+      {\tiny\textit{Success rate in top 5}}\\[5pt]
+      $\displaystyle\frac{1}{|Q|}\sum_{q} \mathbb{1}[\text{rank}_q \leq 5]$\\[6pt]
       {\tiny Fraction of queries where the}\\[-1pt]
       {\tiny correct match appears in \textbf{top 5}.}
     };
 
     % --- Card 3: MRR ---
     \node[mcard=cemb, right=0.8cm of h5] (mrr) {
-      \textcolor{cemb}{\faSortAmountDown}\\[2pt]
-      {\scriptsize\bfseries\textcolor{cemb!80!black}{MRR}}\\[1pt]
-      {\tiny\textit{Mean Reciprocal Rank}}\\[3pt]
-      $\displaystyle\frac{1}{|Q|}\sum_{q} \frac{1}{\text{rank}_q}$\\[4pt]
+      \textcolor{cemb}{\faSortAmountDown}\\[4pt]
+      {\scriptsize\bfseries\textcolor{cemb!80!black}{MRR}}\\[6pt]
+      {\tiny\textit{Mean Reciprocal Rank}}\\[5pt]
+      $\displaystyle\frac{1}{|Q|}\sum_{q} \frac{1}{\text{rank}_q}$\\[6pt]
       {\tiny Average inverse rank across}\\[-1pt]
       {\tiny queries — rewards \textbf{higher} placements.}
     };
 
     % --- Card 4: CWE Recall ---
     \node[mcard=csub, right=0.8cm of mrr] (cwe) {
-      \textcolor{csub}{\faProjectDiagram}\\[2pt]
-      {\scriptsize\bfseries\textcolor{csub!80!black}{CWE Recall}}\\[1pt]
-      {\tiny\textit{Type coverage}}\\[3pt]
-      $\displaystyle\frac{|\text{CWE}_{\text{retrieved}}|}{|\text{CWE}_{\text{index}}|}$\\[4pt]
+      \\[-0.5pt]
+      \textcolor{csub}{\faProjectDiagram}\\[4pt]
+      {\scriptsize\bfseries\textcolor{csub!80!black}{CWE Recall}}\\[6pt]
+      {\tiny\textit{Type coverage}}\\[7pt]
+      $\displaystyle\frac{|\text{CWE}_{\text{retrieved}}|}{|\text{CWE}_{\text{index}}|}$\\[6pt]
       {\tiny Fraction of distinct CWE types}\\[-1pt]
       {\tiny correctly retrieved \textbf{at least once}.}
+      % \\[-0.01pt]
     };
 
   \end{tikzpicture}
