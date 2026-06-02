@@ -1,14 +1,17 @@
 \documentclass[aspectratio=169,10pt]{beamer}
 \usetheme{Madrid}
 \usecolortheme{default}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
 \usepackage{tikz}
 \usepackage{booktabs}
 \usepackage{fontawesome5}
 \usepackage{xcolor}
-\usepackage{amsmath}
+\usepackage{mathtools}
 \usepackage{colortbl}
 \usepackage{multirow}
 \usepackage{listings}
+\usepackage{bookmark}
 \usepackage[most]{tcolorbox}
 \usepackage[backend=biber, style=numeric, sorting=none, maxnames=3, minnames=1]{biblatex}
 \addbibresource{references.bib}
@@ -621,7 +624,7 @@ struct sock *alloc_socket(
     \begin{itemize}
       \item Train GNNs / graph kernels on labeled CPGs or PDGs
       \item Learn to classify subgraphs as vulnerable vs.\ safe
-      \item Devign, ReVeal, IVDetect, \ldots
+      \item Devign \cite{zhou2019devign}, ReVeal \cite{chakraborty2020reveal}, IVDetect \cite{li2021ivdetect}, \ldots
     \end{itemize}
     
     \vspace{0.5cm}
@@ -1567,6 +1570,180 @@ val uafCandidates = cpg.call.name(".*free.*")
 
   \normalsize
   \textbf{Output:} \texttt{[UAF] sk\_free(sk) — dangling: sock->sk}
+\end{frame}
+
+% =====================================================================
+% APPENDIX: CODE SLICING ALGORITHM
+% =====================================================================
+\begin{frame}[fragile]{Appendix: Vulnerability-Aware Code Slicing}
+
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+
+    \textbf{Goal:} Extract a minimal subgraph capturing the vulnerability context from the full CPG.
+
+    \vspace{0.3cm}
+    \textbf{Algorithm (3 phases):}
+    \begin{enumerate}
+      \item \textbf{Semantic Node Diff} — Match nodes by fingerprint \texttt{(labelV, CODE, LINE\_NUMBER)} between pre-/post-patch CPGs. Identify removed, added, and fix-adjacent nodes.
+      \item \textbf{Semantic Edge Diff} — Detect structural changes (rewired control/data flow).
+      \item \textbf{Bounded Program Slice} — BFS $k{=}3$ hops along flow edges (CFG, CDG, REACHING\_DEF, PDG, DDG) from seed nodes.
+    \end{enumerate}
+
+    \column{0.48\textwidth}
+
+    \begin{center}
+    \begin{tikzpicture}[
+      node distance=0.3cm,
+      chip/.style={
+        draw=none, rounded corners=5pt,
+        minimum width=2.8cm, minimum height=0.5cm,
+        font=\tiny\sffamily\bfseries, align=center,
+        fill=#1, text=white,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.35, fill=shadowcol}
+      },
+      arr/.style={-{Stealth[length=3.5pt, width=3.5pt]}, line width=0.9pt, color=notecol!80},
+      lbl/.style={font=\tiny\sffamily, text=notecol}
+    ]
+      \node[chip=ccode]                     (before) {CPG$_{\text{before}}$};
+      \node[chip=csub, right=0.8cm of before] (after)  {CPG$_{\text{after}}$};
+
+      \node[chip=ccpg, below=0.6cm of $(before)!0.5!(after)$] (diff) {Semantic Diff\\{\tiny node + edge fingerprints}};
+
+      \node[chip=ckb, below=0.5cm of diff] (seeds) {Seed Nodes\\{\tiny removed $|$ fix-adjacent $|$ edge-changed}};
+
+      \node[chip=cemb, below=0.5cm of seeds] (slice) {BFS Slice ($k{=}3$)\\{\tiny along CFG/CDG/DDG}};
+
+      \node[chip=crank, below=0.5cm of slice] (out) {Vulnerability Subgraph};
+
+      \draw[arr] (before) -- (diff);
+      \draw[arr] (after) -- (diff);
+      \draw[arr] (diff) -- (seeds);
+      \draw[arr] (seeds) -- (slice);
+      \draw[arr] (slice) -- (out);
+    \end{tikzpicture}
+    \end{center}
+
+    % \vspace{0.1cm}
+    \begin{center}
+    {\scriptsize
+    \renewcommand{\arraystretch}{1.1}
+    \begin{tabular}{lc}
+      \toprule
+      \textbf{Diff Label} & \textbf{Weight} \\
+      \midrule
+      removed & 1.0 \\
+      fix\_adjacent & 0.8 \\
+      edge\_changed & 0.6 \\
+      context & 0.2 \\
+      \bottomrule
+    \end{tabular}}
+    \end{center}
+
+  \end{columns}
+\end{frame}
+
+% =====================================================================
+% APPENDIX: CODEBERT PATTERN EMBEDDING DETAIL
+% =====================================================================
+\begin{frame}[fragile]{Appendix: CodeBERT Pattern Embedding — Detail}
+
+  \begin{columns}[T]
+    \column{0.55\textwidth}
+
+    \textbf{34d Feature Vector — 5 Groups:}\\[4pt]
+    {\scriptsize All features require CPG edge connectivity (REACHING\_DEF, CDG, CFG).}
+
+    \vspace{0.15cm}
+    {\tiny
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{clp{4.8cm}}
+      \toprule
+      \textbf{Grp} & \textbf{Dim} & \textbf{Features \& Mechanism} \\
+      \midrule
+      \multirow{8}{*}{\rotatebox{90}{\textbf{A: Vuln Flow (8)}}}
+        & A1 & UAF: free $\xrightarrow{\text{REACH\_DEF}}$ identifier (2-hop) \\
+        & A2 & NPD: ptr deref w/o null-check in CDG preds \\
+        & A3 & Unchecked return: CALL $\not\to$ CONTROL\_STRUCT \\
+        & A4 & Lock/unlock imbalance: $|L{-}U|/(L{+}U{+}1)$ \\
+        & A5 & Unguarded arithmetic: no bounds in CDG neighbourhood \\
+        & A6 & Use w/o def: IDENTIFIER w/o incoming REACH\_DEF \\
+        & A7 & Alloc/free imbalance: $|A{-}F|/(A{+}F{+}1)$ \\
+        & A8 & Cast in data flow: cast $\xleftrightarrow{\text{REACH\_DEF}}$ changed \\
+      \midrule
+      \multirow{2}{*}{\rotatebox{90}{\textbf{B (8)}}}
+        & B1--8 & Edge type distribution among changed nodes \\
+        &       & {\tiny AST, CFG, CDG, REACH\_DEF, REF, ARG, RECV, CALL} \\
+      \midrule
+      \multirow{2}{*}{\rotatebox{90}{\textbf{C (6)}}}
+        & C1--6 & Boundary flow: changed$\to$ctx vs ctx$\to$changed \\
+        &       & {\tiny per CFG, CDG, REACHING\_DEF (2 dirs $\times$ 3 types)} \\
+      \midrule
+      \multirow{2}{*}{\rotatebox{90}{\textbf{D (6)}}}
+        & D1--6 & Diff topology: changed frac, density, \#components, \\
+        &       & {\tiny mean/max degree, internal vs crossing edge ratio} \\
+      \midrule
+      \multirow{2}{*}{\rotatebox{90}{\textbf{E (6)}}}
+        & E1--6 & Node role distribution of changed nodes \\
+        &       & {\tiny CALL, CTRL\_STRUCT, ID, LITERAL, BLOCK, OTHER} \\
+      \bottomrule
+    \end{tabular}}
+
+    \vspace{0.2cm}
+    {\scriptsize Node classification uses regex on \texttt{CODE} attr (e.g.\ \texttt{free|kfree|vfree} for free nodes). Flow features traverse CPG edges.}
+
+    \column{0.42\textwidth}
+
+    \begin{center}
+    \textbf{Full Pipeline:}\\[6pt]
+    \begin{tikzpicture}[
+      node distance=0.3cm,
+      box/.style={draw=c1!60, fill=c1!8, rounded corners=3pt,
+        minimum width=2.6cm, minimum height=0.45cm,
+        font=\tiny\sffamily\bfseries, align=center},
+      arr/.style={-{Stealth[length=3pt, width=3pt]}, line width=0.7pt, color=notecol},
+      lbl/.style={font=\tiny\sffamily, text=notecol}
+    ]
+      \node[box] (cpg) {Vulnerability Subgraph\\{\tiny (from slicing)}};
+
+      \node[box, below=0.4cm of cpg, xshift=-1.4cm] (pat)
+            {Pattern Extractor\\{\tiny 34 features (A--E)}};
+      \node[box, below=0.4cm of cpg, xshift=1.4cm] (code)
+            {Changed Code\\{\tiny diff\_weight $>$ 0.3}};
+
+      \node[box, draw=c3!60, fill=c3!8, below=0.35cm of code] (bert)
+            {CodeBERT [CLS]\\{\tiny 768d}};
+
+      \node[box, draw=c5!60, fill=c5!8, below=0.4cm of bert] (cat)
+            {Concatenate\\{\tiny [34d $\|$ 768d] = 802d}};
+
+      \node[box, draw=c3!60, fill=c3!8, below=0.35cm of cat] (pca)
+            {PCA\\{\tiny 802d $\to$ 128d}};
+
+      \node[box, draw=hit!60, fill=hit!8, below=0.35cm of pca] (norm)
+            {L2 Normalize\\{\tiny 128d final embedding}};
+
+      \draw[arr] (cpg) -- (pat);
+      \draw[arr] (cpg) -- (code);
+      \draw[arr] (code) -- (bert);
+      \draw[arr] (pat) |- (cat);
+      \draw[arr] (bert) -- (cat);
+      \draw[arr] (cat) -- (pca);
+      \draw[arr] (pca) -- (norm);
+    \end{tikzpicture}
+    \end{center}
+
+    % \begin{tcolorbox}[colback=c3!5, colframe=c3!60!black, boxrule=0.3pt,
+    %   left=3pt, right=3pt, top=2pt, bottom=2pt, arc=2pt]
+    %   \scriptsize
+    %   \textbf{Key insight:} Pattern features inject \emph{graph-derived} vulnerability signals into the semantic embedding space — every feature requires edge traversal.
+    % \end{tcolorbox}
+
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Appendix: Joern Generated graph}
+  TODO: add graphml example 
 \end{frame}
 
 % =====================================================================
