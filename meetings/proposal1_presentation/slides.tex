@@ -10,6 +10,8 @@
 \usepackage{multirow}
 \usepackage{listings}
 \usepackage[most]{tcolorbox}
+\usepackage[backend=biber, style=numeric, sorting=none, maxnames=3, minnames=1]{biblatex}
+\addbibresource{references.bib}
 \usetikzlibrary{arrows.meta,shadows,positioning,fit,shapes.geometric,calc, shadows.blur, backgrounds}
 
 \lstdefinestyle{ccode}{
@@ -77,6 +79,8 @@
 \author{Lívia Cavalcanti}
 \date{June 2026}
 
+% TODO: add supervisors names and affiliations if desired
+
 \begin{document}
 
 % =====================================================================
@@ -96,9 +100,9 @@
   \begin{columns}
     \column{0.45\textwidth}
     \begin{tcolorbox}[colback=c1!5, colframe=c1!60!black, boxrule=0.6pt,
-      left=6pt, right=6pt, top=6pt, bottom=6pt, arc=3pt, title={\scriptsize\bfseries NIST SP 800-53 / CWE Definition}]
+      left=6pt, right=6pt, top=6pt, bottom=6pt, arc=3pt, title={\scriptsize\bfseries NIST FIPS 200~\cite{nist_fips200}}]
       \small
-      A \textbf{vulnerability} is a weakness in a system that can be exploited by a threat to gain unauthorized access or cause harm.
+      A \textbf{vulnerability} is a weakness in an information system, system security procedures, internal controls, or implementation that could be exploited by a threat source.
     \end{tcolorbox}
 
     \vspace{0.4cm}
@@ -131,6 +135,9 @@ struct sock *alloc_socket(
 }
     \end{lstlisting}
     \end{tcolorbox}
+      % \vspace{0.2em}
+  \center{\tiny\textcolor{notecol}{Inspired by CVE-2024-56605 (Linux kernel) — a real-world use-after-free vulnerability.}}
+
   \end{columns}
 \end{frame}
 
@@ -283,12 +290,13 @@ struct sock *alloc_socket(
     \begin{tikzpicture}
       \node[
         fill=slidebg,
-        draw=labelcol!20, line width=0.5pt,
+        draw=labelcol!20, line width=0.4pt,
         rounded corners=5pt,
         font=\tiny\sffamily,
         text=labelcol,
         inner xsep=8pt, inner ysep=3pt,
         align=center,
+        text width=0.85\linewidth,
         drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
       ]{
         \footnotesize{This pattern leaves a structural fingerprint in the code graph.}
@@ -304,7 +312,7 @@ struct sock *alloc_socket(
 % =====================================================================
 % CPG VISUALIZATION — Overview (raw Joern output)
 % =====================================================================
-\begin{frame}{Code Property Graph: Full Joern Output}
+\begin{frame}{Code Property Graph: Full Joern \cite{joern} Output}
   \begin{columns}
     \column{0.3\textwidth}
     \centering
@@ -925,9 +933,9 @@ struct sock *alloc_socket(
         \toprule
         \textbf{Embedder} & \textbf{Dim} & \textbf{Mechanism} \\
         \midrule
-        NetLSD & 128 & Heat kernel trace on graph Laplacian spectrum (100 timescales $10^{-2}$--$10^{2}$) \\[3pt]
-        WL & 128 & Weisfeiler-Lehman color refinement (4 iters) $\rightarrow$ sum pool $\rightarrow$ linear proj. \\[3pt]
-        GIN & 128 & 3-layer Graph Isomorphism Network (random weights, frozen) $\rightarrow$ mean+sum readout \\
+        NetLSD \cite{netlsd} & 128 & Heat kernel trace on graph Laplacian spectrum (100 timescales $10^{-2}$--$10^{2}$) \\[3pt]
+        WL \cite{shervashidze2011wl} & 128 & Weisfeiler-Lehman color refinement (4 iters) $\rightarrow$ sum pool $\rightarrow$ linear proj. \\[3pt]
+        GIN \cite{xu2019gin} & 128 & 3-layer Graph Isomorphism Network (random weights, frozen) $\rightarrow$ mean+sum readout \\
         \bottomrule
       \end{tabular}
     \end{table}
@@ -941,7 +949,7 @@ struct sock *alloc_socket(
         \toprule
         \textbf{Embedder} & \textbf{Dim} & \textbf{Mechanism} \\
         \midrule
-        CodeBERT & 768 & Pretrained transformer; CLS token on linearized code \\
+        CodeBERT \cite{feng2020codebert} & 768 & Pretrained transformer; CLS token on linearized code \\
         \bottomrule
       \end{tabular}
     \end{table}
@@ -1278,7 +1286,7 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
 \begin{column}{0.48\textwidth}
 
   \textbf{Real-World Dataset}\\[3pt]
-  {\small CVEFixes datasets is large dataset with real-world CVEs collected from the U.S. National Vulnerability Database, patches, and code changes.\\}
+  {\small CVEFixes \cite{bhandari2021cvefixes} datasets is large dataset with real-world CVEs collected from the U.S. National Vulnerability Database, patches, and code changes.\\}
   
   \vspace{0.5em}
   \begin{center}
@@ -1561,6 +1569,12 @@ val uafCandidates = cpg.call.name(".*free.*")
   \textbf{Output:} \texttt{[UAF] sk\_free(sk) — dangling: sock->sk}
 \end{frame}
 
-
+% =====================================================================
+% REFERENCES
+% =====================================================================
+\begin{frame}[allowframebreaks]{References}
+  \scriptsize
+  \printbibliography[heading=none]
+\end{frame}
 
 \end{document}
