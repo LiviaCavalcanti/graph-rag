@@ -27,6 +27,8 @@
   tabsize=2,
 }
 
+\setbeamertemplate{itemize item}{--}
+
 % ── palette ──────────────────────────────────────────────────────────
 \definecolor{c1}{RGB}{41,128,185}
 \definecolor{c2}{RGB}{52,152,219}
@@ -628,36 +630,52 @@ struct sock *alloc_socket(
 % =====================================================================
 % MOTIVATION: PRIOR WORK LIMITATIONS
 % =====================================================================
-\begin{frame}{Motivation: Why Not Just Train a Graph Classifier?}
-  
-    \textbf{Prior work exploits the same insight} — code structure reveals vulnerabilities:
-    \begin{itemize}
-      \item Train GNNs / graph kernels on labeled CPGs or PDGs
-      \item Learn to classify subgraphs as vulnerable vs.\ safe
-      \item Devign \cite{zhou2019devign}, ReVeal \cite{chakraborty2020reveal}, IVDetect \cite{li2021ivdetect}, \ldots
-    \end{itemize}
-    
-    \vspace{0.5cm}
-    \textbf{But these approaches hit a wall:}
-    \begin{itemize}
-      \item Require large labeled datasets (expensive to curate)
-      \item Require retraining to \emph{unseen} vulnerability types
-      \item Treat each vulnerability independently — no knowledge reuse
-    \end{itemize}
-    
-    \vspace{0.5cm}
-    \textbf{Our alternative:} Instead of \emph{classifying}, \textbf{retrieve}.\\
-    Store known vulnerability patterns as graph embeddings in a knowledge base,\\
-    then rank new code by structural similarity — no retraining needed.
-    
-\end{frame}
+\begin{frame}{Motivation: Why Current Approaches Fall Short}
 
+\begin{columns}[T]
+
+  %% LEFT: The Problem
+  \begin{column}{0.48\textwidth}
+    \textbf{ The Gap}\\[0.4em]
+    Industrial compliance standards demand \emph{auditable}, automated remediation \cite{iso27001}\\[0.8em]
+
+    \textbf{ LLMs Failure}
+    \begin{itemize}
+      \item \textbf{84--94\%} of AI patches are bypassable \cite{mahmud2025systematic}
+      \item \textbf{91.6\%} failure in vulnerability identification \cite{McClanahan2024Meets}
+      \item Hallucinated fixes $\Rightarrow$ false sense of security \cite{zemicheal2024llm}
+    \end{itemize}
+  \end{column}
+
+  % \vrule{}
+
+  %% RIGHT: The Alternative
+  \begin{column}{0.48\textwidth}
+    \textbf{ Existing Tools Also Fall Short}
+    \begin{itemize}
+      \item Graph classifiers: \emph{no knowledge reuse}
+      \item Agentic approaches: \emph{ignore structure}
+    \end{itemize}
+
+    \vspace{0.6em}
+    % \rule{\linewidth}{0.4pt}
+    \vspace{0.4em}
+
+    \textbf{ Our Approach}\\[0.3em]
+    \textbf{Retrieve} known structural patterns\\
+    $\Rightarrow$ fixes that are \emph{correct \textbf{and} explainable}
+  \end{column}
+
+\end{columns}
+
+\end{frame}
 % =====================================================================
 % RESEARCH QUESTION
 % =====================================================================
 \begin{frame}{Research Questions}
   \textbf{RQ1: }How effective are graph-based embeddings at retrieving relevant vulnerability fix patterns from the knowledge base?
  
+    \vspace{0.5cm}
 \textbf{RQ2: }What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline?
 
 \end{frame}
