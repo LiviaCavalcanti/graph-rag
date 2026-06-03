@@ -10,8 +10,12 @@
 \usepackage{mathtools}
 \usepackage{colortbl}
 \usepackage{multirow}
+\usepackage{bbm}
 \usepackage{listings}
 \usepackage{bookmark}
+\usepackage{amsmath}    % Essential for many math features
+\usepackage{amsfonts}   % Provides \mathbb
+\usepackage{amssymb}
 \usepackage[most]{tcolorbox}
 \usepackage[backend=biber, style=numeric, sorting=none, maxnames=3, minnames=1]{biblatex}
 \addbibresource{references.bib}
@@ -1017,27 +1021,27 @@ struct sock *alloc_socket(
 
     % --- Card 1: Hit@1 ---
     \node[mcard=ccode] (h1) {
-      \textcolor{ccode}{\faBuilding}\\[4pt]
+      % \textcolor{ccode}{\faBuilding}\\[4pt]
       {\scriptsize\bfseries\textcolor{ccode!80!black}{Hit@1}}\\[6pt]
       {\tiny\textit{Success rate at rank 1}}\\[5pt]
-      $\displaystyle\frac{1}{|Q|}\sum_{q} \mathbb{1}[\text{rank}_q = 1]$\\[6pt]
+      $\displaystyle\frac{1}{|Q|}\sum_{q} \mathbbm{1}[\text{rank}_q = 1]$\\[6pt]
       {\tiny Fraction of queries where the}\\[-1pt]
       {\tiny correct match is ranked \textbf{first}.}
     };
 
     % --- Card 2: Hit@5 ---
     \node[mcard=ccpg, right=0.8cm of h1] (h5) {
-      \textcolor{ccpg}{\faListOl}\\[4pt]
+      % \textcolor{ccpg}{\faListOl}\\[4pt]
       {\scriptsize\bfseries\textcolor{ccpg!80!black}{Hit@5}}\\[6pt]
       {\tiny\textit{Success rate in top 5}}\\[5pt]
-      $\displaystyle\frac{1}{|Q|}\sum_{q} \mathbb{1}[\text{rank}_q \leq 5]$\\[6pt]
+      $\displaystyle\frac{1}{|Q|}\sum_{q} \mathbbm{1}[\text{rank}_q \leq 5]$\\[6pt]
       {\tiny Fraction of queries where the}\\[-1pt]
       {\tiny correct match appears in \textbf{top 5}.}
     };
 
     % --- Card 3: MRR ---
     \node[mcard=cemb, right=0.8cm of h5] (mrr) {
-      \textcolor{cemb}{\faSortAmountDown}\\[4pt]
+      % \textcolor{cemb}{\faSortAmountDown}\\[4pt]
       {\scriptsize\bfseries\textcolor{cemb!80!black}{MRR}}\\[6pt]
       {\tiny\textit{Mean Reciprocal Rank}}\\[5pt]
       $\displaystyle\frac{1}{|Q|}\sum_{q} \frac{1}{\text{rank}_q}$\\[6pt]
@@ -1048,7 +1052,7 @@ struct sock *alloc_socket(
     % --- Card 4: CWE Recall ---
     \node[mcard=csub, right=0.8cm of mrr] (cwe) {
       \\[-0.5pt]
-      \textcolor{csub}{\faProjectDiagram}\\[4pt]
+      % \textcolor{csub}{\faProjectDiagram}\\[4pt]
       {\scriptsize\bfseries\textcolor{csub!80!black}{CWE Recall}}\\[6pt]
       {\tiny\textit{Type coverage}}\\[7pt]
       $\displaystyle\frac{|\text{CWE}_{\text{retrieved}}|}{|\text{CWE}_{\text{index}}|}$\\[6pt]
@@ -1059,7 +1063,6 @@ struct sock *alloc_socket(
 
   \end{tikzpicture}
   \end{center}
-
  
 
 \end{frame}
@@ -1348,23 +1351,6 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
 
 \begin{frame}{CodeBERT Embeddings — Sequence vs. Pattern}
 
-  % \textbf{Observation:} CodeBERT performs better on sequence-based linearized code than on pattern-based graph representations.
-
-  % \vspace{0.3cm}
-  % \begin{center}
-  %   \begin{tcolorbox}[colback=warn!5, colframe=warn!60!black, boxrule=0.4pt,
-  %     left=4pt, right=4pt, top=3pt, bottom=3pt, arc=3pt,
-  %     title={\scriptsize\bfseries Interpretation}]
-  %     \scriptsize
-  %     \begin{itemize}
-  %       \setlength\itemsep{2pt}
-  %       \item CodeBERT is pretrained on natural code sequences, so it may struggle to encode graph-structured inputs without fine-tuning.
-  %       \item The performance gap suggests that CodeBERT's semantic understanding does not fully compensate for the loss of structural information in the pattern-based representation.
-  %       \item Highlights the importance of choosing embeddings that align with the input format and task requirements.
-  %     \end{itemize}
-  %   \end{tcolorbox}
-  % \end{center}
-
   \vspace{0.2cm}
   \begin{columns}[T]
     \begin{column}{0.48\textwidth}
@@ -1502,7 +1488,7 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
       \midrule
       GIN & 0.259 & 0.778 & 0.315 & 0.202 \\
       Combined & 0.111 & 0.778 & 0.223 & 0.189 \\
-      CodeBERT (baseline) & TODO? & & & \\
+      CodeBERT (baseline) & 0.080 & 0.1518 & 0.098 & 0.141 \\
       \rowcolor{hit!12}
       \textbf{CodeBERT (seq)} & \textbf{0.556} & \textbf{0.926} & \textbf{0.555} & \textbf{0.264} \\
       \textbf{CodeBERT (pat)} & \textbf{0.519} & \textbf{0.889} & \textbf{0.549} & \textbf{0.276} \\
