@@ -46,6 +46,57 @@ def nx_to_pyg(G: nx.MultiDiGraph) -> Data | None:
     )
 
 
+# ── Diff-weight encoding (visible to structural embedders) ──────────
+
+DIFF_LABELS = ["removed", "fix_adjacent", "edge_changed", "context", "token_entry"]
+DIFF_LABEL_IDX = {d: i for i, d in enumerate(DIFF_LABELS)}
+
+
+def nx_to_pyg_enriched(G: nx.MultiDiGraph) -> Data | None:
+    """
+    Extended feature encoding: [labelV one-hot (11) || diff one-hot (5) || diff_weight (1)]
+    Total: 17-dim continuous features per node.
+
+    The diff one-hot includes 'token_entry' as a distinct label, so GIN can
+    distinguish token-guided entry points from diff-based removed nodes.
+    """
+    nodes = list(G.nodes())
+    if not nodes:
+        return None
+    idx = {n: i for i, n in enumerate(nodes)}
+
+    features = []
+    for n in nodes:
+        attr = G.nodes[n]
+        # labelV one-hot (11 dims)
+        ntype = attr.get("labelV", "UNKNOWN")
+        type_idx = NODE_TYPE_IDX.get(ntype, len(NODE_TYPES) - 1)
+        type_onehot = [0.0] * len(NODE_TYPES)
+        type_onehot[type_idx] = 1.0
+
+        # diff label one-hot (5 dims) — includes token_entry as distinct class
+        diff = attr.get("diff", "context")
+        diff_idx = DIFF_LABEL_IDX.get(diff, 3)
+        diff_onehot = [0.0] * len(DIFF_LABELS)
+        diff_onehot[diff_idx] = 1.0
+
+        # diff_weight (1 dim, continuous 0-1)
+        dw = float(attr.get("diff_weight", 0.2))
+
+        features.append(type_onehot + diff_onehot + [dw])
+
+    edge_index = [[], []]
+    for u, v in G.edges():
+        if u in idx and v in idx:
+            edge_index[0].append(idx[u])
+            edge_index[1].append(idx[v])
+
+    return Data(
+        x=torch.tensor(features, dtype=torch.float),
+        edge_index=torch.tensor(edge_index, dtype=torch.long),
+    )
+
+
 class WLEmbedder(BaseEmbedder):
     """
     Weisfeiler-Lehman colour refinement → sum pool per iteration
