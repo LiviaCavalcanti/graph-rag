@@ -502,3 +502,106 @@ class CodeBERTPatternEmbedder(BaseEmbedder):
             if i in set(valid_idx):
                 out[i] = projected[i]
         return out
+
+
+class CodeBERTFlowPatternEmbedder(BaseEmbedder):
+    """
+    Fusion: vulnerability graph patterns (34d) + CodeBERT with flow-ordered
+    code sequencing (768d) → PCA → L2-normalised embedding.
+
+    Improvement over CodeBERTPatternEmbedder: instead of concatenating code
+    by line number, orders code by data-flow traversal (REACHING_DEF → CFG)
+    so CodeBERT's self-attention sees flow-connected statements as adjacent
+    tokens. Inspired by GraphFVD's graph-aware code representation.
+    """
+
+    def __init__(self, cfg: dict, apply_norm: bool = True):
+        super().__init__(cfg)
+        from .codebert_seq import CodeBERTFlowEmbedder, collect_flow_ordered_code
+
+        self._cb_embedder = CodeBERTFlowEmbedder(cfg, apply_norm=apply_norm)
+        self._collect = collect_flow_ordered_code
+        self._pca = None
+        self._fitted = False
+
+    @property
+    def name(self) -> str:
+        return "codebert_flow_pattern"
+
+    def _build_raw(
+        self,
+        graphs: list[nx.MultiDiGraph],
+    ) -> tuple[np.ndarray, list[int]]:
+        """Concatenated [pattern(34) || codebert_flow(768)] for each graph."""
+        pattern_raw = VulnPatternEmbedder.build_raw_many(graphs)
+
+        self._cb_embedder._load_codebert()
+        code_strings = [self._collect(G) for G in graphs]
+        cb_raw = self._cb_embedder.encode_batch(code_strings)
+
+        raw = np.concatenate([pattern_raw, cb_raw], axis=1)
+
+        valid = []
+        for i in range(len(graphs)):
+            if (
+                np.linalg.norm(pattern_raw[i]) > 1e-8
+                or np.linalg.norm(cb_raw[i]) > 1e-8
+            ):
+                valid.append(i)
+
+        return raw, valid
+
+    def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
+        raw, _ = self._build_raw([G])
+        if self.projection == "none":
+            return self._norm_vec(raw[0])
+        if not self._fitted:
+            raise RuntimeError("Call embed_many() first to fit PCA")
+        proj = self._pca.transform(raw)[0].astype(np.float32)
+        if proj.shape[0] < self.dim:
+            padded = np.zeros(self.dim, dtype=np.float32)
+            padded[: proj.shape[0]] = proj
+            proj = padded
+        return self._norm_vec(proj)
+
+    def embed_many(self, graphs: list) -> np.ndarray:
+        raw, valid_idx = self._build_raw(graphs)
+        if not valid_idx:
+            return np.zeros((len(graphs), self.dim), dtype=np.float32)
+
+        if self.projection == "none":
+            self.dim = raw.shape[1]
+            out = np.zeros((len(graphs), self.dim), dtype=np.float32)
+            projected = self._norm_mat(raw)
+            for i in set(valid_idx):
+                out[i] = projected[i]
+            print(f"    [codebert_flow_pattern] no projection — dim={self.dim}")
+            return out
+
+        from sklearn.decomposition import PCA
+
+        out = np.zeros((len(graphs), self.dim), dtype=np.float32)
+        valid_raw = raw[valid_idx]
+
+        if not self._fitted:
+            n_comp = min(self.dim, valid_raw.shape[0] - 1, valid_raw.shape[1])
+            self._pca = PCA(n_components=n_comp, random_state=42)
+            self._pca.fit(valid_raw)
+            self._fitted = True
+            expl = self._pca.explained_variance_ratio_.sum()
+            print(
+                f"    [codebert_flow_pattern] PCA fitted — {n_comp} comp, "
+                f"explained variance: {expl:.2%}"
+            )
+
+        projected = self._pca.transform(raw).astype(np.float32)
+        if projected.shape[1] < self.dim:
+            padded = np.zeros((projected.shape[0], self.dim), dtype=np.float32)
+            padded[:, : projected.shape[1]] = projected
+            projected = padded
+        projected = self._norm_mat(projected)
+
+        for i in range(len(graphs)):
+            if i in set(valid_idx):
+                out[i] = projected[i]
+        return out
