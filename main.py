@@ -1,8 +1,10 @@
 import argparse
+import json
 from enum import Enum, auto
 from functools import partial
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
+from typing import Any
 
 import yaml
 from tqdm import tqdm
@@ -13,6 +15,17 @@ from src.data.cvefixes import CVEFixesDataset
 from src.data.pipeline import run_joern_export, write_c_file
 from src.embeddings import build_embedders
 from src.rag.faiss_index import FAISSIndex
+from src.schema_config import (
+    AppConfig,
+    DatasetBatch,
+    EmbeddedBatch,
+    EmbeddingConfig,
+    GraphProcessingConfig,
+    IndexUpdateResult,
+    PathsConfig,
+    RetrievalResult,
+    VariantConfig,
+)
 
 DATASETS = {"autopatch": AutoPatchDataset, "cvefixes": CVEFixesDataset}
 
@@ -21,6 +34,103 @@ class JobStatus(Enum):
     OK = auto()
     SKIPPED = auto()
     FAILED = auto()
+
+
+def _validate_cfg(cfg: dict) -> None:
+    """Fail fast on missing top-level config sections used by main modes."""
+    required = ["data", "rag", "embeddings"]
+    missing = [k for k in required if k not in cfg]
+    if missing:
+        raise KeyError(f"Missing required config keys: {missing}")
+
+    if "joern" not in cfg and "paths" not in cfg:
+        raise KeyError("Missing joern/path configuration. Need cfg['joern'] or cfg['paths']")
+
+
+def _instantiate_app_config(cfg: dict) -> AppConfig:
+    """Instantiate typed AppConfig from current (legacy-compatible) YAML shape."""
+    paths_raw = cfg.get("paths", {})
+    joern_bin = paths_raw.get("joern_bin_dir") or cfg.get("joern", {}).get("bin_dir")
+    if not joern_bin:
+        raise KeyError("Missing Joern binary path. Set joern.bin_dir or paths.joern_bin_dir")
+
+    rag_cfg = cfg.get("rag", {})
+    index_path = rag_cfg.get("index_path", "indexes/faiss.index")
+    inferred_index_dir = str(Path(index_path).parent) if index_path else "indexes"
+
+    paths_cfg = PathsConfig(
+        joern_bin_dir=Path(joern_bin),
+        output_dir=Path(paths_raw.get("output_dir", "experiments/output")),
+        models_cache_dir=Path(paths_raw.get("models_cache_dir", "models")),
+        index_dir=Path(paths_raw.get("index_dir", inferred_index_dir)),
+    )
+
+    graph_raw = cfg.get("graph_processing", {})
+    graph_cfg = GraphProcessingConfig(
+        slice_depth=graph_raw.get("slice_depth", 3),
+        change_weight=graph_raw.get(
+            "change_weight",
+            {
+                "function_added": 1.0,
+                "function_deleted": 1.0,
+                "parameter_changed": 0.5,
+            },
+        ),
+        noise_types=graph_raw.get("noise_types", ["add_noise", "drop_noise"]),
+    )
+
+    emb_root = cfg.get("embeddings", {})
+    active_embedders = emb_root.get("active", [])
+    if not active_embedders and cfg.get("rag", {}).get("embedding_variant"):
+        active_embedders = [cfg["rag"]["embedding_variant"]]
+
+    embeddings_cfg: dict[str, EmbeddingConfig] = {}
+    for name in active_embedders:
+        sub = emb_root.get(name, {}) if isinstance(emb_root.get(name, {}), dict) else {}
+        model_checkpoint = sub.get("checkpoint_path") or sub.get("model_checkpoint")
+        model_name = sub.get("model_name") or sub.get("model_path") or name
+
+        embeddings_cfg[name] = EmbeddingConfig(
+            variant=name,
+            dim=emb_root.get("dim", 128),
+            model_name=str(model_name),
+            model_checkpoint=Path(model_checkpoint) if model_checkpoint else None,
+            wl_iterations=emb_root.get("wl", {}).get("num_iterations", 4),
+            wl_color_space=emb_root.get("wl", {}).get("color_space", 8192),
+            hidden_dim=sub.get("hidden_dim", emb_root.get("wl", {}).get("hidden_dim", 64)),
+        )
+
+    variants_cfg: list[VariantConfig] = []
+    for raw in cfg.get("variants", []):
+        if not isinstance(raw, dict):
+            continue
+        name = raw.get("name")
+        model = raw.get("model")
+        if not name or not model:
+            continue
+        variants_cfg.append(
+            VariantConfig(
+                name=name,
+                model=model,
+                llm_output_file=raw.get("llm_output_file", f"{name}_response.json"),
+                patch_file=raw.get("patch_file", f"{name}_patch.py"),
+            )
+        )
+
+    return AppConfig(
+        paths=paths_cfg,
+        graph=graph_cfg,
+        embeddings=embeddings_cfg,
+        variants=variants_cfg,
+        rag=cfg.get("rag", {}),
+        data=cfg.get("data", {}),
+    )
+
+
+def _write_json(path: Path, payload: Any) -> None:
+    """Write JSON with safe fallback for non-serializable objects."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, default=str))
 
 
 def apply_split_overrides(cfg: dict, args) -> None:
@@ -59,8 +169,12 @@ def _process_job(job: ExportJob, joern_bin_dir: str) -> tuple[JobStatus, str]:
     return JobStatus.FAILED, f"FAIL {label}"
 
 
-def run_export(cfg: str, dataset_name: str | None = None):
-    joern_bin_dir = cfg["joern"]["bin_dir"]
+def run_export(cfg: dict, dataset_name: str | None = None):
+    joern_bin_dir = str(
+        cfg.get("paths", {}).get("joern_bin_dir", cfg.get("joern", {}).get("bin_dir", ""))
+    )
+    if not joern_bin_dir:
+        raise KeyError("Joern path not found. Set paths.joern_bin_dir or joern.bin_dir")
     workers = cfg["joern"].get("workers", max(1, cpu_count() - 1))
     active = [dataset_name] if dataset_name else list(DATASETS.keys())
     active = [n for n in active if cfg["data"].get(n)]
@@ -97,8 +211,14 @@ def run_pipeline(cfg):
     rag_cfg = cfg["rag"]
     variant = rag_cfg["embedding_variant"]
     embedders = build_embedders(cfg)
-    
-    indexer = next(e for e in embedders if e.name == variant)
+
+    indexer = next((e for e in embedders if e.name == variant), None)
+    if indexer is None:
+        available = [e.name for e in embedders]
+        raise ValueError(
+            f"Embedding variant '{variant}' not found. Available embedders: {available}"
+        )
+
     index = FAISSIndex(
         dim=cfg["embeddings"]["dim"],
         index_path=rag_cfg["index_path"],
@@ -106,6 +226,8 @@ def run_pipeline(cfg):
     )
 
     total = 0
+    contract_batches: list[DatasetBatch] = []
+    contract_embedded: list[EmbeddedBatch] = []
 
     for ds_name in active_datasets:
         ds_cfg = cfg["data"][ds_name]
@@ -113,18 +235,74 @@ def run_pipeline(cfg):
         dataset = DATASETS[ds_name](ds_cfg)
         print(f"-----------{dataset.name()}-----------")
 
+        ds_total = 0
+
         for pair in dataset.stream():
             try:
                 emb = indexer.embed_one(pair.G_vuln)
                 index.add(pair, emb, variant)  # index to RAG
                 total += 1
+                ds_total += 1
                 if total % 5 == 0:
                     print(f" indexed {total} pairs.. ")
             except Exception as e:
                 print(f"   skip {pair.cve_id} / {pair.func_name}:  {e}")
 
+        contract_batches.append(
+            DatasetBatch(
+                batch_id=f"{ds_name}-index",
+                run_id="index",
+                pairs=[],
+                metadata={
+                    "dataset": ds_name,
+                    "streaming": True,
+                    "indexed_count": ds_total,
+                },
+            )
+        )
+        contract_embedded.append(
+            EmbeddedBatch(
+                batch_id=f"{ds_name}-embed",
+                run_id="index",
+                embedder_name=variant,
+                embedder_version=None,
+                dim=cfg["embeddings"]["dim"],
+                pairs=[],
+                embeddings=[],
+                metadata={
+                    "dataset": ds_name,
+                    "streaming": True,
+                    "embedded_count": ds_total,
+                },
+            )
+        )
+
     index.save()
+
+    index_contract = IndexUpdateResult(
+        run_id="index",
+        index_backend="faiss",
+        index_path=Path(rag_cfg["index_path"]),
+        index_version=variant,
+        added_count=total,
+        total_count=total,
+        metadata_path=Path(rag_cfg["metadata_path"]),
+        metadata={"active_datasets": active_datasets},
+    )
+
+    contracts_path = Path(rag_cfg["metadata_path"]).with_name(
+        f"{Path(rag_cfg['metadata_path']).stem}_contracts.json"
+    )
+    _write_json(
+        contracts_path,
+        {
+            "dataset_batches": [b.__dict__ for b in contract_batches],
+            "embedded_batches": [b.__dict__ for b in contract_embedded],
+            "index_update": index_contract.__dict__,
+        },
+    )
     print(f"\nDone. \nTotal indexed: {total}")
+    print(f"Contracts snapshot: {contracts_path}")
 
 
 def run_query(cfg: dict, cve_id: str):
@@ -138,8 +316,27 @@ def run_query(cfg: dict, cve_id: str):
     )
     index.load()
     retriever = Retriever(index, top_k=rag_cfg["top_k"])
-    for r in retriever.query_by_cve(cve_id):
+    raw_results = retriever.query_by_cve(cve_id)
+    for r in raw_results:
         print(r)
+
+    retrieval_contract = RetrievalResult(
+        run_id="query",
+        query_id=cve_id,
+        query_cve=cve_id,
+        retriever_name="metadata_lookup",
+        top_k=len(raw_results),
+        hit_ids=[str(r.get("_idx", i)) for i, r in enumerate(raw_results)],
+        hit_scores=[float(r.get("score", 1.0)) for r in raw_results],
+        hit_metadata=raw_results,
+        metadata={"result_count": len(raw_results)},
+    )
+
+    query_contract_path = Path(rag_cfg["metadata_path"]).with_name(
+        f"query_{cve_id}_retrieval_contract.json"
+    )
+    _write_json(query_contract_path, retrieval_contract.__dict__)
+    print(f"Retrieval contract: {query_contract_path}")
 
 
 def run_batch_query(cfg: dict, args):
@@ -285,6 +482,19 @@ if __name__ == "__main__":
     args = parser.parse_args()
     with open(args.config) as f:
         cfg = yaml.safe_load(f)
+
+    app_cfg = _instantiate_app_config(cfg)
+    cfg.setdefault("paths", {})
+    cfg["paths"].update(
+        {
+            "joern_bin_dir": str(app_cfg.paths.joern_bin_dir),
+            "output_dir": str(app_cfg.paths.output_dir),
+            "models_cache_dir": str(app_cfg.paths.models_cache_dir),
+            "index_dir": str(app_cfg.paths.index_dir),
+        }
+    )
+
+    _validate_cfg(cfg)
 
     # Apply split overrides for modes that use them
     if args.mode in ("query", "experiment", "batch", "full"):
