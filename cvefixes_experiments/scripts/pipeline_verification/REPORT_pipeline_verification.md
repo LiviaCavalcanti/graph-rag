@@ -115,6 +115,7 @@ This design ensures the retrieval task is **feasible** — we are testing whethe
 |----------|-----------|-------------|
 | `gin` | structure-based | GIN over graph topology (node types, edge types) |
 | `combined` | hybrid | Concatenation of GIN structural + CodeBERT semantic |
+| `codebert_seq` | semantic | CodeBERT encoding of changed code sequences from graph diff |
 | `codebert_pattern` | semantic | CodeBERT encoding of vulnerability-pattern tokens |
 
 ---
@@ -168,6 +169,7 @@ CWE_hit@k ≥ CWE_recall@k  (binary hit ≥ fractional recall)
 |----------|-----------|-----------|------------|-----|-----------|-----------|------------|------------|
 | **gin** | 0.222 | 0.444 | 0.556 | 0.315 | 0.259 | 0.778 | 0.852 | 0.202 |
 | **combined** | 0.074 | 0.444 | 0.519 | 0.223 | 0.111 | 0.778 | 0.889 | 0.189 |
+| **codebert_seq** | 0.481 | 0.667 | 0.704 | 0.555 | 0.556 | 0.926 | 1.000 | 0.264 |
 | **codebert_pattern** | **0.444** | **0.667** | **0.778** | **0.549** | **0.519** | **0.889** | **0.926** | **0.276** |
 
 ### 5.2 Per-CWE Breakdown: CWE Hit@k
@@ -196,6 +198,18 @@ CWE_hit@k ≥ CWE_recall@k  (binary hit ≥ fractional recall)
 | CWE-476 | 5 | 0.400 | 0.800 | 0.800 |
 | CWE-787 | 4 | 0.000 | 0.500 | 0.750 |
 
+#### CodeBERT Seq
+
+| CWE | n | hit@1 | hit@5 | hit@10 |
+|-----|---|-------|-------|--------|
+| CWE-190 | 4 | 0.500 | 1.000 | 1.000 |
+| CWE-20 | 4 | 0.750 | 1.000 | 1.000 |
+| CWE-362 | 3 | 0.333 | 0.667 | 1.000 |
+| CWE-400 | 3 | 1.000 | 1.000 | 1.000 |
+| CWE-416 | 4 | 0.500 | 1.000 | 1.000 |
+| CWE-476 | 5 | 0.400 | 1.000 | 1.000 |
+| CWE-787 | 4 | 0.500 | 0.750 | 1.000 |
+
 #### CodeBERT Pattern
 
 | CWE | n | hit@1 | hit@5 | hit@10 |
@@ -210,15 +224,15 @@ CWE_hit@k ≥ CWE_recall@k  (binary hit ≥ fractional recall)
 
 ### 5.3 Per-CWE CWE Recall (Fractional)
 
-| CWE | Support | gin | combined | codebert_pattern |
-|-----|---------|-----|----------|------------------|
-| CWE-190 | 12 | 0.200 | 0.200 | 0.275 |
-| CWE-20 | 16 | 0.200 | 0.150 | 0.125 |
-| CWE-362 | 17 | 0.200 | 0.100 | 0.300 |
-| CWE-400 | 17 | 0.267 | 0.300 | 0.600 |
-| CWE-416 | 16 | 0.200 | 0.200 | 0.275 |
-| CWE-476 | 15 | 0.220 | 0.300 | 0.180 |
-| CWE-787 | 16 | 0.125 | 0.075 | 0.175 |
+| CWE | Support | gin | combined | codebert_seq | codebert_pattern |
+|-----|---------|-----|----------|--------------|------------------|
+| CWE-190 | 12 | 0.200 | 0.200 | 0.325 | 0.275 |
+| CWE-20 | 16 | 0.200 | 0.150 | 0.100 | 0.125 |
+| CWE-362 | 17 | 0.200 | 0.100 | 0.267 | 0.300 |
+| CWE-400 | 17 | 0.267 | 0.300 | 0.433 | 0.600 |
+| CWE-416 | 16 | 0.200 | 0.200 | 0.200 | 0.275 |
+| CWE-476 | 15 | 0.220 | 0.300 | 0.220 | 0.180 |
+| CWE-787 | 16 | 0.125 | 0.075 | 0.300 | 0.175 |
 
 ---
 
@@ -228,6 +242,7 @@ CWE_hit@k ≥ CWE_recall@k  (binary hit ≥ fractional recall)
 |----------|-----------|-------------------|------------------|---------|---------|---------------|
 | gin | 2.41s | 0.993 | 0.005 | 0.950 | 1.000 | 8.0 |
 | combined | 28.93s | 0.049 | 0.500 | -0.732 | 1.000 | 4.3 |
+| codebert_seq | 9.46s | -0.003 | 0.233 | -0.595 | 0.984 | 16.1 |
 | codebert_pattern | 16.81s | -0.005 | 0.226 | -0.569 | 0.988 | 16.8 |
 
 **Key observations:**
