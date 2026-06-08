@@ -1,12 +1,12 @@
 data:
-  active: [autopatch]
+  active: [cvefixes]
   autopatch:
     root: CVE-list
     graphml_root: graphml_augmented
     include_variants: true
   cvefixes:
     db_path: data/cvefixes/CVEfixes.db
-    graphml_root: graphml_cvefixes
+    graphml_root: graphml_cvefixes_fixed
     languages: [C, C++]
     level: method
     max_lines: 500
@@ -14,7 +14,7 @@ data:
 joern:
   workers: 8
   timeout_s: 120
-  bin_dir: /bin/joern/joern-cli
+  bin_dir: /home/z0050s2b/bin/joern/joern-cli
 graph:
   node_types:
     - METHOD
@@ -38,7 +38,7 @@ graph:
     - ARGUMENT
     - RECEIVER
 embeddings:
-  active: [gin, combined]
+  active: [gin, combined, wl]
   dim: 128
   projection: pca              # pca | none
   l2_normalize: true            # true | false
@@ -58,7 +58,7 @@ embeddings:
   codebert:
     model_path: /home/z0050s2b/code/graph-rag/models/codebert-base/
   gin_codebert:
-    hidden_dim: 128
+    hidden_dim: 25
     num_layers: 3
     dropout: 0.3
     device: cpu

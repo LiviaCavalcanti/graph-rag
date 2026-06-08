@@ -5,16 +5,59 @@ Prior work has shown that graph-based approaches can be effective for vulnerabil
 Our proposal: a retrieval-augmented approach that leverages a knowledge base of known vulnerability patterns
     to improve precision when ranking candidate sinks, even with limited training data.
 
-Phase 1 — Feasibility (AutoPatch dataset):
+Phase 1 — Feasibility (AutoPatch dataset, n=225):
     used AutoPatch as a controlled dataset to validate the concept and define baselines
-    baselines: structure-only embeddings (NetLSD + WL + GIN) vs. CodeBERT
+    baselines: structure-only embeddings (NetLSD + WL + GIN combined) vs. CodeBERT
     result: comparable retrieval performance between CodeBERT and combined structural embeddings
         → structural graph representations capture vulnerability patterns as effectively as pretrained code models
 
-Phase 2 — Generalization (CVEfixes dataset):
+    \begin{center}
+    \begin{tabular}{|l|r|r|r|r|}
+    \hline
+    \textbf{Embedder} & \textbf{Hit@1} & \textbf{Hit@5} & \textbf{MRR} & \textbf{CWE Recall} \\
+    \hline
+    \hline
+    \multicolumn{5}{|c|}{\textit{Structure-Only Embeddings}} \\
+    \hline
+    Combined (NetLSD+WL+GIN) & 0.8904 & 0.9589 & 0.9162 & 0.4978 \\
+    GIN & 0.7260 & 0.8767 & 0.7879 & 0.4427 \\
+    WL & 0.6986 & 0.7945 & 0.7363 & 0.4386 \\
+    NetLSD & 0.3288 & 0.5479 & 0.4172 & 0.2096 \\
+    \hline
+    \multicolumn{5}{|c|}{\textit{CodeBERT (Baseline)}} \\
+    \hline
+    CodeBERT (sequence) & 0.7534 & 0.8630 & 0.7927 & 0.4121 \\
+    CodeBERT (pattern) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\
+    \hline
+    \end{tabular}
+    \end{center}
+
+    Key finding: Combined structural embeddings (0.8904 hit@1) outperform both individual structure embeddings and CodeBERT (0.7534 hit@1).
+
+Phase 2 — Generalization (CVEfixes dataset, n_index=74, n_query=20, depth-1 slicing):
     question: does the approach generalize to real-world, more complex vulnerabilities?
-    initial results on CVEfixes are weaker — likely due to greater code diversity and patch complexity
+    initial results on CVEfixes are substantially weaker — likely due to greater code diversity, patch complexity, and insufficient context in shallow slices
     deeper analysis needed to isolate failure modes (embedding collapse, CWE coverage gaps, etc.)
+
+    \begin{center}
+    \begin{tabular}{|l|r|r|r|r|}
+    \hline
+    \textbf{Embedder} & \textbf{Hit@1} & \textbf{Hit@5} & \textbf{MRR} & \textbf{CWE Recall} \\
+    \hline
+    \hline
+    \multicolumn{5}{|c|}{\textit{Structure-Only Embeddings}} \\
+    \hline
+    Combined (NetLSD+WL+GIN) & 0.1176 & 0.1176 & 0.1176 & 0.2367 \\
+    GIN & 0.0000 & 0.0588 & 0.0196 & 0.2383 \\
+    \hline
+    \multicolumn{5}{|c|}{\textit{CodeBERT (Baseline)}} \\
+    \hline
+    CodeBERT (pattern) & 0.1176 & 0.1176 & 0.1176 & 0.2367 \\
+    \hline
+    \end{tabular}
+    \end{center}
+
+    The sharp drop (0.8904 → 0.1176 hit@1) reveals that shallow slices lose critical context. CVEfixes requires better handling of inter-procedural flow and larger context windows.
 
 Phase 3 — Candidate sink ranking (current direction):
     leverage Joern static analysis to identify candidate sinks in CVEfixes code

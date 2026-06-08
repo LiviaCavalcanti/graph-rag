@@ -882,19 +882,6 @@ The result is the vulnerability-relevant **program slice** — the subgraph of \
   may preserve vulnerability patterns more faithfully,
   making the fix-list instructions more applicable.
 
-  \paragraph{Confidence as a vulnerability detector.}
-  The confidence evaluation assesses whether the retriever's
-  top-1 similarity score can predict correct retrieval.
-  At the random baseline threshold (score $> 0.946$),
-  precision is 70.4\% at 100\% recall ($n{=}71$).
-  At the median threshold (score $> 0.98$), precision rises
-  to 86.1\% with 62.0\% recall ($n{=}36$).
-  At the stricter p75 threshold (score $> 0.989$), precision
-  reaches 88.9\% but recall drops to 32.0\% ($n{=}18$),
-  indicating that a conservative confidence threshold can
-  flag high-confidence vulnerability matches with few
-  false positives at the cost of missing many true positives.
-
   \paragraph{Implications.}
   The substantial agent gap has two practical implications:
   (1)~\emph{retrieval quality matters}---the 17.8~pp retrieval
@@ -1178,6 +1165,218 @@ The result is the vulnerability-relevant **program slice** — the subgraph of \
   The fusion strategy improves retrieval by $+8.2$~pp over the
   strongest individual component, confirming the value of
   multi-view structural representations.
+
+
+  \subsection{Prompt Variation Experiment}
+  \label{sec:prompt-variation}
+
+  \subsubsection{Overview}
+
+  The experiment tests \textbf{4~system-prompt variants} on the same
+  41-query subset (oracle retrieval, GPT-4o, temperature\,=\,0.2) to
+  measure how prompt design affects patch semantic correctness.
+  All variants share the same \textbf{one-shot patching-by-analogy}
+  structure (4-message conversation) but differ in CoT depth,
+  verification steps, and whether CPG graph data is injected.
+
+  \subsubsection{Shared Architecture}
+
+  Every variant uses the same 4-message chat structure defined in
+  \texttt{patcher.py}:
+
+  \begin{enumerate}[nosep]
+    \item \textbf{System message} --- role definition + fix-list +
+      CoT instructions.
+    \item \textbf{User example} --- the retrieved CVE's
+      variable/function mappings, root cause, and code
+      (\texttt{user\_example.txt}).
+    \item \textbf{Assistant example} --- a ``gold'' one-shot answer
+      demonstrating the expected CoT + patched code format.
+    \item \textbf{User target} --- the actual vulnerable function to
+      patch, with its mappings and root cause.
+  \end{enumerate}
+
+  The \textbf{fix-list} in the system message is populated from the
+  \texttt{fix\_list} field of the retrieved CVE's
+  \texttt{db\_entry.json}.
+  For example, when the retrieved example is CVE-2024-12382
+  (Use After Free), the system message contains:
+
+  \begin{quote}\small\ttfamily
+  [Fix-List for CVE-2024-12382]\\
+  Verify that variable model\_loaded\_callbacks\_ is not modified
+  during iteration in function NotifyModelLoaded. Ensure that
+  function NotifyModelLoaded uses a local copy of
+  model\_loaded\_callbacks\_ for iteration to prevent
+  use-after-free. Check if function NotifyModelLoaded safely
+  handles variable loaded\_ after processing callbacks.
+  \end{quote}
+
+  \noindent For CVE-2024-12381 (Type Confusion):
+
+  \begin{quote}\small\ttfamily
+  [Fix-List for CVE-2024-12381]\\
+  Verify that variable type1 and type2 have the same kind before
+  proceeding with further checks. Ensure that the has\_index
+  function is consistently applied to both type1 and type2 to
+  check for index presence. Check if function EqualTypeIndex is
+  safely handling variable indexed by ensuring both types have
+  the same index status.
+  \end{quote}
+
+  \noindent Each fix-list entry describes verification steps using
+  the anonymised variable and function names from the
+  \texttt{[Variable Mapping]} and \texttt{[Function Mapping]}
+  sections, providing the LLM with a structured remediation
+  checklist grounded in the example CVE's actual patch.
+
+  The LLM must output
+  \texttt{[CoT START]\ldots[CoT END]} and
+  \texttt{[Patched Code START]\ldots[Patched Code END]} markers,
+  which are parsed by \texttt{AutoPatchPatcher.parse()}.
+
+  \subsubsection{The Four Variants}
+
+  \paragraph{1.\ \texttt{default} --- Baseline 3-step CoT.}
+  \begin{itemize}[nosep]
+    \item \textbf{System prompt} (\texttt{system.txt}):
+      ``Expert software security engineer.'' Three steps:
+      (i)~\emph{Describe} how to patch based on fix-list + mappings;
+      (ii)~\emph{Generate} patched code;
+      (iii)~\emph{Output} results in structured format.
+    \item \textbf{User target} (\texttt{user\_target.txt}): provides
+      supplementary code, variable/function mappings, root cause, and
+      target code. \emph{No graph context.}
+    \item \textbf{Assistant example} (\texttt{assistant.txt}): shows
+      3-step CoT + patched code.
+  \end{itemize}
+
+  \paragraph{2.\ \texttt{graph} --- 6-step CoT + CPG analysis.}
+  \begin{itemize}[nosep]
+    \item \textbf{System prompt} (\texttt{graph\_system.txt}):
+      ``Expert specialising in vulnerability patching \emph{with
+      program analysis}.'' Adds 3~CPG-analysis steps before the fix:
+      \begin{enumerate}[nosep, label=(\roman*)]
+        \item \textbf{Analyse [Vulnerability Diff]} --- identify
+          removed/modified lines and patch insertion points from the
+          CPG diff (lines categorised as
+          \textsc{Removed} $>$ \textsc{Fix\_Adjacent} $>$
+          \textsc{Edge\_Changed} $>$ \textsc{Context} with AST node
+          types).
+        \item \textbf{Trace [Data Flow]} --- follow
+          \texttt{REACHING\_DEF} edges to understand how tainted data
+          propagates.
+        \item \textbf{Check [Control Dependencies]} --- examine
+          \texttt{CDG} edges for missing guards.
+      \end{enumerate}
+      Steps 4--6: describe the patch (combining CPG analysis +
+      fix-list), generate patched code, output results.
+    \item \textbf{User target} (\texttt{graph\_user\_target.txt}):
+      same as \texttt{default} \emph{plus} a \texttt{[Graph Analysis]}
+      section containing the serialised CPG context from
+      \texttt{serialize\_graph\_context()} --- which outputs
+      \texttt{[Patch Diff]}, \texttt{[Data Flow]}, and
+      \texttt{[Control Dependencies]} sections extracted from the
+      vulnerability's $G_{\mathrm{vuln}}$ multi-digraph.
+    \item \textbf{Assistant example}: same as \texttt{default}
+      (no graph-aware example).
+  \end{itemize}
+
+  \paragraph{3.\ \texttt{graph\_v2} --- Verification checklist +
+  patch diff as context.}
+  \begin{itemize}[nosep]
+    \item \textbf{System prompt} (\texttt{graph\_system\_v2.txt}):
+      same expert role but with a \textbf{4-step} process:
+      \begin{enumerate}[nosep, label=(\roman*)]
+        \item \textbf{Describe} how to patch based on fix-list,
+          mappings, \emph{and} \texttt{[Patch Diff]}.
+        \item \textbf{Verify} the patch plan with 4~sub-checks:
+          (a)~does it address the \texttt{[Root Cause]}?
+          (b)~\emph{API compliance}: correct parameter lifetimes,
+            ownership semantics, return-value handling;
+          (c)~\emph{Resource ownership}: every resource
+            (memory, locks, refs, handles) acquired/held/released
+            by exactly one owner; no dangling refs, double-frees,
+            or leaks;
+          (d)~if any check fails, \emph{revise the plan} before
+            proceeding.
+        \item \textbf{Generate} patched code from verified plan.
+        \item \textbf{Output} results.
+      \end{enumerate}
+    \item \textbf{User target} (\texttt{graph\_user\_target\_v2.txt}):
+      includes \texttt{[Patch Diff]} instead of full
+      \texttt{[Graph Analysis]} --- the graph context field contains
+      only the diff portion, not data-flow/control-dependency sections.
+    \item \textbf{Assistant example} (\texttt{assistant\_v2.txt}):
+      explicitly demonstrates the verification step: ``Root cause
+      is: \{root\_cause\}. My plan addresses this because\ldots\
+      API compliance: all function calls use parameters with correct
+      lifetimes\ldots\ Resource ownership: no dangling
+      references\ldots\ No revision needed.''
+  \end{itemize}
+
+  \paragraph{4.\ \texttt{default\_v2} --- 3-step CoT + root-cause
+  confirmation.}
+  \begin{itemize}[nosep]
+    \item \textbf{System prompt} (\texttt{system\_v2.txt}): identical
+      to \texttt{default} except Step~1 adds one sentence:
+      \emph{``Confirm your plan addresses the [Root Cause] and covers
+      all instances of the bug pattern in the function.''}
+    \item \textbf{User target}: same as \texttt{default}
+      (no graph context).
+    \item \textbf{Assistant example}: same as \texttt{default}
+      (no verification demo).
+  \end{itemize}
+
+  \subsubsection{Graph Context Generation}
+
+  For \texttt{graph} and \texttt{graph\_v2}, the CPG context comes
+  from \texttt{serialize\_graph\_context()} in
+  \texttt{graph\_context.py}.
+  It takes the vulnerability's $G_{\mathrm{vuln}}$ NetworkX
+  multi-digraph and produces three sections:
+  \begin{itemize}[nosep]
+    \item \textbf{Patch Diff}: changed lines grouped by importance
+      tier (\textsc{Removed}, \textsc{Fix\_Adjacent},
+      \textsc{Edge\_Changed}, \textsc{Context}) with line numbers,
+      code text, and AST node types.
+    \item \textbf{Data Flow}: \texttt{REACHING\_DEF} edges showing
+      variable propagation.
+    \item \textbf{Control Dependencies}: \texttt{CDG} edges showing
+      guard conditions.
+  \end{itemize}
+  \texttt{graph} uses all three sections; \texttt{graph\_v2} uses
+  only the Patch Diff.
+
+  \subsubsection{Key Differences Summary}
+
+  \begin{table}[ht]
+  \centering
+  \caption{Comparison of the four prompt variants.}
+  \label{tab:prompt-variants}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{l cccc}
+    \toprule
+    \textbf{Aspect}
+      & \texttt{default} & \texttt{graph}
+      & \texttt{graph\_v2} & \texttt{default\_v2} \\
+    \midrule
+    CoT steps & 3 & 6 & 4 & 3 \\
+    CPG data in prompt & No & Full & Patch diff only & No \\
+    Verification checklist & No & No & Yes & No \\
+    Root-cause confirmation & No & No & Yes & Yes \\
+    Asst.\ example shows verification & No & No & Yes & No \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  The main finding: \texttt{graph\_v2}'s structured verification
+  checklist (41.5\% fix rate) outperforms both raw graph injection
+  (\texttt{graph}, 19.5\%) and simple root-cause confirmation
+  (\texttt{default\_v2}, 26.8\%), while text-similarity metrics
+  remain nearly identical across all four variants.
 
   % ─────────────────────────────────────────────────────────────────
   \subsection{Trained GIN-Struct: Triplet Learning on Structural Features}
@@ -1551,6 +1750,408 @@ The result is the vulnerability-relevant **program slice** — the subgraph of \
   \end{enumerate}
 
   % ─────────────────────────────────────────────────────────────────
+  \section{CVEFixes: Cross-Vulnerability Family Clustering}
+  \label{sec:cvefixes}
+
+  All preceding experiments used the \textbf{AutoPatch} dataset
+  (75~CVEs, same-CVE retrieval).
+  This section evaluates a fundamentally different question on the
+  \textbf{CVEFixes} dataset ($\sim$10\,000 method-level vulnerability
+  fixes): \emph{can unsupervised embeddings of vulnerability code
+  discriminate between vulnerability families (CWE classes) without
+  labelled training?}
+
+  If vulnerability families have distinct structural or textual
+  signatures, an unsupervised embedding should produce clusters
+  aligned with the ground-truth family labels---enabling
+  CWE-aware retrieval without supervised fine-tuning.
+
+  \subsection{Experimental Setup}
+
+  \subsubsection{Dataset and Families}
+
+  From CVEFixes, we select functions belonging to 5~vulnerability
+  families (30~samples each, 150~candidates with fallbacks for
+  Joern parse failures, yielding $\sim$94 valid graphs):
+
+  \begin{center}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Family} & \textbf{Representative CWEs} \\
+    \midrule
+    memory\_corruption & CWE-119, CWE-120, CWE-787 \\
+    use\_after\_free   & CWE-416 \\
+    integer\_issues    & CWE-190, CWE-191 \\
+    null\_ptr\_deref   & CWE-476 \\
+    race\_condition    & CWE-362, CWE-667 \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  Each function is exported via Joern, producing a full CPG
+  ($G_{\mathrm{before}}$) which is then sliced according to
+  different strategies.
+
+  \subsubsection{Slicing Strategies}
+
+  Three graph slicing strategies are compared, each producing a
+  subgraph that is then embedded and clustered:
+
+  \begin{enumerate}[nosep]
+    \item \textbf{Token-guided:} entry nodes are those whose
+      \texttt{CODE} contains discriminative tokens identified by
+      TF-IDF/SVM analysis of each vulnerability family (e.g.\
+      \texttt{free}, \texttt{kfree} for use\_after\_free;
+      \texttt{lock}, \texttt{mutex} for race\_condition;
+      \texttt{NULL}, \texttt{null} for null\_ptr\_deref).
+      2-hop BFS expansion along flow edges from entry nodes.
+    \item \textbf{Diff-based:} entry nodes are changed nodes
+      (diff\_weight $> 0.3$) identified by semantic graph diff
+      between pre-patch and post-patch CPGs. 2-hop expansion.
+    \item \textbf{Random:} entry nodes are randomly selected
+      (size-matched to token-guided). Controls for whether any
+      subgraph of similar size would produce similar clustering.
+  \end{enumerate}
+
+  \subsubsection{Embedders}
+
+  Seven embedders are evaluated:
+
+  \begin{itemize}[nosep]
+    \item \textbf{GIN} --- frozen random-weight 3-layer GIN
+      (structural baseline)
+    \item \textbf{GIN-enriched} --- GIN with 17-dimensional input
+      features (11 node types + 5 diff labels + 1 diff\_weight)
+    \item \textbf{Combined} --- NetLSD + WL + GIN, PCA to 128-d
+    \item \textbf{Combined-enriched} --- Combined with enriched
+      GIN component
+    \item \textbf{CodeBERT-pattern} --- 34-d structural vulnerability
+      patterns + 768-d CodeBERT on changed code, PCA to 128-d
+    \item \textbf{CodeBERT-flow} --- CodeBERT with graph-flow-ordered
+      code sequencing (BFS along REACHING\_DEF/CFG edges from seed
+      nodes, inspired by GraphFVD)
+    \item \textbf{CodeBERT-flow-pattern} --- 34-d patterns + flow-ordered
+      CodeBERT fusion
+  \end{itemize}
+
+  \subsubsection{Evaluation Protocol}
+
+  For each (strategy, embedder) pair:
+  \begin{enumerate}[nosep]
+    \item Embed all valid graph slices ($n \approx 94$).
+    \item K-means cluster with $k = 5$ (number of families).
+    \item Compute clustering metrics vs.\ ground-truth family labels:
+      ARI, Homogeneity, NMI.
+    \item Compute retrieval metrics: for each sample as query,
+      rank all others by cosine similarity and measure P@$k$, MAP,
+      MRR.
+  \end{enumerate}
+
+  \subsection{Iteration 1: Baseline Structural Embedders}
+
+  The initial experiment tested whether GIN and Combined embedders
+  on token-guided slices produce family-aligned clusters.
+
+  \begin{table}[ht]
+  \centering
+  \caption{Clustering results --- structural embedders.}
+  \label{tab:cvefixes-structural}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{ll rrr}
+    \toprule
+    \textbf{Strategy} & \textbf{Embedder}
+      & \textbf{ARI} & \textbf{Homog.} & \textbf{NMI} \\
+    \midrule
+    token\_guided & GIN             &  0.015 & 0.064 & 0.071 \\
+    token\_guided & Combined        & $-$0.001 & 0.057 & 0.057 \\
+    diff\_based   & GIN             &  0.029 & 0.108 & 0.111 \\
+    diff\_based   & Combined        &  0.026 & 0.091 & 0.096 \\
+    random        & GIN             & $-$0.011 & 0.073 & 0.080 \\
+    random        & Combined        & $-$0.003 & 0.087 & 0.091 \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \textbf{Finding:} All structural embedders produce near-zero ARI.
+  Graph topology alone does not discriminate between vulnerability
+  families. The frozen random GIN and Combined embedders capture
+  graph shape, but different vulnerability types do not have
+  sufficiently distinct topological signatures to cluster.
+
+  \subsection{Iteration 2: Enriched Structural Features}
+
+  Hypothesising that diff-awareness might help, we created enriched
+  variants (GIN-enriched, Combined-enriched) that encode
+  diff status and weight as node features (17-dim input: 11~node
+  types + 5~diff labels + 1~diff\_weight).
+
+  \begin{table}[ht]
+  \centering
+  \caption{Enriched vs.\ baseline structural embedders.}
+  \label{tab:cvefixes-enriched}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{ll rrr}
+    \toprule
+    \textbf{Strategy} & \textbf{Embedder}
+      & \textbf{ARI} & \textbf{Homog.} & \textbf{NMI} \\
+    \midrule
+    token\_guided & GIN             &  0.015 & 0.064 & 0.071 \\
+    token\_guided & GIN-enriched    & $-$0.013 & 0.037 & 0.046 \\
+    token\_guided & Combined        & $-$0.001 & 0.057 & 0.057 \\
+    token\_guided & Combined-enriched & $-$0.001 & 0.057 & 0.057 \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \textbf{Finding:} Enriched variants perform \emph{worse} than
+  baselines. Untrained random-weight GNNs cannot leverage additional
+  features---they only add noise dimensions to the projection.
+  The extra features would require supervised training (as in
+  GIN-Struct, Section~\ref{sec:gin-struct}) to be useful.
+
+  \subsection{Iteration 3: CodeBERT-Pattern (Semantic + Structural Fusion)}
+
+  Since topology is insufficient, we tested CodeBERT-pattern which
+  fuses 34 hand-crafted vulnerability pattern features (data-flow
+  reachability, boundary edges, diff composition) with 768-d
+  CodeBERT representations of the changed code.
+
+  \begin{table}[ht]
+  \centering
+  \caption{CodeBERT-pattern clustering results.}
+  \label{tab:cvefixes-codebert}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{ll rrr}
+    \toprule
+    \textbf{Strategy} & \textbf{Embedder}
+      & \textbf{ARI} & \textbf{Homog.} & \textbf{NMI} \\
+    \midrule
+    token\_guided & codebert\_pattern & 0.068 & 0.154 & 0.154 \\
+    diff\_based   & codebert\_pattern & 0.017 & 0.099 & 0.100 \\
+    random        & codebert\_pattern & 0.019 & 0.113 & 0.125 \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \textbf{Finding:} CodeBERT-pattern on token-guided slices achieves
+  the best clustering (ARI\,=\,0.068, NMI\,=\,0.154), confirming
+  that discriminative textual tokens combined with semantic
+  embedding provides marginally more signal than topology alone.
+  However, the improvement over random baseline (ARI\,$\approx$\,0)
+  is negligible in absolute terms.
+
+  \subsection{Iteration 4: Graph-Flow-Ordered Code Sequencing}
+
+  Inspired by GraphFVD~\cite{graphfvd2024}, we hypothesised that
+  reordering code fed to CodeBERT by graph traversal (following
+  REACHING\_DEF $\to$ CFG $\to$ CDG edges from seed nodes via BFS)
+  would allow the self-attention mechanism to implicitly capture
+  data-flow relationships between adjacent tokens.
+
+  \begin{table}[ht]
+  \centering
+  \caption{Flow-ordered vs.\ line-ordered CodeBERT sequencing.}
+  \label{tab:cvefixes-flow}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{ll rrr}
+    \toprule
+    \textbf{Strategy} & \textbf{Embedder}
+      & \textbf{ARI} & \textbf{Homog.} & \textbf{NMI} \\
+    \midrule
+    token\_guided & codebert\_pattern       & 0.068 & 0.154 & 0.154 \\
+    token\_guided & codebert\_flow          & 0.011 & 0.076 & 0.077 \\
+    token\_guided & codebert\_flow\_pattern & 0.050 & 0.115 & 0.116 \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \textbf{Finding:} Flow-ordered sequencing \emph{degrades}
+  performance. BFS traversal from seed nodes jumps across distant
+  parts of a function, producing scrambled text that breaks
+  CodeBERT's syntactic expectations (it was pre-trained on
+  line-ordered source code). Line-number ordering preserves the
+  syntactic locality that CodeBERT relies on for meaningful
+  representations.
+
+  \subsection{Retrieval Metrics}
+
+  To provide a more fine-grained evaluation beyond clustering, we
+  computed retrieval metrics for the best configuration
+  (token\_guided + codebert\_pattern). For each of the 94~samples,
+  all others are ranked by cosine similarity and we measure
+  whether same-family items are retrieved first.
+
+  \begin{table}[ht]
+  \centering
+  \caption{Retrieval metrics for codebert\_pattern on token-guided
+    slices ($n=94$, $k=5$ families). Random baseline:
+    P@1\,$\approx$\,0.20, MAP\,$\approx$\,0.20.}
+  \label{tab:cvefixes-retrieval}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{l c}
+    \toprule
+    \textbf{Metric} & \textbf{Value} \\
+    \midrule
+    P@1  & 0.330 \\
+    P@3  & 0.305 \\
+    P@5  & 0.262 \\
+    P@10 & 0.237 \\
+    MAP  & 0.257 \\
+    MRR  & 0.532 \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \begin{table}[ht]
+  \centering
+  \caption{Per-family retrieval breakdown.}
+  \label{tab:cvefixes-retrieval-family}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{l ccccc}
+    \toprule
+    \textbf{Family}
+      & \textbf{P@1} & \textbf{P@3} & \textbf{P@5}
+      & \textbf{MAP} & \textbf{MRR} \\
+    \midrule
+    integer\_issues     & 0.333 & 0.259 & 0.211 & 0.245 & 0.496 \\
+    memory\_corruption  & 0.353 & 0.275 & 0.200 & 0.235 & 0.544 \\
+    null\_ptr\_deref    & 0.150 & 0.250 & 0.250 & 0.243 & 0.424 \\
+    race\_condition     & 0.550 & 0.517 & 0.420 & 0.300 & 0.732 \\
+    use\_after\_free    & 0.263 & 0.211 & 0.211 & 0.255 & 0.460 \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \textbf{Finding:} Retrieval performance is only marginally above
+  the random baseline (P@1\,=\,0.330 vs.\ random
+  $\approx$\,0.20; MAP\,=\,0.257 vs.\ $\approx$\,0.20). The
+  $\sim$13~pp lift is not actionable for a retrieval system.
+  Race condition shows the strongest signal
+  (P@1\,=\,0.550, MRR\,=\,0.732), likely due to distinctive
+  lock/unlock patterns in the code text. Null pointer
+  dereference is the weakest (P@1\,=\,0.150), consistent with
+  earlier findings that null-check patterns are structurally
+  homogeneous across unrelated CVEs.
+
+  \subsection{Consolidated Results}
+
+  Table~\ref{tab:cvefixes-all} presents the complete
+  strategy$\times$embedder results grid.
+
+  \begin{table}[ht]
+  \centering
+  \caption{Full clustering results: all strategy$\times$embedder
+    combinations on CVEFixes ($n \approx 94$ per strategy).}
+  \label{tab:cvefixes-all}
+  \small
+  \renewcommand{\arraystretch}{1.1}
+  \setlength{\tabcolsep}{3.5pt}
+  \begin{tabular}{ll rrr r}
+    \toprule
+    \textbf{Strategy} & \textbf{Embedder}
+      & \textbf{ARI} & \textbf{Homog.} & \textbf{NMI}
+      & $n$ \\
+    \midrule
+    token\_guided & GIN                    &  0.015 & 0.064 & 0.071 & 94 \\
+    token\_guided & GIN-enriched           & $-$0.013 & 0.037 & 0.046 & 94 \\
+    token\_guided & Combined               & $-$0.001 & 0.057 & 0.057 & 94 \\
+    token\_guided & Combined-enriched      & $-$0.001 & 0.057 & 0.057 & 94 \\
+    token\_guided & codebert\_pattern      &  \textbf{0.068} & \textbf{0.154} & \textbf{0.154} & 94 \\
+    token\_guided & codebert\_flow         &  0.011 & 0.076 & 0.077 & 94 \\
+    token\_guided & codebert\_flow\_pattern &  0.050 & 0.115 & 0.116 & 94 \\
+    \midrule
+    diff\_based   & GIN                    &  0.029 & 0.108 & 0.111 & 92 \\
+    diff\_based   & GIN-enriched           &  0.038 & 0.090 & 0.093 & 92 \\
+    diff\_based   & Combined               &  0.026 & 0.091 & 0.096 & 92 \\
+    diff\_based   & Combined-enriched      &  0.035 & 0.101 & 0.109 & 92 \\
+    diff\_based   & codebert\_pattern      &  0.017 & 0.099 & 0.100 & 92 \\
+    diff\_based   & codebert\_flow         &  0.018 & 0.094 & 0.094 & 92 \\
+    diff\_based   & codebert\_flow\_pattern & $-$0.002 & 0.074 & 0.074 & 92 \\
+    \midrule
+    random        & GIN                    & $-$0.011 & 0.073 & 0.080 & 70 \\
+    random        & GIN-enriched           & $-$0.018 & 0.075 & 0.080 & 70 \\
+    random        & Combined               & $-$0.003 & 0.087 & 0.091 & 70 \\
+    random        & Combined-enriched      & $-$0.003 & 0.087 & 0.091 & 70 \\
+    random        & codebert\_pattern      &  0.019 & 0.113 & 0.125 & 70 \\
+    random        & codebert\_flow         &  0.024 & 0.114 & 0.124 & 70 \\
+    random        & codebert\_flow\_pattern &  0.019 & 0.107 & 0.118 & 70 \\
+    \bottomrule
+  \end{tabular}
+  \end{table}
+
+  \subsection{Conclusions}
+  \label{sec:cvefixes-conclusions}
+
+  \begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+
+    \item \textbf{Unsupervised CWE family clustering does not work.}
+      The best configuration (token\_guided + codebert\_pattern)
+      achieves ARI\,=\,0.068 and MAP\,=\,0.257---barely above
+      random chance ($\approx$\,0.20). No embedder, slicing strategy,
+      or code ordering produces meaningful family-level clusters
+      without supervised training.
+
+    \item \textbf{Vulnerability type is not the dominant signal.}
+      The embedding space is dominated by function-specific and
+      project-specific variation (code style, naming conventions,
+      function complexity) that overwhelms the subtle structural
+      differences between CWE families. Two null-pointer-dereference
+      fixes in different subsystems are more different from each other
+      than from a use-after-free fix in the same subsystem.
+
+    \item \textbf{Graph topology alone is uninformative for CWE
+      discrimination.}
+      All GIN/Combined variants (including enriched) produce
+      ARI\,$\leq$\,0.038. The topological ``shape'' of a
+      vulnerability slice does not encode which \emph{type} of
+      vulnerability it is. This contrasts sharply with the AutoPatch
+      results where structural embedders achieve 89\% hit@1---but
+      that task is same-CVE retrieval (matching identical structure),
+      not cross-CVE family discrimination.
+
+    \item \textbf{Token-guided slicing helps only with CodeBERT.}
+      The discriminative tokens (free, lock, null, etc.) provide
+      useful signal only when processed by a language model that
+      understands their semantics. For structural embedders, the
+      token-guided slice is no better than random.
+
+    \item \textbf{Graph-flow ordering is counterproductive for CodeBERT.}
+      Reordering code by BFS over flow edges destroys the syntactic
+      locality that CodeBERT expects from pre-training. The model
+      was trained on source code in line order; presenting scrambled
+      statement sequences degrades representation quality.
+
+    \item \textbf{Race conditions are the most retrievable family.}
+      P@1\,=\,0.550 and MRR\,=\,0.732 for race\_condition---likely
+      because lock/unlock API calls (\texttt{mutex\_lock},
+      \texttt{spin\_lock}) create distinctive textual patterns
+      recognisable by CodeBERT. This suggests that vocabulary-based
+      retrieval (keyword matching) may outperform embedding-based
+      retrieval for CWE discrimination.
+
+    \item \textbf{Implications for the RAG system.}
+      Cross-CWE retrieval requires either:
+      (a)~supervised contrastive learning with CWE labels
+      (as demonstrated effective for same-CVE retrieval in
+      Section~\ref{sec:gin-struct}), or
+      (b)~a fundamentally different approach such as
+      specification-level matching (comparing vulnerability
+      descriptions or fix-lists rather than raw code embeddings).
+      The current unsupervised embedding pipeline is effective for
+      same-CVE retrieval (89\% hit@1) but cannot generalise to
+      family-level discrimination.
+
+  \end{enumerate}
+
+  % ─────────────────────────────────────────────────────────────────
   \begin{thebibliography}{9}
 
   \bibitem{beyer1999nearest}
@@ -1595,6 +2196,12 @@ The result is the vulnerability-relevant **program slice** — the subgraph of \
     language models,''
     in \emph{Proc.\ 45th International Conference on Software
     Engineering (ICSE)}, pp.~1482--1494, IEEE, 2023.
+
+  \bibitem{graphfvd2024}
+    Y.~Li, S.~Wang, and T.\,N.~Nguyen,
+    ``GraphFVD: Fine-Grained Vulnerability Detection via Graph-Based
+    Code Representation,''
+    \emph{IEEE Transactions on Software Engineering}, 2024.
 
   \end{thebibliography}
 
