@@ -13,7 +13,80 @@
 \usepackage[T1]{fontenc}
 \usepackage{float}
 \usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit}
 
+\tikzset{
+    % Cylinder style for databases
+    cylinder/.style = {
+        shape=cylinder,
+        cylinder body fill=blue!25,
+        cylinder end fill=blue!35,
+        draw=blue!60,
+        line width=1.5pt,
+        shape aspect=0.6,
+        minimum width=2cm,
+        minimum height=1.5cm,
+        shape border rotate=90
+    },
+    % Folded box style for processing
+    foldedbox/.style = {
+        rectangle,
+        rounded corners=4pt,
+        draw=black,
+        line width=1.5pt,
+        minimum width=2.2cm,
+        minimum height=0.9cm,
+        align=center,
+        font=\small\bfseries, % Corrected: \bfseriespart to \bfseries
+        path picture={
+            \draw[line width=1pt] 
+            ([shift={(3pt,-3pt)}]path picture bounding box.north east) 
+            -- (path picture bounding box.north east) 
+            -- ([shift={(3pt,-3pt)}]path picture bounding box.north east);
+        }
+    },
+    % Input box style (vulnerable - pink/red)
+    inputbox/.style = {
+        foldedbox,
+        fill=red!20,
+        draw=red!50
+    },
+    % Input box style (patched - blue)
+    patchbox/.style = {
+        foldedbox,
+        fill=blue!20,
+        draw=blue!50
+    },
+    % Process box style (orange/peach)
+    processbox/.style = {
+        foldedbox,
+        fill=orange!25,
+        draw=orange!60
+    },
+    % Output box style (light blue/gray)
+    outputbox/.style = {
+        foldedbox,
+        fill=blue!15,
+        draw=blue!40
+    },
+    % Dashed grouping box
+    groupbox/.style = {
+        rectangle,
+        draw=gray,
+        dashed,
+        line width=1.5pt,
+        rounded corners=8pt,
+        inner sep=15pt
+    },
+    % Arrow style
+    arrow/.style = {
+        ->,
+        >= Stealth,
+        line width=1pt,
+        draw=black!70
+    }
+}
 
 % Define TUM Blue
 \definecolor{tumblue}{RGB}{0, 101, 189}
@@ -90,8 +163,10 @@ Empirical results from the same work suggest that this code noise induces what t
 Thus, there is an opportunity to develop methodologies that enrich security-relevant information while filtering out implementation noise. 
 Moreover, although various studies show that knowledge bases improve LLM responses in security applications \cite{du2025vulragenhancingllmbasedvulnerability, seo2026autopatch, wang2025valign, guo2025bluecodeagentblueteamingagent}, it is unclear which approach optimizes patch quality effectively in multi-agent environments.
 
-This work contributes to the exploration of this gap by proposing a Retrieval-Augmented Generation (RAG) system that uses graph-based representations of code vulnerabilities to generate embeddings.
-
+% Example of graph definition from NetLSD
+% This work contributes to the exploration of this gap by proposing a Retrieval-Augmented Generation (RAG) system that uses graph-based representations of code vulnerabilities to generate embeddings.
+% An undirected graph is a pairG = (V, E), whereV = (v1, . . . ,vn),n =
+% |V | is the set of vertices and E ⊆ (V ×V ) the set of edges
 \subsection{Research Objectives}
 
 To evaluate the proposed framework, we address two primary research questions:
@@ -193,49 +268,131 @@ Once the graph is loaded, the following cleanups are applied:
 Once the CPG is loaded, it contains the full code, including the boilerplate added in the pipelene.
 Thefore it is necessary to isolate the subgraph related to the vulnerability from the irrelevant rest of the code. 
 For that, a subsample is calculated from the difference between the vulnerable graph and the patched graph, the so called $G_{\mathrm{vuln}}$. 
-To include context that may be relevant, a bounded search is performed with the goal of include any relevant settings in which the vulnerability occurs.
 By doing so we expect to be able to generalize the search for the vulnerability removing the specificities of a given system that are inprint in the graph.
 
-\paragraph{Semantic diff with }
+\paragraph{Bounded slicing}
+To include context that may be relevant, a bounded search is performed with the goal of include any relevant settings in which the vulnerability occurs.
+The slice is a configurable neighbourhood expansion ($n \in \{0,1,2,3\}$ hops). $n=0$ is the original sampled graph, that is, only directly changed nodes.
+    
+\paragraph{Semantic difference}
 Before perform the sampling, each node needs to be deterministically identifiable to avoid different results depending on runs or randomness resulting from non-deterministic ID assigned by Joern across runs.
 The nodes in the sample are further enriched with semantic labels resulting of the two graphs comparison.
 Each node of the sample is labeled as either:
 \begin{itemize}
-  \item Removed node: every node present in $G_\mathrm{vuln}$ but absent in the $G_\mathrm{patch}$.
-  \item Fix-adjacent node: every node present in $G_\mathrm{vuln}$ that is a removed node neighbor.
+  \item Removed node: every node present in $G_\mathrm{orig}$ but absent in the $G_\mathrm{patch}$.
+  \item Fix-adjacent node: every node present in $G_\mathrm{orig}$ that is a removed node neighbor.
   \item Edge-changed node: every node attached to an edge which any of the nodes changed between the two graphs. 
 \end{itemize}
+
+Besides the labelling, the $G_\mathrm{vuln}$ nodes also received weights. 
+\begin{center}
+\begin{tabular}{lc}
+  \textbf{Label} & \textbf{Weight} \\
+  \hline
+  \texttt{removed}       & 1.0 \\
+  \texttt{fix\_adjacent} & 0.8 \\
+  \texttt{edge\_changed} & 0.6 \\
+  \texttt{context}       & 0.2 \\
+\end{tabular}
+\end{center}
+
+These weights are directly proportional to the relation of the node to the vulnerability and will be integrated to the embedders for further prunning.
+
+\begin{tikzpicture}[node distance=1.2cm and 2cm]
+
+    % ===== TOP GROUP: CODE PARSING & ANALYSIS =====
+    \begin{scope}[local bounding box=analysis_group]
+        
+        % Vulnerable input
+        \node[inputbox] (vuln_code) {Vulnerable\\Code};
+        
+        % Joern Parse
+        \node[processbox, right=of vuln_code] (joern) {Joern Parse};
+        
+        % GraphML Export
+        \node[processbox, right=of joern] (export) {GraphML \\ Export};
+        
+        % Graph DB
+        \node[cylinder, right=of export] (graphdb) {};
+        % \node[above=0cm of graphdb, font=\small\bfseries] {Compiled\\Graphs};
+        
+    \end{scope}
     
-\paragraph{Bounded slicing}
-Fingerprint-matched diff with configurable neighbourhood expansion
-    ($n \in \{0,1,2,3\}$ hops). $n=0$ returns only directly changed
-    nodes; $n=3$ adds structural context. Experiments show $n=1$ or
-    $n=2$ best balances signal density and context.
+    % Dashed box around analysis
+    \node[groupbox, fit=(analysis_group), label={[anchor=north, yshift=-5pt]\textbf{CODE ANALYSIS}}] {};
+    
+    % % ===== MIDDLE GROUP: GRAPH PROCESSING =====
+    \begin{scope}[local bounding box=processing_group, yshift=-3cm]
+        
+        % Graph Loading
+        \node[processbox] (load) at (1.5, 0) {Graph Loading\\Merge XML,\\Filter Nodes};
+        
+        % Semantic Diff
+        \node[processbox, right=of load] (diff) {Semantic Diff\\Fingerprint\\Matching};
+        
+        % Graph Sampling
+        \node[processbox, right=of diff] (sampling) {Graph Sampling\\Extract\\Vulnerability};
+        
+    \end{scope}
+    
+    % Dashed box around processing
+    \node[groupbox, fit=(processing_group), label={[anchor=north, yshift=-5pt]\textbf{GRAPH PROCESSING}}] {};
+    
+    % ===== BOTTOM: OUTPUT =====
+    \node[outputbox, below=4.5cm of sampling] (output) {Vulnerability\\Subgraph\\with diff\_weight};
+    
+    % % ===== PATCHED CODE BRANCH =====
+    % \node[patchbox, right=1cm of vuln_code, anchor=west] (patch_code) {Patched\\Code};
+    
+    % % Joern Parse for patched
+    % \node[processbox, right=of patch_code] (joern_patch) {Joern Parse\\Code Structural\\Representation};
+    
+    % % GraphML Export for patched
+    % \node[processbox, right=of joern_patch] (export_patch) {GraphML\\Export\\AST, CFG,\\CDG, PDG};
+    
+    % % Connection to graph DB
+    % \draw[arrow] (export_patch) -- (graphdb);
+    
+    % % ===== ARROWS =====
+    
+    % % Top group arrows
+    \draw[arrow] (vuln_code) -- (joern);
+    \draw[arrow] (joern) -- (export);
+    \draw[arrow] (export) -- (graphdb);
+    
+    % % Patched code arrows
+    % \draw[arrow] (patch_code) -- (joern_patch);
+    % \draw[arrow] (joern_patch) -- (export_patch);
+    
+    % % From graph DB to loading
+    \draw[arrow] (graphdb.south) -- ++(0,-0.6) -| (load.north);
+    
+    % % Processing arrows
+    \draw[arrow] (load) -- (diff);
+    \draw[arrow] (diff) -- (sampling);
+    
+    % % To output
+    \draw[arrow] (sampling) -- (output);
+    
+    % % ===== LABELS =====
+    \node[below=8.5cm of vuln_code, font=\small\bfseries] {INPUT};
+    \node[below=0.5cm of output, font=\small\bfseries] {OUTPUT};
 
+\end{tikzpicture}
 
-\begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
-
-  \item \textbf{ID-based diff (baseline, deprecated).}
-    Original approach: set difference of Joern node IDs between
-    \textit{before} and \textit{after} graphs. Produces $G_{\mathrm{vuln}}
-    \approx G_{\mathrm{before}}$ because Joern assigns different IDs to
-    semantically identical nodes across runs.
-\end{enumerate}
-
-\subsection*{Embeddings}
+\subsection*{Embedders}
 For reference, we started with deterministic embedders that work either with heuristics or with well-defined mathematical formulations.
-
-All embedders are \textbf{unsupervised} (no labelled training data required)
-and output L2-normalised vectors of configurable dimension (default 128).
+All embedders are \textbf{unsupervised}, that is, no labelled training data required.
+By default their output is L2-normalised vectors with a default dimension of 128, but configurable.
+Besides that, the embedding may have a PCA.
 
 \begin{itemize}[leftmargin=*]
 
-  \item \textbf{NetLSD} (\textit{Network Laplacian Spectral Descriptor}).
-    Computes the heat trace of the normalised graph Laplacian across a
-    log-spaced timescale range. Permutation-invariant; captures global
-    spectral structure. Sensitive to graph size — collapses on graphs
-    with $<3$ nodes. Weighted variant uses \texttt{diff\_weight} to
-    bias edge weights toward changed nodes.
+  \item \textbf{NetLSD} (\textit{Network Laplacian Spectral Descriptor}) \cite{netlsd}.
+  Computes the heat trace of the normalised graph Laplacian across a timescale that aims to get graph expressive representations similar to random walk models.
+  It is node permutation-invariant and captures global spectral structure, adapting to scale encoding both local and global features, that is, it is scale-adaptable. 
+  It is also capable of comparing different size graphs. It supports weighted graphs. 
+  It was created to be an alternative to the NP-approach graph edit distance, being then efficiently computable, so the comparison calculation happens in a constant time. 
 
   \item \textbf{WL Baseline} (\textit{Weisfeiler-Lehman}).
     Iterative colour refinement over node types followed by weighted
@@ -406,6 +563,6 @@ space, and \textbf{query latency} (p50/p99)
 
 
 \bibliographystyle{ieeetr} % Use 'plain', 'unsrt', or 'ieeetr' for different styles
-\bibliography{references}  % Points to your references.bib file
+\bibliography{../references}  % Points to your references.bib file
 
 \end{document}
