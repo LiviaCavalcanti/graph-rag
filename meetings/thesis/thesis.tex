@@ -168,6 +168,8 @@ It main import nodes from the others folders.
 The graph generation is for both the  snippets: vulnerable and patched one. Each are stored in a different folder. They are then grouped by the CVE type and a random generated hash to avoid conflicts.  
 
 \subsection*{Graph Loading}
+The graph is imported into the pipeline by using the NetworkX library. All the export.xml are merged by reading each file and updated the loaded graph iteratively. 
+The Joern definition of the graph is, therefore, the responsible for the consistency of the graph. 
 
 \subsection*{Graph Sampling}
 
