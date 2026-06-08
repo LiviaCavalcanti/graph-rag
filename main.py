@@ -171,16 +171,17 @@ def _process_job(job: ExportJob, joern_bin_dir: str) -> tuple[JobStatus, str]:
 
 def run_export(cfg: dict, dataset_name: str | None = None):
     joern_bin_dir = str(
-        cfg.get("paths", {}).get("joern_bin_dir", cfg.get("joern", {}).get("bin_dir", ""))
+        cfg.paths.joern_bin_dir
     )
     if not joern_bin_dir:
         raise KeyError("Joern path not found. Set paths.joern_bin_dir or joern.bin_dir")
-    workers = cfg["joern"].get("workers", max(1, cpu_count() - 1))
+    # workers = cfg["joern"].get("workers", max(1, cpu_count() - 1))
+    workers = max(1, cpu_count() - 1)
     active = [dataset_name] if dataset_name else list(DATASETS.keys())
-    active = [n for n in active if cfg["data"].get(n)]
+    active = [n for n in active if cfg.data.get(n)]
 
     for ds_name in active:
-        ds_cfg = cfg["data"][ds_name]
+        ds_cfg = cfg.data[ds_name]
         dataset = DATASETS[ds_name](ds_cfg)
         graphml_root = ds_cfg["graphml_root"]
 
@@ -305,49 +306,49 @@ def run_pipeline(cfg):
     print(f"Contracts snapshot: {contracts_path}")
 
 
-def run_query(cfg: dict, cve_id: str):
-    from src.rag.retriever import Retriever
+# def run_query(cfg: dict, cve_id: str):
+#     from src.rag.retriever import Retriever
 
-    rag_cfg = cfg["rag"]
-    index = FAISSIndex(
-        dim=cfg["embeddings"]["dim"],
-        index_path=rag_cfg["index_path"],
-        metadata_path=rag_cfg["metadata_path"],
-    )
-    index.load()
-    retriever = Retriever(index, top_k=rag_cfg["top_k"])
-    raw_results = retriever.query_by_cve(cve_id)
-    for r in raw_results:
-        print(r)
+#     rag_cfg = cfg["rag"]
+#     index = FAISSIndex(
+#         dim=cfg["embeddings"]["dim"],
+#         index_path=rag_cfg["index_path"],
+#         metadata_path=rag_cfg["metadata_path"],
+#     )
+#     index.load()
+#     retriever = Retriever(index, top_k=rag_cfg["top_k"])
+#     raw_results = retriever.query_by_cve(cve_id)
+#     for r in raw_results:
+#         print(r)
 
-    retrieval_contract = RetrievalResult(
-        run_id="query",
-        query_id=cve_id,
-        query_cve=cve_id,
-        retriever_name="metadata_lookup",
-        top_k=len(raw_results),
-        hit_ids=[str(r.get("_idx", i)) for i, r in enumerate(raw_results)],
-        hit_scores=[float(r.get("score", 1.0)) for r in raw_results],
-        hit_metadata=raw_results,
-        metadata={"result_count": len(raw_results)},
-    )
+#     retrieval_contract = RetrievalResult(
+#         run_id="query",
+#         query_id=cve_id,
+#         query_cve=cve_id,
+#         retriever_name="metadata_lookup",
+#         top_k=len(raw_results),
+#         hit_ids=[str(r.get("_idx", i)) for i, r in enumerate(raw_results)],
+#         hit_scores=[float(r.get("score", 1.0)) for r in raw_results],
+#         hit_metadata=raw_results,
+#         metadata={"result_count": len(raw_results)},
+#     )
 
-    query_contract_path = Path(rag_cfg["metadata_path"]).with_name(
-        f"query_{cve_id}_retrieval_contract.json"
-    )
-    _write_json(query_contract_path, retrieval_contract.__dict__)
-    print(f"Retrieval contract: {query_contract_path}")
+#     query_contract_path = Path(rag_cfg["metadata_path"]).with_name(
+#         f"query_{cve_id}_retrieval_contract.json"
+#     )
+#     _write_json(query_contract_path, retrieval_contract.__dict__)
+#     print(f"Retrieval contract: {query_contract_path}")
 
 
-def run_batch_query(cfg: dict, args):
-    """Batch query: thin wrapper around retrieval experiment."""
-    from experiments.exp.retrieval_experiment import run_experiment
-    from src.data import load_pairs
+# def run_batch_query(cfg: dict, args):
+#     """Batch query: thin wrapper around retrieval experiment."""
+#     from experiments.exp.retrieval_experiment import run_experiment
+#     from src.data import load_pairs
 
-    pairs = load_pairs(cfg)
-    if args.max_queries:
-        pairs = pairs[: args.max_queries]
-    return run_experiment(pairs, cfg)
+#     pairs = load_pairs(cfg)
+#     if args.max_queries:
+#         pairs = pairs[: args.max_queries]
+#     return run_experiment(pairs, cfg)
 
 
 def run_full_pipeline(cfg: dict, args):
@@ -501,7 +502,7 @@ if __name__ == "__main__":
         apply_split_overrides(cfg, args)
 
     if args.mode == "export":
-        run_export(cfg, args.dataset)
+        run_export(app_cfg, args.dataset)
     elif args.mode == "index":
         run_pipeline(cfg)
     elif args.mode == "query":
