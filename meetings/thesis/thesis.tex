@@ -12,7 +12,7 @@
 \renewcommand{\familydefault}{\sfdefault} % Set the default font to Sans-Serif
 \usepackage[T1]{fontenc}
 \usepackage{float}
-
+% \usepackage{minted}
 
 
 % Define TUM Blue
@@ -160,20 +160,54 @@ The system will use an agentic framework common in industrial applications and s
 
  \subsection*{Data Pipeline}
 \subsection*{Graph Generation}
-This work utilizes Joern to generate the graph from a code snippet. For snippets that are not well formed C/C++ programs, the pipeline first complete the program with the necessary imports and writes a compilable file that can be further consulted for reference.
-Joern compiles the code into the graph. To be able to use the graph, the next step exports te compiled graph into GraphML. Each graph contains  AST, CFG, CDG, and PDG edges. The format file is XML. The output is grouped into folders. The <empthy> folder contains the symbols that are inate of the language.
-For each operator we have subfolders. Each folder contains a export.xml file with the actual graph. The <includes> folder contains the imports definitions. Then we have the folder named after the C file that also contains an export.xml file. 
-It main import nodes from the others folders. 
+This work utilizes Joern to generate the Code Property Graph (CPG) from a code snippet. 
+For snippets that are not well-formed C/C++ programs, the pipeline first wraps the code with the minimum necessary macros and type definitions (e.g. \ \verb|typedef unsigned int u32|, \verb|#define NULL ((void*)0)|) and writes a parseable source file.
+The C/C++ code files are exported to a binary graph  with the Joern shell command \verb|joern-parse --language newc|, where \verb|newc| specifies the C++ specifities avoiding will-formed graphs.  
+Then, the compiled graph is exported to GraphML format with the shell-command \verb|joern-export --repr cpg --format graphml|. 
+Each export generates a directory tree where each subdirectory contains an \verb|export.xml| file with a subgraph of the the whole CPG. 
+The nodes can have different labels (e.g.\ \verb|CALL|, \verb|IDENTIFIER|, \verb|CONTROL_STRUCTURE|), whereas the edges can belong to one of the following graph representation: Abstract Syntax Tree (AST), Control Flow Graph (CFG), Call Dependency Graph (CDG), and Program Dependency Graph (PDG). 
+% The output is grouped into folders. The <empthy> folder contains the symbols that are inate of the language.
+% For each operator we have subfolders. Each folder contains a export.xml file with the actual graph. 
+% The <includes> folder contains the imports definitions. Then we have the folder named after the C file that also contains an export.xml file. 
+% It main import nodes from the others folders. 
 
-The graph generation is for both the  snippets: vulnerable and patched one. Each are stored in a different folder. They are then grouped by the CVE type and a random generated hash to avoid conflicts.  
+The pipeline generates both \textit{vulnerable} and \textit{patched} code snippet graphs.  
 
 \subsection*{Graph Loading}
-The graph is imported into the pipeline by using the NetworkX library. All the export.xml are merged by reading each file and updated the loaded graph iteratively. 
+The graph is imported into the pipeline by using the NetworkX library. 
+All the export.xml are merged by reading each file and updated the loaded graph iteratively. 
+The NetworkX library considers each graph, node and edges as a dictionary and update the data structure by adding one graph set of nodes and edges at a time.
 The Joern definition of the graph is, therefore, the responsible for the consistency of the graph. 
+\verb|COMMENT| and \verb|UNKNOWN| nodes are removed
 
 \subsection*{Graph Sampling}
+The graph has the footprints of the code. Thefore it is necessary to look for the subsample of the graph that contains the vulnerability. 
+By doing so we expect to be able to generalize the search for the vulnerability removing the specificities of a given system that are inprint in the graph.
+
+\begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
+
+  \item \textbf{ID-based diff (baseline, deprecated).}
+    Original approach: set difference of Joern node IDs between
+    \textit{before} and \textit{after} graphs. Produces $G_{\mathrm{vuln}}
+    \approx G_{\mathrm{before}}$ because Joern assigns different IDs to
+    semantically identical nodes across runs.
+
+  \item \textbf{Semantic diff with $n$-hop expansion.}
+    Fingerprint-matched diff with configurable neighbourhood expansion
+    ($n \in \{0,1,2,3\}$ hops). $n=0$ returns only directly changed
+    nodes; $n=3$ adds structural context. Experiments show $n=1$ or
+    $n=2$ best balances signal density and context.
+
+  \item \textbf{CFG-only subgraph.}
+    Retains only control-flow edges and their endpoints.
+    Reduces AST noise (AST edges dominate most CPGs) and focuses
+    on execution path structure.
+\end{enumerate}
 
 \subsection*{Embeddings}
+For reference, we started with deterministic embedders that work either with heuristics or with well-defined mathematical formulations.
+
+
 The pipeline begins by generating a graph embedding of the input vulnerable code snippet.
 This embedding is used to query the KB for the most structurally similar fix. 
 The AutoPatch dataset will be used as the primary source for the KB, providing a consistent baseline for our experiments.
