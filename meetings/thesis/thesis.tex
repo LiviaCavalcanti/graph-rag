@@ -174,11 +174,20 @@ The nodes can have different labels (e.g.\ \verb|CALL|, \verb|IDENTIFIER|, \verb
 The pipeline generates both \textit{vulnerable} and \textit{patched} code snippet graphs.  
 
 \subsection*{Graph Loading}
-The graph is imported into the pipeline by using the NetworkX library. 
-All the export.xml are merged by reading each file and updated the loaded graph iteratively. 
+The exported graph is imported into the pipeline using the NetworkX library as a \verb|MultiDiGraph|. %TODO: explain library 
+All the export.xml discovered by recursively exploring the subdirectories. Once the graph they store is imported to the pipeline, it is merged by reading each file with \verb|nx.read_graph|and updating the combined graph iteratively. 
 The NetworkX library considers each graph, node and edges as a dictionary and update the data structure by adding one graph set of nodes and edges at a time.
-The Joern definition of the graph is, therefore, the responsible for the consistency of the graph. 
-\verb|COMMENT| and \verb|UNKNOWN| nodes are removed
+The Joern definition of the graph is, that is, the node and edge attributes, is conserved, therefore, the graph consistency depends on the Joern export. 
+% The Joern-assigned node and edge attributes are preserved as-is;
+% however, the multi-file export may contain edges referencing nodes
+% outside the exported scope (e.g.\ language built-ins).
+% The loader removes such attributeless stub nodes and their
+% dangling edges to produce a self-contained graph.
+Once the graph is loaded, the following cleanups are applied:
+\begin{itemize}
+  \item Nodes with the label \verb|COMMENT| or \verb|UNKNOWN| are removed
+  \item Any remaining edges whose source or target were removed are pruned.
+\end{itemize}
 
 \subsection*{Graph Sampling}
 The graph has the footprints of the code. Thefore it is necessary to look for the subsample of the graph that contains the vulnerability. 
