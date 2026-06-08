@@ -12,7 +12,7 @@
 \renewcommand{\familydefault}{\sfdefault} % Set the default font to Sans-Serif
 \usepackage[T1]{fontenc}
 \usepackage{float}
-% \usepackage{minted}
+\usepackage{booktabs}
 
 
 % Define TUM Blue
@@ -197,11 +197,20 @@ To include context that may be relevant, a bounded search is performed with the 
 By doing so we expect to be able to generalize the search for the vulnerability removing the specificities of a given system that are inprint in the graph.
 
 \paragraph{Semantic diff with }
-    Fingerprint-matched diff with configurable neighbourhood expansion
+Before perform the sampling, each node needs to be deterministically identifiable to avoid different results depending on runs or randomness resulting from non-deterministic ID assigned by Joern across runs.
+The nodes in the sample are further enriched with semantic labels resulting of the two graphs comparison.
+Each node of the sample is labeled as either:
+\begin{itemize}
+  \item Removed node: every node present in $G_\mathrm{vuln}$ but absent in the $G_\mathrm{patch}$.
+  \item Fix-adjacent node: every node present in $G_\mathrm{vuln}$ that is a removed node neighbor.
+  \item Edge-changed node: every node attached to an edge which any of the nodes changed between the two graphs. 
+\end{itemize}
+    
+\paragraph{Bounded slicing}
+Fingerprint-matched diff with configurable neighbourhood expansion
     ($n \in \{0,1,2,3\}$ hops). $n=0$ returns only directly changed
     nodes; $n=3$ adds structural context. Experiments show $n=1$ or
     $n=2$ best balances signal density and context.
-\paragraph{Bounded slicing}
 
 
 \begin{enumerate}[leftmargin=*, label=\textbf{\arabic*.}]
@@ -293,6 +302,99 @@ space, and \textbf{query latency} (p50/p99)
 % compare storage of text vs cpg embeddings: feasible in scale or too large? If it is similar, it may be a positive point.
 \item \textbf{Storage complexity}: We will measure and compare the storage size of a KB using graph embeddings versus one using traditional text embeddings.
 \end{itemize}
+
+\section{Experiments}
+  \begin{enumerate}[nosep]
+    \item \textbf{Slicing}: \emph{full} (the complete pre-patch CPG,
+      $G_{\mathrm{before}}$) vs.\ \emph{sliced} (the
+      fingerprint-diff subgraph $G_{\mathrm{vuln}}$, retaining only
+      nodes within 3~flow-edge hops of changed nodes).
+    \item \textbf{Diff labelling}: \emph{absent} (all \texttt{diff}
+      and \texttt{diff\_weight} node attributes stripped) vs.\
+      \emph{present} (each node annotated with its change class and
+      a weight $w \in \{1.0, 0.8, 0.6, 0.2\}$ for \texttt{removed},
+      \texttt{fix\_adjacent}, \texttt{edge\_changed}, and
+      \texttt{context} respectively).
+  \end{enumerate}
+
+  This yields four graph representations:
+
+  \begin{center}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lccl}
+    \toprule
+    \textbf{Symbol} & \textbf{Sliced?} & \textbf{Labels?}
+      & \textbf{Construction} \\
+    \midrule
+    $G_{\mathrm{before}}$
+      & No & No
+      & Full pre-patch CPG; diff attributes removed. \\
+    $G_{\mathrm{before}}^{+\ell}$
+      & No & Yes
+      & Full pre-patch CPG; diff labels transferred from
+        $G_{\mathrm{vuln}}$; unmatched nodes default to
+        \texttt{context} ($w{=}0.2$). \\
+    $G_{\mathrm{vuln}}^{-\ell}$
+      & Yes & No
+      & Fingerprint-sliced subgraph; diff attributes stripped. \\
+    $G_{\mathrm{vuln}}$
+      & Yes & Yes
+      & Fingerprint-sliced subgraph with native diff labels
+        and weights. \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \subsubsection{Experimental Configurations}
+
+  The ablation was run under three configurations that differ in
+  \emph{query protocol} and \emph{PCA fitting procedure}, allowing
+  us to disentangle representation quality from methodological
+  artefacts.
+
+  \begin{center}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{p{2.5cm}p{3.8cm}p{3.8cm}p{3.8cm}}
+    \toprule
+    & \textbf{Run~A} & \textbf{Run~B} & \textbf{Run~C} \\
+    \midrule
+    \textbf{Script}
+      & \texttt{slicing\_comparison}
+      & \texttt{slicing\_comparison}
+      & \texttt{runner.py} \\
+    \textbf{Query protocol}
+      & Symmetric: query graph uses the same variant as the index.
+      & Asymmetric: augmented queries use $G_{\mathrm{before}}$;
+        original queries use $G_{\mathrm{vuln}}$.
+      & Same as Run~B. \\
+    \textbf{PCA fitting}
+      & Index-only: \texttt{embed\_many} on index, then on queries
+        (PCA reused).
+      & Same as Run~A.
+      & Index-only: PCA fitted via \texttt{embed\_many} on
+        index; queries projected via \texttt{embed\_one}. \\
+    \textbf{Graph variants}
+      & All four.
+      & All four.
+      & $G_{\mathrm{vuln}}$ only. \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  Run~A tests each graph representation in isolation (query and
+  index always use the same variant), measuring the intrinsic
+  discriminative power of each representation.
+  Runs~B and~C use the \emph{asymmetric} protocol that reflects
+  a realistic deployment scenario: augmented (LLM-rewritten)
+  queries lack a patched version and can only provide the full
+  pre-patch CPG, while original CVE queries have access to the
+  vulnerability-sliced subgraph.
+  Runs~B and~C differ only in the embedding call path
+  (\texttt{embed\_many} vs.\ \texttt{embed\_one} for queries),
+  allowing a direct comparison of batch vs.\ single-query
+  embedding under identical data and PCA protocol.
 
 \subsection*{Discussion}
 
