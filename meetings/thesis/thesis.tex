@@ -65,6 +65,7 @@
 \vspace{0.8cm}
 % --- Body Content ---
 \section*{Context}
+\subsection{Research Background}
 To meet compliance requirements, organizations must adhere to International Standards and regulations such as ISO/IEC 27001 \cite{iso27001}. This standard establishes best practices for data protection, cyber-resilience, and operational excellence. 
 To accomplish that and improve development robustness, enterprises must anticipate and adapt to vulnerabilities and potential attacks. 
 For software companies, this goal demands evolving software development life cycles to rapidly identify, generate, and deploy risk mitigation for vulnerabilities. 
@@ -82,6 +83,7 @@ However, the current LLM approaches remain insufficient for security patching du
 
 \end{enumerate}
 
+\subsection{Problem Statement}
 These failures are aggravated by providing lengthy raw source code to the LLM. 
 In these cases, vulnerability-relevant logic is diluted by implementation details and boilerplate code, thereby degrading the quality of security analysis \cite{contextenhancedYang}.
 Empirical results from the same work suggest that this code noise induces what the authors term Analysis Focus Drift, wherein the model performs a code quality review rather than a vulnerability analysis.
@@ -89,6 +91,20 @@ Thus, there is an opportunity to develop methodologies that enrich security-rele
 Moreover, although various studies show that knowledge bases improve LLM responses in security applications \cite{du2025vulragenhancingllmbasedvulnerability, seo2026autopatch, wang2025valign, guo2025bluecodeagentblueteamingagent}, it is unclear which approach optimizes patch quality effectively in multi-agent environments.
 
 This work contributes to the exploration of this gap by proposing a Retrieval-Augmented Generation (RAG) system that uses graph-based representations of code vulnerabilities to generate embeddings.
+
+\subsection{Research Objectives}
+
+To evaluate the proposed framework, we address two primary research questions:
+ 
+\textbf{RQ1: }How effective are graph-based embeddings at retrieving relevant vulnerability fix patterns from the knowledge base?
+ 
+\textbf{RQ2: }What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline?
+
+If within reach, we aim to also address the following complementary research questions:
+ 
+\textbf{CRQ1: }How does the structure-aware RAG framework with a small model compare with existing approaches (e.g., zero-shot small models and AutoPatch)?
+
+\textbf{CRQ2: }What is the computational and financial cost of the approach (e.g., token usage, storage complexity and size, end-to-end pipeline costs)? 
 
 \section*{Related Work}
 Automated Program Repair (APR) aims to fix functional and security defects, which are critical in large-scale software systems.
@@ -117,9 +133,9 @@ Rather than relying only on the generative capacity of frontier models, this app
 
 The vulnerable code will be represented using graph embeddings to retrieve structurally similar patches from a knowledge base at inference time.
 Beyond retrieval, we will apply the graph edit distance \cite{gao2010survey, li2019simgnn} to identify structural differences between vulnerable and patched code within the retrieved pairs.
-These structural differences will serve as a grounding repair orientation for the LLM to remediate a flaw. 
+These structural differences serves as a grounding repair orientation for the LLM to remediate a flaw. 
 
-We will investigate how this design leverages structural meaning encoded in graph representations to identify the lines that introduce security breaches.
+We investigated how this design leverages structural meaning encoded in graph representations to identify the lines that introduce security breaches.
 
 \subsection*{Architecture }
 
@@ -142,20 +158,20 @@ The system will use an agentic framework common in industrial applications and s
   \label{fig:sysdesign}
 \end{figure}
 
-To evaluate the proposed framework, we address two primary research questions:
- 
-\textbf{RQ1: }How effective are graph-based embeddings at retrieving relevant vulnerability fix patterns from the knowledge base?
- 
-\textbf{RQ2: }What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline?
-
-If within reach, we aim to also address the following complementary research questions:
- 
-\textbf{CRQ1: }How does the structure-aware RAG framework with a small model compare with existing approaches (e.g., zero-shot small models and AutoPatch)?
-
-\textbf{CRQ2: }What is the computational and financial cost of the approach (e.g., token usage, storage complexity and size, end-to-end pipeline costs)? 
-
  \subsection*{Data Pipeline}
+\subsection*{Graph Generation}
+This work utilizes Joern to generate the graph from a code snippet. For snippets that are not well formed C/C++ programs, the pipeline first complete the program with the necessary imports and writes a compilable file that can be further consulted for reference.
+Joern compiles the code into the graph. To be able to use the graph, the next step exports te compiled graph into GraphML. Each graph contains  AST, CFG, CDG, and PDG edges. The format file is XML. The output is grouped into folders. The <empthy> folder contains the symbols that are inate of the language.
+For each operator we have subfolders. Each folder contains a export.xml file with the actual graph. The <includes> folder contains the imports definitions. Then we have the folder named after the C file that also contains an export.xml file. 
+It main import nodes from the others folders. 
 
+The graph generation is for both the  snippets: vulnerable and patched one. Each are stored in a different folder. They are then grouped by the CVE type and a random generated hash to avoid conflicts.  
+
+\subsection*{Graph Loading}
+
+\subsection*{Graph Sampling}
+
+\subsection*{Embeddings}
 The pipeline begins by generating a graph embedding of the input vulnerable code snippet.
 This embedding is used to query the KB for the most structurally similar fix. 
 The AutoPatch dataset will be used as the primary source for the KB, providing a consistent baseline for our experiments.
