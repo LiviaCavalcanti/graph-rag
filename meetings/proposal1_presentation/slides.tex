@@ -131,11 +131,11 @@
       A \textbf{vulnerability} is a weakness in an information system, system security procedures, internal controls, or implementation that could be exploited by a threat source.
     \end{tcolorbox}
 
-    \vspace{0.4cm}
+    \vspace{0.2cm}
     \textbf{Example:}\\
     % \textit{CVE-2024-56605} — 
     % CWE-416: 
-     Use-After-Free\\[0.2cm]
+     Use-After-Free\\
     \footnotesize The program references memory after it has been freed, leading to undefined behavior.
 
     \column{0.55\textwidth}
@@ -165,7 +165,66 @@ struct sock *alloc_socket(
   \center{\tiny\textcolor{notecol}{Inspired by CVE-2024-56605 (Linux kernel) — a real-world use-after-free vulnerability.}}
 
   \end{columns}
+
+  
+ \begin{center}
+    \begin{tikzpicture}
+      \node[fill=slidebg, draw=labelcol!20, line width=0.5pt,
+        rounded corners=5pt, font=\small\sffamily, text=labelcol,
+        inner xsep=10pt, inner ysep=4pt,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+      ]{
+        \textbf{CWE} = vulnerability \emph{type} \quad$\longleftrightarrow$\quad \textbf{CVE} = vulnerability \emph{instance}
+      };
+    \end{tikzpicture}
+  \end{center}
 \end{frame}
+
+% =====================================================================
+% CVE vs CWE
+% =====================================================================
+% \begin{frame}{CVE vs.\ CWE: Classifying Vulnerabilities}
+
+%   \begin{columns}[T]
+%     \column{0.48\textwidth}
+%     \begin{tcolorbox}[colback=ccode!5, colframe=ccode!60!black, boxrule=0.6pt,
+%       left=6pt, right=6pt, top=6pt, bottom=6pt, arc=3pt,
+%       title={\scriptsize\bfseries CVE — Common Vulnerabilities and Exposures~\cite{mitre_cve}}]
+%       \small
+%       A \textbf{specific instance} of a vulnerability in a particular product or system.\\[4pt]
+%       \scriptsize
+%       \textbf{Example:} CVE-2024-56605\\
+%       Use-after-free in Linux kernel's Bluetooth L2CAP subsystem.\\[4pt]
+%       \textit{Each CVE is a unique, publicly disclosed security bug.}
+%     \end{tcolorbox}
+
+%     \column{0.48\textwidth}
+%     \begin{tcolorbox}[colback=c3!5, colframe=c3!60!black, boxrule=0.6pt,
+%       left=6pt, right=6pt, top=6pt, bottom=6pt, arc=3pt,
+%       title={\scriptsize\bfseries CWE — Common Weakness Enumeration~\cite{mitre_cwe}}]
+%       \small
+%       A \textbf{category} of software weaknesses that can lead to vulnerabilities.\\[4pt]
+%       \scriptsize
+%       \textbf{Example:} CWE-416 (Use After Free)\\
+%       Referencing memory after it has been freed.\\[4pt]
+%       \textit{Each CWE is a class of bugs — many CVEs share the same CWE.}
+%     \end{tcolorbox}
+%   \end{columns}
+
+%   \vspace{0.5cm}
+%   \begin{center}
+%     \begin{tikzpicture}
+%       \node[fill=slidebg, draw=labelcol!20, line width=0.5pt,
+%         rounded corners=5pt, font=\small\sffamily, text=labelcol,
+%         inner xsep=10pt, inner ysep=4pt,
+%         drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+%       ]{
+%         \textbf{CWE} = vulnerability \emph{type} \quad$\longleftrightarrow$\quad \textbf{CVE} = vulnerability \emph{instance}
+%       };
+%     \end{tikzpicture}
+%   \end{center}
+
+% \end{frame}
 
 % --- Slide 2: Highlight step 1 — allocation ---
 \begin{frame}[fragile]{Tracing the Vulnerability (1/4): Allocation}
@@ -1395,8 +1454,8 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
       ]
         \node[box] (cpg) {CPG (Joern)};
         \node[box, below=of cpg, xshift=2cm] (pat) {Vuln Pattern Features\\{\tiny 34d: UAF/NPD/race/\ldots}};
-        \node[box, draw=c8, fill=c8!8 , below=of cpg, xshift=-2cm] (code-pat) {Changed Code\\{\tiny CodeBERT [CLS] 768d}};
-        \node[box, draw=c5!60, fill=c5!8, below=0.45cm of cpg, yshift=-0.7cm] (cat) {Concatenate\\{\tiny [pattern $\|$ CodeBERT] = 802d}};
+        \node[box, draw=c8, fill=c8!8 , below=of cpg, xshift=-2cm] (code-pat) { CodeBERT (seq) \\{\tiny [CLS] 768d}};
+        \node[box, draw=c5!60, fill=c5!8, below=0.45cm of cpg, yshift=-0.7cm] (cat) {Concatenate\\{\tiny [pattern $\|$ CodeBERT (seq)] = 802d}};
         \node[box, draw=c3!60, fill=c3!8, below=of cat] (pca) {PCA reduce\\{\tiny 128d}};
         \node[box, draw=hit!60, fill=hit!8, below=of pca] (out) {L2 Normalize\\{\tiny 128d embedding}};
         \draw[arr] (cpg) -- (pat);
