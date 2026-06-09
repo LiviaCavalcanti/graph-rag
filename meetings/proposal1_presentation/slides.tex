@@ -41,6 +41,13 @@
 \definecolor{c4}{RGB}{142,68,173}
 \definecolor{c5}{RGB}{230,126,34}
 \definecolor{c6}{RGB}{211,84,0}
+% \definecolor{banana}{RGB}{253, 231, 76} 
+% \definecolor{strongcyan}{RGB}{78, 205, 196}
+% \definecolor{spaceindigo}{RGB}{195, 195, 230}
+% \definecolor{powderblush}{RGB}{247, 177, 171}
+\definecolor{c7}{RGB}{63,81,181}
+\definecolor{c8}{RGB}{0,128,128}
+\definecolor{c9}{RGB}{219,39,119}
 \definecolor{hit}{RGB}{39,174,96}
 \definecolor{miss}{RGB}{192,57,43}
 \definecolor{warn}{RGB}{243,156,18}
@@ -1356,7 +1363,7 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
     \begin{column}{0.48\textwidth}
       \begin{center}
       \textbf{\small CodeBERT (seq)}\\[4pt]
-      \begin{tikzpicture}[
+      \begin{tikzpicture}[remember picture,
         node distance=0.28cm,
         box/.style={draw=c1!60, fill=c1!8, rounded corners=3pt,
           minimum width=3.2cm, minimum height=0.4cm,
@@ -1367,11 +1374,11 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
         \node[box, below=of cpg] (collect) {Collect changed code\\{\tiny diff\_weight $>$ 0.3, sort by line}};
         \node[box, below=of collect] (tok) {Tokenize as flat sequence\\{\tiny ``sk = sk\_alloc(); sock->sk = sk; ...''}};
         \node[box, draw=c3!60, fill=c3!8, below=of tok] (bert) {CodeBERT [CLS]\\{\tiny 768d}};
-        \node[box, draw=hit!60, fill=hit!8, below=of bert] (out) {L2 Normalize\\{\tiny 768d embedding}};
+        \node[box, draw=hit!60, fill=hit!8, below=of bert] (out-seq) {L2 Normalize\\{\tiny 768d embedding}};
         \draw[arr] (cpg) -- (collect);
         \draw[arr] (collect) -- (tok);
         \draw[arr] (tok) -- (bert);
-        \draw[arr] (bert) -- (out);
+        \draw[arr] (bert) -- (out-seq);
       \end{tikzpicture}
       \end{center}
       {\scriptsize\centering Text-only: structure is \textbf{discarded}.\par}
@@ -1379,7 +1386,7 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
     \begin{column}{0.48\textwidth}
       \begin{center}
       \textbf{\small CodeBERT (pat)}\\[4pt]
-      \begin{tikzpicture}[
+      \begin{tikzpicture}[remember picture,
         node distance=0.28cm,
         box/.style={draw=c1!60, fill=c1!8, rounded corners=3pt,
           minimum width=3.2cm, minimum height=0.4cm,
@@ -1387,15 +1394,15 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
         arr/.style={-{Stealth[length=3pt, width=3pt]}, line width=0.7pt, color=notecol}
       ]
         \node[box] (cpg) {CPG (Joern)};
-        \node[box, below=of cpg, xshift=-2cm] (pat) {Vuln Pattern Features\\{\tiny 34d: UAF/NPD/race/\ldots}};
-        \node[box, below=of cpg, xshift=2cm] (code) {Changed Code\\{\tiny CodeBERT [CLS] 768d}};
+        \node[box, below=of cpg, xshift=2cm] (pat) {Vuln Pattern Features\\{\tiny 34d: UAF/NPD/race/\ldots}};
+        \node[box, draw=c8, fill=c8!8 , below=of cpg, xshift=-2cm] (code-pat) {Changed Code\\{\tiny CodeBERT [CLS] 768d}};
         \node[box, draw=c5!60, fill=c5!8, below=0.45cm of cpg, yshift=-0.7cm] (cat) {Concatenate\\{\tiny [pattern $\|$ CodeBERT] = 802d}};
         \node[box, draw=c3!60, fill=c3!8, below=of cat] (pca) {PCA reduce\\{\tiny 128d}};
         \node[box, draw=hit!60, fill=hit!8, below=of pca] (out) {L2 Normalize\\{\tiny 128d embedding}};
         \draw[arr] (cpg) -- (pat);
-        \draw[arr] (cpg) -- (code);
+        \draw[arr] (cpg) -- (code-pat);
         \draw[arr] (pat) |- (cat);
-        \draw[arr] (code) |- (cat);
+        \draw[arr] (code-pat) |- (cat);
         \draw[arr] (cat) -- (pca);
         \draw[arr] (pca) -- (out);
       \end{tikzpicture}
@@ -1403,6 +1410,11 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
       {\scriptsize\centering Fuses \textbf{graph structure} with semantics.\par}
     \end{column}
   \end{columns}
+
+  \begin{tikzpicture}[remember picture, overlay]
+    \draw[-{Stealth[length=3.5pt, width=3.5pt]}, line width=0.8pt, color=c8!70, dashed]
+      (out-seq.east) -- ++(1,0) |- (code-pat.west);
+  \end{tikzpicture}
   
 \end{frame}
 
