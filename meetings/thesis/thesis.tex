@@ -16,13 +16,24 @@
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit}
 
+% ── Palette (matching presentation) ──────────────────────────────────
+\definecolor{ccode}{RGB}{239, 68, 68}
+\definecolor{ccpg}{RGB}{59, 130, 246}
+\definecolor{csub}{RGB}{16, 185, 129}
+\definecolor{cemb}{RGB}{168, 85, 247}
+\definecolor{ckb}{RGB}{245, 158, 11}
+\definecolor{crank}{RGB}{236, 72, 153}
+\definecolor{notecol}{RGB}{100, 116, 139}
+\definecolor{shadowcol}{RGB}{101, 67, 33}
+\definecolor{slidebg}{RGB}{248, 250, 252}
+
 \tikzset{
     % Cylinder style for databases
     cylinder/.style = {
         shape=cylinder,
-        cylinder body fill=blue!25,
-        cylinder end fill=blue!35,
-        draw=blue!60,
+        cylinder body fill=ckb!25,
+        cylinder end fill=ckb!35,
+        draw=ckb!60,
         line width=1.5pt,
         shape aspect=0.6,
         minimum width=2cm,
@@ -33,12 +44,14 @@
     foldedbox/.style = {
         rectangle,
         rounded corners=4pt,
-        draw=black,
+        % draw=gray,
         line width=1.5pt,
         minimum width=2.2cm,
         minimum height=0.9cm,
         align=center,
-        font=\small\bfseries, % Corrected: \bfseriespart to \bfseries
+        % font=\ttfamily\footnotesize,
+        font=\sffamily\scriptsize,
+        text=black!60,
         path picture={
             \draw[line width=1pt] 
             ([shift={(3pt,-3pt)}]path picture bounding box.north east) 
@@ -46,34 +59,34 @@
             -- ([shift={(3pt,-3pt)}]path picture bounding box.north east);
         }
     },
-    % Input box style (vulnerable - pink/red)
+    % Input box style (vulnerable - red)
     inputbox/.style = {
         foldedbox,
-        fill=red!20,
-        draw=red!50
+        fill=ccode!15,
+        draw=ccode!50
     },
     % Input box style (patched - blue)
     patchbox/.style = {
         foldedbox,
-        fill=blue!20,
-        draw=blue!50
+        fill=ccpg!15,
+        draw=ccpg!50
     },
-    % Process box style (orange/peach)
+    % Process box style (purple)
     processbox/.style = {
         foldedbox,
-        fill=orange!25,
-        draw=orange!60
+        fill=cemb!12,
+        draw=cemb!50
     },
-    % Output box style (light blue/gray)
+    % Output box style (green)
     outputbox/.style = {
         foldedbox,
-        fill=blue!15,
-        draw=blue!40
+        fill=csub!15,
+        draw=csub!50
     },
     % Dashed grouping box
     groupbox/.style = {
         rectangle,
-        draw=gray,
+        draw=notecol,
         dashed,
         line width=1.5pt,
         rounded corners=8pt,
