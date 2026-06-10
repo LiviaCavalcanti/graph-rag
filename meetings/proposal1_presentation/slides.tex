@@ -704,37 +704,52 @@ struct sock *alloc_socket(
 \begin{frame}{Motivation: Why Current Approaches Fall Short}
 
 \begin{columns}[T]
-
-  %% LEFT: The Problem
   \begin{column}{0.48\textwidth}
-    \textbf{ The Gap}\\[0.4em]
+    \textbf{The Gap}\\[0.4em]
     Industrial compliance standards demand \emph{auditable}, automated remediation \cite{iso27001}\\[0.8em]
 
-    \textbf{ LLMs Failure}
-    \begin{itemize}
-      \item \textbf{84--94\%} of AI patches are bypassable \cite{mahmud2025systematic}
-      \item \textbf{91.6\%} failure in vulnerability identification \cite{McClanahan2024Meets}
-      \item Hallucinated fixes $\Rightarrow$ false sense of security \cite{zemicheal2024llm}
-    \end{itemize}
-  \end{column}
-
-  % \vrule{}
-
-  %% RIGHT: The Alternative
-  \begin{column}{0.48\textwidth}
-    \textbf{ Existing Tools Also Fall Short}
+    \textbf{Existing Approaches Fall Short}
     \begin{itemize}
       \item Graph classifiers: \emph{no knowledge reuse}
       \item Agentic approaches: \emph{ignore structure}
+      \item LLM failures:
+      \begin{itemize}
+        \item \textbf{84--94\%} of AI patches are still bypassable \cite{mahmud2025systematic}
+        \item \textbf{91.6\%} failure in vulnerability identification \cite{McClanahan2024Meets}
+      \end{itemize}
+    \end{itemize}
+    
+    \begin{center}
+      \begin{tikzpicture}
+        \node[fill=slidebg, draw=labelcol!20, line width=0.5pt,
+          rounded corners=5pt, font=\small\sffamily, text=labelcol,
+          inner xsep=10pt, inner ysep=4pt,
+          drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+        ]{
+          Hallucinated fixes $\Rightarrow$ false sense of security \cite{zemicheal2024llm}
+        };
+      \end{tikzpicture}
+    \end{center}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \textbf{Existing Approach Strengths}
+    \begin{itemize}
+      \item Static analysis for vulnerability detection is well-established \cite{joern}
+      \item Agentic RAG approaches show promising results in code repair \cite{Seo2025AutoPatchMF, bouzenia2025repairagent}
     \end{itemize}
 
     \vspace{0.6em}
     % \rule{\linewidth}{0.4pt}
     \vspace{0.4em}
 
-    \textbf{ Our Approach}\\[0.3em]
-    \textbf{Retrieve} known structural patterns\\
-    $\Rightarrow$ fixes that are \emph{correct \textbf{and} explainable}
+    \textbf{Our Approach}\\[0.3em]
+    \textbf{RAG + Static Analysis:} retrieve known structural patterns\\
+    % \begin{center}
+    % \textbf{$+$  }
+    % \end{center}
+     
+    \textbf{Agentic generation:} produce fixes that are \emph{correct \textbf{and} explainable}
   \end{column}
 
 \end{columns}
@@ -1558,7 +1573,8 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
       \textbf{Embedder} & \textbf{Hit@1} & \textbf{Hit@5} & \textbf{MRR} & \textbf{CWE Recall} \\
       \midrule
       GIN & 0.259 & 0.778 & 0.315 & 0.202 \\
-      Combined & 0.111 & 0.778 & 0.223 & 0.189 \\
+      \rowcolor{warn!12}
+      Combined & \cmiss{0.111} & 0.778 & 0.223 & 0.189 \\
       CodeBERT (baseline) & 0.080 & 0.1518 & 0.098 & 0.141 \\
       \rowcolor{hit!12}
       \textbf{CodeBERT (seq)} & \textbf{0.556} & \textbf{0.926} & \textbf{0.555} & \textbf{0.264} \\
@@ -1651,18 +1667,22 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
 % SUMMARY
 % =====================================================================
 \begin{frame}[fragile]{Next Steps: Research Question 2}
- \textbf{RQ2: }What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline?
-
+ 
+  \textbf{RQ1: }How effective are graph-based embeddings at retrieving relevant vulnerability fix patterns from the knowledge base?
+   \begin{itemize}
+    \item \textbf{Investigate}: Why does combined embedder perform worse than CodeBERT(seq) on CVEFixes?
+   \end{itemize}
  \begin{columns}
   \begin{column}{0.5\textwidth}
+  \textbf{RQ2: }What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline?
     \begin{enumerate}
             \item Integrate the retrieval layer with patch agent
-            \item Run comparative experiments against baseline approaches:
+            \item Run \textbf{comparative experiments} against baseline approaches:
                \begin{itemize}
-                \item zero-shot open-source models
-                \item AutoPatch
+                \item \small{zero-shot open-source models}
+                \item \small{AutoPatch}
                \end{itemize} 
-            \item Validate the end-to-end patching pipeline with industry professionals.
+            \item \textbf{Validate} the end-to-end patching \textbf{pipeline} with industry professionals.
         \end{enumerate}
 
   \end{column}
