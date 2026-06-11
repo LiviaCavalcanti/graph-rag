@@ -14,7 +14,13 @@
 \usepackage{float}
 \usepackage{booktabs}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[most]{tcolorbox}
+% \usepackage[backend=biber, style=numeric, sorting=none, maxnames=3, minnames=1]{biblatex}
+% \addbibresource{references.bib}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit, calc}
 
 % ── Palette (matching presentation) ──────────────────────────────────
 \definecolor{ccode}{RGB}{239, 68, 68}
@@ -26,6 +32,23 @@
 \definecolor{notecol}{RGB}{100, 116, 139}
 \definecolor{shadowcol}{RGB}{101, 67, 33}
 \definecolor{slidebg}{RGB}{248, 250, 252}
+
+\definecolor{c1}{RGB}{41,128,185}
+\definecolor{c2}{RGB}{52,152,219}
+\definecolor{c3}{RGB}{155,89,182}
+\definecolor{c4}{RGB}{142,68,173}
+\definecolor{c5}{RGB}{230,126,34}
+\definecolor{c6}{RGB}{211,84,0}
+% \definecolor{banana}{RGB}{253, 231, 76} 
+% \definecolor{strongcyan}{RGB}{78, 205, 196}
+% \definecolor{spaceindigo}{RGB}{195, 195, 230}
+% \definecolor{powderblush}{RGB}{247, 177, 171}
+\definecolor{c7}{RGB}{63,81,181}
+\definecolor{c8}{RGB}{0,128,128}
+\definecolor{c9}{RGB}{219,39,119}
+\definecolor{hit}{RGB}{39,174,96}
+\definecolor{miss}{RGB}{192,57,43}
+\definecolor{warn}{RGB}{243,156,18}
 
 \tikzset{
     % Cylinder style for databases
@@ -208,6 +231,9 @@ Despite these advantages, RAG-based approaches identified in this review depend 
 This limitation creates a representational gap, causing these systems to fall back on the inherent capacity of the generative model, assuming that scale is the main lever for repair quality.
 Consequently, this dependency results in high repair costs and structural logic errors \cite{cao2024cutting}.
 
+TODO
+CVE vs CWE definition 
+Define graphs
 Prior to the recent advancements in LLM-based code understanding \cite{llmcodeadvances}, static analysis techniques such as Code Property Graphs (CPGs) \cite{cpgyamaguchi} were already well established. 
 CPG is a code representation that merges abstract syntax trees, control flow graphs, and data flow graphs into a joint data structure, facilitating vulnerability detection through graph traversal.
 Although CPGs have been applied to vulnerability detection, their potential as a retrieval representation for automated vulnerability repair remains unexplored.
@@ -253,7 +279,8 @@ For snippets that are not well-formed C/C++ programs, the pipeline first wraps t
 The C/C++ code files are exported to a binary graph  with the Joern shell command \verb|joern-parse --language newc|, where \verb|newc| specifies the C++ specifities avoiding will-formed graphs.  
 Then, the compiled graph is exported to GraphML format with the shell-command \verb|joern-export --repr cpg --format graphml|. 
 Each export generates a directory tree where each subdirectory contains an \verb|export.xml| file with a subgraph of the the whole CPG. 
-The nodes can have different labels (e.g.\ \verb|CALL|, \verb|IDENTIFIER|, \verb|CONTROL_STRUCTURE|), whereas the edges can belong to one of the following graph representation: Abstract Syntax Tree (AST), Control Flow Graph (CFG), Call Dependency Graph (CDG), and Program Dependency Graph (PDG). 
+The nodes can have different labels (e.g.\ \verb|CALL|, \verb|IDENTIFIER|, \verb|CONTROL_STRUCTURE|), whereas the edges can belong to one of the following graph representation: 
+Abstract Syntax Tree (AST), Control Flow Graph (CFG), Call Dependency Graph (CDG), and Program Dependency Graph (PDG). % TODO: define these graphs
 % The output is grouped into folders. The <empthy> folder contains the symbols that are inate of the language.
 % For each operator we have subfolders. Each folder contains a export.xml file with the actual graph. 
 % The <includes> folder contains the imports definitions. Then we have the folder named after the C file that also contains an export.xml file. 
@@ -408,20 +435,158 @@ Besides that, the embedding may have a PCA.
   It was created to be an alternative to the NP-approach graph edit distance, being then efficiently computable, so the comparison calculation happens in a constant time. 
 
   \item \textbf{WL Baseline} (\textit{Weisfeiler-Lehman}).
-    Iterative colour refinement over node types followed by weighted
-    sum pooling and a linear projection. Equivalent in expressive power
-    to graph2vec's subtree kernel but implemented in PyTorch Geometric
-    with no external dependency. \texttt{diff\_weight} biases pooling
-    toward high-signal nodes.
+    Iterative colour refinement over node types followed by weighted sum pooling and a linear projection. 
+    In this work, it was implemented in PyTorch Geometric with no external dependency. 
+    % \texttt{diff\_weight} biases pooling toward high-signal nodes.
+    WL test iteratively : 
+    (1) aggregates the labels of nodes and their neighborhoods, 
+    and (2) hashes theaggregated labels into unique new labels
 
-  \item \textbf{GIN} (\textit{Graph Isomorphism Network}).
-    3-layer GIN with random (frozen) weights.
-    Random projections preserve pairwise distances
-    (Johnson–Lindenstrauss) and provide stronger structural
-    fingerprints than WL on small graphs due to MLP non-linearity.
-    Dual pooling (sum + mean concatenated).
+  \item \textbf{GIN} (\textit{Graph Isomorphism Network}) \cite{xu2019gin}
+   Message-passing neural Network that is as powerful as the Weisfeiler-Lehman graph isomorphism test, which evaluates whether two graphs are topologically identical.
+    A Graph Neural Network that represents each node by recursively aggregating the neighboring represention. 
+    The node representation is updated at each layer k, by aggregating the representations of its neighbors via a sum aggregator, followed by an MLP:
+    $$h_v^{(k)} = \text{MLP}^{(k)}\!\left((1+\epsilon)\cdot h_v^{(k-1)} + \sum_{u \in \mathcal{N}(v)} h_u^{(k-1)}\right)$$
 
-  \item \textbf{Combined.}
+  Where $\epsilon$ is either a learnable paramet or a fixed scalar (TODO: check what is the case here).
+  $h_v^{(0)}$ is initialized from the node features. (TODO: explain network initialization).
+  The number of layers is equivalent to the number of neighbor hops that will be encoded by each node.
+  This choice is a trade-off of the amount of local structural pattern against the global one.  
+  Therefore it learns to embed the subtree in a low dimensional space, not only discriminating different structures but also mapping similar embeddings for similar structures and capturing dependencies between graph structures.
+  Graph-level embeddings are obtained via dual pooling concatenating sum pooling and mean pooling outputs. 
+  The sum pooling preserves structural size information, while mean pooling makes the normalized representations normalized.
+  $$\mathbf{h}_G = \left[\sum_{v} h_v^{(K)}\ \Big\|\ \frac{1}{|V|}\sum_{v} h_v^{(K)}\right]$$   
+    % Architecture
+    \vspace{0.2cm}
+    \begin{figure}[h!]
+      \centering
+      \begin{minipage}{0.48\textwidth}
+        \begin{tikzpicture}[
+        node distance=0.35cm and 0.6cm,
+        layer/.style={
+          draw=ccpg!70, fill=ccpg!10,
+          rounded corners=5pt,
+          minimum width=3.6cm,
+          minimum height=0.55cm,
+          font=\tiny\sffamily\bfseries,
+          align=center
+        },
+        op/.style={
+          draw=c5!70, fill=c5!10,
+          rounded corners=3pt,
+          minimum width=2.4cm,
+          minimum height=0.4cm,
+          font=\tiny\sffamily,
+          align=center
+        },
+        arr/.style={
+          -{Stealth[length=3.5pt, width=3.5pt]},
+          line width=0.8pt,
+          color=notecol!80
+        },
+        lbl/.style={font=\tiny\sffamily, text=notecol}
+      ]
+        % Input
+        \node[layer, fill=csub!15, draw=csub!70] (input)
+              {Node features $h^{(0)}$\\{\tiny 11-dim one-hot (CPG type)}};
+
+        % Layer 1
+        \node[op, below=0.35cm of input] (agg1)
+              {$\Sigma$ neighbors + $(1{+}\epsilon) \cdot h_v$};
+        \node[layer, below=0.25cm of agg1] (mlp1)
+              {MLP$^{(1)}$: Linear(11$\to$128) $\to$ ReLU $\to$ Linear(128$\to$128)};
+
+        % Layer 2
+        \node[op, below=0.3cm of mlp1] (agg2)
+              {$\Sigma$ neighbors + $(1{+}\epsilon) \cdot h_v$};
+        \node[layer, below=0.25cm of agg2] (mlp2)
+              {MLP$^{(2)}$: Linear(128$\to$128) $\to$ ReLU $\to$ Linear(128$\to$128)};
+
+        % Layer 3
+        \node[op, below=0.3cm of mlp2] (agg3)
+              {$\Sigma$ neighbors + $(1{+}\epsilon) \cdot h_v$};
+        \node[layer, below=0.25cm of agg3] (mlp3)
+              {MLP$^{(3)}$: Linear(128$\to$128) $\to$ ReLU $\to$ Linear(128$\to$128)};
+
+        % Arrows
+        \draw[arr] (input) -- (agg1);
+        \draw[arr] (agg1) -- (mlp1);
+        \draw[arr] (mlp1) -- (agg2);
+        \draw[arr] (agg2) -- (mlp2);
+        \draw[arr] (mlp2) -- (agg3);
+        \draw[arr] (agg3) -- (mlp3);
+
+        % Labels
+        \node[lbl, left=0.1cm of mlp1, xshift=-0.3cm] {\rotatebox{90}{Layer 1}};
+        \node[lbl, left=0.1cm of mlp2, xshift=-0.3cm] {\rotatebox{90}{Layer 2}};
+        \node[lbl, left=0.1cm of mlp3, xshift=-0.3cm] {\rotatebox{90}{Layer 3}};
+      \end{tikzpicture}
+      \end{minipage}
+      \hfill
+      \begin{minipage}{0.48\textwidth}
+        \begin{tikzpicture}[
+        node distance=0.3cm,
+        pool/.style={
+          draw=cemb!70, fill=cemb!10,
+          rounded corners=4pt,
+          minimum width=3.2cm,
+          minimum height=0.45cm,
+          font=\tiny\sffamily\bfseries,
+          align=center
+        },
+        outstyle/.style={
+          draw=hit!70, fill=hit!10,
+          rounded corners=4pt,
+          minimum width=3.2cm,
+          minimum height=0.45cm,
+          font=\tiny\sffamily\bfseries,
+          align=center
+        },
+        arr/.style={
+          -{Stealth[length=3.5pt, width=3.5pt]},
+          line width=0.8pt,
+          color=notecol!80
+        },
+        lbl/.style={font=\tiny\sffamily, text=notecol}
+      ]
+        \node[pool] (mean) {MEAN pool over nodes};
+        \node[pool, right=0.2cm of mean] (sum) {SUM pool over nodes};
+        \node[outstyle, below=0.4cm of $(mean.south)!0.5!(sum.south)$] (cat) {Concat: 128 + 128 = 256d};
+        \node[outstyle, draw=ckb!70, fill=ckb!10, below=0.3cm of cat] (proj) {Linear projection $\to$ 128d};
+
+        \draw[arr] (mean) |- (cat);
+        \draw[arr] (sum) |- (cat);
+        \draw[arr] (cat) -- (proj);
+
+        \node[lbl, right=0.1cm of mean] {global};
+        \node[lbl, right=0.1cm of sum] {global};
+      \end{tikzpicture}
+
+      \end{minipage}
+    \end{figure}
+    
+    \textbf{Graph-level readout:}
+
+    \vspace{0.15cm}
+    
+    \vspace{0.4cm}
+    \begin{tcolorbox}[colback=warn!5, colframe=warn!60!black, boxrule=0.4pt,
+      left=4pt, right=4pt, top=3pt, bottom=3pt, arc=3pt,
+      title={\scriptsize\bfseries Key Properties}]
+      \scriptsize
+      \begin{itemize}
+        \setlength\itemsep{2pt}
+        \item As powerful as WL test (injective aggregation)
+        \item Random weights, frozen --- no training needed
+        \item Captures $k$-hop structural neighborhoods
+        \item Node-type aware (unlike spectral methods)
+      \end{itemize}
+    \end{tcolorbox}
+
+    \vspace{0.2cm}
+    {\scriptsize\textit{Source: Xu et al., ``How Powerful are Graph Neural Networks?'', ICLR 2019 (arXiv:1810.00826)}}
+  
+\item \textbf{Combined.}
     Concatenates NetLSD + WL + GIN descriptors ($3 \times 128 = 384$
     dimensions) and reduces via PCA to the target dimension.
     Explained variance reported at fit time. Most robust to
@@ -465,7 +630,7 @@ Evaluation will be conducted using a curated dataset of vulnerabilities drawn fr
  \textbf{MRR} (mean reciprocal rank),
 \textbf{CWE-group recall} (fraction of top-$K$ results sharing the
 query's CWE type), \textbf{effective dimensionality} of the embedding
-space, and \textbf{query latency} (p50/p99)
+space, and 
 \item \textbf{Patch vulnerability verification:} Average loop counts will measure the number of iterations required before the vulnerability is no longer detected. Notably important for answering RQ2 and directly comparing results with AutoPatch.
 \item \textbf{Efficiency:} A comparative cost analysis (measuring tokens, as in RepairAgent, and USD, as in AutoPatch) against LLM-only solutions.
 \item \textbf{Patch Quality}: A qualitative assessment by industry security specialists on a representative sample of generated patches.
