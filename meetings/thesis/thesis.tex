@@ -524,6 +524,7 @@ Besides that, the embedding may have a PCA.
       \end{minipage}
       \hfill
       \begin{minipage}{0.48\textwidth}
+        Graph level readout
         \begin{tikzpicture}[
         node distance=0.3cm,
         pool/.style={
@@ -564,27 +565,6 @@ Besides that, the embedding may have a PCA.
 
       \end{minipage}
     \end{figure}
-    
-    \textbf{Graph-level readout:}
-
-    \vspace{0.15cm}
-    
-    \vspace{0.4cm}
-    \begin{tcolorbox}[colback=warn!5, colframe=warn!60!black, boxrule=0.4pt,
-      left=4pt, right=4pt, top=3pt, bottom=3pt, arc=3pt,
-      title={\scriptsize\bfseries Key Properties}]
-      \scriptsize
-      \begin{itemize}
-        \setlength\itemsep{2pt}
-        \item As powerful as WL test (injective aggregation)
-        \item Random weights, frozen --- no training needed
-        \item Captures $k$-hop structural neighborhoods
-        \item Node-type aware (unlike spectral methods)
-      \end{itemize}
-    \end{tcolorbox}
-
-    \vspace{0.2cm}
-    {\scriptsize\textit{Source: Xu et al., ``How Powerful are Graph Neural Networks?'', ICLR 2019 (arXiv:1810.00826)}}
   
 \item \textbf{Combined.}
     Concatenates NetLSD + WL + GIN descriptors ($3 \times 128 = 384$
