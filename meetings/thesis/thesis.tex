@@ -4,7 +4,7 @@
 \usepackage[margin=1in, left=0.5in, right=1in]{geometry}
 \usepackage{graphicx}
 \usepackage{enumitem}
-\usepackage{xcolor}
+\usepackage[table]{xcolor}
 \usepackage{hyperref}
 \usepackage{fancyhdr}
 \usepackage{cite}
@@ -718,6 +718,25 @@ space, and
   embedding under identical data and PCA protocol.
 
 \subsection*{Discussion}
+
+{\small\textbf{Same-CWE Retrieval} {\scriptsize(n=109 index, 27 query)}}\\[6pt]
+  {\scriptsize
+  \renewcommand{\arraystretch}{1.35}
+  \setlength{\tabcolsep}{3.5pt}
+    \begin{tabular}{lrrrr}
+      \toprule
+      \textbf{Embedder} & \textbf{Hit@1} & \textbf{Hit@5} & \textbf{MRR} & \textbf{CWE Recall} \\
+      \midrule
+      GIN & 0.259 & 0.778 & 0.315 & 0.202 \\
+      \rowcolor{warn!12}
+      Combined & 0.111 & 0.778 & 0.223 & 0.189 \\
+      CodeBERT (baseline) & 0.080 & 0.1518 & 0.098 & 0.141 \\
+      \rowcolor{hit!12}
+      \textbf{CodeBERT (seq)} & \textbf{0.556} & \textbf{0.926} & \textbf{0.555} & \textbf{0.264} \\
+      \textbf{CodeBERT (pat)} & \textbf{0.519} & \textbf{0.889} & \textbf{0.549} & \textbf{0.276} \\
+      \bottomrule
+    \end{tabular}
+  }
 
 \section*{Deliverables}
 \begin{itemize}
