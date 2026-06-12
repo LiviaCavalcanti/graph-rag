@@ -233,6 +233,14 @@ Consequently, this dependency results in high repair costs and structural logic 
 
 TODO
 CVE vs CWE definition 
+source and sink definition
+
+Joern \cite{joern} is a static analysis tool that uses their own graph definition to represent the code, namely Code Property Graphs (CPGs). 
+It consists of nodes that contain the code and a label; and a set of edges that can represent either an edge from abstract syntax tree, control flow, data dependency or control dependency.
+Joern supports the graph generation and exportation; and disposes of a language for graph traversal with the aim of searching a developer defined vulnerability.
+As a consequence, it requires a technical knowledge of the vulnerability and the required language, besides a deep understanding of how the code flows (e.g. sinks and sources).
+Regardless, it is a powerful tool that can have lower false positives than other tools like (dog tool name here)  
+
 Define graphs
 Prior to the recent advancements in LLM-based code understanding \cite{llmcodeadvances}, static analysis techniques such as Code Property Graphs (CPGs) \cite{cpgyamaguchi} were already well established. 
 CPG is a code representation that merges abstract syntax trees, control flow graphs, and data flow graphs into a joint data structure, facilitating vulnerability detection through graph traversal.
@@ -434,7 +442,7 @@ Besides that, the embedding may have a PCA.
   It is also capable of comparing different size graphs. It supports weighted graphs. 
   It was created to be an alternative to the NP-approach graph edit distance, being then efficiently computable, so the comparison calculation happens in a constant time. 
 
-  \item \textbf{WL Baseline} (\textit{Weisfeiler-Lehman}).
+  \item \textbf{WL} (\textit{Weisfeiler-Lehman Kernel}).
     Iterative colour refinement over node types followed by weighted sum pooling and a linear projection. 
     In this work, it was implemented in PyTorch Geometric with no external dependency. 
     % \texttt{diff\_weight} biases pooling toward high-signal nodes.
@@ -567,10 +575,8 @@ Besides that, the embedding may have a PCA.
     \end{figure}
   
 \item \textbf{Combined.}
-    Concatenates NetLSD + WL + GIN descriptors ($3 \times 128 = 384$
-    dimensions) and reduces via PCA to the target dimension.
-    Explained variance reported at fit time. Most robust to
-    individual embedder collapse.
+    Concatenates NetLSD, WL and GIN descriptors ($3 \times 128 = 384$ dimensions) and reduces via PCA to the target dimension, by default 128.
+    It aims to be most robust to individual embedder failures.
 
 \end{itemize}
 The pipeline begins by generating a graph embedding of the input vulnerable code snippet.
