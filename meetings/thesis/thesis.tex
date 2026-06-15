@@ -346,7 +346,7 @@ Besides the labelling, the $G_\mathrm{vuln}$ nodes also received weights.
 
 These weights are directly proportional to the relation of the node to the vulnerability and will be integrated to the embedders for further prunning.
 
-\begin{tikzpicture}[node distance=1.2cm and 2cm]
+\begin{tikzpicture}[node distance=0.8cm and 2.2cm]
 
     % ===== TOP GROUP: CODE PARSING & ANALYSIS =====
     \begin{scope}[local bounding box=analysis_group]
@@ -358,22 +358,34 @@ These weights are directly proportional to the relation of the node to the vulne
         \node[processbox, right=of vuln_code] (joern) {Joern Parse};
         
         % GraphML Export
-        \node[processbox, right=of joern] (export) {GraphML \\ Export};
+        \node[processbox, right=of joern] (export) {GraphML\\Export};
         
-        % Graph DB
-        \node[cylinder, right=of export] (graphdb) {};
-        % \node[above=0cm of graphdb, font=\small\bfseries] {Compiled\\Graphs};
+    \end{scope}
+
+    \begin{scope}[local bounding box=analysis_group_patched, yshift=-2.3cm]
+        
+        % Patched input
+        \node[inputbox] (patched_code) {Patched\\Code};
+        
+        % Joern Parse
+        \node[processbox, right=of patched_code] (joern2) {Joern Parse};
+        
+        % GraphML Export
+        \node[processbox, right=of joern2] (export2) {GraphML\\Export};
         
     \end{scope}
     
-    % Dashed box around analysis
-    \node[groupbox, fit=(analysis_group), label={[anchor=north, yshift=-5pt]\textbf{CODE ANALYSIS}}] {};
+    % Graph DB - centered above the middle section
+    \node[cylinder, right=3cm of export, yshift=-1.15cm] (graphdb) {};
     
-    % % ===== MIDDLE GROUP: GRAPH PROCESSING =====
-    \begin{scope}[local bounding box=processing_group, yshift=-3cm]
+    % Dashed box around analysis (encompasses both scopes equally)
+    \node[groupbox, fit=(analysis_group) (analysis_group_patched), label={[anchor=north, yshift=-2pt]\textbf{CODE ANALYSIS}}] {};
+    
+    % ===== MIDDLE GROUP: GRAPH PROCESSING =====
+    \begin{scope}[local bounding box=processing_group, yshift=-5.5cm]
         
-        % Graph Loading
-        \node[processbox] (load) at (1.5, 0) {Graph Loading\\Merge XML,\\Filter Nodes};
+        % Graph Loading (aligned with the left of export)
+        \node[processbox] (load) {Graph Loading\\Merge XML,\\Filter Nodes};
         
         % Semantic Diff
         \node[processbox, right=of load] (diff) {Semantic Diff\\Fingerprint\\Matching};
@@ -384,47 +396,40 @@ These weights are directly proportional to the relation of the node to the vulne
     \end{scope}
     
     % Dashed box around processing
-    \node[groupbox, fit=(processing_group), label={[anchor=north, yshift=-5pt]\textbf{GRAPH PROCESSING}}] {};
+    \node[groupbox, fit=(processing_group), label={[anchor=north, yshift=-2pt]\textbf{GRAPH PROCESSING}}] {};
     
-    % ===== BOTTOM: OUTPUT =====
-    \node[outputbox, below=4.5cm of sampling] (output) {Vulnerability\\Subgraph\\with diff\_weight};
+    % ===== BOTTOM: OUTPUT (centered below sampling) =====
+    \node[outputbox, below=1.2cm of sampling] (output) {Vulnerability\\Subgraph\\with diff\_weight};
     
-    % % ===== PATCHED CODE BRANCH =====
-    % \node[patchbox, right=1cm of vuln_code, anchor=west] (patch_code) {Patched\\Code};
+    % ===== ARROWS =====
     
-    % % Joern Parse for patched
-    % \node[processbox, right=of patch_code] (joern_patch) {Joern Parse\\Code Structural\\Representation};
-    
-    % % GraphML Export for patched
-    % \node[processbox, right=of joern_patch] (export_patch) {GraphML\\Export\\AST, CFG,\\CDG, PDG};
-    
-    % % Connection to graph DB
-    % \draw[arrow] (export_patch) -- (graphdb);
-    
-    % % ===== ARROWS =====
-    
-    % % Top group arrows
+    % Vulnerable group arrows
     \draw[arrow] (vuln_code) -- (joern);
     \draw[arrow] (joern) -- (export);
-    \draw[arrow] (export) -- (graphdb);
     
-    % % Patched code arrows
-    % \draw[arrow] (patch_code) -- (joern_patch);
-    % \draw[arrow] (joern_patch) -- (export_patch);
+    % Perpendicular arrow from export to graphdb
+    \draw[arrow] (export.east) -- ++(1.1,0) |- (graphdb.west);
+
+    % Patched group arrows
+    \draw[arrow] (patched_code) -- (joern2);
+    \draw[arrow] (joern2) -- (export2);
     
-    % % From graph DB to loading
-    \draw[arrow] (graphdb.south) -- ++(0,-0.6) -| (load.north);
+    % Perpendicular arrow from export2 to graphdb
+    \draw[arrow] (export2.east) -- ++(1.1,0) |- (graphdb.west);
     
-    % % Processing arrows
+    % From graph DB to loading (routed cleanly)
+    \draw[arrow] (graphdb.south) -- ++(0,-1.6) -| (load.north);
+    
+    % Processing arrows
     \draw[arrow] (load) -- (diff);
     \draw[arrow] (diff) -- (sampling);
     
-    % % To output
+    % To output
     \draw[arrow] (sampling) -- (output);
     
-    % % ===== LABELS =====
-    \node[below=8.5cm of vuln_code, font=\small\bfseries] {INPUT};
-    \node[below=0.5cm of output, font=\small\bfseries] {OUTPUT};
+    % ===== LABELS =====
+    \node[left=0.6cm of vuln_code, yshift=-11pt, font=\small\bfseries] {INPUT};
+    \node[below=0.6cm of output, font=\small\bfseries] {OUTPUT};
 
 \end{tikzpicture}
 
@@ -579,6 +584,16 @@ Besides that, the embedding may have a PCA.
     It aims to be most robust to individual embedder failures.
 
 \end{itemize}
+
+PCA and L2 normalization Discussion with experiments
+
+FAISS and HNSW
+
+Agent 
+prompt
+iteration
+
+
 The pipeline begins by generating a graph embedding of the input vulnerable code snippet.
 This embedding is used to query the KB for the most structurally similar fix. 
 The AutoPatch dataset will be used as the primary source for the KB, providing a consistent baseline for our experiments.
@@ -612,11 +627,6 @@ Evaluation will be conducted using a curated dataset of vulnerabilities drawn fr
 
 \begin{itemize}
 \item \textbf{Retrieval Quality:} Measured via Hit@K, which calculates the fraction of true entities appearing in the top \textit{k} results of the ranked list. This metric evaluates the performance of the Graph-based search. % different results using the top-k results (maybe the same algorithm as autopatch IV-PQ, HNSW, include param-search ? irrelevant) 
-\item Metrics:
- \textbf{MRR} (mean reciprocal rank),
-\textbf{CWE-group recall} (fraction of top-$K$ results sharing the
-query's CWE type), \textbf{effective dimensionality} of the embedding
-space, and 
 \item \textbf{Patch vulnerability verification:} Average loop counts will measure the number of iterations required before the vulnerability is no longer detected. Notably important for answering RQ2 and directly comparing results with AutoPatch.
 \item \textbf{Efficiency:} A comparative cost analysis (measuring tokens, as in RepairAgent, and USD, as in AutoPatch) against LLM-only solutions.
 \item \textbf{Patch Quality}: A qualitative assessment by industry security specialists on a representative sample of generated patches.
