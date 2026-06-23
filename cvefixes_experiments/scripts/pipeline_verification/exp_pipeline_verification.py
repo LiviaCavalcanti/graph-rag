@@ -68,6 +68,8 @@ import shutil
 import time
 from collections import Counter, defaultdict
 from pathlib import Path
+from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import networkx as nx
 import numpy as np
@@ -92,8 +94,8 @@ from src.rag.utils import populate_index
 # ── Configuration ────────────────────────────────────────────────────
 
 JOERN_BIN_DIR = "/home/z0050s2b/bin/joern/joern-cli"
-DATA_FILE = Path("cvefixes_experiments/data/cvefixes_filtered_by_cwe.json")
-OUTPUT_DIR = Path("cvefixes_experiments/output/pipeline_verification")
+DATA_FILE = Path("cvefixes_experiments/data/cvefixes_filtered_by_cwe_with_files.json")
+OUTPUT_DIR = Path("cvefixes_experiments/output/pipeline_verification_structure_file_ctxt_codebertandgin")
 WORK_DIR = OUTPUT_DIR / "cpg_cache"
 
 SEED = 42
@@ -107,10 +109,10 @@ SAMPLES_PER_CWE = 20  # target per CWE → ~140 total → 112 index + 28 query
 
 # Code size bounds (lines)
 MIN_LINES = 10
-MAX_LINES = 120
+MAX_LINES = float('inf')
 
 # Embedders to evaluate
-EMBEDDER_NAMES = ["gin", "combined", "codebert_pattern"]
+EMBEDDER_NAMES = ['netlsd']
 
 KS = [1, 5, 10]
 
@@ -176,7 +178,14 @@ def select_entries(data_file: Path, seed: int) -> list[dict]:
 
 
 def generate_cpg_pair(entry: dict, work_dir: Path) -> tuple[nx.MultiDiGraph, nx.MultiDiGraph] | None:
-    """Generate before/after CPGs. Returns (G_before, G_after) or None."""
+    """Generate before/after CPGs from file-level code.
+    
+    Uses full file context instead of just method code to get better graph
+    structure and data/control flow information. The function name is preserved
+    for later anchoring if needed.
+    
+    Returns (G_before, G_after) or None.
+    """
     func_name = entry.get("method_name") or "function"
     func_safe = "".join(c if c.isalnum() or c == "_" else "_" for c in func_name)
 
@@ -184,12 +193,19 @@ def generate_cpg_pair(entry: dict, work_dir: Path) -> tuple[nx.MultiDiGraph, nx.
     after_dir = work_dir / "after"
 
     try:
-        src_before = write_c_file(entry["code_before"], before_dir / f"{func_safe}.cpp")
+        # Prefer file-level code for better context, fall back to method-level
+        code_before = entry.get("file_code_before") or entry.get("code_before")
+        code_after = entry.get("file_code_after") or entry.get("code_after")
+        
+        if not code_before or not code_after:
+            return None
+        
+        src_before = write_c_file(code_before, before_dir / f"{func_safe}.cpp")
         ok = run_joern_export(JOERN_BIN_DIR, str(src_before), str(before_dir), str(before_dir / "graph"))
         if not ok:
             return None
 
-        src_after = write_c_file(entry["code_after"], after_dir / f"{func_safe}.cpp")
+        src_after = write_c_file(code_after, after_dir / f"{func_safe}.cpp")
         ok = run_joern_export(JOERN_BIN_DIR, str(src_after), str(after_dir), str(after_dir / "graph"))
         if not ok:
             return None
@@ -209,75 +225,126 @@ def generate_cpg_pair(entry: dict, work_dir: Path) -> tuple[nx.MultiDiGraph, nx.
 
 
 def build_pairs(entries: list[dict], work_dir: Path) -> list[FunctionPair]:
-    """Generate CPGs and build FunctionPair objects with graph diffs."""
+    """Generate CPGs from file-level code and build FunctionPair objects with graph diffs.
+    
+    This version uses the full file content (file_code_before/after) to generate
+    CPGs, providing better context via data flow, control flow, and function calls.
+    The function of interest is anchored via func_name and meta fields.
+    
+    Parallelizes CPG generation and graph diff computation using ThreadPoolExecutor.
+    """
     work_dir.mkdir(parents=True, exist_ok=True)
-    pairs = []
-    cwe_counts = Counter()
     t_start = time.perf_counter()
 
-    for i, entry in enumerate(entries):
-        cwe_id = entry["cwe"][0]["cwe_id"]
+    def process_entry(i_entry_tuple):
+        """Process a single entry: generate CPGs, compute diff, return FunctionPair or None."""
+        i, entry = i_entry_tuple
+        try:
+            cwe_id = entry["cwe"][0]["cwe_id"]
+            cve_id = entry["cve_id"]
+            func_name = entry.get("method_name") or "func"
+            func_safe = "".join(c if c.isalnum() or c == "_" else "_" for c in func_name)
+            entry_dir = work_dir / f"{i:04d}_{cve_id}_{func_safe}"
 
-        # Stop if we have enough for this CWE
-        if cwe_counts[cwe_id] >= SAMPLES_PER_CWE:
-            continue
-
-        cve_id = entry["cve_id"]
-        func_name = entry.get("method_name") or "func"
-        func_safe = "".join(c if c.isalnum() or c == "_" else "_" for c in func_name)
-        entry_dir = work_dir / f"{i:04d}_{cve_id}_{func_safe}"
-
-        # Try to load from cache
-        G_before, G_after = None, None
-        if (entry_dir / "before" / "graph").exists() and (entry_dir / "after" / "graph").exists():
-            try:
-                G_before = load_cpg_dir(str(entry_dir / "before" / "graph"))
-                G_after = load_cpg_dir(str(entry_dir / "after" / "graph"))
-                if G_before.number_of_nodes() < 10 or G_after.number_of_nodes() < 10:
+            # Try to load from cache
+            G_before, G_after = None, None
+            if (entry_dir / "before" / "graph").exists() and (entry_dir / "after" / "graph").exists():
+                try:
+                    G_before = load_cpg_dir(str(entry_dir / "before" / "graph"))
+                    G_after = load_cpg_dir(str(entry_dir / "after" / "graph"))
+                    if G_before.number_of_nodes() < 10 or G_after.number_of_nodes() < 10:
+                        G_before, G_after = None, None
+                except Exception:
                     G_before, G_after = None, None
-            except Exception:
-                G_before, G_after = None, None
 
-        # Generate fresh if not cached
-        if G_before is None:
-            if entry_dir.exists():
-                shutil.rmtree(entry_dir)
-            result = generate_cpg_pair(entry, entry_dir)
-            if result is None:
-                continue
-            G_before, G_after = result
+            # Generate fresh if not cached
+            if G_before is None:
+                if entry_dir.exists():
+                    shutil.rmtree(entry_dir)
+                result = generate_cpg_pair(entry, entry_dir)
+                if result is None:
+                    return None
+                G_before, G_after = result
 
-        # Compute graph diff (vulnerability slice)
-        G_vuln = compute_graph_diff(G_before, G_after)
-        if G_vuln.number_of_nodes() == 0:
+            # Compute graph diff (vulnerability slice anchored on function context)
+            G_vuln = compute_graph_diff(G_before, G_after)
+            if G_vuln.number_of_nodes() == 0:
+                return None
+
+            # Determine whether we used file-level or method-level code
+            used_file_context = bool(entry.get("file_code_before")) and bool(entry.get("file_code_after"))
+            
+            return (cwe_id, FunctionPair(
+                cve_id=cve_id,
+                cwe_id=cwe_id,
+                func_name=func_name,
+                project=entry.get("project", ""),
+                G_before=G_before,
+                G_after=G_after,
+                G_vuln=G_vuln,
+                meta={
+                    "dataset": "CVEfixes",
+                    "variant": "file_context" if used_file_context else "method_only",
+                    "filename": entry.get("filename", ""),
+                    "language": entry.get("programming_language", "C"),
+                    "source_before": entry.get("code_before", ""),
+                    "file_source_before": entry.get("file_code_before", ""),
+                    "anchor_function": func_name,
+                },
+            ))
+        except Exception as e:
+            return None
+
+    # Pre-filter: mark candidates by CWE to respect SAMPLES_PER_CWE limit
+    by_cwe = defaultdict(list)
+    for i, entry in enumerate(entries):
+        try:
+            cwe_id = entry["cwe"][0]["cwe_id"]
+            if cwe_id in TARGET_CWES:
+                by_cwe[cwe_id].append((i, entry))
+        except (KeyError, IndexError, TypeError):
             continue
+    
+    # Select candidates (up to SAMPLES_PER_CWE * 1.5 per CWE)
+    candidates = []
+    for cwe in TARGET_CWES:
+        pool = by_cwe.get(cwe, [])
+        n_take = int(SAMPLES_PER_CWE * 1.5)
+        candidates.extend(pool[:n_take])
 
-        pairs.append(FunctionPair(
-            cve_id=cve_id,
-            cwe_id=cwe_id,
-            func_name=func_name,
-            project=entry.get("project", ""),
-            G_before=G_before,
-            G_after=G_after,
-            G_vuln=G_vuln,
-            meta={
-                "dataset": "CVEfixes",
-                "variant": "original",
-                "filename": entry.get("filename", ""),
-                "language": entry.get("programming_language", "C"),
-                "source_before": entry.get("code_before", ""),
-            },
-        ))
-        cwe_counts[cwe_id] += 1
-
-        elapsed = time.perf_counter() - t_start
-        print(f"  [{len(pairs):3d}] {cve_id}/{func_name} [{cwe_id}]  "
-              f"nodes: {G_before.number_of_nodes()}/{G_after.number_of_nodes()} "
-              f"→ slice: {G_vuln.number_of_nodes()}")
+    # Process candidates in parallel
+    pairs = []
+    cwe_counts = Counter()
+    
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {executor.submit(process_entry, item): item for item in candidates}
+        
+        for future in tqdm(as_completed(futures), total=len(candidates), desc="Building pairs"):
+            result = future.result()
+            if result is not None:
+                cwe_id, pair = result
+                
+                # Apply per-CWE sampling limit
+                if cwe_counts[cwe_id] >= SAMPLES_PER_CWE:
+                    continue
+                
+                pairs.append(pair)
+                cwe_counts[cwe_id] += 1
+                
+                elapsed = time.perf_counter() - t_start
+                ctx = "[FILE]" if pair.meta.get("variant") == "file_context" else "[FUNC]"
+                print(f"  [{len(pairs):3d}] {pair.cve_id}/{pair.func_name} [{cwe_id}] {ctx}  "
+                      f"nodes: {pair.G_before.number_of_nodes()}/{pair.G_after.number_of_nodes()} "
+                      f"→ slice: {pair.G_vuln.number_of_nodes()}")
 
     elapsed_total = time.perf_counter() - t_start
     print(f"\n  Built {len(pairs)} pairs in {elapsed_total:.0f}s")
     print(f"  Per-CWE: {dict(cwe_counts)}")
+    
+    # Summary of context usage
+    file_ctx_count = sum(1 for p in pairs if p.meta.get("variant") == "file_context")
+    print(f"  Using file-level context: {file_ctx_count}/{len(pairs)} pairs")
+    
     return pairs
 
 
@@ -334,31 +401,157 @@ def stratified_split(pairs: list[FunctionPair], test_ratio: float, seed: int):
 # ── Main experiment ──────────────────────────────────────────────────
 
 
-def run_experiment(cfg_path: str = "config.yaml"):
-    """Run the full pipeline verification experiment."""
+def run_experiment(
+    cfg_path: str = "config.yaml",
+    load_pairs_from: str | None = None,
+    save_embeddings_dir: str | None = None,
+    load_embeddings_dir: str | None = None,
+):
+    """Run the full pipeline verification experiment.
+    
+    Args:
+        cfg_path: Path to config YAML
+        load_pairs_from: Optional path to pre-computed cpg_cache to skip build_pairs step
+        save_embeddings_dir: Optional directory to save computed embeddings (npz + metadata)
+        load_embeddings_dir: Optional directory to load pre-computed embeddings from
+    """
     import yaml
 
     with open(cfg_path) as f:
         cfg = yaml.safe_load(f)
 
+    # Load experiment configuration (with defaults)
+    exp_cfg = cfg.get("experiment", {}).get("pipeline_verification", {})
+    
+    # Override module-level defaults with config values
+    global SEED, SLICE_DEPTH, TARGET_CWES, SAMPLES_PER_CWE, MIN_LINES, MAX_LINES, EMBEDDER_NAMES, KS
+    
+    SEED = exp_cfg.get("seed", SEED)
+    SLICE_DEPTH = exp_cfg.get("slice_depth", SLICE_DEPTH)
+    TARGET_CWES = exp_cfg.get("target_cwes", TARGET_CWES)
+    SAMPLES_PER_CWE = exp_cfg.get("samples_per_cwe", SAMPLES_PER_CWE)
+    MIN_LINES = exp_cfg.get("min_lines", MIN_LINES)
+    MAX_LINES = exp_cfg.get("max_lines") or float('inf')
+    EMBEDDER_NAMES = exp_cfg.get("embedders", EMBEDDER_NAMES)
+    KS = exp_cfg.get("ks", KS)
+
     print("=" * 70)
     print("EXPERIMENT: CVEfixes Pipeline Verification")
     print("  Verifying that graph-RAG retrieves same-CVE / same-CWE entries")
     print("=" * 70)
+    print(f"\nConfiguration (from {cfg_path}):")
+    print(f"  Target CWEs: {TARGET_CWES}")
+    print(f"  Embedders: {EMBEDDER_NAMES}")
+    print(f"  Samples per CWE: {SAMPLES_PER_CWE}")
+    print(f"  Code size: {MIN_LINES}-{MAX_LINES} lines")
+    print(f"  Metrics: hit@{KS}")
+    print()
 
-    # 1. Select data
-    print(f"\n[1/5] Selecting entries from {DATA_FILE}...")
-    entries = select_entries(DATA_FILE, SEED)
+    # entries = select_entries(DATA_FILE, SEED)
+    # OUTPUT_DIR = Path('./experiments_cves')
+    # # Save selected entries to file
+    # entries_path = OUTPUT_DIR / "selected_entries.json"
+    # OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    # with open(entries_path, "w") as f:
+    #     json.dump({
+    #         "count": len(entries),
+    #         "seed": SEED,
+    #         "target_cwes": TARGET_CWES,
+    #         "entries": entries,
+    #     }, f, indent=2, default=str)
+    # print(f"  Selected entries → {entries_path}")
 
-    # 2. Generate CPGs and build pairs
-    print(f"\n[2/5] Building CPGs and graph diffs (slice depth={SLICE_DEPTH})...")
-    pairs = build_pairs(entries, WORK_DIR)
+    # Currently very buggy
+    # 1. Select data or load from cache
+    if load_pairs_from:
+        print(f"\n[1-2/5] Loading pairs from cache: {load_pairs_from}...")
+        cache_path = Path(load_pairs_from)
+        
+        # Helper function to load a single entry (for parallel execution)
+        def load_entry(entry_dir):
+            try:
+                if not entry_dir.is_dir():
+                    print('dir not found', entry_dir)
+                    return None
+
+                # Support both flat layout (before/graph, after/graph) and
+                # nested layout (original/before/graph, original/after/graph)
+                if (entry_dir / "original" / "before" / "graph").exists():
+                    before_graph = entry_dir / "original" / "before" / "graph"
+                    after_graph = entry_dir / "original" / "after" / "graph"
+                elif (entry_dir / "before" / "graph").exists():
+                    before_graph = entry_dir / "before" / "graph"
+                    after_graph = entry_dir / "after" / "graph"
+                else:
+                    return None
+
+                print('after graph: ', after_graph)
+                if not before_graph.exists() or not after_graph.exists():
+                    return None
+                
+                # Parse CVE from dirname (format: CVE-YYYY-XXXXX_suffix or similar)
+                dir_name = entry_dir.name
+                # Extract CVE ID: everything before the first underscore (or the whole name if no underscore)
+                if "_" in dir_name:
+                    cve_id = dir_name.split("_")[0]
+                else:
+                    cve_id = dir_name
+                
+                G_before = load_cpg_dir(str(before_graph))
+                G_after = load_cpg_dir(str(after_graph))
+                G_vuln = compute_graph_diff(G_before, G_after)
+                
+                if G_vuln.number_of_nodes() == 0:
+                    return None
+                
+                # Extract function name from dirname (everything after the first underscore)
+                func_name = "_".join(dir_name.split("_")[1:]) if "_" in dir_name else "unknown"
+                
+                return FunctionPair(
+                    cve_id=cve_id,
+                    cwe_id="UNKNOWN",
+                    func_name=func_name,
+                    project="",
+                    G_before=G_before,
+                    G_after=G_after,
+                    G_vuln=G_vuln,
+                    meta={"dataset": "CVEfixes", "variant": "cached"}
+                )
+            except Exception as e:
+                print(f"    WARNING: Failed to load {entry_dir.name}: {e}")
+                return None
+        
+        # Load all graphs in parallel
+        pairs = []
+        cache_dirs = sorted(cache_path.iterdir())
+        # Keep symlinks and dirs (don't resolve — relative symlinks must be followed from cwd)
+        cache_dirs = [d for d in cache_dirs if d.is_symlink() or d.is_dir()]
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            futures = {executor.submit(load_entry, d): d for d in cache_dirs}
+            for future in tqdm(as_completed(futures), total=len(cache_dirs), desc="Loading pairs from cache"):
+                result = future.result()
+                if result is not None:
+                    pairs.append(result)
+            
+                if len(pairs) > 50:
+                    break
+        
+        print(f"  Loaded {len(pairs)} pairs from cache")
+        skip_build = True
+    else:
+        print(f"\n[1/5] Selecting entries from {DATA_FILE}...")
+        entries = select_entries(DATA_FILE, SEED)
+
+        # 2. Generate CPGs and build pairs
+        print(f"\n[2/5] Building CPGs and graph diffs (slice depth={SLICE_DEPTH})...")
+        pairs = build_pairs(entries, WORK_DIR)
+        skip_build = False
 
     if len(pairs) < 20:
         print(f"FATAL: only {len(pairs)} pairs — need at least 20")
         return
-
-    # 3. Split
+    
+    # 3. Split (always done)
     print(f"\n[3/5] Splitting into index/query (stratified by CWE)...")
     index_pairs, query_pairs = stratified_split(pairs, test_ratio=0.2, seed=SEED)
 
@@ -394,12 +587,30 @@ def run_experiment(cfg_path: str = "config.yaml"):
         embedder = EMBEDDER_REGISTRY[emb_name](emb_cfg)
         print(f"\n  ── {embedder.name} ──")
 
-        # Embed index
-        t0 = time.perf_counter()
-        index_graphs = [p.G_vuln for p in index_pairs]
-        index_embeddings = embedder.embed_many(index_graphs)
-        embed_time = time.perf_counter() - t0
-        print(f"    Embedded {len(index_graphs)} graphs in {embed_time:.1f}s")
+        # Embed index (or load from cache)
+        emb_load_path = Path(load_embeddings_dir) / f"{emb_name}_index.npz" if load_embeddings_dir else None
+        if emb_load_path and emb_load_path.exists():
+            print(f"    Loading embeddings from {emb_load_path}")
+            npz = np.load(emb_load_path)
+            index_embeddings = npz["embeddings"]
+            embed_time = 0.0
+            print(f"    Loaded {len(index_embeddings)} index embeddings (dim={index_embeddings.shape[1]})")
+        else:
+            t0 = time.perf_counter()
+            index_graphs = [p.G_vuln for p in index_pairs]
+            index_embeddings = embedder.embed_many(index_graphs)
+            embed_time = time.perf_counter() - t0
+            print(f"    Embedded {len(index_graphs)} graphs in {embed_time:.1f}s")
+            # Optionally save
+            if save_embeddings_dir:
+                emb_save_dir = Path(save_embeddings_dir)
+                emb_save_dir.mkdir(parents=True, exist_ok=True)
+                save_path = emb_save_dir / f"{emb_name}_index.npz"
+                np.savez(save_path, embeddings=index_embeddings,
+                         cve_ids=[p.cve_id for p in index_pairs],
+                         cwe_ids=[p.cwe_id for p in index_pairs],
+                         func_names=[p.func_name for p in index_pairs])
+                print(f"    Saved index embeddings → {save_path}")
 
         # Check for degenerate embeddings
         norms = np.linalg.norm(index_embeddings, axis=1)
@@ -425,8 +636,33 @@ def run_experiment(cfg_path: str = "config.yaml"):
             index, index_pairs, index_embeddings, embedder.name, top_k=max(KS)
         )
 
-        # Retrieve
-        qr = retrieve_all(query_pairs, embedder, retriever, top_k=max(KS))
+        # Embed query (or load from cache)
+        qemb_load_path = Path(load_embeddings_dir) / f"{emb_name}_query.npz" if load_embeddings_dir else None
+        if qemb_load_path and qemb_load_path.exists():
+            print(f"    Loading query embeddings from {qemb_load_path}")
+            npz_q = np.load(qemb_load_path)
+            query_embeddings = npz_q["embeddings"]
+            print(f"    Loaded {len(query_embeddings)} query embeddings")
+        else:
+            query_graphs = [p.G_vuln for p in query_pairs]
+            query_embeddings = embedder.embed_many(query_graphs)
+            if save_embeddings_dir:
+                emb_save_dir = Path(save_embeddings_dir)
+                emb_save_dir.mkdir(parents=True, exist_ok=True)
+                qsave_path = emb_save_dir / f"{emb_name}_query.npz"
+                np.savez(qsave_path, embeddings=query_embeddings,
+                         cve_ids=[p.cve_id for p in query_pairs],
+                         cwe_ids=[p.cwe_id for p in query_pairs],
+                         func_names=[p.func_name for p in query_pairs])
+                print(f"    Saved query embeddings → {qsave_path}")
+
+        # Retrieve — use pre-computed query embeddings directly to avoid re-embedding
+        qr = []
+        for pair, query_vec in zip(query_pairs, query_embeddings):
+            if np.linalg.norm(query_vec) < 1e-6:
+                continue
+            results = retriever.query(query_vec, top_k=max(KS))
+            qr.append((pair, results))
         print(f"    Retrieved for {len(qr)} queries")
 
         # Compute metrics
@@ -488,6 +724,7 @@ def run_experiment(cfg_path: str = "config.yaml"):
             "max_lines": MAX_LINES,
             "embedders": EMBEDDER_NAMES,
             "ks": KS,
+            "success_criteria": exp_cfg.get("success_criteria", {}),
         },
         "dataset_info": {
             "source": str(DATA_FILE),
@@ -538,17 +775,33 @@ def run_experiment(cfg_path: str = "config.yaml"):
 
     # Correctness verdict
     if cells:
+        # Get thresholds from config
+        success_cfg = exp_cfg.get("success_criteria", {})
+        mrr_threshold = success_cfg.get("mrr_threshold", 0.2)
+        cwe_recall_threshold = success_cfg.get("cwe_recall_threshold", 0.5)
+        hit_at_5_threshold = success_cfg.get("hit_at_5_threshold", 0.3)
+        
         best_mrr = max(c["self_retrieval"].get("mrr", 0) for c in cells)
         best_cwe = max(c["cwe_recall"].get("macro_avg", 0) for c in cells)
         best_hit5 = max(c["self_retrieval"].get("hit@5", 0) for c in cells)
-        print(f"\n  Best MRR:        {best_mrr:.3f} {'✓' if best_mrr > 0.2 else '✗'} (threshold: 0.2)")
-        print(f"  Best CWE recall: {best_cwe:.3f} {'✓' if best_cwe > 0.5 else '✗'} (threshold: 0.5)")
-        print(f"  Best hit@5:      {best_hit5:.3f} {'✓' if best_hit5 > 0.3 else '✗'} (threshold: 0.3)")
+        print(f"\n  Best MRR:        {best_mrr:.3f} {'✓' if best_mrr > mrr_threshold else '✗'} (threshold: {mrr_threshold})")
+        print(f"  Best CWE recall: {best_cwe:.3f} {'✓' if best_cwe > cwe_recall_threshold else '✗'} (threshold: {cwe_recall_threshold})")
+        print(f"  Best hit@5:      {best_hit5:.3f} {'✓' if best_hit5 > hit_at_5_threshold else '✗'} (threshold: {hit_at_5_threshold})")
 
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="CVEfixes pipeline verification experiment")
     parser.add_argument("--config", default="config.yaml", help="Config YAML path")
+    parser.add_argument("--load-pairs-from", default=None, help="Path to pre-computed cpg_cache to skip build_pairs step")
+    parser.add_argument("--save-embeddings", default=None, metavar="DIR",
+                        help="Save computed embeddings (index + query) as .npz files in DIR")
+    parser.add_argument("--load-embeddings", default=None, metavar="DIR",
+                        help="Load pre-computed embeddings from DIR (skips embed step)")
     args = parser.parse_args()
-    run_experiment(cfg_path=args.config)
+    run_experiment(
+        cfg_path=args.config,
+        load_pairs_from=args.load_pairs_from,
+        save_embeddings_dir=args.save_embeddings,
+        load_embeddings_dir=args.load_embeddings,
+    )
