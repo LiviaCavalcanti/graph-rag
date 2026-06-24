@@ -71,6 +71,11 @@ class CVEFixesDataset(BaseDataset):
     def _sample_limit(self) -> int:
         return int(self.cfg.get("sample_limit", 0))
 
+    def _target_cwes(self) -> list[str] | None:
+        """Get target CWEs to filter on, or None if filtering disabled."""
+        target_cwes = self.cfg.get("target_cwes", [])
+        return target_cwes if target_cwes else None
+
     def _connect(self) -> sqlite3.Connection:
         db = self._db_path()
         if not db.exists():
@@ -107,10 +112,18 @@ class CVEFixesDataset(BaseDataset):
     def _iter_rows(self):
         """Yield rows from the database, applying filters."""
         conn = self._connect()
+        target_cwes = self._target_cwes()
+        
         try:
             query, params = self._build_query()
             cursor = conn.execute(query, params)
             for row in cursor:
+                # Filter by target CWEs if configured
+                if target_cwes is not None:
+                    cwe_id = row["cwe_id"]
+                    if cwe_id not in target_cwes:
+                        continue
+                
                 code_before = row["code_before"]
                 code_after = row["code_after"]
                 if not self._passes_filter(code_before):
