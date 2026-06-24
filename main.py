@@ -1,3 +1,36 @@
+"""
+Unified CVE graph-RAG pipeline supporting both AutoPatch and CVEfixes datasets.
+
+PRIMARY WORKFLOW (CVEfixes — Recommended):
+────────────────────────────────────────
+  1. Export CPGs:   python main.py --mode export [--dataset cvefixes]
+  2. Build index:   python main.py --mode index
+  3. Query:         python main.py --mode query --cve CVE-2024-XXXXX
+  4. Full pipeline: python main.py --mode full
+
+CONFIGURATION:
+──────────────
+- config.yaml: Dataset selection (data.active), embedders, Joern paths
+  • data.active: [cvefixes]  ← CVEfixes is now the default
+  • data.cvefixes.db_path: data/cvefixes/CVEfixes.db (download from Zenodo)
+  • data.cvefixes.graphml_root: graphml_cvefixes_fixed (Joern outputs)
+
+CVEFIXES SETUP:
+───────────────
+  1. Download: https://zenodo.org/record/4476563 (DOI: 10.5281/zenodo.4476563)
+  2. Inflate:  gzcat CVEfixes.sql.gz | sqlite3 data/cvefixes/CVEfixes.db
+  3. Export:   python main.py --mode export
+     → Generates CPGs for C/C++ code in graphml_cvefixes_fixed/
+
+MODES:
+──────
+  export:       Run Joern to generate CPGs (before/after code)
+  index:        Embed CPGs and build FAISS retrieval index
+  query:        Retrieve similar vulnerabilities from index
+  batch:        End-to-end inference with LLM patching
+  full:         Complete pipeline: retrieval → patching → evaluation
+"""
+
 import argparse
 import json
 from enum import Enum, auto
@@ -170,15 +203,38 @@ def _process_job(job: ExportJob, joern_bin_dir: str) -> tuple[JobStatus, str]:
 
 
 def run_export(cfg: dict, dataset_name: str | None = None):
-    joern_bin_dir = str(
-        cfg.paths.joern_bin_dir
-    )
+    """Export CPGs for specified dataset(s).
+    
+    Args:
+        cfg: AppConfig with paths and dataset configs
+        dataset_name: Specific dataset to export ('autopatch', 'cvefixes', etc).
+                     If None, uses all datasets in config.data.active
+    """
+    joern_bin_dir = str(cfg.paths.joern_bin_dir)
     if not joern_bin_dir:
         raise KeyError("Joern path not found. Set paths.joern_bin_dir or joern.bin_dir")
-    # workers = cfg["joern"].get("workers", max(1, cpu_count() - 1))
+    
     workers = max(1, cpu_count() - 1)
-    active = [dataset_name] if dataset_name else list(DATASETS.keys())
+    
+    # Determine which datasets to process
+    if dataset_name:
+        # Explicit dataset requested
+        active = [dataset_name] if DATASETS.get(dataset_name) else []
+    else:
+        # Use config's active datasets, defaulting to all if not specified
+        from src.schema_config import AppConfig
+        if isinstance(cfg, AppConfig):
+            raw_cfg = getattr(cfg, '_raw_cfg', None)
+            active = raw_cfg.get("data", {}).get("active", list(DATASETS.keys())) if raw_cfg else list(DATASETS.keys())
+        else:
+            active = cfg.get("data", {}).get("active", list(DATASETS.keys()))
+    
+    # Filter to configured datasets
     active = [n for n in active if cfg.data.get(n)]
+    
+    if not active:
+        print("ERROR: No active datasets configured. Check config.yaml: data.active")
+        return
 
     for ds_name in active:
         ds_cfg = cfg.data[ds_name]
@@ -229,6 +285,9 @@ def run_pipeline(cfg):
     total = 0
     contract_batches: list[DatasetBatch] = []
     contract_embedded: list[EmbeddedBatch] = []
+    
+    # Batch embedding configuration
+    BATCH_SIZE = 32  # Embed in batches for efficiency
 
     for ds_name in active_datasets:
         ds_cfg = cfg["data"][ds_name]
@@ -237,17 +296,47 @@ def run_pipeline(cfg):
         print(f"-----------{dataset.name()}-----------")
 
         ds_total = 0
+        batch_pairs = []
 
         for pair in dataset.stream():
             try:
-                emb = indexer.embed_one(pair.G_vuln)
-                index.add(pair, emb, variant)  # index to RAG
-                total += 1
-                ds_total += 1
-                if total % 5 == 0:
-                    print(f" indexed {total} pairs.. ")
+                batch_pairs.append(pair)
+                
+                # Process batch when full
+                if len(batch_pairs) >= BATCH_SIZE:
+                    try:
+                        graphs = [p.G_vuln for p in batch_pairs]
+                        embeddings = indexer.embed_many(graphs)
+                        
+                        for p, emb in zip(batch_pairs, embeddings):
+                            index.add(p, emb, variant)
+                            total += 1
+                            ds_total += 1
+                        
+                        if total % 50 == 0:
+                            print(f" indexed {total} pairs.. ")
+                        batch_pairs = []
+                    except Exception as e:
+                        print(f"   batch error: {e}")
+                        batch_pairs = []
+                        
             except Exception as e:
                 print(f"   skip {pair.cve_id} / {pair.func_name}:  {e}")
+        
+        # Process remaining pairs in final batch
+        if batch_pairs:
+            try:
+                graphs = [p.G_vuln for p in batch_pairs]
+                embeddings = indexer.embed_many(graphs)
+                
+                for p, emb in zip(batch_pairs, embeddings):
+                    index.add(p, emb, variant)
+                    total += 1
+                    ds_total += 1
+                
+                print(f" indexed {total} pairs.. (final batch)")
+            except Exception as e:
+                print(f"   final batch error: {e}")
 
         contract_batches.append(
             DatasetBatch(
@@ -409,6 +498,37 @@ def run_full_pipeline(cfg: dict, args):
     print(f"{'━'*60}")
 
 
+def _print_cvefixes_info(cfg: dict):
+    """Print CVEfixes setup and workflow status."""
+    print(f"\n{'╭'+'─'*68+'╮'}")
+    print(f"{'│':1}{'CVEfixes Graph-RAG Workflow':^68}{'│':1}")
+    print(f"{'├'+'─'*68+'┤'}")
+    
+    # Check if CVEfixes is in active datasets
+    active = cfg.get("data", {}).get("active", [])
+    cvefixes_active = "cvefixes" in active
+    status = "✓ ACTIVE" if cvefixes_active else "○ Configured"
+    print(f"{'│':1} Dataset Status: {status:50} {'│':1}")
+    
+    # Check database
+    db_path = Path(cfg.get("data", {}).get("cvefixes", {}).get("db_path", ""))
+    db_exists = db_path.exists()
+    db_status = f"✓ {db_path}" if db_exists else f"✗ Not found: {db_path}"
+    print(f"{'│':1} Database: {db_status:60} {'│':1}")
+    
+    # Check graphml_root
+    graphml_root = Path(cfg.get("data", {}).get("cvefixes", {}).get("graphml_root", ""))
+    print(f"{'│':1} CPG Output: {str(graphml_root):60} {'│':1}")
+    
+    print(f"{'├'+'─'*68+'┤'}")
+    print(f"{'│':1}{'Quick Start Commands':^68}{'│':1}")
+    print(f"{'├'+'─'*68+'┤'}")
+    print(f"{'│':1} 1. Generate CPGs:  python main.py --mode export              {'│':1}")
+    print(f"{'│':1} 2. Build index:    python main.py --mode index               {'│':1}")
+    print(f"{'│':1} 3. Query:          python main.py --mode query --cve CVE-... {'│':1}")
+    print(f"{'╰'+'─'*68+'╯'}\n")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="config.yaml")
@@ -416,8 +536,15 @@ if __name__ == "__main__":
         "--mode",
         choices=["index", "query", "export", "experiment", "diagnostics", "batch", "full"],
         default="export",
+        help="Operation mode: export (CPG generation), index (embedding+FAISS), query (retrieval), etc.",
     )
-    parser.add_argument("--dataset", choices=["autopatch", "cvefixes"], default="autopatch")
+    parser.add_argument(
+        "--dataset",
+        choices=["autopatch", "cvefixes"],
+        default=None,
+        help="Dataset to process ('cvefixes' for CVEfixes SQLite, 'autopatch' for CVE-list folder). "
+             "If not specified, uses config.data.active",
+    )
     parser.add_argument("--cve")
     parser.add_argument(
         "--loo",
@@ -496,6 +623,10 @@ if __name__ == "__main__":
     )
 
     _validate_cfg(cfg)
+    
+    # Print CVEfixes workflow info for relevant modes
+    if args.mode in ("export", "index") and "cvefixes" in cfg.get("data", {}).get("active", []):
+        _print_cvefixes_info(cfg)
 
     # Apply split overrides for modes that use them
     if args.mode in ("query", "experiment", "batch", "full"):
