@@ -33,6 +33,16 @@ class CombinedEmbedder(BaseEmbedder):
             return self._norm_vec(raw)
         if not self._fitted:
             raise RuntimeError("Call embed_many() first to fit PCA")
+        
+        # Safety check: if PCA was fitted with different input dim, raise clear error
+        if self._pca.n_features_in_ != raw.shape[0]:
+            raise ValueError(
+                f"PCA dimension mismatch: fitted on {self._pca.n_features_in_} features, "
+                f"but got {raw.shape[0]} features. "
+                f"This usually means embedder config changed or cached PCA is stale. "
+                f"Try deleting cached embedder files and refitting."
+            )
+        
         proj = self._pca.transform(raw.reshape(1, -1))[0].astype(np.float32)
         return self._norm_vec(proj)
 
@@ -43,7 +53,15 @@ class CombinedEmbedder(BaseEmbedder):
         return np.concatenate([a, b, c])
 
     def embed_many(self, graphs: list[nx.MultiDiGraph]) -> np.ndarray:
-        raws = np.stack([self._raw_one(G) for G in graphs]).astype(np.float32)
+        # Batch embed with each sub-embedder (more efficient than per-graph calls)
+        a_all = self._netlsd.embed_many(graphs)
+        b_all = self._wl.embed_many(graphs)
+        c_all = self._gin.embed_many(graphs)
+
+        print('[COMBINED] All graphs embedded')
+        
+        # Concatenate along feature dimension
+        raws = np.concatenate([a_all, b_all, c_all], axis=1).astype(np.float32)
 
         if self.projection == "none":
             self.dim = raws.shape[1]
@@ -89,6 +107,16 @@ class CombinedEnrichedEmbedder(BaseEmbedder):
             return self._norm_vec(raw)
         if not self._fitted:
             raise RuntimeError("Call embed_many() first to fit PCA")
+        
+        # Safety check: if PCA was fitted with different input dim, raise clear error
+        if self._pca.n_features_in_ != raw.shape[0]:
+            raise ValueError(
+                f"PCA dimension mismatch: fitted on {self._pca.n_features_in_} features, "
+                f"but got {raw.shape[0]} features. "
+                f"This usually means embedder config changed or cached PCA is stale. "
+                f"Try deleting cached embedder files and refitting."
+            )
+        
         proj = self._pca.transform(raw.reshape(1, -1))[0].astype(np.float32)
         return self._norm_vec(proj)
 
@@ -99,7 +127,13 @@ class CombinedEnrichedEmbedder(BaseEmbedder):
         return np.concatenate([a, b, c])
 
     def embed_many(self, graphs: list[nx.MultiDiGraph]) -> np.ndarray:
-        raws = np.stack([self._raw_one(G) for G in graphs]).astype(np.float32)
+        # Batch embed with each sub-embedder (more efficient than per-graph calls)
+        a_all = self._netlsd.embed_many(graphs)
+        b_all = self._wl.embed_many(graphs)
+        c_all = self._gin.embed_many(graphs)
+        
+        # Concatenate along feature dimension
+        raws = np.concatenate([a_all, b_all, c_all], axis=1).astype(np.float32)
 
         if self.projection == "none":
             self.dim = raws.shape[1]
