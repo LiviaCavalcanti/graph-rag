@@ -1,9 +1,13 @@
 data:
+  # CVEfixes is now the primary dataset for ingestion and graph generation
   active: [cvefixes]
-  autopatch:
-    root: CVE-list
-    graphml_root: graphml_augmented
-    include_variants: true
+  # autopatch:
+  #   root: CVE-list
+  #   graphml_root: graphml_cvefixes_files
+  #   include_variants: true
+  # CVEfixes dataset configuration
+  # Source: https://zenodo.org/record/4476563 (DOI: 10.5281/zenodo.4476563)
+  # After downloading: gzcat CVEfixes.sql.gz | sqlite3 data/cvefixes/CVEfixes.db
   cvefixes:
     db_path: data/cvefixes/CVEfixes.db
     graphml_root: graphml_cvefixes_fixed
@@ -11,10 +15,13 @@ data:
     level: method
     max_lines: 500
     sample_limit: 0
+    # Optional: filter to specific CWEs (empty = load all CWEs)
+    # Common choices: [CWE-20, CWE-476, CWE-362, CWE-416, CWE-787, CWE-400, CWE-190]
+    target_cwes: [CWE-20, CWE-476, CWE-362, CWE-416, CWE-787, CWE-400, CWE-190]
 joern:
   workers: 8
   timeout_s: 120
-  bin_dir: /home/z0050s2b/bin/joern/joern-cli
+  bin_dir: 
 graph:
   node_types:
     - METHOD
@@ -57,11 +64,13 @@ embeddings:
     seed: 42
   codebert:
     model_path: /home/z0050s2b/code/graph-rag/models/codebert-base/
+    dim: 128
+    seed: 42
   gin_codebert:
     hidden_dim: 25
     num_layers: 3
     dropout: 0.3
-    device: cpu
+    device: gpu
     cb_batch_size: 32
     node_cache_dir: workspace/node_codebert_cache
     checkpoint_path: experiments/output/gin_codebert_training/gin_codebert_checkpoint.pt
@@ -106,3 +115,30 @@ experiment:
     include_real_in_index: true
     augmented_train_ratio: 0.5
     query_source: graphml_augmented
+  # Pipeline verification experiment configuration
+  pipeline_verification:
+    seed: 42
+    slice_depth: 2
+    # Target CWEs for retrieval evaluation (CWEs with multi-function CVEs)
+    target_cwes:
+      - CWE-20              # Improper Input Validation
+      - CWE-476             # NULL Pointer Dereference
+      - CWE-362             # Race Condition
+      - CWE-416             # Use After Free
+      - CWE-787             # Out-of-bounds Write
+      - CWE-400             # Uncontrolled Resource Consumption
+      - CWE-190             # Integer Overflow or Wraparound
+    # Sampling and filtering
+    samples_per_cwe: 20     # Target entries per CWE → ~140 total
+    min_lines: 10           # Minimum function lines
+    max_lines: null         # Maximum function lines (null = unlimited)
+    # Embedders to evaluate
+    embedders:
+      - combined 
+      - codebert_pattern
+    # Retrieval metrics thresholds
+    ks: [1, 5, 10]          # Recall cutoffs for hit@k metrics
+    success_criteria:
+      mrr_threshold: 0.2           # Mean Reciprocal Rank (same-CVE)
+      cwe_recall_threshold: 0.5    # CWE-level recall
+      hit_at_5_threshold: 0.3      # Hit@5 (same-CVE)
