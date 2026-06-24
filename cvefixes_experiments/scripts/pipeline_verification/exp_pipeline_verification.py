@@ -73,6 +73,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import networkx as nx
 import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import normalize
 
 from src.data.base import FunctionPair
 from src.data.pipeline import (
@@ -91,11 +93,110 @@ from src.metrics.retrieval_eval import (
 from src.rag.hnsw import HNSWIndex
 from src.rag.utils import populate_index
 
+
+def _generate_embedding_space_plots(
+    *,
+    embedder,
+    emb_name: str,
+    all_pairs: list[FunctionPair],
+    split_markers: list[str],
+    pca_embs: np.ndarray,
+    out_dir: Path,
+    run_dir: Path,
+    seed: int,
+    tsne_perplexity: float = 30.0,
+) -> dict[str, str]:
+    """Generate embedding-space visualization artifacts for one embedder.
+
+    Returns a mapping of artifact keys to run-dir-relative file paths.
+    """
+    from experiments.embedding_space.visualize_embeddings import (
+        get_raw_embeddings,
+        tsne_project,
+        umap_project,
+        plot_2d_comparison,
+        plot_3d_interactive,
+        plot_pca_scree,
+    )
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    graphs = [p.G_vuln for p in all_pairs]
+    cwe_labels = [p.cwe_id for p in all_pairs]
+
+    unique_cwes = sorted(set(cwe_labels))
+    short_cwes = [c.split("(")[0].strip()[:25] for c in unique_cwes]
+    cmap = plt.colormaps.get_cmap("tab20").resampled(max(1, len(unique_cwes)))
+
+    raw_embs = get_raw_embeddings(embedder, graphs)
+    raw_dim = raw_embs.shape[1]
+    pca_dim = pca_embs.shape[1]
+
+    raw_normed = normalize(raw_embs, norm="l2")
+    raw_2d = tsne_project(raw_normed, perplexity=tsne_perplexity, seed=seed)
+    pca_2d = tsne_project(pca_embs, perplexity=tsne_perplexity, seed=seed)
+
+    raw_vs_pca_path = out_dir / f"{emb_name}_raw_vs_pca.png"
+    plot_2d_comparison(
+        raw_2d,
+        pca_2d,
+        cwe_labels,
+        split_markers,
+        unique_cwes,
+        short_cwes,
+        cmap,
+        left_title=f"{emb_name} - Raw ({raw_dim}d, L2-normed)",
+        right_title=f"{emb_name} - PCA->{pca_dim}d + L2",
+        suptitle=f"Embedding Space: {emb_name} (n={len(all_pairs)}, seed={seed})",
+        out_path=raw_vs_pca_path,
+    )
+
+    raw_umap_2d = umap_project(raw_normed, n_components=2, seed=seed)
+    pca_umap_2d = umap_project(pca_embs, n_components=2, seed=seed)
+
+    umap_2d_path = out_dir / f"{emb_name}_umap.png"
+    plot_2d_comparison(
+        raw_umap_2d,
+        pca_umap_2d,
+        cwe_labels,
+        split_markers,
+        unique_cwes,
+        short_cwes,
+        cmap,
+        left_title=f"{emb_name} - UMAP of Raw ({raw_dim}d)",
+        right_title=f"{emb_name} - UMAP of PCA->{pca_dim}d + L2",
+        suptitle=f"UMAP: {emb_name} (n={len(all_pairs)}, cosine metric)",
+        out_path=umap_2d_path,
+    )
+
+    pca_umap_3d = umap_project(pca_embs, n_components=3, seed=seed)
+    cve_ids = [p.cve_id for p in all_pairs]
+    umap_3d_path = out_dir / f"{emb_name}_3d_interactive.html"
+    plot_3d_interactive(
+        pca_umap_3d,
+        cwe_labels,
+        split_markers,
+        cve_ids,
+        f"{emb_name} - 3D UMAP (PCA->{pca_dim}d + L2)",
+        umap_3d_path,
+        unique_cwes,
+    )
+
+    scree_path = out_dir / f"{emb_name}_pca_scree.png"
+    plot_pca_scree(raw_embs, emb_name, scree_path)
+
+    return {
+        "raw_vs_pca": str(raw_vs_pca_path.relative_to(run_dir)),
+        "umap_2d": str(umap_2d_path.relative_to(run_dir)),
+        "umap_3d_html": str(umap_3d_path.relative_to(run_dir)),
+        "pca_scree": str(scree_path.relative_to(run_dir)),
+    }
+
 # ── Configuration ────────────────────────────────────────────────────
 
 JOERN_BIN_DIR = "/home/z0050s2b/bin/joern/joern-cli"
 DATA_FILE = Path("cvefixes_experiments/data/cvefixes_filtered_by_cwe_with_files.json")
-OUTPUT_DIR = Path("cvefixes_experiments/output/pipeline_verification_structure_file_ctxt_codebertandgin")
+OUTPUT_DIR = Path("cvefixes_experiments/output/pipeline_verification_structure_file_ctxt_combined_code")
 WORK_DIR = OUTPUT_DIR / "cpg_cache"
 
 SEED = 42
@@ -573,6 +674,8 @@ def run_experiment(
         "index_cve_unique": len(set(p.cve_id for p in index_pairs)),
         "query_cve_unique": len(set(p.cve_id for p in query_pairs)),
     }
+    all_pairs = index_pairs + query_pairs
+    split_markers_all = ["index"] * len(index_pairs) + ["query"] * len(query_pairs)
 
     # 4. Embed + retrieve for each embedder
     print(f"\n[4/5] Running retrieval for {len(EMBEDDER_NAMES)} embedders...")
@@ -656,6 +759,25 @@ def run_experiment(
                          func_names=[p.func_name for p in query_pairs])
                 print(f"    Saved query embeddings → {qsave_path}")
 
+        # Optional embedding-space plots for dashboard diagnostics.
+        embedding_plots = {}
+        try:
+            space_dir = OUTPUT_DIR / "embedding_space"
+            all_pca_embeddings = np.vstack([index_embeddings, query_embeddings])
+            embedding_plots = _generate_embedding_space_plots(
+                embedder=embedder,
+                emb_name=emb_name,
+                all_pairs=all_pairs,
+                split_markers=split_markers_all,
+                pca_embs=all_pca_embeddings,
+                out_dir=space_dir,
+                run_dir=OUTPUT_DIR,
+                seed=SEED,
+            )
+            print(f"    Embedding-space plots → {space_dir}")
+        except Exception as e:
+            print(f"    Skipping embedding-space plots: {e}")
+
         # Retrieve — use pre-computed query embeddings directly to avoid re-embedding
         qr = []
         for pair, query_vec in zip(query_pairs, query_embeddings):
@@ -705,6 +827,7 @@ def run_experiment(
             "self_retrieval": cve_metrics,
             "cwe_recall": cwe_metrics,
             "cwe_hit": {f"hit@{k}": v for k, v in cwe_hit.items()},
+            "embedding_space_plots": embedding_plots,
         })
 
     # 5. Save results
