@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from experiments.base import Axis, CellContext, Experiment, ExperimentOutput
+from experiments.base import Axis, CellContext, Experiment
 
 
 # ── Experiment class ─────────────────────────────────────────────────
