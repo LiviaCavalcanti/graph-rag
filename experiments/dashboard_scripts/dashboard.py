@@ -118,7 +118,7 @@ def _tab_overview(results: dict, miss: dict | None, crossing: dict | None) -> st
                 "hit10": c["self_retrieval"].get("hit@10", 0),
                 "mrr": c["self_retrieval"].get("mrr", 0),
                 "cwe_rec": c["cwe_recall"].get("macro_avg", 0),
-                "lat": c["query_latency"].get("p50_ms", 0),
+                "lat": c.get("query_latency", {}).get("p50_ms", 0),
                 "n": c["self_retrieval"].get("n", 0),
             }
             for c in cells
@@ -270,10 +270,10 @@ def _tab_retrieval(results: dict) -> str:
         f'<tr>'
         f'<td><span class="dot" style="background:{_approach_color(approach_names, c["embedder"])}"></span>'
         f'{_esc(c["embedder"])}</td>'
-        f'<td>{_num(c["query_latency"].get("p50_ms"), 2)}</td>'
-        f'<td>{_num(c["query_latency"].get("p95_ms"), 2)}</td>'
-        f'<td>{_num(c["query_latency"].get("p99_ms"), 2)}</td>'
-        f'<td>{_num(c["embed_time_s"], 1)} s</td>'
+        f'<td>{_num(c.get("query_latency", {}).get("p50_ms"), 2)}</td>'
+        f'<td>{_num(c.get("query_latency", {}).get("p95_ms"), 2)}</td>'
+        f'<td>{_num(c.get("query_latency", {}).get("p99_ms"), 2)}</td>'
+        f'<td>{_num(c.get("embed_time_s", {}), 1)} s</td>'
         f'</tr>'
         for c in cells
     )
@@ -894,6 +894,99 @@ def _tab_code(results: dict, crossing: dict | None = None) -> str:
 
 
 # ─────────────────────────────────────────────────────────────────────
+#  Tab 6: Embedding Space
+# ─────────────────────────────────────────────────────────────────────
+
+def _collect_embedding_space_artifacts(results: dict, run_dir: Path) -> dict[str, dict[str, str]]:
+  """Collect per-embedder embedding-space artifacts from results and file fallback."""
+  by_embedder: dict[str, dict[str, str]] = {}
+
+  for cell in results.get("cells", []):
+    emb = cell.get("embedder")
+    if not emb:
+      continue
+    plots = cell.get("embedding_space_plots") or {}
+    if plots:
+      by_embedder[emb] = dict(plots)
+
+  space_dir = run_dir / "embedding_space"
+  if space_dir.exists():
+    for emb, d in by_embedder.items():
+      d.setdefault("raw_vs_pca", f"embedding_space/{emb}_raw_vs_pca.png")
+      d.setdefault("umap_2d", f"embedding_space/{emb}_umap.png")
+      d.setdefault("umap_3d_html", f"embedding_space/{emb}_3d_interactive.html")
+      d.setdefault("pca_scree", f"embedding_space/{emb}_pca_scree.png")
+
+    # Fallback for runs where results.json lacks explicit plot metadata.
+    for p in sorted(space_dir.glob("*_raw_vs_pca.png")):
+      emb = p.name[: -len("_raw_vs_pca.png")]
+      by_embedder.setdefault(emb, {})
+      by_embedder[emb].setdefault("raw_vs_pca", f"embedding_space/{p.name}")
+      by_embedder[emb].setdefault("umap_2d", f"embedding_space/{emb}_umap.png")
+      by_embedder[emb].setdefault("umap_3d_html", f"embedding_space/{emb}_3d_interactive.html")
+      by_embedder[emb].setdefault("pca_scree", f"embedding_space/{emb}_pca_scree.png")
+
+  return by_embedder
+
+
+def _tab_embedding_space(results: dict, run_dir: Path) -> str:
+  artifacts = _collect_embedding_space_artifacts(results, run_dir)
+  if not artifacts:
+    return """<section id="tab-embedding-space" class="tab-panel">
+  <h2>Embedding Space</h2>
+  <p class="muted">Embedding-space plots were not found for this run.</p>
+</section>"""
+
+  cards_html = ""
+  for emb_name in sorted(artifacts.keys()):
+    p = artifacts[emb_name]
+
+    raw_vs_pca = p.get("raw_vs_pca", "")
+    umap_2d = p.get("umap_2d", "")
+    pca_scree = p.get("pca_scree", "")
+    umap_3d_html = p.get("umap_3d_html", "")
+
+    raw_block = (
+      f'<img src="{_esc(raw_vs_pca)}" alt="{_esc(emb_name)} raw vs pca" loading="lazy" />'
+      if raw_vs_pca and (run_dir / raw_vs_pca).exists()
+      else '<p class="muted">Missing raw vs PCA plot.</p>'
+    )
+    umap_block = (
+      f'<img src="{_esc(umap_2d)}" alt="{_esc(emb_name)} umap" loading="lazy" />'
+      if umap_2d and (run_dir / umap_2d).exists()
+      else '<p class="muted">Missing UMAP 2D plot.</p>'
+    )
+    scree_block = (
+      f'<img src="{_esc(pca_scree)}" alt="{_esc(emb_name)} pca scree" loading="lazy" />'
+      if pca_scree and (run_dir / pca_scree).exists()
+      else '<p class="muted">Missing PCA scree plot.</p>'
+    )
+    umap3d_link = (
+      f'<a href="{_esc(umap_3d_html)}" target="_blank" rel="noopener">Open interactive 3D plot</a>'
+      if umap_3d_html and (run_dir / umap_3d_html).exists()
+      else '<span class="muted">Interactive 3D plot not available.</span>'
+    )
+
+    cards_html += f"""
+  <div class="card">
+  <h3>{_esc(emb_name)}</h3>
+  <div class="emb-grid">
+    <div class="emb-plot"><h4>t-SNE Raw vs PCA</h4>{raw_block}</div>
+    <div class="emb-plot"><h4>UMAP Raw vs PCA</h4>{umap_block}</div>
+    <div class="emb-plot"><h4>PCA Scree Curve</h4>{scree_block}</div>
+    <div class="emb-plot emb-plot-link"><h4>3D UMAP</h4><p>{umap3d_link}</p></div>
+  </div>
+  </div>"""
+
+  return f"""
+<section id="tab-embedding-space" class="tab-panel">
+  <h2>Embedding Space</h2>
+  <p class="sub">Diagnostic projections and PCA variance curves for each embedder.</p>
+  {cards_html}
+</section>"""
+
+
+# ─────────────────────────────────────────────────────────────────────
 #  CSS + JS shell
 # ─────────────────────────────────────────────────────────────────────
 
@@ -1032,6 +1125,12 @@ tr:hover td {{ background: #f9f8f5; }}
 .retrieved-meta {{ display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap; }}
 .rank {{ font-size:.8rem; font-weight:700; color:var(--muted); min-width:24px; }}
 
+/* ── Embedding-space tab ── */
+.emb-grid {{ display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:14px; }}
+.emb-plot {{ border:1px solid var(--border); border-radius:10px; padding:10px; background:#fafafa; }}
+.emb-plot img {{ width:100%; height:auto; border-radius:8px; display:block; }}
+.emb-plot-link {{ display:flex; align-items:center; justify-content:center; min-height:180px; }}
+
 details > summary {{ cursor:pointer; font-weight:600; user-select:none; }}
 details > summary:hover {{ color:var(--accent); }}
 code {{ font-family:"JetBrains Mono","Fira Code",monospace; }}
@@ -1078,6 +1177,7 @@ def generate_html_dashboard(run_dir: str | Path) -> Path:
         ("tab-retrieval", "📊 Retrieval Performance",  _tab_retrieval(results)),
         ("tab-miss",      "🔍 Miss Analysis",          _tab_miss(miss, results)),
         ("tab-crossing",  "🔀 Crossing Strategies",    _tab_crossing(crossing, results)),
+      ("tab-embedding-space", "🧭 Embedding Space", _tab_embedding_space(results, run_dir)),
         ("tab-code",      "💻 Code Explorer",          _tab_code(results, crossing)),
     ]
 
