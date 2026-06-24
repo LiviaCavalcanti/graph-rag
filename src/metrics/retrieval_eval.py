@@ -117,12 +117,33 @@ def retrieve_all(
     """Run retrieval for all pairs, returning (pair, results) tuples.
 
     Pairs whose embedding has near-zero norm are silently skipped.
+    Uses embedder.embed_many() for efficient batch processing on GPU.
     """
+    if not pairs:
+        return []
+    
+    print(f"[retrieve_all] Embedding {len(pairs)} graphs in batch...")
+    # Extract query graphs for all pairs
+    query_graphs = [_query_graph_for(pair) for pair in pairs]
+    
+    # Batch embed all at once (single GPU forward pass)
+    embeddings = embedder.embed_many(query_graphs)
+    
+    print(f"[retrieve_all] Running retrieval for {len(pairs)} queries...")
     out = []
-    for pair in pairs:
-        results = _retrieve_for(pair, embedder, retriever, top_k)
-        if results is not None:
-            out.append((pair, results))
+    valid_count = 0
+    for i, (pair, query_vec) in enumerate(zip(pairs, embeddings)):
+        if np.linalg.norm(query_vec) < 1e-6:
+            continue
+        
+        results = retriever.query(query_vec, top_k=top_k)
+        out.append((pair, results))
+        valid_count += 1
+        
+        if (i + 1) % max(1, len(pairs) // 10) == 0:
+            print(f"  [{i + 1}/{len(pairs)}] queries processed")
+    
+    print(f"[retrieve_all] Done! Retrieved {valid_count}/{len(pairs)} queries")
     return out
 
 
