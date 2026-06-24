@@ -5,6 +5,9 @@ import textwrap
 from pathlib import Path
 
 import networkx as nx
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def extract_c_snippets(text: str) -> list[str]:
@@ -63,6 +66,7 @@ def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
     phantom_nodes = set(G.nodes()) - declared_nodes
     G.remove_nodes_from(phantom_nodes)
 
+
     # clean edges of removed phantom
     dangling = [
         (u, v, k)
@@ -71,6 +75,8 @@ def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
     ]
     # print(f"{graph_dir} -- Declared nodes: {len(declared_nodes)}, noise: {len(noise)}, dangling nodes: {len(dangling)}")
     G.remove_edges_from(dangling)
+
+    logger.info(f"Declared nodes {declared_nodes}. Phantom nodes: {phantom_nodes}. Prunned dangling edges after removing phantoms: {dangling}")
     return G
 
 
