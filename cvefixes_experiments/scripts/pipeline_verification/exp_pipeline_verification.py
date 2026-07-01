@@ -564,89 +564,14 @@ def run_experiment(
 
     # Currently very buggy
     # 1. Select data or load from cache
-    if load_pairs_from:
-        print(f"\n[1-2/5] Loading pairs from cache: {load_pairs_from}...")
-        cache_path = Path(load_pairs_from)
-        
-        # Helper function to load a single entry (for parallel execution)
-        def load_entry(entry_dir):
-            try:
-                if not entry_dir.is_dir():
-                    print('dir not found', entry_dir)
-                    return None
 
-                # Support both flat layout (before/graph, after/graph) and
-                # nested layout (original/before/graph, original/after/graph)
-                if (entry_dir / "original" / "before" / "graph").exists():
-                    before_graph = entry_dir / "original" / "before" / "graph"
-                    after_graph = entry_dir / "original" / "after" / "graph"
-                elif (entry_dir / "before" / "graph").exists():
-                    before_graph = entry_dir / "before" / "graph"
-                    after_graph = entry_dir / "after" / "graph"
-                else:
-                    return None
+    print(f"\n[1/5] Selecting entries from {DATA_FILE}...")
+    entries = select_entries(DATA_FILE, SEED)
 
-                print('after graph: ', after_graph)
-                if not before_graph.exists() or not after_graph.exists():
-                    return None
-                
-                # Parse CVE from dirname (format: CVE-YYYY-XXXXX_suffix or similar)
-                dir_name = entry_dir.name
-                # Extract CVE ID: everything before the first underscore (or the whole name if no underscore)
-                if "_" in dir_name:
-                    cve_id = dir_name.split("_")[0]
-                else:
-                    cve_id = dir_name
-                
-                G_before = load_cpg_dir(str(before_graph))
-                G_after = load_cpg_dir(str(after_graph))
-                G_vuln = compute_graph_diff(G_before, G_after)
-                
-                if G_vuln.number_of_nodes() == 0:
-                    return None
-                
-                # Extract function name from dirname (everything after the first underscore)
-                func_name = "_".join(dir_name.split("_")[1:]) if "_" in dir_name else "unknown"
-                
-                return FunctionPair(
-                    cve_id=cve_id,
-                    cwe_id="UNKNOWN",
-                    func_name=func_name,
-                    project="",
-                    G_before=G_before,
-                    G_after=G_after,
-                    G_vuln=G_vuln,
-                    meta={"dataset": "CVEfixes", "variant": "cached"}
-                )
-            except Exception as e:
-                print(f"    WARNING: Failed to load {entry_dir.name}: {e}")
-                return None
-        
-        # Load all graphs in parallel
-        pairs = []
-        cache_dirs = sorted(cache_path.iterdir())
-        # Keep symlinks and dirs (don't resolve — relative symlinks must be followed from cwd)
-        cache_dirs = [d for d in cache_dirs if d.is_symlink() or d.is_dir()]
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            futures = {executor.submit(load_entry, d): d for d in cache_dirs}
-            for future in tqdm(as_completed(futures), total=len(cache_dirs), desc="Loading pairs from cache"):
-                result = future.result()
-                if result is not None:
-                    pairs.append(result)
-            
-                if len(pairs) > 50:
-                    break
-        
-        print(f"  Loaded {len(pairs)} pairs from cache")
-        skip_build = True
-    else:
-        print(f"\n[1/5] Selecting entries from {DATA_FILE}...")
-        entries = select_entries(DATA_FILE, SEED)
-
-        # 2. Generate CPGs and build pairs
-        print(f"\n[2/5] Building CPGs and graph diffs (slice depth={SLICE_DEPTH})...")
-        pairs = build_pairs(entries, WORK_DIR)
-        skip_build = False
+    # 2. Generate CPGs and build pairs
+    print(f"\n[2/5] Building CPGs and graph diffs (slice depth={SLICE_DEPTH})...")
+    pairs = build_pairs(entries, WORK_DIR)
+    skip_build = False
 
     if len(pairs) < 20:
         print(f"FATAL: only {len(pairs)} pairs — need at least 20")
@@ -690,30 +615,22 @@ def run_experiment(
         embedder = EMBEDDER_REGISTRY[emb_name](emb_cfg)
         print(f"\n  ── {embedder.name} ──")
 
-        # Embed index (or load from cache)
-        emb_load_path = Path(load_embeddings_dir) / f"{emb_name}_index.npz" if load_embeddings_dir else None
-        if emb_load_path and emb_load_path.exists():
-            print(f"    Loading embeddings from {emb_load_path}")
-            npz = np.load(emb_load_path)
-            index_embeddings = npz["embeddings"]
-            embed_time = 0.0
-            print(f"    Loaded {len(index_embeddings)} index embeddings (dim={index_embeddings.shape[1]})")
-        else:
-            t0 = time.perf_counter()
-            index_graphs = [p.G_vuln for p in index_pairs]
-            index_embeddings = embedder.embed_many(index_graphs)
-            embed_time = time.perf_counter() - t0
-            print(f"    Embedded {len(index_graphs)} graphs in {embed_time:.1f}s")
-            # Optionally save
-            if save_embeddings_dir:
-                emb_save_dir = Path(save_embeddings_dir)
-                emb_save_dir.mkdir(parents=True, exist_ok=True)
-                save_path = emb_save_dir / f"{emb_name}_index.npz"
-                np.savez(save_path, embeddings=index_embeddings,
-                         cve_ids=[p.cve_id for p in index_pairs],
-                         cwe_ids=[p.cwe_id for p in index_pairs],
-                         func_names=[p.func_name for p in index_pairs])
-                print(f"    Saved index embeddings → {save_path}")
+        
+        t0 = time.perf_counter()
+        index_graphs = [p.G_vuln for p in index_pairs]
+        index_embeddings = embedder.embed_many(index_graphs)
+        embed_time = time.perf_counter() - t0
+        print(f"    Embedded {len(index_graphs)} graphs in {embed_time:.1f}s")
+        # Optionally save
+        if save_embeddings_dir:
+            emb_save_dir = Path(save_embeddings_dir)
+            emb_save_dir.mkdir(parents=True, exist_ok=True)
+            save_path = emb_save_dir / f"{emb_name}_index.npz"
+            np.savez(save_path, embeddings=index_embeddings,
+                        cve_ids=[p.cve_id for p in index_pairs],
+                        cwe_ids=[p.cwe_id for p in index_pairs],
+                        func_names=[p.func_name for p in index_pairs])
+            print(f"    Saved index embeddings → {save_path}")
 
         # Check for degenerate embeddings
         norms = np.linalg.norm(index_embeddings, axis=1)
