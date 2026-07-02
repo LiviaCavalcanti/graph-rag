@@ -689,8 +689,72 @@ Evaluation will be conducted using a curated dataset of vulnerabilities drawn fr
 \end{itemize}
 
 \section{Dataset}
-AutoPatch dataset
-CVE fixes dataset
+\begin{itemize}[leftmargin=*]
+  \item \textbf{AutoPatch dataset (evaluation benchmark).}
+  We use AutoPatch as the main benchmark for end-to-end patching evaluation, enabling direct comparison with prior RAG-based vulnerability repair results.
+
+  \item \textbf{CVEfixes dataset (retrieval knowledge base).}
+  \begin{itemize}[leftmargin=*]
+    \item \textbf{Origin.} CVEfixes is a public vulnerability-fix dataset built by linking CVE/CWE records to real source-code commits across open-source repositories (DOI: \url{https://doi.org/10.5281/zenodo.4476563}).
+    \item \textbf{Collection method.} The dataset mines vulnerability-fixing commits and stores aligned metadata in SQLite tables (e.g., \texttt{cve}, \texttt{cwe\_classification}, \texttt{fixes}, \texttt{commits}, \texttt{file\_change}, \texttt{method\_change}). This provides both file-level snapshots (before/after) and method-level changes tied to the same vulnerability event.
+    \item \textbf{Composition used in this thesis.} We retrieve C/C++ entries and use CVE/CWE labels as retrieval supervision metadata. We keep both graph artifacts (for structural retrieval) and source code (for LLM grounding and patch generation).
+  \end{itemize}
+
+  \item \textbf{Observed CVEfixes file-level size in our local SQLite copy (\texttt{data/cvefixes/CVEfixes.db}).}
+  \begin{center}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{lr}
+    \toprule
+    \textbf{Metric on \texttt{file\_change.code\_before}} & \textbf{Value} \\
+    \midrule
+    Total rows in \texttt{file\_change} & 51,342 \\
+    Non-null rows & 51,342 \\
+    Non-empty rows & 51,342 \\
+    Min length (characters) & 1 \\
+    Mean length (characters) & 39,190.41 \\
+    Max length (characters) & 33,397,878 \\
+    Rows with length $\geq 1{,}000$ & 37,553 \\
+    Rows with length $\geq 10{,}000$ & 19,348 \\
+    Rows with length $\geq 100{,}000$ & 3,017 \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \item \textbf{Distribution buckets for \texttt{code\_before} length (characters).}
+  \begin{center}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{lr}
+    \toprule
+    \textbf{Bucket} & \textbf{Rows} \\
+    \midrule
+    $<100$ & 9,690 \\
+    100--999 & 4,099 \\
+    1,000--9,999 & 18,205 \\
+    10,000--99,999 & 16,331 \\
+    $\geq 100,000$ & 3,017 \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \item \textbf{Method input vs file input in our pipeline.}
+  \begin{center}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{p{3.2cm}p{5.5cm}p{5.5cm}}
+    \toprule
+    \textbf{Aspect} & \textbf{Method-level input} & \textbf{File-level input (current)} \\
+    \midrule
+    Source unit & \texttt{method\_change.code} (single function diff) & \texttt{file\_change.code\_before/code\_after} (full file snapshots) \\
+    Typical context size & Compact; high signal, lower surrounding context & Larger context; includes surrounding logic and declarations \\
+    Graph export granularity & One CPG per changed method & One CPG per file pair (before/after) or merged method CPGs \\
+    Best use case & Fine-grained pattern retrieval and focused localization & End-to-end patch generation with complete file context \\
+    Trade-off & May miss file-scope interactions & Higher compute/storage and more potential boilerplate noise \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+\end{itemize}
 \section{Experiments}
   \begin{enumerate}[nosep]
     \item \textbf{Slicing}: \emph{full} (the complete pre-patch CPG,
