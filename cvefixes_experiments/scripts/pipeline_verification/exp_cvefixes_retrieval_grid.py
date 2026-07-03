@@ -220,8 +220,8 @@ class CVEFixesRetrievalComparisonExperiment(RetrievalGridExperiment):
 def _prepare_cfg(
     cfg: dict,
     *,
-    db_path: str,
-    graphml_root: str,
+    db_path: str | None,
+    graphml_root: str | None,
     embedders: list[str],
     target_cwes: list[str] | None,
     ks: list[int],
@@ -229,8 +229,10 @@ def _prepare_cfg(
     cfg.setdefault("data", {})
     cfg["data"]["active"] = ["cvefixes"]
     cfg["data"].setdefault("cvefixes", {})
-    cfg["data"]["cvefixes"]["db_path"] = db_path
-    cfg["data"]["cvefixes"]["graphml_root"] = graphml_root
+    if db_path is not None:
+        cfg["data"]["cvefixes"]["db_path"] = db_path
+    if graphml_root is not None:
+        cfg["data"]["cvefixes"]["graphml_root"] = graphml_root
 
     if target_cwes is not None:
         cfg["data"]["cvefixes"]["target_cwes"] = target_cwes
@@ -263,8 +265,8 @@ def run_experiment(
     *,
     config_path: str = "config.yaml",
     output_dir: str = "cvefixes_experiments/output/cvefixes_retrieval_grid",
-    graphml_root: str = "graphml_selected_cves",
-    db_path: str = "data/cvefixes/CVEfixes.db",
+    graphml_root: str | None = None,
+    db_path: str | None = None,
     embedders: list[str] | None = None,
     target_cwes: list[str] | None = None,
     ks: list[int] | None = None,
@@ -301,13 +303,25 @@ def run_experiment(
     )
     _sync_top_level_split(cfg, seed=seed, test_ratio=test_ratio)
 
+    # Resolve final data paths after config + optional CLI overrides.
+    resolved_data_cfg = cfg.get("data", {}).get("cvefixes", {})
+    resolved_db_path = str(resolved_data_cfg.get("db_path", ""))
+    resolved_graphml_root = str(resolved_data_cfg.get("graphml_root", ""))
+
+    if not resolved_graphml_root or not Path(resolved_graphml_root).exists():
+        raise FileNotFoundError(
+            "CVEfixes graphml_root is missing or does not exist: "
+            f"{resolved_graphml_root!r}. "
+            "Set data.cvefixes.graphml_root in config.yaml or pass --graphml-root."
+        )
+
     print("=" * 70)
     print("EXPERIMENT: CVEfixes Retrieval Grid (Structured)")
     print("  Compare codebert_seq vs codebert_pattern vs combined")
     print("=" * 70)
     print(f"Config: {config_path}")
-    print(f"DB: {db_path}")
-    print(f"GraphML root: {graphml_root}")
+    print(f"DB: {resolved_db_path}")
+    print(f"GraphML root: {resolved_graphml_root}")
     print(f"Embedders: {embedders}")
     print(f"KS: {ks}")
     print(f"Split seed={seed}, test_ratio={test_ratio}")
@@ -337,13 +351,13 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--graphml-root",
-        default="graphml_selected_cves",
-        help="GraphML root directory for CVEfixes exported CPGs",
+        default=None,
+        help="Optional override for GraphML root directory (defaults to config value)",
     )
     parser.add_argument(
         "--db-path",
-        default="data/cvefixes/CVEfixes.db",
-        help="Path to CVEfixes SQLite database",
+        default=None,
+        help="Optional override for CVEfixes SQLite database path (defaults to config value)",
     )
     parser.add_argument(
         "--embedders",

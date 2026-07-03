@@ -10,7 +10,7 @@ data:
   # After downloading: gzcat CVEfixes.sql.gz | sqlite3 data/cvefixes/CVEfixes.db
   cvefixes:
     db_path: data/cvefixes/CVEfixes.db
-    graphml_root: graphml_cvefixes_fixed
+    graphml_root: graphml_fixedcves_file
     languages: [C, C++]
     level: method
     max_lines: 500
@@ -23,6 +23,16 @@ joern:
   timeout_s: 120
   bin_dir: 
 graph:
+  # ── program-slice / semantic-diff parameters (compute_graph_diff) ──
+  # Control G_vuln construction; tune these to run slicing experiments.
+  # Defaults below match the historical hard-coded behavior.
+  slice_depth: 3              # hops along CFG/CDG/REACHING_DEF edges from changed nodes
+  # change_weight:            # per-diff-label node weights (defaults shown)
+  #   removed: 1.0
+  #   fix_adjacent: 0.8
+  #   edge_changed: 0.6
+  #   context: 0.2
+  # noise_types: [TYPE_DECL, FILE, NAMESPACE_BLOCK, COMMENT, UNKNOWN, METHOD_RETURN]
   node_types:
     - METHOD
     - METHOD_PARAMETER_IN
@@ -45,7 +55,7 @@ graph:
     - ARGUMENT
     - RECEIVER
 embeddings:
-  active: [gin, combined, wl]
+  active: [gin, combined, wl, codebert_pattern, codebert_seq]
   dim: 128
   projection: pca              # pca | none
   l2_normalize: true            # true | false
@@ -101,10 +111,10 @@ embeddings:
       label_mode: cve           # cve or dir_name
       warm_start: true
 rag:
-  index_path: src/rag/faiss.index
-  metadata_path: src/rag/metadata.json
+  index_path: rag/cvefixes/faiss.index
+  metadata_path: rag/cvefixes/metadata.json
   top_k: 5
-  embedding_variant: wl
+  embedding_variant: codebert_pattern
   prompt_variant: graph       # default | graph
 experiment:
   split:
@@ -134,8 +144,9 @@ experiment:
     max_lines: null         # Maximum function lines (null = unlimited)
     # Embedders to evaluate
     embedders:
-      - combined 
-      - codebert_pattern
+      - wl
+      - combined
+      - codebert_seq
     # Retrieval metrics thresholds
     ks: [1, 5, 10]          # Recall cutoffs for hit@k metrics
     success_criteria:

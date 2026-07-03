@@ -46,7 +46,15 @@ class MotifEmbedder(BaseEmbedder):
             for n, a in G.nodes(data=True)
             if a.get("diff") in ("removed", "added", "mutated", "rewired")
         }
-        from knowledge.slicing import extract_motif_histogram
+        try:
+            from knowledge.slicing import extract_motif_histogram
+        except ImportError as e:  # pragma: no cover - deprecated embedder
+            raise RuntimeError(
+                "MotifEmbedder is unavailable: its dependency "
+                "'knowledge.slicing.extract_motif_histogram' is missing. "
+                "This embedder is deprecated/quarantined — remove 'motif' "
+                "from embeddings.active or restore knowledge.slicing."
+            ) from e
 
         motifs = extract_motif_histogram(G, changed or set(G.nodes()))
 

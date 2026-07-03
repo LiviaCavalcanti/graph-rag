@@ -2,6 +2,8 @@
 """
 Experiment: Pipeline Verification with Sink-Based CWEs
 
+Standardize the logic written in cvefixes/experiments/scripts/exp_pipeline_verification.py
+
 Same protocol as exp_pipeline_verification but using the refined dataset
 of CWEs suited to sink-based vulnerability detection:
   - CWE-190: Integer Overflow

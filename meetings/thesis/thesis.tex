@@ -755,6 +755,87 @@ Evaluation will be conducted using a curated dataset of vulnerabilities drawn fr
   \end{tabular}
   \end{center}
 \end{itemize}
+
+\subsection*{Requirements for a Leakage-Safe Retrieval Split}
+
+The retrieval evaluation partitions the labelled pairs into an \emph{index} set,
+which forms the searchable knowledge base, and a disjoint \emph{query} set of
+held-out probes. Because the knowledge base simultaneously acts as the retrieval
+target, a careless partition can render the task either trivial --- when a
+near-identical copy of the answer is already present in the index --- or
+impossible --- when no valid answer is present at all. To obtain an unbiased
+estimate of retrieval generalisation, the split must satisfy the following
+requirements.
+
+\begin{enumerate}[leftmargin=*, label=R\arabic*.]
+  \item \textbf{No index/query leakage.} No query and its ground-truth evidence
+    may originate from an artefact that is also present, in identical or
+    near-identical form, in the index; otherwise retrieval degenerates into
+    recognising a memorised copy rather than generalising a vulnerability
+    pattern. Leakage of this kind is a well-documented source of over-optimistic
+    results both in general machine-learning pipelines \cite{kaufman2012leakage}
+    and, specifically, in machine-learning-for-security evaluations
+    \cite{arp2022dosdonts}.
+
+  \item \textbf{Guaranteed positive support (retrievability).} Every query must
+    have at least one valid positive in the index; otherwise the same-CVE
+    Hit@$k$ and MRR are undefined for that query, since the correct item cannot
+    be retrieved at any rank. The split therefore keeps at least one pair of each
+    queried CVE inside the index.
+
+  \item \textbf{Non-trivial positives.} The retained positive must not be a
+    duplicate or near-duplicate of the query. Duplicate and near-duplicate
+    samples are pervasive in vulnerability datasets and are known to
+    substantially inflate reported performance
+    \cite{chakraborty2020reveal, croft2023dataquality}.
+
+  \item \textbf{Representativeness (stratification).} The index and query sets
+    preserve the CWE distribution of the corpus, so that per-class metrics are
+    not dominated by a few majority classes; unrepresentative sampling otherwise
+    biases the estimate \cite{arp2022dosdonts}.
+
+  \item \textbf{Sufficient per-class support.} At least three distinct CVEs are
+    retained per CWE, so that macro-averaged CWE recall is computed over enough
+    groups to be stable rather than driven by a single vulnerability.
+
+  \item \textbf{Determinism.} A fixed seed and a fixed query ratio make the
+    partition reproducible across runs.
+\end{enumerate}
+
+Concretely, the split groups the pairs first by CWE and then by CVE. For every
+CVE with at least \texttt{min\_pairs\_per\_cve} entries it moves a fraction of the
+pairs to the query set while retaining at least one in the index; CVEs
+represented by a single pair remain in the index only. A final safety pass drops
+any query whose CVE lost all of its index support, enforcing~R2.
+
+\paragraph{Why the split must be at the CVE level and not only at the CWE level.}
+A CWE is a coarse category: a single weakness class such as CWE-787
+(out-of-bounds write) aggregates thousands of semantically unrelated defects, so
+same-CWE membership is far too weak to serve as retrieval ground truth. The
+precise positive is the \emph{same underlying vulnerability}, i.e.\ the same CVE.
+This distinction has two practical consequences that a CWE-only split cannot
+address. First, a single CVE typically spans several files and methods that share
+one root cause and a near-identical fix. If pairs are assigned to the index and
+query sets by CWE alone --- randomly, without regard to their CVE --- sibling
+pairs of the same CVE straddle the boundary, and each query is then answered by
+retrieving its own near-duplicate. This is exactly the near-duplicate leakage
+shown to inflate vulnerability-detection results
+\cite{chakraborty2020reveal, croft2023dataquality}, and it rewards memorisation
+over structural generalisation. Second, and symmetrically, an unconstrained
+CWE-level split can place \emph{all} pairs of a query's CVE outside the index,
+leaving that query with no valid positive and deflating (or undefining) its
+Hit@$k$ and MRR. Grouping by CVE --- and only then partitioning \emph{within}
+each CVE while keeping at least one pair in the index --- is the unique unit of
+division that simultaneously prevents trivial sibling leakage and guarantees
+every query a legitimate, non-identical positive; neither property is enforceable
+at the CWE granularity.
+
+Building on this leakage-safe partition, we additionally compare two CVE-aware
+samples of the corpus --- one that preserves the natural CWE distribution and one
+that balances it across classes --- to quantify how much the dataset's class
+distribution, rather than the embedding itself, drives the observed retrieval
+scores.
+
 \section{Experiments}
   \begin{enumerate}[nosep]
     \item \textbf{Slicing}: \emph{full} (the complete pre-patch CPG,

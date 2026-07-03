@@ -21,9 +21,13 @@ Layout (5 tabs):
 from __future__ import annotations
 
 import json
+import sys
 from html import escape
 from pathlib import Path
 from typing import Any
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -341,6 +345,345 @@ def _tab_retrieval(results: dict) -> str:
   }})();
   </script>
 </section>"""
+
+
+# ─────────────────────────────────────────────────────────────────────
+#  Tab: Threshold Study & Abstention Error Analysis
+# ─────────────────────────────────────────────────────────────────────
+#  Consumes threshold_analysis.json (built by src.metrics.threshold_analysis
+#  via experiments.dashboard_scripts.analyze_thresholds).  Framing: at a
+#  similarity threshold t, a query is "has class" (predicted) when the top-1
+#  score >= t, else "no class" (abstained).  See that module for the full
+#  confusion-matrix convention.
+
+def _thr_metrics_from_ea(ea: dict) -> dict:
+    """Derive coverage / selective-accuracy / recall / F1 from an error blob."""
+    tp = ea["has_class"]["correct"]
+    fp = ea["has_class"]["wrong"]
+    fn = ea["no_class"]["fn"]
+    tn = ea["no_class"]["tn"]
+    n = ea.get("n", tp + fp + fn + tn)
+    predicted = tp + fp
+    return {
+        "threshold": ea.get("threshold"),
+        "coverage": predicted / n if n else 0.0,
+        "sel_acc": tp / predicted if predicted else 0.0,
+        "recall": tp / (tp + fn) if (tp + fn) else 0.0,
+        "f1": (2 * tp) / (2 * tp + fp + fn) if (2 * tp + fp + fn) else 0.0,
+        "accuracy": (tp + tn) / n if n else 0.0,
+        "tp": tp, "fp": fp, "fn": fn, "tn": tn, "n": n, "predicted": predicted,
+    }
+
+
+def _thr_line_chart_js(canvas_id: str, rows: list[dict], col: str) -> str:
+    thr = json.dumps([r["threshold"] for r in rows])
+    cov = json.dumps([r["coverage"] for r in rows])
+    sel = json.dumps([r["selective_accuracy"] for r in rows])
+    rec = json.dumps([r["recall"] for r in rows])
+    f1v = json.dumps([r["f1"] for r in rows])
+    tpl = """
+    new Chart(document.getElementById('__CANVAS__'), {
+      type:'line',
+      data:{ labels:__THR__, datasets:[
+        { label:'Coverage',      data:__COV__, borderColor:'__COL__', backgroundColor:'__COL__', tension:.2, pointRadius:2, borderWidth:2 },
+        { label:'Selective Acc', data:__SEL__, borderColor:'#146c43', tension:.2, pointRadius:2, borderWidth:2 },
+        { label:'Recall',        data:__REC__, borderColor:'#c62828', borderDash:[5,4], tension:.2, pointRadius:1, borderWidth:1.5 },
+        { label:'F1',            data:__F1__,  borderColor:'#1a1a2e', tension:.2, pointRadius:1, borderWidth:1.5 }
+      ]},
+      options:{ responsive:true, interaction:{mode:'index',intersect:false},
+        scales:{ y:{min:0,max:1,ticks:{format:'~p'}},
+                 x:{title:{display:true,text:'similarity threshold'}} },
+        plugins:{ legend:{position:'bottom'} } }
+    });"""
+    return (tpl.replace("__CANVAS__", canvas_id).replace("__THR__", thr)
+            .replace("__COV__", cov).replace("__SEL__", sel)
+            .replace("__REC__", rec).replace("__F1__", f1v).replace("__COL__", col))
+
+
+def _thr_cr_chart_js(canvas_id: str, cwe_rows: list[dict], cve_rows: list[dict], col: str) -> str:
+    def _pts(rows):
+        return json.dumps(
+            [{"x": r["coverage"], "y": r["selective_accuracy"]} for r in rows]
+        )
+    tpl = """
+    new Chart(document.getElementById('__CANVAS__'), {
+      type:'scatter',
+      data:{ datasets:[
+        { label:'CWE', data:__CWE__, showLine:true, borderColor:'__COL__', backgroundColor:'__COL__', pointRadius:2 },
+        { label:'CVE', data:__CVE__, showLine:true, borderColor:'#7209B7', backgroundColor:'#7209B7', borderDash:[5,4], pointRadius:2 }
+      ]},
+      options:{ responsive:true,
+        scales:{ x:{min:0,max:1,title:{display:true,text:'coverage'},ticks:{format:'~p'}},
+                 y:{min:0,max:1,title:{display:true,text:'selective accuracy'},ticks:{format:'~p'}} },
+        plugins:{ legend:{position:'bottom'} } }
+    });"""
+    return (tpl.replace("__CANVAS__", canvas_id)
+            .replace("__CWE__", _pts(cwe_rows)).replace("__CVE__", _pts(cve_rows))
+            .replace("__COL__", col))
+
+
+def _thr_markers_table(cell: dict) -> str:
+    body = ""
+    for label in ("p50", "p75", "p90"):
+        t = cell["markers"].get(label)
+        if t is None:
+            continue
+        ea_cwe = cell["error_analysis"]["cwe"].get(label)
+        ea_cve = cell["error_analysis"]["cve"].get(label)
+        body += f'<tr><td><span class="pill">{label}</span> {_num(t, 3)}</td>'
+        for ea in (ea_cwe, ea_cve):
+            if ea:
+                m = _thr_metrics_from_ea(ea)
+                body += (f"<td>{_pct(m['coverage'])}</td><td>{_pct(m['sel_acc'])}</td>"
+                         f"<td>{_pct(m['recall'])}</td><td>{_pct(m['f1'])}</td>")
+            else:
+                body += "<td>–</td><td>–</td><td>–</td><td>–</td>"
+        body += "</tr>"
+    return f"""<table>
+      <thead>
+        <tr><th rowspan="2">Marker</th><th colspan="4">CWE axis</th><th colspan="4">CVE axis</th></tr>
+        <tr><th>Cov</th><th>Sel.Acc</th><th>Rec</th><th>F1</th><th>Cov</th><th>Sel.Acc</th><th>Rec</th><th>F1</th></tr>
+      </thead>
+      <tbody>{body}</tbody></table>"""
+
+
+def _thr_sweep_table(rows: list[dict], axis_label: str, marker_ts: set) -> str:
+    body = ""
+    for r in rows:
+        hl = ' class="thr-marker"' if round(r["threshold"], 4) in marker_ts else ""
+        body += (
+            f"<tr{hl}><td>{r['threshold']:.2f}</td>"
+            f"<td>{_pct(r['coverage'])}</td><td>{_pct(r['selective_accuracy'])}</td>"
+            f"<td>{_pct(r['recall'])}</td><td>{_pct(r['f1'])}</td><td>{_pct(r['accuracy'])}</td>"
+            f"<td>{r['tp']}</td><td>{r['fp']}</td><td>{r['fn']}</td><td>{r['tn']}</td></tr>"
+        )
+    return f"""<h4>{axis_label} axis</h4>
+      <div class="scroll-x"><table><thead><tr>
+        <th>Thr</th><th>Cov</th><th>Sel.Acc</th><th>Rec</th><th>F1</th><th>Acc</th>
+        <th>TP</th><th>FP</th><th>FN</th><th>TN</th>
+      </tr></thead><tbody>{body}</tbody></table></div>"""
+
+
+def _thr_group_cards(m: dict, ea: dict) -> str:
+    has = ea["has_class"]
+    no = ea["no_class"]
+    recoverable = no.get("tn_recoverable_in_topk", 0)
+    return f"""
+    <div class="stat-row">
+      <div class="stat-card accent">
+        <div class="stat-label">Has class · predicted</div>
+        <div class="stat-value">{has['n']}</div>
+        <div class="stat-sub">{has['correct']} correct · {has['wrong']} wrong ({_pct(m['sel_acc'])} sel-acc)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">No class · abstained</div>
+        <div class="stat-value">{no['n']}</div>
+        <div class="stat-sub">{no['fn']} missed (FN) · {no['tn']} correct-abstain (TN)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Coverage</div>
+        <div class="stat-value">{_pct(m['coverage'])}</div>
+        <div class="stat-sub">threshold {_num(m['threshold'], 3)}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Recoverable abstains</div>
+        <div class="stat-value">{recoverable}</div>
+        <div class="stat-sub">TN with correct CWE deeper in top-k</div>
+      </div>
+    </div>"""
+
+
+def _thr_by_cwe_table(ea: dict) -> str:
+    has = ea["has_class"].get("by_true_cwe", {})
+    no = ea["no_class"].get("by_true_cwe", {})
+    cwes = set(has) | set(no)
+    rows = []
+    for cwe in cwes:
+        h = has.get(cwe, {})
+        nn = no.get(cwe, {})
+        correct = h.get("correct", 0)
+        wrong = h.get("wrong", 0)
+        fn = nn.get("fn", 0)
+        tn = nn.get("tn", 0)
+        rows.append((correct + wrong + fn + tn, cwe, correct, wrong, fn, tn))
+    rows.sort(reverse=True)
+    body = "".join(
+        f"<tr><td>{_esc(cwe)}</td><td>{correct}</td><td>{wrong}</td>"
+        f"<td>{fn}</td><td>{tn}</td><td>{tot}</td></tr>"
+        for tot, cwe, correct, wrong, fn, tn in rows
+    )
+    if not body:
+        return "<p class='muted'>No queries in this group.</p>"
+    return f"""<div class="scroll-x"><table><thead><tr>
+        <th>CWE (true)</th><th>Pred ✓</th><th>Pred ✗</th><th>Abstain FN</th><th>Abstain TN</th><th>Total</th>
+      </tr></thead><tbody>{body}</tbody></table></div>"""
+
+
+def _thr_confusion(ea: dict) -> str:
+    conf = ea["has_class"].get("wrong_cwe_confusion", {})
+    if not conf:
+        return "<p class='muted'>No mispredicted CWE pairs at this threshold.</p>"
+    body = "".join(
+        f"<tr><td>{_esc(k)}</td><td>{v}</td></tr>" for k, v in conf.items()
+    )
+    return f"""<div class="scroll-x"><table><thead><tr>
+        <th>true → predicted CWE</th><th>count</th>
+      </tr></thead><tbody>{body}</tbody></table></div>"""
+
+
+def _thr_recoverable(ea: dict) -> str:
+    hist = ea["no_class"].get("tn_recoverable_rank_hist", {})
+    if not hist:
+        return ""
+    parts = " ".join(
+        f'<span class="pill">rank {_esc(k)}: {v}</span>' for k, v in hist.items()
+    )
+    return (
+        '<p style="margin-top:8px"><strong>Correctly-abstained (TN) with a right-CWE '
+        f"neighbour deeper in top-k:</strong> {parts}</p>"
+    )
+
+
+def _thr_cve_summary(ea_cve: dict, m_cve: dict) -> str:
+    has = ea_cve["has_class"]
+    no = ea_cve["no_class"]
+    soft = has.get("soft_errors_wrong_cve_right_cwe", 0)
+    return f"""<p>
+      <span class="pill ok">has class {has['n']}</span>
+      <span class="pill">correct {has['correct']}</span>
+      <span class="pill warn">wrong {has['wrong']}</span>
+      <span class="pill">soft errors (wrong CVE / right CWE) {soft}</span>
+      &nbsp;·&nbsp;
+      <span class="pill">no class {no['n']}</span>
+      <span class="pill warn">FN {no['fn']}</span>
+      <span class="pill ok">TN {no['tn']}</span>
+      &nbsp;·&nbsp; coverage {_pct(m_cve['coverage'])}, sel-acc {_pct(m_cve['sel_acc'])}
+    </p>"""
+
+
+def _nearest_grid(grid: list[float], value: float | None) -> float | None:
+    if not grid or value is None:
+        return None
+    return round(min(grid, key=lambda g: abs(g - value)), 4)
+
+
+def _tab_threshold(threshold: dict | None, results: dict) -> str:
+    if not threshold:
+        return """<section id="tab-threshold" class="tab-panel">
+          <h2>Threshold Study</h2>
+          <p class="muted">Run <code>uv run python -m experiments.dashboard_scripts.analyze_thresholds
+          --results &lt;results.json&gt;</code> to generate threshold_analysis.json first.</p></section>"""
+
+    cells = threshold.get("cells", [])
+    grid = threshold.get("grid", [])
+    approach_names = list(dict.fromkeys(c["embedder"] for c in results.get("cells", [])))
+
+    intro = (
+        "Only <em>accept</em> a retrieval when the top-1 similarity is at or above a "
+        "threshold <code>t</code>. A query is then <strong>has class</strong> (we assign the "
+        "top-1 CWE/CVE) or <strong>no class</strong> (we abstain). Sweeping <code>t</code> "
+        "trades coverage for selective accuracy. The <strong>CWE</strong> axis scores a "
+        "class-match; the <strong>CVE</strong> axis scores an exact-instance match. Percentile "
+        "markers are per-embedder (raw scores are not comparable across embedders), and no "
+        "single threshold is recommended — inspect the curves and pick per your precision/coverage target."
+    )
+
+    card_blocks = []
+    chart_js = []
+    for i, cell in enumerate(cells):
+        name = cell["embedder"]
+        col = _approach_color(approach_names, name)
+        cwe_rows = cell["sweep"]["cwe"]
+        cve_rows = cell["sweep"]["cve"]
+        c1, c2, c3 = f"thrCwe{i}", f"thrCve{i}", f"thrCR{i}"
+        chart_js.append(_thr_line_chart_js(c1, cwe_rows, col))
+        chart_js.append(_thr_line_chart_js(c2, cve_rows, col))
+        chart_js.append(_thr_cr_chart_js(c3, cwe_rows, cve_rows, col))
+
+        marker_ts = {_nearest_grid(grid, cell["markers"].get(l)) for l in ("p50", "p75", "p90")}
+        marker_ts = {t for t in marker_ts if t is not None}
+
+        # Primary error analysis at p75 (fall back to first available marker)
+        cwe_ea_map = cell["error_analysis"]["cwe"]
+        prim = "p75" if "p75" in cwe_ea_map else (next(iter(cwe_ea_map), None))
+        err_html = ""
+        if prim:
+            ea_cwe = cwe_ea_map[prim]
+            m_cwe = _thr_metrics_from_ea(ea_cwe)
+            ea_cve = cell["error_analysis"]["cve"].get(prim)
+            m_cve = _thr_metrics_from_ea(ea_cve) if ea_cve else None
+            cve_block = _thr_cve_summary(ea_cve, m_cve) if ea_cve else ""
+            err_html = f"""
+          <h4>Error analysis @ {prim} (threshold {_num(cell['markers'].get(prim), 3)}) — CWE axis</h4>
+          {_thr_group_cards(m_cwe, ea_cwe)}
+          <div class="chart-grid">
+            <div><h4>Group breakdown by true CWE</h4>{_thr_by_cwe_table(ea_cwe)}</div>
+            <div><h4>Mispredicted CWE pairs (predicted &amp; wrong)</h4>{_thr_confusion(ea_cwe)}</div>
+          </div>
+          {_thr_recoverable(ea_cwe)}
+          <h4>CVE axis summary @ {prim}</h4>
+          {cve_block}"""
+
+        other_html = ""
+        for label in ("p50", "p90"):
+            ea = cwe_ea_map.get(label)
+            if not ea:
+                continue
+            m = _thr_metrics_from_ea(ea)
+            other_html += (
+                f"<details><summary>Error analysis @ {label} "
+                f"(threshold {_num(cell['markers'].get(label), 3)}) — CWE axis</summary>"
+                f"{_thr_group_cards(m, ea)}{_thr_by_cwe_table(ea)}{_thr_confusion(ea)}</details>"
+            )
+
+        sweep_details = (
+            "<details><summary>Full threshold sweep table (all grid points)</summary>"
+            f"{_thr_sweep_table(cwe_rows, 'CWE', marker_ts)}"
+            f"{_thr_sweep_table(cve_rows, 'CVE', marker_ts)}</details>"
+        )
+
+        ss = cell.get("score_stats", {})
+        card_blocks.append(f"""
+        <div class="card">
+          <div class="cell-header">
+            <span class="dot" style="background:{col}"></span>
+            <strong>{_esc(name)}</strong> · {_esc(cell.get('backend'))} · {_esc(cell.get('graph_variant'))}
+            &nbsp; <span class="pill">{cell.get('n_queries', 0)} queries</span>
+            <span class="pill">{cell.get('n_queries_cwe', 0)} with CWE</span>
+          </div>
+          <p class="muted">Top-1 score range {_num(ss.get('min'), 3)}–{_num(ss.get('max'), 3)},
+             median {_num(ss.get('median'), 3)}.</p>
+          <div class="chart-grid">
+            <div class="chart-card"><h4>CWE axis — metrics vs threshold</h4><canvas id="{c1}" height="200"></canvas></div>
+            <div class="chart-card"><h4>CVE axis — metrics vs threshold</h4><canvas id="{c2}" height="200"></canvas></div>
+          </div>
+          <div class="chart-grid">
+            <div class="chart-card"><h4>Coverage vs selective accuracy</h4><canvas id="{c3}" height="200"></canvas></div>
+            <div>
+              <h4>Reference markers (non-prescriptive)</h4>
+              {_thr_markers_table(cell)}
+              <p class="muted" style="margin-top:8px">F1-max grid threshold:
+                 CWE {_num(cell['markers'].get('f1max_cwe'), 2)},
+                 CVE {_num(cell['markers'].get('f1max_cve'), 2)};
+                 random-baseline {_num(cell['markers'].get('random'), 3)}.</p>
+            </div>
+          </div>
+          {err_html}
+          {other_html}
+          {sweep_details}
+        </div>""")
+
+    style_block = "<style>.thr-marker td{background:#fff8e1;}</style>"
+    script_block = "<script>(function(){" + "".join(chart_js) + "})();</script>"
+    return (
+        '<section id="tab-threshold" class="tab-panel">'
+        "<h2>Threshold Study &amp; Abstention Error Analysis</h2>"
+        f'<p class="sub">{intro}</p>'
+        + style_block
+        + "".join(card_blocks)
+        + script_block
+        + "</section>"
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -932,9 +1275,22 @@ def _collect_embedding_space_artifacts(results: dict, run_dir: Path) -> dict[str
 def _tab_embedding_space(results: dict, run_dir: Path) -> str:
   artifacts = _collect_embedding_space_artifacts(results, run_dir)
   if not artifacts:
+    # Reuse the full embedding-space analysis dashboard (analyze_spaces),
+    # embedded inline, rather than maintaining a parallel visualisation here.
+    if (run_dir / "space_dashboard.html").exists():
+      return """<section id="tab-embedding-space" class="tab-panel">
+  <h2>Embedding Space</h2>
+  <p class="sub">Intrinsic quality, CWE class separation and cross-space comparison,
+     computed from the persisted vector indices.</p>
+  <div class="card" style="padding:0; overflow:hidden">
+    <iframe src="space_dashboard.html" title="Embedding space analysis"
+            style="width:100%; height:1400px; border:0; display:block"></iframe>
+  </div>
+  <p class="sub"><a href="space_dashboard.html" target="_blank" rel="noopener">Open full screen ↗</a></p>
+</section>"""
     return """<section id="tab-embedding-space" class="tab-panel">
   <h2>Embedding Space</h2>
-  <p class="muted">Embedding-space plots were not found for this run.</p>
+  <p class="muted">Embedding-space analysis was not found for this run.</p>
 </section>"""
 
   cards_html = ""
@@ -1152,29 +1508,105 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 #  Main entry
 # ─────────────────────────────────────────────────────────────────────
 
-def generate_html_dashboard(run_dir: str | Path) -> Path:
+def _ensure_analyses(run_dir: Path) -> None:
+    """Derive optional analysis artifacts in-place when they are missing.
+
+    Keeps the dashboard self-contained: the Miss Analysis, Crossing Strategies
+    and Embedding Space tabs are computed on demand from results.json and the
+    persisted vector indices, so no separate scripts need to be run first.
+    Each step is best-effort — on failure the corresponding tab falls back to
+    its guidance message.
+    """
+    results_path = run_dir / "results.json"
+
+    # ── Miss / uncertainty analysis (miss_analysis.json) ─────────────
+    miss_path = run_dir / "miss_analysis.json"
+    if not miss_path.exists():
+        try:
+            from experiments.dashboard_scripts.analyze_misses import analyze_results
+            analyze_results(
+                results_path=results_path,
+                out_json=miss_path,
+                out_html=run_dir / "miss_dashboard.html",
+                uncertainty_quantile=25.0,
+                uncertainty_prob_floor=0.12,
+                uncertainty_margin_floor=0.005,
+                temperature=1.0,
+                max_examples=20,
+                regenerate_unified=False,  # prevent recursion back into this dashboard
+            )
+        except Exception as e:
+            print(f"  [dashboard] miss analysis skipped: {e}")
+
+    # ── Crossing / fusion strategy analysis (crossing_analysis.json) ─
+    crossing_path = run_dir / "crossing_analysis.json"
+    if not crossing_path.exists():
+        try:
+            from experiments.put_aside.verify_crossing import analyze_crossing
+            report = analyze_crossing(results_path)
+            crossing_path.write_text(json.dumps(report, indent=2))
+        except Exception as e:
+            print(f"  [dashboard] crossing analysis skipped: {e}")
+
+    # ── Threshold study / abstention error analysis (threshold_analysis.json) ─
+    threshold_path = run_dir / "threshold_analysis.json"
+    if not threshold_path.exists():
+        try:
+            from experiments.dashboard_scripts.analyze_thresholds import analyze_results as _analyze_thresholds
+            _analyze_thresholds(
+                results_path=results_path,
+                out_json=threshold_path,
+                regenerate_unified=False,  # prevent recursion back into this dashboard
+            )
+        except Exception as e:
+            print(f"  [dashboard] threshold analysis skipped: {e}")
+
+    # ── Embedding-space analysis (space_dashboard.html) ──────────────
+    # Reuse analyze_spaces + src.metrics.space_analysis, sourcing embeddings
+    # from the persisted vector indices instead of re-embedding.
+    if not (run_dir / "space_dashboard.html").exists():
+        try:
+            from experiments.dashboard_scripts.analyze_spaces import ensure_space_dashboard
+            ensure_space_dashboard(run_dir)
+        except Exception as e:
+            print(f"  [dashboard] embedding-space analysis skipped: {e}")
+
+
+def generate_html_dashboard(run_dir: str | Path, compute_missing: bool = True) -> Path:
     """
     Read all JSON files from run_dir, generate a single dashboard.html.
     Returns the path to the written file.
+
+    When ``compute_missing`` is True (default), any missing miss/crossing
+    analyses are derived from results.json and the Embedding Space tab is built
+    from the persisted vector indices first, so every tab is populated without
+    running separate scripts.
     """
     run_dir = Path(run_dir)
 
     results_path  = run_dir / "results.json"
-    miss_path     = run_dir / "miss_analysis.json"
-    crossing_path = run_dir / "crossing_analysis.json"
 
     if not results_path.exists():
         raise FileNotFoundError(f"results.json not found in {run_dir}")
 
+    if compute_missing:
+        _ensure_analyses(run_dir)
+
+    miss_path     = run_dir / "miss_analysis.json"
+    crossing_path = run_dir / "crossing_analysis.json"
+    threshold_path = run_dir / "threshold_analysis.json"
+
     results  = json.loads(results_path.read_text())
     miss     = json.loads(miss_path.read_text())     if miss_path.exists()     else None
     crossing = json.loads(crossing_path.read_text()) if crossing_path.exists() else None
+    threshold = json.loads(threshold_path.read_text()) if threshold_path.exists() else None
 
     run_id = results.get("run_id", run_dir.name)
 
     tabs = [
         ("tab-overview",  "🏠 Overview",              _tab_overview(results, miss, crossing)),
         ("tab-retrieval", "📊 Retrieval Performance",  _tab_retrieval(results)),
+        ("tab-threshold", "🎯 Threshold Study",        _tab_threshold(threshold, results)),
         ("tab-miss",      "🔍 Miss Analysis",          _tab_miss(miss, results)),
         ("tab-crossing",  "🔀 Crossing Strategies",    _tab_crossing(crossing, results)),
       ("tab-embedding-space", "🧭 Embedding Space", _tab_embedding_space(results, run_dir)),

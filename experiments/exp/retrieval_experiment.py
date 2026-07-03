@@ -13,6 +13,7 @@ and run_cell processes one (embedder, backend, graph_variant) cell.
 from __future__ import annotations
 
 import time
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -30,12 +31,11 @@ from src.metrics.retrieval_eval import (
 from src.rag.hnsw import HNSWIndex
 from src.rag.utils import populate_index
 
+logger = logging.getLogger(__name__)
+
 BACKEND_REGISTRY = {
     "hnsw": HNSWIndex,
 }
-
-
-# ── Metric functions (MetricSpec-compatible signatures) ──────────────
 
 
 def _metric_space_stats(ctx: CellContext) -> dict:

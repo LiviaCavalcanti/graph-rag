@@ -15,7 +15,7 @@ import networkx as nx
 import numpy as np
 import torch
 
-from .base import BaseEmbedder
+from .base import BaseEmbedder, resolve_codebert_path
 
 # ── shared utility ─────────────────────────────────────────────────────
 
@@ -126,6 +126,7 @@ def collect_flow_ordered_code(
 
     # Start BFS from each seed
     from collections import deque
+
     queue = deque()
     for nd, _ in seeds:
         if nd not in visited:
@@ -178,10 +179,7 @@ class CodeBERTSeqEmbedder(BaseEmbedder):
             if torch.cuda.is_available()
             else cfg.get("rgcn", {}).get("device", "cpu")
         )
-        self._model_name = cfg.get("rgcn", {}).get(
-            "codebert_model",
-            "/home/z0050s2b/code/graph-rag/models/codebert-base/",
-        )
+        self._model_name = resolve_codebert_path(cfg)
         self._codebert_dim = cfg.get("codebert").get("dim", 128)
         self._cb_batch_size = cfg.get("rgcn", {}).get("cb_batch_size", 64)
         self._cb_model = None
@@ -189,7 +187,9 @@ class CodeBERTSeqEmbedder(BaseEmbedder):
         self._cb_available = None
         self._pca = None
         self._fitted = False
-        print(f"Device: { self._device} \n Final dimension: {self._codebert_dim} \n Batch size: {self._cb_batch_size}")
+        print(
+            f"Device: { self._device} \n Final dimension: {self._codebert_dim} \n Batch size: {self._cb_batch_size}"
+        )
 
     def _load_codebert(self):
         if self._cb_available is not None:
@@ -258,11 +258,13 @@ class CodeBERTSeqEmbedder(BaseEmbedder):
 
     def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
         raw_dim = 768
-        should_compress = self.projection != "none" or (self.dim is not None and self.dim < raw_dim)
-        
+        should_compress = self.projection != "none" or (
+            self.dim is not None and self.dim < raw_dim
+        )
+
         if should_compress and not self._fitted:
             raise RuntimeError("Call embed_many() first to fit PCA")
-        
+
         self._load_codebert()
         code = collect_changed_code(G)
         raw = self.encode_batch([code])
@@ -277,7 +279,7 @@ class CodeBERTSeqEmbedder(BaseEmbedder):
             padded = np.zeros(target_dim, dtype=np.float32)
             padded[: projected.shape[0]] = projected
             projected = padded
-        return self._norm_vec(projected) if self.apply_norm else projected  
+        return self._norm_vec(projected) if self.apply_norm else projected
 
     def embed_many(self, graphs: list) -> np.ndarray:
         self._load_codebert()
@@ -289,7 +291,9 @@ class CodeBERTSeqEmbedder(BaseEmbedder):
 
         # Determine if we need to compress: either projection is set OR self.dim < raw_dim
         raw_dim = raw.shape[1]
-        should_compress = self.projection != "none" or (self.dim is not None and self.dim < raw_dim)
+        should_compress = self.projection != "none" or (
+            self.dim is not None and self.dim < raw_dim
+        )
 
         if not should_compress:
             # No compression needed - keep full dimensionality
@@ -348,11 +352,13 @@ class CodeBERTFlowEmbedder(CodeBERTSeqEmbedder):
 
     def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
         raw_dim = 768
-        should_compress = self.projection != "none" or (self.dim is not None and self.dim < raw_dim)
-        
+        should_compress = self.projection != "none" or (
+            self.dim is not None and self.dim < raw_dim
+        )
+
         if should_compress and not self._fitted:
             raise RuntimeError("Call embed_many() first to fit PCA")
-        
+
         self._load_codebert()
         code = collect_flow_ordered_code(G)
         raw = self.encode_batch([code])
@@ -379,7 +385,9 @@ class CodeBERTFlowEmbedder(CodeBERTSeqEmbedder):
 
         # Determine if we need to compress: either projection is set OR self.dim < raw_dim
         raw_dim = raw.shape[1]
-        should_compress = self.projection != "none" or (self.dim is not None and self.dim < raw_dim)
+        should_compress = self.projection != "none" or (
+            self.dim is not None and self.dim < raw_dim
+        )
 
         if not should_compress:
             # No compression needed - keep full dimensionality

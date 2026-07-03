@@ -76,6 +76,8 @@ pip install networkx pandas netlsd torch torch_geometric faiss-cpu scikit-learn 
 
 The `codebert` embedder requires the `microsoft/codebert-base` model weights. Choose one of the two options below.
 
+TODO: Add HF login 
+
 **Option A — download once and run offline (recommended)**
 ```bash
 python -c "
