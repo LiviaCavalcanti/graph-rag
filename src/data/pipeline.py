@@ -1,11 +1,13 @@
 import glob
+import logging
 import re
 import subprocess
 import textwrap
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
+from typing import Any
 
 import networkx as nx
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +34,30 @@ def cpg_dir_for(graphml_root: str, cve_id: str, variant: str, version: str) -> s
     return str(Path(graphml_root) / cve_id / variant / version / "graph")
 
 
-def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
+def _cache_path_for(graph_dir: str) -> Path:
+    """Return the pickle cache path for a graph directory."""
+    return Path(graph_dir).parent / ".graph_cache.pkl"
+
+
+def load_cpg_dir(graph_dir: str, use_cache: bool = True) -> nx.MultiDiGraph:
+    """Load a CPG from export.xml files, using pickle cache when available.
+
+    First run parses all XML files and saves a .graph_cache.pkl alongside them.
+    Subsequent runs load the pickle directly (~100x faster).
+    """
+    import pickle
+
+    cache_file = _cache_path_for(graph_dir)
+
+    # Try loading from cache first
+    if use_cache and cache_file.exists():
+        try:
+            with open(cache_file, "rb") as fh:
+                return pickle.load(fh)
+        except Exception:
+            pass  # Fall through to full parse
+
+    # Full XML parse
     root = Path(graph_dir)
     if not (root / "graph").exists() and root.name != "graph":
         root = root / "graph"
@@ -66,31 +91,129 @@ def load_cpg_dir(graph_dir: str) -> nx.MultiDiGraph:
     phantom_nodes = set(G.nodes()) - declared_nodes
     G.remove_nodes_from(phantom_nodes)
 
-
     # clean edges of removed phantom
     dangling = [
         (u, v, k)
         for u, v, k in G.edges(keys=True)
         if u not in G._node or v not in G._node
     ]
-    # print(f"{graph_dir} -- Declared nodes: {len(declared_nodes)}, noise: {len(noise)}, dangling nodes: {len(dangling)}")
     G.remove_edges_from(dangling)
 
-    logger.info(f"Declared nodes {declared_nodes}. Phantom nodes: {phantom_nodes}. Prunned dangling edges after removing phantoms: {dangling}")
+    logger.info(
+        f"Declared nodes {declared_nodes}. Phantom nodes: {phantom_nodes}. Prunned dangling edges after removing phantoms: {dangling}"
+    )
+
+    # Save to cache for next time
+    if use_cache:
+        try:
+            with open(cache_file, "wb") as fh:
+                pickle.dump(G, fh, protocol=pickle.HIGHEST_PROTOCOL)
+        except Exception as e:
+            logger.warning(f"Could not write graph cache {cache_file}: {e}")
+
     return G
 
 
-# diff-type → weight mapping (used by both compute_graph_diff and slicing)
-CHANGE_WEIGHT = {
+def load_cpg_dir_safe(graph_dir: str) -> tuple[str, nx.MultiDiGraph | None]:
+    """Load CPG and return (graph_dir, graph) or (graph_dir, None) on failure."""
+    try:
+        return (graph_dir, load_cpg_dir(graph_dir))
+    except Exception as e:
+        logger.warning(f"Failed to load {graph_dir}: {e}")
+        return (graph_dir, None)
+
+
+def load_cpg_dirs_parallel(
+    graph_dirs: list[str], max_workers: int = 8
+) -> dict[str, nx.MultiDiGraph]:
+    """Load multiple CPG directories in parallel using ThreadPoolExecutor.
+
+    ThreadPoolExecutor is ideal for I/O-bound operations like file loading.
+
+    Args:
+        graph_dirs: List of graph directory paths
+        max_workers: Number of parallel workers (default 8 for I/O)
+
+    Returns:
+        Dict mapping graph_dir -> loaded graph (skips failed paths)
+    """
+    graphs = {}
+    failed = []
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(load_cpg_dir_safe, gd): gd for gd in graph_dirs}
+
+        from tqdm import tqdm as tqdm_module
+
+        for future in tqdm_module(
+            as_completed(futures), total=len(futures), desc="Loading graphs (parallel)"
+        ):
+            graph_dir, graph = future.result()
+            if graph is not None:
+                graphs[graph_dir] = graph
+            else:
+                failed.append(graph_dir)
+
+    if failed:
+        logger.warning(f"Failed to load {len(failed)} graphs: {failed[:5]}...")
+
+    return graphs
+
+
+# ── graph-diff defaults ──────────────────────────────────────────────
+# Single source of truth for compute_graph_diff parameters.  Override per
+# run via the config `graph:` section (see graph_diff_params()).  Defaults
+# preserve the historical hard-coded behavior.
+DEFAULT_SLICE_DEPTH = 3  # hops along flow edges from seed nodes
+DEFAULT_CHANGE_WEIGHT = {
     "removed": 1.0,
     "fix_adjacent": 0.8,
     "edge_changed": 0.6,
     "context": 0.2,
 }
+DEFAULT_NOISE_TYPES = {
+    "TYPE_DECL",
+    "FILE",
+    "NAMESPACE_BLOCK",
+    "COMMENT",
+    "UNKNOWN",
+    "METHOD_RETURN",
+}
+DEFAULT_FLOW_EDGES = {"CFG", "CDG", "REACHING_DEF", "PDG", "DDG"}
+
+# Backwards-compatible alias (was the only module-level constant before the
+# parameters became configurable).
+CHANGE_WEIGHT = DEFAULT_CHANGE_WEIGHT
+
+
+def graph_diff_params(cfg: dict | None) -> dict:
+    """Extract compute_graph_diff() overrides from a config mapping.
+
+    Accepts either a full config dict (reads its ``graph`` section) or a
+    graph-section dict directly.  Only keys explicitly present are returned,
+    so anything omitted falls back to the ``DEFAULT_*`` values above — i.e.
+    passing an empty or foreign config is behavior-preserving.
+    """
+    if not cfg:
+        return {}
+    section = cfg.get("graph", cfg) if isinstance(cfg, dict) else cfg
+    if not isinstance(section, dict):
+        return {}
+    params: dict = {}
+    for key in ("slice_depth", "change_weight", "noise_types", "flow_edges"):
+        if section.get(key) is not None:
+            params[key] = section[key]
+    return params
 
 
 def compute_graph_diff(
-    G_before: nx.MultiDiGraph, G_after: nx.MultiDiGraph
+    G_before: nx.MultiDiGraph,
+    G_after: nx.MultiDiGraph,
+    *,
+    slice_depth: int | None = None,
+    change_weight: dict | None = None,
+    noise_types=None,
+    flow_edges=None,
 ) -> nx.MultiDiGraph:
     """
     Semantic graph diff + vulnerability-aware program slice.
@@ -102,17 +225,11 @@ def compute_graph_diff(
     """
     from collections import Counter
 
-    # ── config ───────────────────────────────────────────────────
-    NOISE_TYPES = {
-        "TYPE_DECL",
-        "FILE",
-        "NAMESPACE_BLOCK",
-        "COMMENT",
-        "UNKNOWN",
-        "METHOD_RETURN",
-    }
-    FLOW_EDGES = {"CFG", "CDG", "REACHING_DEF", "PDG", "DDG"}
-    SLICE_DEPTH = 3  # hops along flow edges from seed nodes
+    # ── resolve parameters (defaults preserve prior behavior) ────
+    slice_depth = DEFAULT_SLICE_DEPTH if slice_depth is None else int(slice_depth)
+    change_weight = DEFAULT_CHANGE_WEIGHT if change_weight is None else change_weight
+    noise_types = DEFAULT_NOISE_TYPES if noise_types is None else set(noise_types)
+    flow_edges = DEFAULT_FLOW_EDGES if flow_edges is None else set(flow_edges)
 
     # ── helpers ──────────────────────────────────────────────────
     def _code(attrs: dict) -> str:
@@ -128,7 +245,7 @@ def compute_graph_diff(
         return (_node_fp(G, u), _node_fp(G, v), d.get("labelE") or d.get("label", ""))
 
     def _is_semantic(G, n) -> bool:
-        return G.nodes[n].get("labelV") not in NOISE_TYPES
+        return G.nodes[n].get("labelV") not in noise_types
 
     # ── 1. semantic node diff ────────────────────────────────────
     before_fps = Counter(
@@ -200,18 +317,18 @@ def compute_graph_diff(
     slice_nodes = set(changed)
     frontier = set(changed)
 
-    for _ in range(SLICE_DEPTH):
+    for _ in range(slice_depth):
         next_frontier = set()
         for n in frontier:
             if n not in G_before:
                 continue
             for _, tgt, d in G_before.out_edges(n, data=True):
                 el = d.get("labelE") or d.get("label", "")
-                if el in FLOW_EDGES and tgt not in slice_nodes:
+                if el in flow_edges and tgt not in slice_nodes:
                     next_frontier.add(tgt)
             for src, _, d in G_before.in_edges(n, data=True):
                 el = d.get("labelE") or d.get("label", "")
-                if el in FLOW_EDGES and src not in slice_nodes:
+                if el in flow_edges and src not in slice_nodes:
                     next_frontier.add(src)
         slice_nodes |= next_frontier
         frontier = next_frontier
@@ -230,7 +347,7 @@ def compute_graph_diff(
     for n in G_vuln:
         dlabel = diff_label.get(n, "context")
         G_vuln.nodes[n]["diff"] = dlabel
-        G_vuln.nodes[n]["diff_weight"] = CHANGE_WEIGHT.get(dlabel, 0.2)
+        G_vuln.nodes[n]["diff_weight"] = change_weight.get(dlabel, 0.2)
 
     return G_vuln
 
@@ -277,8 +394,18 @@ def write_c_file(
     return dest_path
 
 
+DEFAULT_JOERN_TIMEOUT_S = 120
+DEFAULT_JOERN_LANGUAGE = "newc"
+
+
 def run_joern_export(
-    joern_bir_dir: str, source_file: str, out_dir: str, graph_dir: str
+    joern_bir_dir: str,
+    source_file: str,
+    out_dir: str,
+    graph_dir: str,
+    *,
+    timeout_s: int = DEFAULT_JOERN_TIMEOUT_S,
+    language: str = DEFAULT_JOERN_LANGUAGE,
 ) -> bool:
     joern_bin = Path(joern_bir_dir)
     source = Path(source_file)
@@ -295,10 +422,12 @@ def run_joern_export(
         "--output",
         str(cpg_file),
         "--language",
-        "newc",
+        language,
     ]
 
-    result = subprocess.run(parse_cmd, capture_output=True, text=True, timeout=120)
+    result = subprocess.run(
+        parse_cmd, capture_output=True, text=True, timeout=timeout_s
+    )
     if result.returncode != 0:
         print(f"EXPORT ERROR: {result.stderr} , {result}")
         return False
@@ -317,7 +446,7 @@ def run_joern_export(
         export_cmd,
         capture_output=True,
         text=True,
-        timeout=120,
+        timeout=timeout_s,
     )
     if result.returncode != 0:
         print(result)

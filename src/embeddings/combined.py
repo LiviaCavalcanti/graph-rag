@@ -10,14 +10,14 @@ from .wl import WLEmbedder
 
 class CombinedEmbedder(BaseEmbedder):
     """
-    Concatenates NetLSD + WL + GIN then reduces with PCA.
+    Concatenates WL + GIN then reduces with PCA.
     The PCA is fit on the first batch seen — refit if the
     data distribution changes significantly.
     """
 
     def __init__(self, cfg: dict):
         super().__init__(cfg)
-        self._netlsd = NetLSDEmbedder(cfg)
+        # self._netlsd = NetLSDEmbedder(cfg)
         self._wl = WLEmbedder(cfg)
         self._gin = GINEmbedder(cfg)
         self._pca = None
@@ -47,36 +47,55 @@ class CombinedEmbedder(BaseEmbedder):
         return self._norm_vec(proj)
 
     def _raw_one(self, G: nx.MultiDiGraph) -> np.ndarray:
-        a = self._netlsd.embed_one(G)
         b = self._wl.embed_one(G)
         c = self._gin.embed_one(G)
-        return np.concatenate([a, b, c])
+        return np.concatenate([b, c])
+
+    def fit(self, graphs: list[nx.MultiDiGraph]) -> None:
+        """Fit PCA on a representative corpus of graphs. Call before embed_many()."""
+        # a_all = self._netlsd.embed_many(graphs)
+        b_all = self._wl.embed_many(graphs)
+        c_all = self._gin.embed_many(graphs)
+        raws = np.concatenate([b_all, c_all], axis=1).astype(np.float32)
+        n_components = max(1, min(self.dim, raws.shape[0] - 1, raws.shape[1]))
+        self._pca = PCA(n_components=n_components, random_state=42)
+        self._pca.fit(raws)
+        self._fitted = True
+        self.dim = n_components
+        explained = self._pca.explained_variance_ratio_.sum()
+        print(f"    [combined] PCA fitted — dim={n_components}, explained variance: {explained:.2%}")
 
     def embed_many(self, graphs: list[nx.MultiDiGraph]) -> np.ndarray:
         # Batch embed with each sub-embedder (more efficient than per-graph calls)
-        a_all = self._netlsd.embed_many(graphs)
+        # a_all = self._netlsd.embed_many(graphs)
         b_all = self._wl.embed_many(graphs)
         c_all = self._gin.embed_many(graphs)
 
         print('[COMBINED] All graphs embedded')
         
         # Concatenate along feature dimension
-        raws = np.concatenate([a_all, b_all, c_all], axis=1).astype(np.float32)
-
+        raws = np.concatenate([ b_all, c_all], axis=1).astype(np.float32)
+        print('concatenation done')
         if self.projection == "none":
             self.dim = raws.shape[1]
             print(f"    [combined] no projection — dim={self.dim}")
             return self._norm_mat(raws)
 
         if not self._fitted:
-            n_components = min(self.dim, raws.shape[0] - 1, raws.shape[1])
+            print("Not fitted")
+            n_components = max(1, min(self.dim, raws.shape[0] - 1, raws.shape[1]))
             self._pca = PCA(n_components=n_components, random_state=42)
+            print("PCA finished successfully")
             self._pca.fit(raws)
             self._fitted = True
             self.dim = n_components
             explained = self._pca.explained_variance_ratio_.sum()
-            print(f"    [combined] PCA fitted — dim={n_components}, explained variance: {explained:.2%}")
+            print(f"    [combined] PCA fitted on batch (n={raws.shape[0]}) — dim={n_components}, explained variance: {explained:.2%}")
+            if raws.shape[0] < 10:
+                print(f"    [combined] WARNING: PCA fitted on only {raws.shape[0]} samples — quality may be poor. "
+                      f"Pass all graphs to fit() first for a stable projection.")
 
+        print('doing the projection')
         projected = self._pca.transform(raws).astype(np.float32)
         return self._norm_mat(projected)
 
@@ -141,7 +160,8 @@ class CombinedEnrichedEmbedder(BaseEmbedder):
             return self._norm_mat(raws)
 
         if not self._fitted:
-            n_components = min(self.dim, raws.shape[0] - 1, raws.shape[1])
+            print('Not fitted')
+            n_components = max(1, min(self.dim, raws.shape[0] - 1, raws.shape[1]))
             self._pca = PCA(n_components=n_components, random_state=42)
             self._pca.fit(raws)
             self._fitted = True

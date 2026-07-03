@@ -20,6 +20,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import random
+from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -39,6 +41,110 @@ def _normalize_embedder_name(name: str) -> str:
     }
     key = name.strip()
     return aliases.get(key, key)
+
+
+def _sample_cve_aware(
+    pairs: list,
+    *,
+    mode: str,
+    seed: int = 42,
+    min_cves_per_cwe: int = 3,
+    total: int | None = None,
+) -> tuple[list, dict[str, Any]]:
+    """Sample pairs at CVE granularity to reshape the CWE distribution.
+
+    Goal: build two samples that serve the same purpose but have different
+    *shapes*, so we can measure how the dataset's CWE distribution affects
+    retrieval.
+
+    Modes:
+      - ``"proportional"``: keep the dataset's natural CWE proportions.
+      - ``"balanced"``: cap every CWE to the same budget so the distribution is
+        approximately uniform across CWEs (under-samples the majority CWEs).
+
+    CVE-aware guarantees (both modes):
+      - Whole CVE groups are kept together (a CVE never straddles the sample
+        boundary), so the downstream leakage-safe split can always find
+        same-CVE support for its queries.
+      - At least ``min_cves_per_cwe`` CVEs are retained per CWE when available.
+      - Multi-pair CVEs are preferred, so each CWE keeps CVEs that can serve as
+        both index and query.
+
+    Args:
+        pairs: file-level ``FunctionPair`` objects (graphs not required yet).
+        mode: ``"proportional"`` or ``"balanced"``.
+        seed: RNG seed for reproducible CVE selection.
+        min_cves_per_cwe: minimum CVEs kept per CWE (whole groups).
+        total: target number of pairs; share it across modes for a fair
+            comparison. If ``None``: proportional keeps all pairs; balanced
+            under-samples every CWE to the smallest CWE's pair count.
+
+    Returns:
+        ``(sampled_pairs, info)`` where ``info`` records the realized per-CWE
+        CVE/pair counts and the requested target.
+    """
+    if mode not in ("proportional", "balanced"):
+        return pairs[:], {"mode": mode or "none", "applied": False}
+
+    rng = random.Random(seed)
+
+    by_cwe: dict[str, dict[str, list]] = defaultdict(lambda: defaultdict(list))
+    for pair in pairs:
+        cwe = getattr(pair, "cwe_id", "UNKNOWN") or "UNKNOWN"
+        cve = getattr(pair, "cve_id", "UNKNOWN") or "UNKNOWN"
+        by_cwe[cwe][cve].append(pair)
+
+    cwes = sorted(by_cwe)
+    n_cwes = max(1, len(cwes))
+    cwe_pair_counts = {c: sum(len(v) for v in by_cwe[c].values()) for c in cwes}
+    total_pairs = sum(cwe_pair_counts.values()) or 1
+
+    if mode == "balanced":
+        if total and total > 0:
+            base = max(1, int(total) // n_cwes)
+        else:
+            base = min(cwe_pair_counts.values())
+        pair_quota = {c: base for c in cwes}
+    else:  # proportional
+        target_total = int(total) if total and total > 0 else total_pairs
+        pair_quota = {
+            c: max(1, round(target_total * cwe_pair_counts[c] / total_pairs))
+            for c in cwes
+        }
+
+    sampled: list = []
+    per_cwe: dict[str, dict[str, int]] = {}
+    for cwe in cwes:
+        groups = list(by_cwe[cwe].items())  # (cve_id, [pairs])
+        rng.shuffle(groups)
+        # Prefer multi-pair CVEs so each CWE keeps query-capable groups.
+        groups.sort(key=lambda kv: len(kv[1]), reverse=True)
+
+        quota = pair_quota[cwe]
+        picked: list = []
+        n_cve = 0
+        for _cve, grp in groups:
+            if n_cve < min_cves_per_cwe or len(picked) < quota:
+                picked.extend(grp)
+                n_cve += 1
+            else:
+                break
+        sampled.extend(picked)
+        per_cwe[cwe] = {"cves": n_cve, "pairs": len(picked)}
+
+    rng.shuffle(sampled)
+
+    info = {
+        "mode": mode,
+        "applied": True,
+        "seed": seed,
+        "min_cves_per_cwe": min_cves_per_cwe,
+        "target_total": int(total) if total and total > 0 else None,
+        "result_total_pairs": len(sampled),
+        "result_total_cves": sum(v["cves"] for v in per_cwe.values()),
+        "per_cwe": per_cwe,
+    }
+    return sampled, info
 
 
 class CVEFixesFileLevelRetrievalExperiment(RetrievalGridExperiment):
@@ -88,8 +194,46 @@ class CVEFixesFileLevelRetrievalExperiment(RetrievalGridExperiment):
             all_file_pairs = dataset.load_lightweight_file_level()
             print(f"  [CVEfixes] loaded {len(all_file_pairs)} file-level pairs from DB")
         
-        # Step 2: Split BEFORE loading graphs — so we only load what we need
-        index_pairs, query_pairs, split_info = build_split(all_file_pairs, cfg)
+        # Step 1b: Optional CVE-aware distribution sampling. Builds a reshaped
+        # sample (natural vs. uniform CWE mix) so we can measure how the dataset
+        # distribution affects retrieval. Whole CVE groups are kept together.
+        sampling_cfg = cfg.get("experiment", {}).get("sampling", {})
+        sample_mode = str(sampling_cfg.get("mode", "none") or "none")
+        if sample_mode in ("proportional", "balanced"):
+            all_file_pairs, sample_info = _sample_cve_aware(
+                all_file_pairs,
+                mode=sample_mode,
+                seed=int(sampling_cfg.get("seed", 42)),
+                min_cves_per_cwe=int(sampling_cfg.get("min_cves_per_cwe", 3)),
+                total=sampling_cfg.get("total"),
+            )
+            per_cwe_pairs = {c: v["pairs"] for c, v in sample_info["per_cwe"].items()}
+            print(
+                f"  [Sampler] mode={sample_mode} -> {sample_info['result_total_pairs']} pairs, "
+                f"{sample_info['result_total_cves']} CVEs across {len(sample_info['per_cwe'])} CWEs"
+            )
+            print(f"  [Sampler] per-CWE pairs: {per_cwe_pairs}")
+        else:
+            sample_info = {"mode": "none", "applied": False}
+
+        # Step 2: Leakage-safe train/test split BEFORE loading graphs.
+        # Reuses the same CVE/CWE-aware split as the method-level experiment so
+        # index/query are disjoint and every query has same-CVE support in index.
+        # Settings come from config experiment.split (seed, test_ratio, enabled).
+        from cvefixes_experiments.scripts.pipeline_verification.exp_cvefixes_retrieval_grid import (
+            _split_cvefixes_pairs,
+        )
+        split_cfg = cfg.get("experiment", {}).get("split", {})
+        if split_cfg.get("enabled", True):
+            index_pairs, query_pairs, split_info = _split_cvefixes_pairs(
+                all_file_pairs,
+                test_ratio=float(split_cfg.get("test_ratio", 0.2)),
+                seed=int(split_cfg.get("seed", 42)),
+                min_pairs_per_cve=int(split_cfg.get("min_pairs_per_cve", 2)),
+            )
+        else:
+            index_pairs, query_pairs, split_info = build_split(all_file_pairs, cfg)
+        split_info["sampling"] = sample_info
         print(f"  Split -> index={len(index_pairs)} files  query={len(query_pairs)} files")
         print(f"  Index CWE dist: {dict(Counter(p.cwe_id for p in index_pairs))}")
         print(f"  Query CWE dist: {dict(Counter(p.cwe_id for p in query_pairs))}")
@@ -138,6 +282,7 @@ class CVEFixesFileLevelRetrievalExperiment(RetrievalGridExperiment):
             "index_pairs": index_pairs,
             "query_pairs": query_pairs,
             "split_info": split_info,
+            "sample_info": sample_info,
         }
 
 
@@ -182,12 +327,18 @@ def _prepare_cfg(
 
 
 def _sync_top_level_split(cfg: dict) -> None:
-    """Configure split settings."""
+    """Ensure the split is enabled while preserving config values.
+
+    Reads existing ``experiment.split`` from config (seed, test_ratio,
+    min_pairs_per_cve, ...) and only forces ``enabled: True`` so the
+    leakage-safe train/test split in load_data() is always applied.
+    """
     cfg.setdefault("experiment", {})
-    cfg["experiment"]["split"] = {
-        "enabled": True,
-        "stratified": True,
-    }
+    split_cfg = cfg["experiment"].setdefault("split", {})
+    split_cfg.setdefault("enabled", True)
+    split_cfg.setdefault("stratified", True)
+    split_cfg.setdefault("seed", 42)
+    split_cfg.setdefault("test_ratio", 0.2)
 
 
 def run_experiment(
@@ -201,6 +352,9 @@ def run_experiment(
     ks: list[int] | None = None,
     run_leave_one_out: bool = False,
     run_self_retrieval: bool = True,
+    sample_mode: str = "none",
+    sample_total: int | None = None,
+    min_cves_per_cwe: int = 3,
 ) -> ExperimentOutput:
     """Run file-level retrieval experiment."""
     if embedders is None:
@@ -229,6 +383,18 @@ def run_experiment(
     )
     _sync_top_level_split(cfg)
 
+    cfg.setdefault("experiment", {})
+    cfg["experiment"]["sampling"] = {
+        "mode": sample_mode,
+        "total": sample_total,
+        "min_cves_per_cwe": min_cves_per_cwe,
+        "seed": int(cfg["experiment"].get("split", {}).get("seed", 42)),
+    }
+
+    # Keep proportional vs. balanced comparison runs in separate folders.
+    if sample_mode in ("proportional", "balanced"):
+        output_dir = str(Path(output_dir) / sample_mode)
+
     print("=" * 70)
     print("EXPERIMENT: CVEfixes File-Level Retrieval Grid")
     print("  Load files directly from database; aggregate all methods per file")
@@ -238,6 +404,10 @@ def run_experiment(
     print(f"GraphML root: {graphml_root}")
     print(f"Embedders: {embedders}")
     print(f"KS: {ks}")
+    print(
+        f"Sampling: mode={sample_mode} total={sample_total} "
+        f"min_cves_per_cwe={min_cves_per_cwe}"
+    )
 
     exp = CVEFixesFileLevelRetrievalExperiment(
         run_leave_one_out=run_leave_one_out,
@@ -297,6 +467,32 @@ if __name__ == "__main__":
         action="store_true",
         help="Disable same-CVE self-retrieval metrics",
     )
+    parser.add_argument(
+        "--sample-mode",
+        choices=["none", "proportional", "balanced"],
+        default="none",
+        help=(
+            "CVE-aware distribution sampling: 'proportional' keeps the natural "
+            "CWE distribution, 'balanced' makes it ~uniform per CWE, 'none' disables. "
+            "Run once per mode with the same --sample-total to compare distributions."
+        ),
+    )
+    parser.add_argument(
+        "--sample-total",
+        type=int,
+        default=None,
+        help=(
+            "Target number of pairs to sample (share across modes for a fair "
+            "comparison). Default: proportional keeps all; balanced under-samples "
+            "each CWE to the smallest CWE."
+        ),
+    )
+    parser.add_argument(
+        "--min-cves-per-cwe",
+        type=int,
+        default=3,
+        help="Keep at least this many whole CVE groups per CWE so retrieval stays feasible.",
+    )
 
     args = parser.parse_args()
 
@@ -310,5 +506,8 @@ if __name__ == "__main__":
         ks=args.ks,
         run_leave_one_out=args.run_leave_one_out,
         run_self_retrieval=not args.no_self_retrieval,
+        sample_mode=args.sample_mode,
+        sample_total=args.sample_total,
+        min_cves_per_cwe=args.min_cves_per_cwe,
     )
 

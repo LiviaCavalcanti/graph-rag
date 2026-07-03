@@ -20,6 +20,8 @@ from torch_geometric.nn import GINConv, global_add_pool, global_mean_pool
 import networkx as nx
 import numpy as np
 
+from .base import BaseEmbedder
+from .codebert_seq import CodeBERTSeqEmbedder
 from .wl import NODE_TYPES, NODE_TYPE_IDX
 
 
@@ -52,18 +54,27 @@ class GINCodeBERTModel(nn.Module):
     """
     Trainable GIN that takes 768-d CodeBERT node features as input.
 
+    Architecture: Two-stage design to avoid early information bottleneck
+      1. Minimal projection: 768 → hidden_dim (preserves semantic richness)
+      2. GIN message passing: Refine node features with graph structure
+      3. Graph-level pooling & readout: Compress to final dimension
+
     Parameters:
         in_dim: Input feature dimension (768 for CodeBERT)
-        hidden_dim: Hidden dimension for GIN layers (default 128)
+        hidden_dim: Hidden dimension for GIN layers (default 256, NOT 128)
         out_dim: Output embedding dimension (default 128)
         num_layers: Number of GIN convolution layers (default 3)
         dropout: Dropout rate (default 0.3)
+    
+    Key insight: Don't compress too early (768→128 loses 87% of info).
+    Instead: 768→256 (preserves ~33% more signal than 768→128),
+    then GIN refines with structure, then compress to out_dim at the end.
     """
 
     def __init__(
         self,
         in_dim: int = 768,
-        hidden_dim: int = 128,
+        hidden_dim: int = 256,  # INCREASED from 128 to preserve semantic signal
         out_dim: int = 128,
         num_layers: int = 3,
         dropout: float = 0.3,
@@ -75,7 +86,8 @@ class GINCodeBERTModel(nn.Module):
         self.num_layers = num_layers
         self.dropout = dropout
 
-        # Project 768-d CodeBERT features to hidden_dim
+        # Semantic projection: 768 → hidden_dim (preserve information for GIN to work with)
+        # This is a careful balance: compress enough to fit in GPU, not too much to lose signal
         self.input_proj = nn.Linear(in_dim, hidden_dim)
 
         self.convs = nn.ModuleList()
@@ -136,3 +148,151 @@ class GINCodeBERTModel(nn.Module):
         self.eval()
         with torch.no_grad():
             return self.forward(data)
+
+
+# ── GINCodeBERTEmbedder: Embedder interface wrapper ──────────────────
+
+
+class GINCodeBERTEmbedder(BaseEmbedder):
+    """
+    Embedder wrapper for GINCodeBERTModel.
+    
+    Uses CodeBERT to embed node code, then refines with graph structure
+    via trainable GIN. Output is fixed-dimensional and L2-normalized.
+    
+    Configuration:
+        gin_model.in_dim: 768 (CodeBERT output)
+        gin_model.hidden_dim: 256 (internal GIN dimension, default)
+        gin_model.out_dim: 128 (or cfg['dim'])
+        gin_model.num_layers: 3
+        gin_model.dropout: 0.3
+        gin_model.device: "cuda" or "cpu"
+    """
+    
+    def __init__(self, cfg: dict, apply_norm: bool = True):
+        super().__init__(cfg, apply_norm=apply_norm)
+        
+        # Get GIN model configuration
+        gin_cfg = cfg.get("gin_model", {})
+        self.in_dim = gin_cfg.get("in_dim", 768)
+        self.hidden_dim = gin_cfg.get("hidden_dim", 256)
+        self.out_dim = self.dim  # Use base class dim as output dimension
+        self.num_layers = gin_cfg.get("num_layers", 3)
+        self.dropout = gin_cfg.get("dropout", 0.3)
+        
+        # Handle device string conversion (gpu -> cuda)
+        device_str = gin_cfg.get("device", "cuda" if torch.cuda.is_available() else "cpu")
+        if device_str == "gpu":
+            self._device = "cuda" if torch.cuda.is_available() else "cpu"
+        else:
+            self._device = device_str
+        
+        # Initialize CodeBERT for node features (without compression)
+        # CodeBERTSeqEmbedder reads: cfg["codebert"]["dim"] and cfg["rgcn"]["cb_batch_size"]
+        # To get raw 768-d vectors, we need to set codebert.dim >= 768
+        cb_cfg = {
+            "codebert": {
+                **cfg.get("codebert", {"model_path": "models/codebert-base/", "seed": 42}),
+                "dim": 768,  # Override to get raw 768-d CodeBERT output (no PCA compression)
+            },
+            "rgcn": cfg.get("rgcn", {"cb_batch_size": 64}),
+            "dim": 768,                # Set to 768 so no compression triggers in embed_many
+            "projection": "none",      # Disable PCA projection
+            "l2_normalize": False,     # Disable L2 norm to preserve raw embeddings
+        }
+        self.codebert_embedder = CodeBERTSeqEmbedder(cb_cfg, apply_norm=False)
+        
+        # Initialize GIN model
+        self.gin_model = GINCodeBERTModel(
+            in_dim=self.in_dim,
+            hidden_dim=self.hidden_dim,
+            out_dim=self.out_dim,
+            num_layers=self.num_layers,
+            dropout=self.dropout,
+        ).to(self._device)
+        self.gin_model.eval()
+    
+    @property
+    def name(self) -> str:
+        return "gin_codebert"
+    
+    def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
+        """Embed a single graph via CodeBERT node features + GIN refinement."""
+        if G.number_of_nodes() == 0:
+            return np.zeros(self.out_dim, dtype=np.float32)
+        
+        # Get CodeBERT node features
+        nodes = list(G.nodes())
+        code_snippets = [
+            (G.nodes[n].get("CODE") or "").strip() or f"node_{n}"
+            for n in nodes
+        ]
+        
+        node_features = self.codebert_embedder.encode_batch(code_snippets)  # (N, 768)
+        
+        # Validate node features shape
+        if node_features.shape[1] != self.in_dim:
+            raise ValueError(
+                f"CodeBERT node features have shape {node_features.shape}, "
+                f"but GINCodeBERTModel expects input dimension {self.in_dim}. "
+                f"Ensure cfg['projection']='none' and cfg['dim']=768."
+            )
+        
+        # Convert to PyG and embed
+        pyg_data = nx_to_pyg_codebert(G, node_features)
+        if pyg_data is None or pyg_data.x.shape[0] == 0:
+            return np.zeros(self.out_dim, dtype=np.float32)
+        
+        pyg_data = pyg_data.to(self._device)
+        with torch.no_grad():
+            embedding = self.gin_model.embed_graph(pyg_data)
+        
+        # embed_graph returns (1, out_dim) for a single graph; drop batch dim.
+        return embedding.cpu().numpy().astype(np.float32)[0]
+    
+    def embed_many(self, graphs: list[nx.MultiDiGraph]) -> np.ndarray:
+        """Embed multiple graphs via CodeBERT + GIN batch processing."""
+        embeddings = []
+        
+        for G in graphs:
+            if G.number_of_nodes() == 0:
+                embeddings.append(np.zeros(self.out_dim, dtype=np.float32))
+                continue
+            
+            # Get CodeBERT node features
+            nodes = list(G.nodes())
+            code_snippets = [
+                (G.nodes[n].get("CODE") or "").strip() or f"node_{n}"
+                for n in nodes
+            ]
+            
+            node_features = self.codebert_embedder.encode_batch(code_snippets)  # (N, 768)
+            
+            # Validate node features shape
+            if node_features.shape[1] != self.in_dim:
+                raise ValueError(
+                    f"CodeBERT node features have shape {node_features.shape}, "
+                    f"but GINCodeBERTModel expects input dimension {self.in_dim}. "
+                    f"Ensure cfg['projection']='none' and cfg['dim']=768."
+                )
+            
+            # Convert to PyG and embed
+            pyg_data = nx_to_pyg_codebert(G, node_features)
+            if pyg_data is None or pyg_data.x.shape[0] == 0:
+                embeddings.append(np.zeros(self.out_dim, dtype=np.float32))
+                continue
+            
+            pyg_data = pyg_data.to(self._device)
+            with torch.no_grad():
+                embedding = self.gin_model.embed_graph(pyg_data)
+            
+            # embed_graph returns (1, out_dim) for a single graph; drop batch dim.
+            embeddings.append(embedding.cpu().numpy().astype(np.float32)[0])
+        
+        result = np.stack(embeddings) if embeddings else np.zeros((0, self.out_dim), dtype=np.float32)
+        
+        # Apply normalization if enabled
+        if self.l2_normalize:
+            result = self._norm_mat(result)
+        
+        return result

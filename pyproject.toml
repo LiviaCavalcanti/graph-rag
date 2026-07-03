@@ -41,8 +41,11 @@ pyg-lib = ["torch", "setuptools"]
 [pytest]
 pythonpath = "src"
 
+# `src` first so bare imports (e.g. `from data.pipeline import ...`) resolve to
+# src/data; `.` (repo root) added so `from src.X` and `from experiments.X`
+# imports work regardless of test collection order (fixes flaky collection).
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 markers = [
     "severity_high: bug changes experiment results (metrics are wrong)",
     "severity_low: corner-case robustness (NaN, crash on edge input)",
