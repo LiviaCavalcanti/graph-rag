@@ -2,36 +2,46 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+
 @dataclass
 class PathsConfig:
     """All system paths in one place."""
-    joern_bin_dir: Path  # was hard-coded to /home/z0050s2b/bin/joern/joern-cli
-    output_dir: Path     # was hard-coded to experiments/output
+
+    joern_bin_dir: Path  # set via config `joern.bin_dir` / `paths.joern_bin_dir`
+    output_dir: Path  # set via config `paths.output_dir` (default experiments/output)
     models_cache_dir: Path
     index_dir: Path
-    
+
+
 @dataclass
 class GraphProcessingConfig:
     """All graph processing parameters (currently scattered in pipeline.py)."""
+
     slice_depth: int = 3
-    change_weight: Dict[str, float] = field(default_factory=lambda: {
-        "function_added": 1.0,
-        "function_deleted": 1.0,
-        "parameter_changed": 0.5,
-    })
+    change_weight: Dict[str, float] = field(
+        default_factory=lambda: {
+            "function_added": 1.0,
+            "function_deleted": 1.0,
+            "parameter_changed": 0.5,
+        }
+    )
     noise_types: List[str] = field(default_factory=lambda: ["add_noise", "drop_noise"])
-    
+
+
 @dataclass
 class VariantConfig:
     """Variant registry (currently hard-coded in autopatch.py)."""
+
     name: str
     model: str
     llm_output_file: str  # was: "gpt-4_response.json" (hard-coded)
     patch_file: str
-    
+
+
 @dataclass
 class EmbeddingConfig:
     """All embedding parameters (scattered defaults)."""
+
     variant: str
     dim: int = 128
     model_name: str = "codebert-base"
@@ -39,10 +49,12 @@ class EmbeddingConfig:
     wl_iterations: int = 4
     wl_color_space: int = 8192
     hidden_dim: int = 64
-    
+
+
 @dataclass
 class AppConfig:
     """Root config, loaded from YAML."""
+
     paths: PathsConfig
     graph: GraphProcessingConfig
     embeddings: Dict[str, EmbeddingConfig]
