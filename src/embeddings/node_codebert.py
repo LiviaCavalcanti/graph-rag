@@ -15,6 +15,8 @@ import networkx as nx
 import numpy as np
 import torch
 
+from .base import resolve_codebert_path
+
 _CACHE_DIR = Path("workspace/node_codebert_cache")
 
 
@@ -42,13 +44,7 @@ class NodeCodeBERTEncoder:
             if torch.cuda.is_available()
             else cfg.get("rgcn", {}).get("device", "cpu")
         )
-        self._model_path = cfg.get("codebert", {}).get(
-            "model_path",
-            cfg.get("rgcn", {}).get(
-                "codebert_model",
-                "/home/z0050s2b/code/graph-rag/models/codebert-base/",
-            ),
-        )
+        self._model_path = resolve_codebert_path(cfg)
         self._batch_size = cfg.get("gin_codebert", {}).get("cb_batch_size", 32)
         self._cache_dir = Path(
             cfg.get("gin_codebert", {}).get("node_cache_dir", str(_CACHE_DIR))
@@ -64,13 +60,13 @@ class NodeCodeBERTEncoder:
             return
         from transformers import AutoModel, AutoTokenizer
 
-        print(f"  [node_codebert] Loading CodeBERT from {self._model_path} on {self._device}...")
+        print(
+            f"  [node_codebert] Loading CodeBERT from {self._model_path} on {self._device}..."
+        )
         self._tokenizer = AutoTokenizer.from_pretrained(
             self._model_path, local_files_only=True
         )
-        self._model = AutoModel.from_pretrained(
-            self._model_path, local_files_only=True
-        )
+        self._model = AutoModel.from_pretrained(self._model_path, local_files_only=True)
         self._model.eval().to(self._device)
         self._loaded = True
         print(f"  [node_codebert] CodeBERT loaded on {self._device}")
@@ -107,7 +103,7 @@ class NodeCodeBERTEncoder:
             all_cls = []
             bs = self._batch_size
             for start in range(0, len(strings), bs):
-                batch = list(strings[start:start + bs])
+                batch = list(strings[start : start + bs])
                 enc = self._tokenizer(
                     batch,
                     padding=True,
@@ -127,9 +123,7 @@ class NodeCodeBERTEncoder:
         np.save(cache_file, out)
         return out
 
-    def encode_graphs_batch(
-        self, graphs: list[nx.MultiDiGraph]
-    ) -> list[np.ndarray]:
+    def encode_graphs_batch(self, graphs: list[nx.MultiDiGraph]) -> list[np.ndarray]:
         """Encode multiple graphs, returning list of (n_nodes_i, 768) arrays."""
         results = []
         for G in graphs:
