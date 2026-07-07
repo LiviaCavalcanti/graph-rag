@@ -546,11 +546,24 @@ class TestBuildCveQrelsAndRun:
         assert qrels["q0"] == {"__none__": 0}
 
     def test_empty_results_skipped(self):
-        """Query with empty results → not added to run/qrels."""
+        """Without metadata, a query with empty results → not added (relevance
+        is unknowable, so it cannot be scored)."""
         query_results = [("q0", "CVE-A", [])]
         qrels, run = _build_cve_qrels_and_run(query_results, None)
         assert "q0" not in run
         assert "q0" not in qrels
+
+    def test_empty_results_with_metadata_kept_as_miss(self):
+        """With index metadata, a supported query with empty results is kept as
+        a guaranteed miss so every embedder shares the same denominator."""
+        index_metadata = [{"cve_id": "CVE-A"}, {"cve_id": "CVE-A"}]
+        query_results = [("q0", "CVE-A", [])]
+        qrels, run = _build_cve_qrels_and_run(query_results, index_metadata)
+        assert "q0" in run and "q0" in qrels
+        # Relevant docs recorded; the run holds only a non-relevant
+        # placeholder, so the query scores as a miss.
+        assert qrels["q0"] == {"d0": 1, "d1": 1}
+        assert all(doc not in qrels["q0"] for doc in run["q0"])
 
     def test_run_scores_preserved(self):
         """Scores in run dict match input scores."""
