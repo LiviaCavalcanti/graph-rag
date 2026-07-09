@@ -97,6 +97,24 @@ rag:
   top_k: 5
   embedding_variant: wl
   prompt_variant: graph       # default | graph
+agents:
+  # Patching-agent architecture. Registered names live in src/agents/registry.py.
+  # Phase 1 ships `single_turn`; later phases add `multistep`, `tool_using`, `mcp`.
+  # Vary this (and prompt_variant) as an experiment axis via PatchingExperiment.
+  architecture: single_turn
+  # Prompt variant from src/agents/prompts/registry.yaml
+  # (default | default_v2 | graph | graph_v2). Kept as `default` to preserve the
+  # historical `--mode batch` behaviour; set to `graph` (or pass
+  # `--prompt-variant graph`) to patch with serialized G_vuln context.
+  prompt_variant: default
+  model: null                 # LLM deployment; null → MODEL_NAME from .env
+  temperature: 0.2
+  max_tokens: 4096
+  # ── knobs reserved for later phases (harmless defaults now) ──
+  max_tool_iters: 6           # tool-using agent loop bound (Phase 3+)
+  tools:
+    provider: none            # none | in_process | joern_server
+  multistep: {}               # multi-step recipe config (Phase 2+)
 experiment:
   split:
     enabled: true
