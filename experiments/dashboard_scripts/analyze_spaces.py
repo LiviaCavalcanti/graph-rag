@@ -367,6 +367,181 @@ def render_dashboard(results: dict, space_analysis: dict) -> str:
 </html>"""
 
 
+# ── Build from persisted indices (no re-embedding required) ──────────
+
+
+def _reconstruct_index_spaces(run_dir: Path):
+    """Reconstruct ``{embedder: embeddings}`` and shared CWE labels from the
+    persisted vector indices in ``<run_dir>/indices``.
+
+    Only the canonical ``G_vuln`` variant is used, so there is a single space
+    per embedder. Returns ``(embeddings, labels, metadata)`` or ``None``.
+    """
+    indices_dir = Path(run_dir) / "indices"
+    if not indices_dir.exists():
+        return None
+    try:
+        import faiss  # type: ignore
+        import numpy as np
+    except Exception:
+        return None
+
+    embeddings: dict = {}
+    metadata: list = []
+    for idx_path in sorted(indices_dir.glob("*.index")):
+        meta_path = idx_path.with_name(idx_path.stem + "_meta.json")
+        if not meta_path.exists():
+            continue
+        parts = idx_path.stem.split("__")
+        name = parts[0]
+        variant = parts[1] if len(parts) > 1 else ""
+        if variant not in ("", "G_vuln") or name in embeddings:
+            continue
+        try:
+            index = faiss.read_index(str(idx_path))
+            n = int(index.ntotal)
+            if n < 3:
+                continue
+            embeddings[name] = index.reconstruct_n(0, n).astype(np.float32)
+            if not metadata:
+                metadata = json.loads(meta_path.read_text())
+        except Exception:
+            continue
+
+    if not embeddings or not metadata:
+        return None
+
+    cwe_list = [(m.get("cwe_id") or "UNKNOWN") for m in metadata]
+    mapping = {c: i for i, c in enumerate(sorted(set(cwe_list)))}
+    labels = np.array([mapping[c] for c in cwe_list])
+    return embeddings, labels, metadata
+
+
+def build_space_analysis_from_indices(run_dir: Path, k_values: tuple = (5, 10, 20)):
+    """Compute the embedding-space analysis (intrinsic + pairwise metrics) for a
+    run directly from its persisted indices, reusing ``src.metrics.space_analysis``.
+
+    Returns ``(results_like, space_analysis)`` in the shape expected by
+    :func:`render_dashboard`, or ``None`` when no indices are available.
+    """
+    from src.metrics.metrics import embedding_space_stats
+    from src.metrics.space_analysis import (
+        alignment_uniformity,
+        distance_concentration,
+        hubness,
+        intra_inter_ratio,
+        isotropy,
+        knn_overlap,
+        linear_cka,
+        rank_correlation,
+    )
+
+    recon = _reconstruct_index_spaces(Path(run_dir))
+    if recon is None:
+        return None
+    embeddings, labels, _ = recon
+    names = sorted(embeddings.keys())
+    k = k_values[1] if len(k_values) > 1 else k_values[0]
+    n_ref = int(len(labels))
+
+    cells: list = []
+    for name in names:
+        embs = embeddings[name]
+
+        hub_by_k = {}
+        for kv in k_values:
+            h = hubness(embs, k=kv)
+            hub_by_k[f"k={kv}"] = {
+                "skewness": round(h["k_skewness"], 4),
+                "hub_fraction": round(h["hub_fraction"], 4),
+            }
+
+        intrinsic = {
+            "dim": int(embs.shape[1]),
+            "embed_time_s": None,  # not recoverable from a persisted index
+            "space_stats": embedding_space_stats(embs),
+            "isotropy": isotropy(embs),
+            "hubness": hubness(embs, k=k),
+            "distance_concentration": distance_concentration(embs),
+            "hubness_by_k": hub_by_k,
+        }
+
+        class_sep: dict = {}
+        align_unif: dict = {}
+        if embs.shape[0] == n_ref:  # labels aligned row-for-row
+            class_sep = intra_inter_ratio(embs, labels)
+            class_sep.pop("per_class", None)
+            align_unif = alignment_uniformity(embs, labels)
+
+        cells.append(
+            {
+                "coords": {"embedder": name},
+                "metrics": {
+                    "intrinsic": intrinsic,
+                    "class_separation": class_sep,
+                    "alignment_uniformity": align_unif,
+                },
+            }
+        )
+
+    # Pairwise matrices — only across embedders aligned to the shared labels.
+    pair_names = [n for n in names if embeddings[n].shape[0] == n_ref]
+    cka: dict = {a: {} for a in pair_names}
+    knn: dict = {a: {} for a in pair_names}
+    rank: dict = {a: {} for a in pair_names}
+    for i, a in enumerate(pair_names):
+        for j, b in enumerate(pair_names):
+            if i == j:
+                cka[a][b] = knn[a][b] = rank[a][b] = 1.0
+            elif j < i:
+                cka[a][b], knn[a][b], rank[a][b] = cka[b][a], knn[b][a], rank[b][a]
+            else:
+                cka[a][b] = round(linear_cka(embeddings[a], embeddings[b]), 4)
+                knn[a][b] = round(
+                    knn_overlap(embeddings[a], embeddings[b], k=k)["mean_overlap"], 4
+                )
+                rank[a][b] = round(
+                    rank_correlation(embeddings[a], embeddings[b])["mean_rho"], 4
+                )
+
+    space_analysis = {
+        "config": {
+            "embedders": names,
+            "k_values": list(k_values),
+            "n_index": n_ref,
+            "n_cwe_classes": int(len(set(labels.tolist()))),
+            "dim": cells[0]["metrics"]["intrinsic"]["dim"] if cells else None,
+            "source": "reconstructed_from_index",
+        },
+        "pairwise_cka": cka,
+        "pairwise_knn_overlap": knn,
+        "pairwise_rank_correlation": rank,
+        # Trustworthiness needs pre-PCA embeddings, which the index does not store.
+        "combined_trustworthiness": {},
+        "hubness_sensitivity": {
+            c["coords"]["embedder"]: c["metrics"]["intrinsic"]["hubness_by_k"]
+            for c in cells
+        },
+    }
+    return {"cells": cells}, space_analysis
+
+
+def ensure_space_dashboard(run_dir: Path):
+    """Write ``space_analysis.json`` + ``space_dashboard.html`` for a run using
+    its persisted indices (best-effort, idempotent). Returns the dashboard path,
+    or ``None`` if it could not be built.
+    """
+    run_dir = Path(run_dir)
+    built = build_space_analysis_from_indices(run_dir)
+    if built is None:
+        return None
+    results_like, space_analysis = built
+    (run_dir / "space_analysis.json").write_text(json.dumps(space_analysis, indent=2))
+    out_html = run_dir / "space_dashboard.html"
+    out_html.write_text(render_dashboard(results_like, space_analysis))
+    return out_html
+
+
 # ── CLI ──────────────────────────────────────────────────────────────
 
 

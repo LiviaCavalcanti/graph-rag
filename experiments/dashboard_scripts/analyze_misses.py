@@ -174,7 +174,7 @@ def _analyze_cell(
     temperature: float,
     max_examples: int,
 ) -> dict[str, Any]:
-    sr = cell.get("cve_retrieval") or cell.get("self_retrieval") or {}
+    sr = cell.get("self_retrieval", {})
     raw_queries = sr.get("raw_queries", []) or []
 
     first_pass = []
@@ -547,6 +547,7 @@ def analyze_results(
     uncertainty_margin_floor: float,
     temperature: float,
     max_examples: int,
+    regenerate_unified: bool = True,
 ) -> dict[str, Any]:
     raw = json.loads(results_path.read_text())
     cells = raw.get("cells", []) or []
@@ -605,14 +606,16 @@ def analyze_results(
     out_json.write_text(json.dumps(analysis, indent=2))
     out_html.write_text(_render_dashboard(analysis))
 
-    # Regenerate unified dashboard if it's a standard run dir
-    try:
-        from experiments.dashboard_scripts.dashboard import generate_html_dashboard
-        run_dir = out_json.parent
-        if (run_dir / "results.json").exists():
-            generate_html_dashboard(run_dir)
-    except Exception as e:
-        pass  # non-fatal; unified dashboard is best-effort
+    # Regenerate unified dashboard if it's a standard run dir.
+    # Skipped when called from the dashboard itself to avoid infinite recursion.
+    if regenerate_unified:
+        try:
+            from experiments.dashboard_scripts.dashboard import generate_html_dashboard
+            run_dir = out_json.parent
+            if (run_dir / "results.json").exists():
+                generate_html_dashboard(run_dir)
+        except Exception as e:
+            pass  # non-fatal; unified dashboard is best-effort
 
     return analysis
 

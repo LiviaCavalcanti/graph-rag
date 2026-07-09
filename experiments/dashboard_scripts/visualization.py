@@ -1,5 +1,4 @@
 import collections
-import json
 import sys
 
 import pandas as pd
@@ -89,17 +88,12 @@ def create_performance_dashboard(raw_data: dict) -> plt.Figure:
     return fig
 
 
-# ── Dashboard 2: CVE Retrieval (same-CVE) ──────────────────
+# ── Dashboard 2: Self-Retrieval (same-CVE retrieval) ──────────────────
 
-def _cve_block(cell: dict) -> dict:
-    """Same-CVE retrieval metrics; prefers new 'cve_retrieval', falls back to legacy 'self_retrieval'."""
-    return cell.get('cve_retrieval') or cell.get('self_retrieval') or {}
-
-
-def create_cve_retrieval_dashboard(raw_data: dict) -> plt.Figure:
+def create_self_retrieval_dashboard(raw_data: dict) -> plt.Figure:
     """
-    CVE retrieval (same-CVE): given the vulnerable graph, does the RAG
-    retrieve the same CVE from the index?
+    Self-retrieval: given the vulnerable graph, does the RAG retrieve
+    the same CVE from the index?
 
     Metrics: Hit@1, Hit@5, Hit@10, MRR (per-query breakdown).
     k=10 precision intentionally omitted — it is dominated by set size.
@@ -111,7 +105,7 @@ def create_cve_retrieval_dashboard(raw_data: dict) -> plt.Figure:
     for cell in raw_data['cells']:
         label    = _strategy_label(cell, multi)
         embedder = cell['embedder']
-        sr       = _cve_block(cell)
+        sr       = cell.get('self_retrieval', {})
 
         summary_rows.append({
             'strategy': label,
@@ -137,7 +131,7 @@ def create_cve_retrieval_dashboard(raw_data: dict) -> plt.Figure:
     palette    = _palette(df_summary['embedder'])
 
     fig = plt.figure(figsize=(20, 14))
-    fig.suptitle('CVE Retrieval (same-CVE) — "Given a vulnerable function, find the same CVE"\n'
+    fig.suptitle('Self-Retrieval Metrics — "Given a vulnerable function, find the same CVE"\n'
                  'Higher is better. Evaluated on held-out augmented test set.',
                  fontsize=14, fontweight='bold')
 
@@ -211,7 +205,7 @@ def create_cwe_recall_dashboard(raw_data: dict) -> plt.Figure:
     # Use the best-MRR strategy for per-CWE breakdown, show all for macro
     all_strategy_macro = []
     best_cell          = max(raw_data['cells'],
-                             key=lambda c: _cve_block(c).get('mrr', 0))
+                             key=lambda c: c.get('self_retrieval', {}).get('mrr', 0))
 
     for cell in raw_data['cells']:
         label = _strategy_label(cell, multi)
@@ -343,7 +337,7 @@ def create_summary_dashboard(raw_data: dict) -> plt.Figure:
     multi = _multi_variant(raw_data)
     rows  = []
     for cell in raw_data['cells']:
-        sr  = _cve_block(cell)
+        sr  = cell.get('self_retrieval', {})
         cwr = cell.get('cwe_recall', {})
         ss  = cell.get('space_stats', {})
         row = {
@@ -389,7 +383,7 @@ def create_summary_dashboard(raw_data: dict) -> plt.Figure:
         tbl[0, j].set_facecolor('#2c3e50')
         tbl[0, j].set_text_props(color='white', fontweight='bold')
 
-    # CVE-retrieval columns: light blue; CWE columns: light green
+    # Self-retrieval columns: light blue; CWE columns: light green
     sr_cols  = {'Hit@1', 'Hit@5', 'Hit@10', 'MRR', '# Queries'}
     cwe_cols = {'CWE Rec@10', '# CWEs'}
     for i in range(1, len(df) + 1):
@@ -403,7 +397,7 @@ def create_summary_dashboard(raw_data: dict) -> plt.Figure:
             tbl[i, j].set_facecolor(base)
 
     # column group labels above header
-    ax.text(0.01, 0.97, '■ blue = CVE retrieval (same-CVE)  ■ green = CWE-group recall',
+    ax.text(0.01, 0.97, '■ blue = self-retrieval  ■ green = CWE-group recall',
             transform=ax.transAxes, fontsize=8, va='top',
             color='#444', style='italic')
 
@@ -423,7 +417,7 @@ def generate_visualizations(raw_data: dict, output_dir: str) -> None:
 
     dashboards = [
         ('dashboard_performance.png',    create_performance_dashboard),
-        ('dashboard_cve_retrieval.png', create_cve_retrieval_dashboard),
+        ('dashboard_self_retrieval.png', create_self_retrieval_dashboard),
         ('dashboard_cwe_recall.png',     create_cwe_recall_dashboard),
         ('dashboard_summary.png',        create_summary_dashboard),
     ]
@@ -461,7 +455,7 @@ def prepare_data(raw_data):
             'latency_mean_ms': cell['query_latency']['mean_ms'],
             'latency_p95_ms': cell['query_latency']['p95_ms'],
             'pairwise_sim': cell['space_stats']['mean_pairwise_sim'],
-            'mrr': _cve_block(cell).get('mrr', 0),
+            'mrr': cell['self_retrieval']['mrr'],
         }
         rows.append(row)
     return pd.DataFrame(rows)
@@ -477,8 +471,8 @@ def prepare_quality_data(raw_data):
             'mean_sim': cell['space_stats']['mean_pairwise_sim'],
             'std_sim': cell['space_stats']['std_pairwise_sim'],
             'eff_dim': cell['space_stats']['effective_dim'],
-            'mrr': _cve_block(cell).get('mrr', 0),
-            'hit1': _cve_block(cell).get('hit@1', 0),
+            'mrr': cell['self_retrieval']['mrr'],
+            'hit1': cell['self_retrieval']['hit@1'],
             'embed_time': cell['embed_time_s'],
         }
         rows.append(row)
@@ -498,7 +492,7 @@ def prepare_metrics_data(raw_data: dict) -> pd.DataFrame:
         backend       = cell['backend']
         label = (f"{embedder} / {graph_variant} / {backend}"
                  if multi_variant else f"{embedder} / {backend}")
-        for q in _cve_block(cell).get('raw_queries', []):
+        for q in cell.get('self_retrieval', {}).get('raw_queries', []):
             retrieved = q.get('retrieved', [])
             for k in [1, 5, 10]:
                 top_k = retrieved[:k]
@@ -542,7 +536,7 @@ def prepare_metrics_data(raw_data: dict) -> pd.DataFrame:
             'latency_mean_ms': cell['query_latency']['mean_ms'],
             'latency_p95_ms': cell['query_latency']['p95_ms'],
             'pairwise_sim': cell['space_stats']['mean_pairwise_sim'],
-            'mrr': _cve_block(cell).get('mrr', 0)
+            'mrr': cell['self_retrieval']['mrr']
         }
         rows.append(row)
     return pd.DataFrame(rows)
