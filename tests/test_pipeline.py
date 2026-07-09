@@ -183,7 +183,7 @@ def test_load_cpg_dir_removes_comment_nodes(tmp_path):
         nodes=[{'id': 'n1', 'labelV': 'METHOD'}, {'id': 'n2', 'labelV': 'COMMENT'}],
         edges=[],
     )
-    G = load_cpg_dir(str(tmp_path))
+    G = load_cpg_dir(str(tmp_path), use_cache=False)
     assert 'n1' in G.nodes
     assert 'n2' not in G.nodes
 
@@ -202,7 +202,7 @@ def test_load_cpg_dir_no_dangling_edges(tmp_path):
         nodes=[{'id': 'n2', 'labelV': 'CALL'}],
         edges=[],
     )
-    G = load_cpg_dir(str(tmp_path))
+    G = load_cpg_dir(str(tmp_path), use_cache=False)
     # edge should be present since both nodes exist after merge
     assert G.has_edge('n1', 'n2')
 
@@ -215,7 +215,7 @@ def test_load_cpg_dir_drops_unresolvable_edges(tmp_path):
         nodes=[{'id': 'n1', 'labelV': 'METHOD'}],
         edges=[{'src': 'n1', 'dst': 'ghost', 'label': 'REF'}],
     )
-    G = load_cpg_dir(str(tmp_path))
+    G = load_cpg_dir(str(tmp_path), use_cache=False)
     assert not G.has_edge('n1', 'REF')
 
 
@@ -234,7 +234,7 @@ def test_load_cpg_dir_tolerates_malformed_file(tmp_path):
         nodes=[{'id': 'n1', 'labelV': 'METHOD'}],
         edges=[],
     )
-    G = load_cpg_dir(str(tmp_path))
+    G = load_cpg_dir(str(tmp_path), use_cache=False)
     assert 'n1' in G.nodes
 
 
@@ -248,6 +248,38 @@ def test_load_cpg_dir_accepts_graph_subdir_directly(tmp_path):
     )
     G = load_cpg_dir(str(graph_dir))
     assert 'n1' in G.nodes
+
+
+# ── load_cpg_dir caching ──────────────────────────────────
+
+def test_load_cpg_dir_writes_and_reuses_cache(tmp_path):
+    """First load parses XML and writes .graph_cache.pkl; second load reuses it."""
+    graph_dir = tmp_path / 'graph'
+    _make_export_xml(
+        graph_dir / 'f.xml' / 'export.xml',
+        nodes=[{'id': 'n1', 'labelV': 'METHOD'}, {'id': 'n2', 'labelV': 'CALL'}],
+        edges=[{'src': 'n1', 'dst': 'n2', 'label': 'AST'}],
+    )
+    G1 = load_cpg_dir(str(graph_dir))
+    cache_file = graph_dir.parent / '.graph_cache.pkl'
+    assert cache_file.exists()
+
+    # Second load returns the cached graph with identical nodes/edges.
+    G2 = load_cpg_dir(str(graph_dir))
+    assert set(G2.nodes) == set(G1.nodes)
+    assert G2.number_of_edges() == G1.number_of_edges()
+
+
+def test_load_cpg_dir_use_cache_false_skips_cache(tmp_path):
+    """use_cache=False must not read or write the pickle cache."""
+    graph_dir = tmp_path / 'graph'
+    _make_export_xml(
+        graph_dir / 'f.xml' / 'export.xml',
+        nodes=[{'id': 'n1', 'labelV': 'METHOD'}],
+        edges=[],
+    )
+    load_cpg_dir(str(graph_dir), use_cache=False)
+    assert not (graph_dir.parent / '.graph_cache.pkl').exists()
 
 
 # ── compute_graph_diff ─────────────────────────────────────────────────

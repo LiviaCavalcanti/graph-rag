@@ -15,7 +15,7 @@ import networkx as nx
 import numpy as np
 import torch
 
-from .base import BaseEmbedder
+from .base import BaseEmbedder, resolve_codebert_path
 from .codebert_seq import collect_changed_code
 
 # ── constants ──────────────────────────────────────────────────────────
@@ -221,10 +221,7 @@ class RGCNEmbedder(BaseEmbedder):
             if torch.cuda.is_available()
             else cfg.get("rgcn", {}).get("device", "cpu")
         )
-        self._model_name = cfg.get("rgcn", {}).get(
-            "codebert_model",
-            "/home/z0050s2b/code/graph-rag/models/codebert-base/",
-        )
+        self._model_name = resolve_codebert_path(cfg)
         self._codebert_dim = 768
         self._in_dim = STRUCTURAL_HIST_DIM + self._codebert_dim  # 78 + 768 = 846
         self._cb_batch_size = cfg.get("rgcn", {}).get("cb_batch_size", 64)

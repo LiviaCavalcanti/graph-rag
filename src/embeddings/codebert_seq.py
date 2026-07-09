@@ -15,7 +15,7 @@ import networkx as nx
 import numpy as np
 import torch
 
-from .base import BaseEmbedder
+from .base import BaseEmbedder, resolve_codebert_path
 
 # ── shared utility ─────────────────────────────────────────────────────
 
@@ -126,6 +126,7 @@ def collect_flow_ordered_code(
 
     # Start BFS from each seed
     from collections import deque
+
     queue = deque()
     for nd, _ in seeds:
         if nd not in visited:
@@ -178,17 +179,17 @@ class CodeBERTSeqEmbedder(BaseEmbedder):
             if torch.cuda.is_available()
             else cfg.get("rgcn", {}).get("device", "cpu")
         )
-        self._model_name = cfg.get("rgcn", {}).get(
-            "codebert_model",
-            "/home/z0050s2b/code/graph-rag/models/codebert-base/",
-        )
-        self._codebert_dim = 768
+        self._model_name = resolve_codebert_path(cfg)
+        self._codebert_dim = cfg.get("codebert").get("dim", 128)
         self._cb_batch_size = cfg.get("rgcn", {}).get("cb_batch_size", 64)
         self._cb_model = None
         self._cb_tokenizer = None
         self._cb_available = None
         self._pca = None
         self._fitted = False
+        print(
+            f"Device: { self._device} \n Final dimension: {self._codebert_dim} \n Batch size: {self._cb_batch_size}"
+        )
 
     def _load_codebert(self):
         if self._cb_available is not None:
@@ -225,7 +226,8 @@ class CodeBERTSeqEmbedder(BaseEmbedder):
         Public so the fusion embedder can call it.
         """
         n = len(code_strings)
-        out = np.zeros((n, self._codebert_dim), dtype=np.float32)
+        raw_dim = 768  # always return full CLS dimension; callers handle projection
+        out = np.zeros((n, raw_dim), dtype=np.float32)
         if not self._cb_available:
             return out
 
@@ -255,58 +257,76 @@ class CodeBERTSeqEmbedder(BaseEmbedder):
         return out
 
     def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
-        if self.projection != "none" and not self._fitted:
+        raw_dim = 768
+        should_compress = self.projection != "none" or (
+            self.dim is not None and self.dim < raw_dim
+        )
+
+        if should_compress and not self._fitted:
             raise RuntimeError("Call embed_many() first to fit PCA")
+
         self._load_codebert()
         code = collect_changed_code(G)
         raw = self.encode_batch([code])
 
-        if self.projection == "none":
+        if not should_compress:
             return self._norm_vec(raw[0]) if self.apply_norm else raw[0]
 
+        # Apply learned PCA transformation
+        target_dim = self.dim if self.dim is not None else raw_dim
         projected = self._pca.transform(raw)[0].astype(np.float32)
-        if projected.shape[0] < self.dim:
-            padded = np.zeros(self.dim, dtype=np.float32)
+        if projected.shape[0] < target_dim:
+            padded = np.zeros(target_dim, dtype=np.float32)
             padded[: projected.shape[0]] = projected
             projected = padded
-        return self._norm_vec(projected) if self.apply_norm else projected  
+        return self._norm_vec(projected) if self.apply_norm else projected
 
     def embed_many(self, graphs: list) -> np.ndarray:
         self._load_codebert()
 
         code_strings = [collect_changed_code(G) for G in graphs]
-        raw = self.encode_batch(code_strings)
+        raw = self.encode_batch(code_strings)  # Shape: (N, 768)
 
         valid = np.linalg.norm(raw, axis=1) > 1e-8
 
-        if self.projection == "none":
-            self.dim = raw.shape[1]
+        # Determine if we need to compress: either projection is set OR self.dim < raw_dim
+        raw_dim = raw.shape[1]
+        should_compress = self.projection != "none" or (
+            self.dim is not None and self.dim < raw_dim
+        )
+
+        if not should_compress:
+            # No compression needed - keep full dimensionality
+            self.dim = raw_dim
             out = self._norm_mat(raw)
             out[~valid] = 0.0
-            print(f"    [codebert_seq] no projection — dim={self.dim}")
+            print(f"    [codebert_seq] no compression — dim={self.dim}")
             return out
 
+        # Apply PCA compression to target dimensionality
         from sklearn.decomposition import PCA
 
-        out = np.zeros((len(graphs), self.dim), dtype=np.float32)
+        # Determine target components
+        target_dim = self.dim if self.dim is not None else raw_dim
+        out = np.zeros((len(graphs), target_dim), dtype=np.float32)
         if not valid.any():
             return out
 
         if not self._fitted:
             valid_raw = raw[valid]
-            n_comp = min(self.dim, valid_raw.shape[0] - 1, valid_raw.shape[1])
+            n_comp = min(target_dim, valid_raw.shape[0] - 1, valid_raw.shape[1])
             self._pca = PCA(n_components=n_comp, random_state=42)
             self._pca.fit(valid_raw)
             self._fitted = True
             expl = self._pca.explained_variance_ratio_.sum()
             print(
-                f"    [codebert_seq] PCA fitted — {n_comp} comp, "
-                f"explained variance: {expl:.2%}"
+                f"    [codebert_seq] PCA compression fitted — {n_comp} comp, "
+                f"explained variance: {expl:.2%} (768 → {target_dim})"
             )
 
         projected = self._pca.transform(raw).astype(np.float32)
-        if projected.shape[1] < self.dim:
-            padded = np.zeros((projected.shape[0], self.dim), dtype=np.float32)
+        if projected.shape[1] < target_dim:
+            padded = np.zeros((projected.shape[0], target_dim), dtype=np.float32)
             padded[:, : projected.shape[1]] = projected
             projected = padded
         projected = self._norm_mat(projected)
@@ -331,18 +351,26 @@ class CodeBERTFlowEmbedder(CodeBERTSeqEmbedder):
         return "codebert_flow"
 
     def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
-        if self.projection != "none" and not self._fitted:
+        raw_dim = 768
+        should_compress = self.projection != "none" or (
+            self.dim is not None and self.dim < raw_dim
+        )
+
+        if should_compress and not self._fitted:
             raise RuntimeError("Call embed_many() first to fit PCA")
+
         self._load_codebert()
         code = collect_flow_ordered_code(G)
         raw = self.encode_batch([code])
 
-        if self.projection == "none":
+        if not should_compress:
             return self._norm_vec(raw[0]) if self.apply_norm else raw[0]
 
+        # Apply learned PCA transformation
+        target_dim = self.dim if self.dim is not None else raw_dim
         projected = self._pca.transform(raw)[0].astype(np.float32)
-        if projected.shape[0] < self.dim:
-            padded = np.zeros(self.dim, dtype=np.float32)
+        if projected.shape[0] < target_dim:
+            padded = np.zeros(target_dim, dtype=np.float32)
             padded[: projected.shape[0]] = projected
             projected = padded
         return self._norm_vec(projected) if self.apply_norm else projected
@@ -351,38 +379,48 @@ class CodeBERTFlowEmbedder(CodeBERTSeqEmbedder):
         self._load_codebert()
 
         code_strings = [collect_flow_ordered_code(G) for G in graphs]
-        raw = self.encode_batch(code_strings)
+        raw = self.encode_batch(code_strings)  # Shape: (N, 768)
 
         valid = np.linalg.norm(raw, axis=1) > 1e-8
 
-        if self.projection == "none":
-            self.dim = raw.shape[1]
+        # Determine if we need to compress: either projection is set OR self.dim < raw_dim
+        raw_dim = raw.shape[1]
+        should_compress = self.projection != "none" or (
+            self.dim is not None and self.dim < raw_dim
+        )
+
+        if not should_compress:
+            # No compression needed - keep full dimensionality
+            self.dim = raw_dim
             out = self._norm_mat(raw)
             out[~valid] = 0.0
-            print(f"    [codebert_flow] no projection — dim={self.dim}")
+            print(f"    [codebert_flow] no compression — dim={self.dim}")
             return out
 
+        # Apply PCA compression to target dimensionality
         from sklearn.decomposition import PCA
 
-        out = np.zeros((len(graphs), self.dim), dtype=np.float32)
+        # Determine target components
+        target_dim = self.dim if self.dim is not None else raw_dim
+        out = np.zeros((len(graphs), target_dim), dtype=np.float32)
         if not valid.any():
             return out
 
         if not self._fitted:
             valid_raw = raw[valid]
-            n_comp = min(self.dim, valid_raw.shape[0] - 1, valid_raw.shape[1])
+            n_comp = min(target_dim, valid_raw.shape[0] - 1, valid_raw.shape[1])
             self._pca = PCA(n_components=n_comp, random_state=42)
             self._pca.fit(valid_raw)
             self._fitted = True
             expl = self._pca.explained_variance_ratio_.sum()
             print(
-                f"    [codebert_flow] PCA fitted — {n_comp} comp, "
-                f"explained variance: {expl:.2%}"
+                f"    [codebert_flow] PCA compression fitted — {n_comp} comp, "
+                f"explained variance: {expl:.2%} (768 → {target_dim})"
             )
 
         projected = self._pca.transform(raw).astype(np.float32)
-        if projected.shape[1] < self.dim:
-            padded = np.zeros((projected.shape[0], self.dim), dtype=np.float32)
+        if projected.shape[1] < target_dim:
+            padded = np.zeros((projected.shape[0], target_dim), dtype=np.float32)
             padded[:, : projected.shape[1]] = projected
             projected = padded
         projected = self._norm_mat(projected)

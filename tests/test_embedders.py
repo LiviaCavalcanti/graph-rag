@@ -38,6 +38,7 @@ from src.embeddings.vuln_pattern import VulnPatternEmbedder, CodeBERTPatternEmbe
 from src.embeddings.codebert_seq import CodeBERTSeqEmbedder
 from src.embeddings.rgcn import RGCNEmbedder
 from src.embeddings.codexglue_baseline import CodeXGLUEBaselineEmbedder
+from src.embeddings.gin_model import GINCodeBERTEmbedder
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -53,6 +54,10 @@ BASE_CFG: dict = {
         "device": "cpu",
         "codebert_model": "/home/z0050s2b/code/graph-rag/models/codebert-base/",
         "cb_batch_size": 4,
+    },
+    "codebert": {
+        "model_path": "/home/z0050s2b/code/graph-rag/models/codebert-base/",
+        "dim": DIM,
     },
 }
 
@@ -77,6 +82,7 @@ CODEBERT_EMBEDDERS: list[type[BaseEmbedder]] = [
     CodeBERTPatternEmbedder,
     RGCNEmbedder,
     CodeXGLUEBaselineEmbedder,
+    GINCodeBERTEmbedder,
 ]
 
 ALL_EMBEDDERS = STANDALONE_EMBEDDERS + PCA_EMBEDDERS + CODEBERT_EMBEDDERS
@@ -432,7 +438,8 @@ class TestDeterminism:
         emb = cls(cfg)
         v1 = emb.embed_one(small_graph)
         v2 = emb.embed_one(small_graph)
-        np.testing.assert_array_equal(v1, v2)
+        # GPU-backed embedders (WL/GIN) have ~1e-6 float non-determinism.
+        np.testing.assert_allclose(v1, v2, rtol=0, atol=1e-5)
 
     @pytest.mark.parametrize("cls", PCA_EMBEDDERS, ids=_pca_ids)
     def test_deterministic_pca(self, cls, cfg, graph_batch, small_graph):
@@ -441,7 +448,8 @@ class TestDeterminism:
         emb.embed_many(graph_batch)
         v1 = emb.embed_one(small_graph)
         v2 = emb.embed_one(small_graph)
-        np.testing.assert_array_equal(v1, v2)
+        # GPU-backed sub-embedders have ~1e-6 float non-determinism.
+        np.testing.assert_allclose(v1, v2, rtol=0, atol=1e-5)
 
 
 class TestStructuralSensitivity:
@@ -596,24 +604,23 @@ class TestGraphConversion:
 # ===================================================================
 
 class TestCombinedEmbedder:
-    """CombinedEmbedder should concatenate NetLSD+WL+GIN then PCA."""
+    """CombinedEmbedder should concatenate WL+GIN then PCA."""
 
     def test_raw_concatenation(self, cfg, small_graph):
         emb = CombinedEmbedder(cfg)
         raw = emb._raw_one(small_graph)
-        # Raw = NetLSD(dim) + WL(dim) + GIN(dim) = 3 * dim
-        assert raw.shape == (3 * DIM,)
+        # Raw = WL(dim) + GIN(dim) = 2 * dim
+        assert raw.shape == (2 * DIM,)
 
     def test_sub_embedders_consistent(self, cfg, small_graph):
         """Raw vector should equal concat of individual sub-embedder outputs."""
         emb = CombinedEmbedder(cfg)
         raw = emb._raw_one(small_graph)
 
-        a = emb._netlsd.embed_one(small_graph)
         b = emb._wl.embed_one(small_graph)
         c = emb._gin.embed_one(small_graph)
 
-        expected = np.concatenate([a, b, c])
+        expected = np.concatenate([b, c])
         np.testing.assert_allclose(raw, expected, atol=1e-6)
 
 
@@ -659,6 +666,14 @@ class TestCodeBERTEmbedders:
         emb = CodeXGLUEBaselineEmbedder(cfg)
         mat = emb.embed_many(graph_batch)
         assert mat.shape == (len(graph_batch), DIM)
+
+    def test_gin_codebert_output_shape(self, cfg, graph_batch, small_graph):
+        emb = GINCodeBERTEmbedder(cfg)
+        mat = emb.embed_many(graph_batch)
+        assert mat.shape == (len(graph_batch), DIM)
+        vec = emb.embed_one(small_graph)
+        assert vec.shape == (DIM,)
+        assert np.all(np.isfinite(vec))
 
     def test_collect_changed_code(self, small_graph):
         from src.embeddings.codebert_seq import collect_changed_code
