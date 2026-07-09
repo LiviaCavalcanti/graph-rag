@@ -174,7 +174,7 @@ def _analyze_cell(
     temperature: float,
     max_examples: int,
 ) -> dict[str, Any]:
-    sr = cell.get("self_retrieval", {})
+    sr = cell.get("cve_retrieval") or cell.get("self_retrieval") or {}
     raw_queries = sr.get("raw_queries", []) or []
 
     first_pass = []
