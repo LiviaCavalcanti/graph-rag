@@ -1,0 +1,53 @@
+# Declarative prompt-variant registry for the patching agent.
+#
+# Each variant is an ordered list of chat messages; every message names a role
+# (system | user | assistant) and a template `file` under this directory. The
+# loader (src/agents/prompt_registry.py) reads this manifest into the
+# {name: [(role, template), ...]} shape the patcher/harness use and computes a
+# content fingerprint per variant for reproducible run metadata.
+#
+# To add a variant: drop new .txt templates in this folder and add an entry
+# here. No Python changes needed. Bump `version` when a variant's semantics
+# change; `needs_graph_context: true` makes the agent serialize G_vuln into
+# {target_graph_context}.
+
+variants:
+  default:
+    version: 1
+    description: Original AutoPatch few-shot prompt (sequence-only context).
+    needs_graph_context: false
+    messages:
+      - {role: system, file: system.txt}
+      - {role: user, file: user_example.txt}
+      - {role: assistant, file: assistant.txt}
+      - {role: user, file: user_target.txt}
+
+  default_v2:
+    version: 2
+    description: Revised system prompt; sequence-only context.
+    needs_graph_context: false
+    messages:
+      - {role: system, file: system_v2.txt}
+      - {role: user, file: user_example.txt}
+      - {role: assistant, file: assistant.txt}
+      - {role: user, file: user_target.txt}
+
+  graph:
+    version: 1
+    description: Graph-enhanced prompt with serialized G_vuln context.
+    needs_graph_context: true
+    messages:
+      - {role: system, file: graph_system.txt}
+      - {role: user, file: user_example.txt}
+      - {role: assistant, file: assistant.txt}
+      - {role: user, file: graph_user_target.txt}
+
+  graph_v2:
+    version: 2
+    description: Graph-enhanced prompt; revised system + assistant + target.
+    needs_graph_context: true
+    messages:
+      - {role: system, file: graph_system_v2.txt}
+      - {role: user, file: user_example.txt}
+      - {role: assistant, file: assistant_v2.txt}
+      - {role: user, file: graph_user_target_v2.txt}
