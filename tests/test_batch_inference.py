@@ -6,25 +6,23 @@ that was refactored to work with db_entry.json instead of graph traversal.
 
 import json
 import re
+import pytest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch, MagicMock
 
-import networkx as nx
-import pytest
-
-from agents.base import AgentResult
 from agents.batch_inference import (
-    ForbiddenError,
-    _get_ground_truth,
     _get_target_code,
+    _get_ground_truth,
     _run_single_query,
+    ForbiddenError,
 )
-from agents.patcher import InvocationRecord, PatchResult
+from agents.patcher import PatchResult, InvocationRecord
 from data.base import FunctionPair
+import networkx as nx
+
 
 # ── helpers ───────────────────────────────────────────────────────────
-
 
 def _mock_record(**overrides):
     """Build a minimal InvocationRecord for test mocks."""
@@ -40,40 +38,6 @@ def _mock_record(**overrides):
     )
     defaults.update(overrides)
     return InvocationRecord(**defaults)
-
-
-class _FakeAgent:
-    """Capturing stand-in for a patching agent (replaces mocking patch_one).
-
-    _run_single_query now delegates to an Agent; these tests exercise its
-    orchestration (db resolution, code extraction, metric computation, error
-    handling) independent of any specific architecture.
-    """
-
-    name = "single_turn"
-
-    def __init__(self, *, result=None, error=None):
-        self._result = result
-        self._error = error
-        self.last_ctx = None
-
-    def run(self, ctx):
-        self.last_ctx = ctx
-        if self._error is not None:
-            raise self._error
-        return self._result
-
-
-def _agent_result(parsed=None, raw="raw", record=None):
-    """Build an AgentResult wrapping a single InvocationRecord turn."""
-    return AgentResult(
-        architecture="single_turn",
-        prompt_variant="default",
-        raw_output=raw,
-        parsed=parsed,
-        turns=[record or _mock_record(parsed=parsed)],
-        prompt_fingerprint="deadbeef0000",
-    )
 
 
 def _make_pair(
@@ -222,9 +186,7 @@ class TestRunSingleQuery:
     def test_skips_when_no_example_found(self):
         query = _make_pair(dir_name="CVE-2025-0001")
         retriever = self._make_retriever(example_pair=None)
-        result = _run_single_query(
-            query, retriever, {}, _FakeAgent(result=_agent_result())
-        )
+        result = _run_single_query(query, retriever, {}, "test-model")
         assert result["status"] == "skipped"
         assert result["reason"] == "no_example_found"
 
@@ -235,9 +197,7 @@ class TestRunSingleQuery:
         retriever = self._make_retriever(example_pair=example)
         # db_cache has example but not query
         db_cache = {"CVE-2025-0002": SAMPLE_DB}
-        result = _run_single_query(
-            query, retriever, db_cache, _FakeAgent(result=_agent_result())
-        )
+        result = _run_single_query(query, retriever, db_cache, "test-model")
         assert result["status"] == "skipped"
         assert result["reason"] == "missing_db_entry"
 
@@ -248,9 +208,7 @@ class TestRunSingleQuery:
         retriever = self._make_retriever(example_pair=example)
         # db_cache has query but not example
         db_cache = {"CVE-2025-0001": SAMPLE_DB}
-        result = _run_single_query(
-            query, retriever, db_cache, _FakeAgent(result=_agent_result())
-        )
+        result = _run_single_query(query, retriever, db_cache, "test-model")
         assert result["status"] == "skipped"
         assert result["reason"] == "missing_db_entry"
 
@@ -261,16 +219,8 @@ class TestRunSingleQuery:
         example = _make_pair(cve_id="CVE-2025-0001", dir_name="CVE-2025-0001_2")
         retriever = self._make_retriever(example_pair=example)
 
-        db1 = {
-            **SAMPLE_DB,
-            "function_name": "func_a",
-            "original_code": "void func_a(){}",
-        }
-        db2 = {
-            **SAMPLE_DB,
-            "function_name": "func_b",
-            "original_code": "void func_b(){}",
-        }
+        db1 = {**SAMPLE_DB, "function_name": "func_a", "original_code": "void func_a(){}"}
+        db2 = {**SAMPLE_DB, "function_name": "func_b", "original_code": "void func_b(){}"}
 
         # keyed by dir_name, NOT cve_id
         db_cache = {
@@ -278,13 +228,15 @@ class TestRunSingleQuery:
             "CVE-2025-0001_2": db2,
         }
 
-        parsed = PatchResult(vuln_patch="void func_a_fixed(){}", cot="...")
-        agent = _FakeAgent(result=_agent_result(parsed=parsed))
-        _run_single_query(query, retriever, db_cache, agent)
+        with patch("agents.batch_inference.patch_one") as mock_patch:
+            parsed = PatchResult(vuln_patch="void func_a_fixed(){}", cot="...")
+            mock_patch.return_value = ("raw output", parsed, _mock_record(parsed=parsed))
+            result = _run_single_query(query, retriever, db_cache, "test-model")
 
-        # the agent must receive the correct per-dir db entries via PatchContext
-        assert agent.last_ctx.example_db["function_name"] == "func_b"
-        assert agent.last_ctx.target_db["function_name"] == "func_a"
+        # patch_one should have been called with the correct per-dir db entries
+        call_kwargs = mock_patch.call_args
+        assert call_kwargs[1]["example_db"]["function_name"] == "func_b"
+        assert call_kwargs[1]["target_db"]["function_name"] == "func_a"
 
     def test_skips_when_no_target_code(self):
         """If target code resolves to empty, should skip with reason no_target_code."""
@@ -296,16 +248,15 @@ class TestRunSingleQuery:
             "CVE-2025-0001": {"cve_id": "CVE-2025-0001"},
             "CVE-2025-0002": SAMPLE_DB,
         }
-        result = _run_single_query(
-            query, retriever, db_cache, _FakeAgent(result=_agent_result())
-        )
+        result = _run_single_query(query, retriever, db_cache, "test-model")
         assert result["status"] == "skipped"
         assert result["reason"] == "no_target_code"
 
-    def test_success_returns_similarity_and_patch(self):
+    @patch("agents.batch_inference.patch_one")
+    def test_success_returns_similarity_and_patch(self, mock_patch):
         ground_truth = "void vuln_fn() { buf[9]=0; }"
         parsed = PatchResult(vuln_patch=ground_truth, cot="fixed it")
-        agent = _FakeAgent(result=_agent_result(parsed=parsed))
+        mock_patch.return_value = ("raw", parsed, _mock_record(parsed=parsed))
 
         query = _make_pair(dir_name="CVE-2025-0001", source_after="")
         example = _make_pair(dir_name="CVE-2025-0002")
@@ -316,20 +267,21 @@ class TestRunSingleQuery:
             "CVE-2025-0001": SAMPLE_DB,
             "CVE-2025-0002": SAMPLE_DB,
         }
-        result = _run_single_query(query, retriever, db_cache, agent)
+        result = _run_single_query(query, retriever, db_cache, "test-model")
         assert result["status"] == "success"
         assert result["similarity"] > 0
         assert result["generated_patch"] is not None
         assert "query_cve" in result
         assert "query_cwe" in result
 
-    def test_exact_match_detected(self):
+    @patch("agents.batch_inference.patch_one")
+    def test_exact_match_detected(self, mock_patch):
         """When generated patch is whitespace-equivalent to ground truth, exact_match should be True."""
         gt = "void fixed() { return 0; }"
         # same code with different whitespace
         generated = "void fixed()  {  return 0;  }"
         parsed = PatchResult(vuln_patch=generated, cot="...")
-        agent = _FakeAgent(result=_agent_result(parsed=parsed))
+        mock_patch.return_value = ("raw", parsed, _mock_record(parsed=parsed))
 
         query = _make_pair(dir_name="CVE-2025-0001", source_after="")
         example = _make_pair(dir_name="CVE-2025-0002")
@@ -339,13 +291,15 @@ class TestRunSingleQuery:
             "CVE-2025-0001": db_entry_with_gt,
             "CVE-2025-0002": SAMPLE_DB,
         }
-        result = _run_single_query(query, retriever, db_cache, agent)
+        result = _run_single_query(query, retriever, db_cache, "test-model")
         assert result["status"] == "success"
         assert result["exact_match"] is True
 
-    def test_parse_error_when_no_vuln_patch(self):
+    @patch("agents.batch_inference.patch_one")
+    def test_parse_error_when_no_vuln_patch(self, mock_patch):
         """If LLM output doesn't produce a vuln_patch, status should be parse_error."""
-        agent = _FakeAgent(result=_agent_result(parsed=None))
+        mock_patch.return_value = ("raw", None, _mock_record())
+
         query = _make_pair(dir_name="CVE-2025-0001")
         example = _make_pair(dir_name="CVE-2025-0002")
         retriever = self._make_retriever(example_pair=example)
@@ -353,12 +307,14 @@ class TestRunSingleQuery:
             "CVE-2025-0001": SAMPLE_DB,
             "CVE-2025-0002": SAMPLE_DB,
         }
-        result = _run_single_query(query, retriever, db_cache, agent)
+        result = _run_single_query(query, retriever, db_cache, "test-model")
         assert result["status"] == "parse_error"
 
-    def test_403_raises_forbidden_error(self):
+    @patch("agents.batch_inference.patch_one")
+    def test_403_raises_forbidden_error(self, mock_patch):
         """HTTP 403 from the API must raise ForbiddenError to abort the run."""
-        agent = _FakeAgent(error=Exception("HTTP 403 Forbidden: Access denied"))
+        mock_patch.side_effect = Exception("HTTP 403 Forbidden: Access denied")
+
         query = _make_pair(dir_name="CVE-2025-0001")
         example = _make_pair(dir_name="CVE-2025-0002")
         retriever = self._make_retriever(example_pair=example)
@@ -367,11 +323,13 @@ class TestRunSingleQuery:
             "CVE-2025-0002": SAMPLE_DB,
         }
         with pytest.raises(ForbiddenError):
-            _run_single_query(query, retriever, db_cache, agent)
+            _run_single_query(query, retriever, db_cache, "test-model")
 
-    def test_non_403_error_returns_error_status(self):
+    @patch("agents.batch_inference.patch_one")
+    def test_non_403_error_returns_error_status(self, mock_patch):
         """Non-403 errors should return an error result, not raise."""
-        agent = _FakeAgent(error=RuntimeError("Connection timeout"))
+        mock_patch.side_effect = RuntimeError("Connection timeout")
+
         query = _make_pair(dir_name="CVE-2025-0001")
         example = _make_pair(dir_name="CVE-2025-0002")
         retriever = self._make_retriever(example_pair=example)
@@ -379,13 +337,14 @@ class TestRunSingleQuery:
             "CVE-2025-0001": SAMPLE_DB,
             "CVE-2025-0002": SAMPLE_DB,
         }
-        result = _run_single_query(query, retriever, db_cache, agent)
+        result = _run_single_query(query, retriever, db_cache, "test-model")
         assert result["status"] == "error"
         assert "Connection timeout" in result["error"]
 
-    def test_result_contains_retrieval_info(self):
+    @patch("agents.batch_inference.patch_one")
+    def test_result_contains_retrieval_info(self, mock_patch):
         parsed = PatchResult(vuln_patch="fixed()", cot="...")
-        agent = _FakeAgent(result=_agent_result(parsed=parsed))
+        mock_patch.return_value = ("raw", parsed, _mock_record(parsed=parsed))
         query = _make_pair(dir_name="CVE-2025-0001")
         example = _make_pair(dir_name="CVE-2025-0002")
         info = {"cve_match": True, "cwe_match": False, "distance": 0.5}
@@ -394,7 +353,7 @@ class TestRunSingleQuery:
             "CVE-2025-0001": SAMPLE_DB,
             "CVE-2025-0002": SAMPLE_DB,
         }
-        result = _run_single_query(query, retriever, db_cache, agent)
+        result = _run_single_query(query, retriever, db_cache, "test-model")
         assert result["retrieval"] == info
         assert result["cve_match"] is True
         assert result["cwe_match"] is False
