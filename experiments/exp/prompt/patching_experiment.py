@@ -19,7 +19,6 @@ from typing import Any
 
 from experiments.base import Axis, CellContext, Experiment, ExperimentOutput
 
-
 # ── Experiment class ─────────────────────────────────────────────────
 
 
@@ -31,6 +30,8 @@ class PatchingExperiment(Experiment):
         *,
         retriever_modes: list[str] | None = None,
         model_names: list[str] | None = None,
+        architectures: list[str] | None = None,
+        prompt_variants: list[str] | None = None,
         query_run: str | None = None,
         max_queries: int | None = None,
         batch_size: int = 10,
@@ -40,6 +41,8 @@ class PatchingExperiment(Experiment):
     ):
         self._retriever_modes = retriever_modes or ["oracle"]
         self._model_names = model_names
+        self._architectures = architectures
+        self._prompt_variants = prompt_variants
         self._query_run = query_run
         self._max_queries = max_queries
         self._batch_size = batch_size
@@ -53,9 +56,9 @@ class PatchingExperiment(Experiment):
 
     def load_data(self, cfg: dict) -> dict[str, Any]:
         """Load lightweight pairs (no CPGs), split, and load db_cache."""
-        from src.data.autopatch import AutoPatchDataset
-        from src.data import load_pairs_lightweight
         from experiments.common import build_split
+        from src.data import load_pairs_lightweight
+        from src.data.autopatch import AutoPatchDataset
 
         pairs = load_pairs_lightweight(cfg)
         print(f"Loaded {len(pairs)} lightweight pairs (no CPGs)")
@@ -82,11 +85,26 @@ class PatchingExperiment(Experiment):
         }
 
     def axes(self, cfg: dict) -> list[Axis]:
+        agent_cfg = cfg.get("agents", {})
+        architectures = self._architectures or [
+            agent_cfg.get("architecture", "single_turn")
+        ]
+        prompt_variants = self._prompt_variants or [
+            self._prompt_variant
+            or agent_cfg.get("prompt_variant")
+            or cfg.get("rag", {}).get("prompt_variant", "default")
+        ]
         model_names = self._model_names or [
-            os.getenv("MODEL_NAME", cfg.get("agents", {}).get("model", "gpt-4o"))
+            os.getenv("MODEL_NAME", agent_cfg.get("model") or "gpt-4o")
         ]
         return [
-            Axis("retriever_mode", self._retriever_modes, description="Retrieval strategy"),
+            Axis("architecture", architectures, description="Agent architecture"),
+            Axis("prompt_variant", prompt_variants, description="Prompt variant"),
+            Axis(
+                "retriever_mode",
+                self._retriever_modes,
+                description="Retrieval strategy",
+            ),
             Axis("model_name", model_names, description="LLM model/deployment"),
         ]
 
@@ -101,6 +119,8 @@ class PatchingExperiment(Experiment):
             sys.exit(1)
 
     def run_cell(self, ctx: CellContext) -> dict[str, Any]:
+        architecture = ctx.coords["architecture"]
+        prompt_variant = ctx.coords["prompt_variant"]
         retriever_mode = ctx.coords["retriever_mode"]
         model_name = ctx.coords["model_name"]
         index_pairs = ctx.data["index_pairs"]
@@ -114,7 +134,8 @@ class PatchingExperiment(Experiment):
         # ── run batch inference ──────────────────────────────────────
         from src.agents.batch_inference import run_batch_inference
 
-        cell_output_dir = ctx.run_dir / f"{retriever_mode}__{model_name}"
+        cell_tag = f"{architecture}__{prompt_variant}__{retriever_mode}__{model_name}"
+        cell_output_dir = ctx.run_dir / cell_tag
         cell_output_dir.mkdir(parents=True, exist_ok=True)
 
         run_dir = run_batch_inference(
@@ -127,13 +148,16 @@ class PatchingExperiment(Experiment):
             resume_dir=self._resume,
             meta_extra={"mode": retriever_mode, "split_info": split_info},
             output_dir=cell_output_dir,
-            prompt_variant=self._prompt_variant,
+            prompt_variant=prompt_variant,
+            architecture=architecture,
         )
 
         # ── aggregate metrics from JSONL ─────────────────────────────
         metrics = self._aggregate_cell_metrics(run_dir)
 
         return {
+            "architecture": architecture,
+            "prompt_variant": prompt_variant,
             "retriever_mode": retriever_mode,
             "model_name": model_name,
             "n_queries": len(query_pairs),
@@ -201,7 +225,11 @@ class PatchingExperiment(Experiment):
         if total == 0:
             return {"n_success": 0}
 
-        avg_rouge = {f"avg_{k}": round(v / rouge_count, 4) for k, v in rouge_sums.items()} if rouge_count else {}
+        avg_rouge = (
+            {f"avg_{k}": round(v / rouge_count, 4) for k, v in rouge_sums.items()}
+            if rouge_count
+            else {}
+        )
 
         return {
             "n_success": total,
@@ -210,9 +238,13 @@ class PatchingExperiment(Experiment):
             **avg_rouge,
         }
 
-    def on_cell_error(self, ctx: CellContext, error: Exception) -> dict[str, Any] | None:
+    def on_cell_error(
+        self, ctx: CellContext, error: Exception
+    ) -> dict[str, Any] | None:
         """Return partial result on error rather than crashing the grid."""
         return {
+            "architecture": ctx.coords.get("architecture"),
+            "prompt_variant": ctx.coords.get("prompt_variant"),
             "retriever_mode": ctx.coords.get("retriever_mode"),
             "model_name": ctx.coords.get("model_name"),
             "status": "error",
@@ -234,6 +266,7 @@ def run_patching_experiment(
     resume: str | None = None,
     output_dir: Path | None = None,
     prompt_variant: str = "default",
+    architecture: str = "single_turn",
     cve_filter: set[str] | None = None,
 ) -> Path:
     """Run the LLM patching experiment.
@@ -245,6 +278,8 @@ def run_patching_experiment(
     exp = PatchingExperiment(
         retriever_modes=[retriever_mode],
         model_names=model_names,
+        architectures=[architecture],
+        prompt_variants=[prompt_variant],
         query_run=query_run,
         max_queries=max_queries,
         batch_size=batch_size,

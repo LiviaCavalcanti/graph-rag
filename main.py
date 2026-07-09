@@ -187,6 +187,11 @@ def run_full_pipeline(cfg: dict, args):
         max_queries=args.max_queries,
         batch_size=args.batch_size,
         output_dir=run_dir,
+        architecture=getattr(args, "architecture", None)
+        or cfg.get("agents", {}).get("architecture", "single_turn"),
+        prompt_variant=getattr(args, "prompt_variant", None)
+        or cfg.get("agents", {}).get("prompt_variant")
+        or cfg.get("rag", {}).get("prompt_variant", "default"),
     )
     print(f"\n  ✓ Patching complete: {run_dir / 'results.jsonl'}")
 
@@ -281,6 +286,18 @@ if __name__ == "__main__":
         default=True,
         help="remove C/C++ comments before patch comparison (full/batch mode)",
     )
+    parser.add_argument(
+        "--architecture",
+        default=None,
+        help="agent architecture (batch/full mode): single_turn (default). "
+        "Overrides config agents.architecture.",
+    )
+    parser.add_argument(
+        "--prompt-variant",
+        default=None,
+        help="prompt variant from src/agents/prompts/registry.yaml "
+        "(batch/full mode). Overrides config agents.prompt_variant.",
+    )
 
     args = parser.parse_args()
     with open(args.config) as f:
@@ -318,6 +335,7 @@ if __name__ == "__main__":
     elif args.mode == "batch":
         from experiments.exp.prompt.patching_experiment import run_patching_experiment
 
+        agent_cfg = cfg.get("agents", {})
         run_patching_experiment(
             cfg,
             retriever_mode="oracle" if args.oracle else "precomputed",
@@ -326,6 +344,11 @@ if __name__ == "__main__":
             max_queries=args.max_queries,
             batch_size=args.batch_size,
             resume=args.resume,
+            architecture=args.architecture
+            or agent_cfg.get("architecture", "single_turn"),
+            prompt_variant=args.prompt_variant
+            or agent_cfg.get("prompt_variant")
+            or cfg.get("rag", {}).get("prompt_variant", "default"),
         )
 
     elif args.mode == "full":
