@@ -342,8 +342,8 @@ Output: L2-normalised 128-dim vector per function graph.}
       \textit{Collapses on graphs $<5$ nodes.}
     \item[\textbf{WL}] Weisfeiler-Lehman colour refinement. Subtree kernel equivalent.
     \item[\textbf{GIN}] 3-layer Graph Isomorphism Network with
-      frozen random weights. Johnson-Lindenstrauss
-      distance preservation via MLP non-linearity.
+      frozen random weights. Diff labels create distinct node
+      features; GIN aggregates them topology-aware (WL-equivalent).
     \item[\textbf{Combined}] NetLSD + WL + GIN concatenated.
     More robust to individual collapse.
   \end{description}

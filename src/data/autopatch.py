@@ -6,8 +6,13 @@ import networkx as nx
 from tqdm import tqdm
 
 from .base import BaseDataset, ExportJob, FunctionPair
-from .pipeline import (compute_graph_diff, cpg_dir_for, load_cpg_dir,
-                       read_supplementary_code)
+from .pipeline import (
+    compute_graph_diff,
+    cpg_dir_for,
+    graph_diff_params,
+    load_cpg_dir,
+    read_supplementary_code,
+)
 
 # augmented versions
 _VARIANTS = [
@@ -79,7 +84,7 @@ class AutoPatchDataset(BaseDataset):
             project="autopatch",
             G_before=G_before,
             G_after=G_after,
-            G_vuln=compute_graph_diff(G_before, G_after),
+            G_vuln=compute_graph_diff(G_before, G_after, **graph_diff_params(self.cfg)),
             meta=meta,
         )
 
@@ -92,7 +97,8 @@ class AutoPatchDataset(BaseDataset):
         cve_list = base_dir / "CVE-list"
         if cve_list.is_dir():
             candidates = sorted(
-                d for d in cve_list.iterdir()
+                d
+                for d in cve_list.iterdir()
                 if d.is_dir() and d.name.startswith(cve_id + "_")
             )
             if candidates:
