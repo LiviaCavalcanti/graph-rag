@@ -47,6 +47,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from transformers import AutoModel, AutoTokenizer
+import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
@@ -59,7 +60,7 @@ from src.embeddings.codexglue_baseline import extract_full_function
 DEFAULT_MODEL_PATH = "models/codebert-base"
 DEFAULT_OUTPUT_DIR = "experiments/output/codebert_fullsource_baseline"
 CVE_ROOT = "CVE-list"
-GRAPHML_ROOT = "graphml_augmented"
+GRAPHML_ROOT = "graphml_cvefixes_fixed"
 VARIANTS = ["original", "augmented", "patch_augmented"]
 MAX_SEQ_LEN = 512
 BATCH_SIZE = 16
@@ -74,6 +75,9 @@ def load_pairs(cve_root: Path, graphml_root: Path, variants: list[str]) -> list[
     This avoids computing graph diffs (the expensive step) since we only
     need the raw node CODE attributes from the 'before' graph.
     """
+    if not graphml_root.exists():
+        raise FileNotFoundError(f"The graph folder {graphml_root} does not exist")
+        
     pairs = []
     for cve_dir in sorted(cve_root.iterdir()):
         if not cve_dir.is_dir():
@@ -145,7 +149,7 @@ def evaluate_loo(pairs: list[dict], embeddings: np.ndarray) -> dict:
     np.fill_diagonal(sim, -1)  # exclude self
 
     n = len(pairs)
-    hits_at = {1: 0, 5: 0, 10: 0}
+    hits_at = {1: 0, 3: 0, 5: 0, 10: 0}
     rr_sum = 0.0
     cwe_hits = defaultdict(lambda: {"total": 0, "hit": 0})
     raw_queries = []
@@ -154,7 +158,7 @@ def evaluate_loo(pairs: list[dict], embeddings: np.ndarray) -> dict:
         sims = sim[i].copy()
         # Exclude exact self (same dir + variant)
         for j in range(n):
-            if pairs[j]["dir"] == qp["dir"] and pairs[j]["variant"] == qp["variant"]:
+            if pairs[j]["dir"] == qp["dir"] and pairs[j].get("variant", "") == qp.get("variant", ""):
                 sims[j] = -2
         top_idx = np.argsort(sims)[::-1][:10]
 
@@ -183,7 +187,7 @@ def evaluate_loo(pairs: list[dict], embeddings: np.ndarray) -> dict:
             "query_cve": target_cve,
             "query_cwe": cwe,
             "query_func": qp["func_name"],
-            "query_variant": qp["variant"],
+            "query_variant": qp.get("variant"),
             "hit_rank": hit_rank,
             "top5_cves": [pairs[j]["cve_id"] for j in top_idx[:5]],
         })
@@ -219,22 +223,51 @@ def main():
         "--model", default=DEFAULT_MODEL_PATH,
         help="Path to CodeBERT model",
     )
+    parser.add_argument(
+        "--dataset", default='autopatch',
+        help="Dataset name", choices=['autopatch', 'cvefixes']
+    )
+    parser.add_argument(
+        "--config", default='config.yaml',
+        help="Path to configure file"
+    )
     args = parser.parse_args()
 
     output_dir = Path(args.output)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    cve_root = Path(CVE_ROOT)
-    graphml_root = Path(GRAPHML_ROOT)
-
-    # ── 1. Load pairs ──────────────────────────────────────────────
-    print("Loading pairs from graphml (no diff computation)...")
-    t0 = time.perf_counter()
-    pairs = load_pairs(cve_root, graphml_root, VARIANTS)
-    load_time = time.perf_counter() - t0
-    print(f"  Loaded {len(pairs)} pairs in {load_time:.1f}s")
+    if args.dataset == 'cvefixes':
+        from src.data.cvefixes import CVEFixesDataset
+        with open(args.config) as f:
+            cfg = yaml.safe_load(f)
+        ds_cfg = cfg["data"][args.dataset]
+        ds_folder = 'cvefixes_experiments/output/pipeline_verification/cpg_cache'
+        dataset = CVEFixesDataset(ds_cfg)
+        pairs = []
+        for pair in dataset.stream():
+            pairs.append(
+                {            
+                    'dir': pair.meta['dir_name'],
+                    'cve_id': pair.cve_id,
+                    'cwe_id': pair.cwe_id,
+                    'func_name': pair.func_name,
+                    'code': extract_full_function(pair.G_before)
+                }
+            )
+              
+    else:
+        cve_root = Path(CVE_ROOT)
+        graphml_root = Path(GRAPHML_ROOT)
+        ds_folder = GRAPHML_ROOT
+        # ── 1. Load pairs ──────────────────────────────────────────────
+        print("Loading pairs from graphml (no diff computation)...")
+        t0 = time.perf_counter()
+        pairs = load_pairs(cve_root, graphml_root, VARIANTS)
+        load_time = time.perf_counter() - t0
+    
+    # print(f"  Loaded {len(pairs)} pairs in {load_time:.1f}s")
     print(f"  Unique CVEs: {len(set(p['cve_id'] for p in pairs))}")
-    print(f"  Variants: {dict(sorted(defaultdict(int, {v: sum(1 for p in pairs if p['variant'] == v) for v in VARIANTS}).items()))}")
+    # print(f"  Variants: {dict(sorted(defaultdict(int, {v: sum(1 for p in pairs if p['variant'] == v) for v in VARIANTS}).items()))}")
 
     # ── 2. Load CodeBERT ───────────────────────────────────────────
     print(f"\nLoading CodeBERT from {args.model}...")
@@ -288,12 +321,12 @@ def main():
         "config": {
             "model": args.model,
             "max_seq_len": MAX_SEQ_LEN,
-            "variants": VARIANTS,
-            "cve_root": CVE_ROOT,
-            "graphml_root": GRAPHML_ROOT,
+            # "variants": VARIANTS,
+            # "cve_root": CVE_ROOT,
+            "graphml_root": ds_folder,
         },
         "timing": {
-            "load_s": load_time,
+            # "load_s": load_time,
             "embed_s": embed_time,
         },
         "space_stats": {
