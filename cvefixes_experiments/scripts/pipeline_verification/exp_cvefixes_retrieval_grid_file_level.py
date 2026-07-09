@@ -355,6 +355,7 @@ def run_experiment(
     sample_mode: str = "none",
     sample_total: int | None = None,
     min_cves_per_cwe: int = 3,
+    seed: int | None = None,
 ) -> ExperimentOutput:
     """Run file-level retrieval experiment."""
     if embedders is None:
@@ -382,6 +383,9 @@ def run_experiment(
         ks=ks,
     )
     _sync_top_level_split(cfg)
+
+    if seed is not None:
+        cfg["experiment"]["split"]["seed"] = int(seed)
 
     cfg.setdefault("experiment", {})
     cfg["experiment"]["sampling"] = {
@@ -493,6 +497,12 @@ if __name__ == "__main__":
         default=3,
         help="Keep at least this many whole CVE groups per CWE so retrieval stays feasible.",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Override split/sampling seed (default: config experiment.split.seed).",
+    )
 
     args = parser.parse_args()
 
@@ -509,5 +519,6 @@ if __name__ == "__main__":
         sample_mode=args.sample_mode,
         sample_total=args.sample_total,
         min_cves_per_cwe=args.min_cves_per_cwe,
+        seed=args.seed,
     )
 

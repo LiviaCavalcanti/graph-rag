@@ -741,7 +741,7 @@ def run_experiment(
             "n_samples": len(index_pairs),
             "embed_time_s": round(embed_time, 2),
             "space_stats": space_stats,
-            "self_retrieval": cve_metrics,
+            "cve_retrieval": cve_metrics,
             "cwe_recall": cwe_metrics,
             "cwe_hit": {f"hit@{k}": v for k, v in cwe_hit.items()},
             "embedding_space_plots": embedding_plots,
@@ -802,7 +802,7 @@ def run_experiment(
     print("SUMMARY")
     print("=" * 70)
     for cell in cells:
-        sr = cell["self_retrieval"]
+        sr = cell.get("cve_retrieval") or cell.get("self_retrieval") or {}
         cwe = cell["cwe_recall"]
         ch = cell.get("cwe_hit", {})
         print(f"  {cell['embedder']:<20}  "
@@ -821,9 +821,9 @@ def run_experiment(
         cwe_recall_threshold = success_cfg.get("cwe_recall_threshold", 0.5)
         hit_at_5_threshold = success_cfg.get("hit_at_5_threshold", 0.3)
         
-        best_mrr = max(c["self_retrieval"].get("mrr", 0) for c in cells)
+        best_mrr = max((c.get("cve_retrieval") or c.get("self_retrieval") or {}).get("mrr", 0) for c in cells)
         best_cwe = max(c["cwe_recall"].get("macro_avg", 0) for c in cells)
-        best_hit5 = max(c["self_retrieval"].get("hit@5", 0) for c in cells)
+        best_hit5 = max((c.get("cve_retrieval") or c.get("self_retrieval") or {}).get("hit@5", 0) for c in cells)
         print(f"\n  Best MRR:        {best_mrr:.3f} {'✓' if best_mrr > mrr_threshold else '✗'} (threshold: {mrr_threshold})")
         print(f"  Best CWE recall: {best_cwe:.3f} {'✓' if best_cwe > cwe_recall_threshold else '✗'} (threshold: {cwe_recall_threshold})")
         print(f"  Best hit@5:      {best_hit5:.3f} {'✓' if best_hit5 > hit_at_5_threshold else '✗'} (threshold: {hit_at_5_threshold})")
