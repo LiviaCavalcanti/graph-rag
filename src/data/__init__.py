@@ -15,12 +15,15 @@ REGISTRY: dict[str, type[BaseDataset]] = {
 def _resolve_datasets(cfg: dict) -> list[tuple[str, "BaseDataset"]]:
     """Instantiate active datasets from config."""
     data_cfg = cfg["data"]
+    graph_cfg = cfg.get("graph", {})
     active = data_cfg.get("active", [k for k in data_cfg if k in REGISTRY])
     datasets = []
     for name in active:
         if name not in REGISTRY:
             continue
-        ds_cfg = data_cfg[name]
+        # Inject the shared graph-processing section so compute_graph_diff
+        # parameters (slice_depth, ...) flow into the dataset stream.
+        ds_cfg = {**data_cfg[name], "graph": graph_cfg} if graph_cfg else data_cfg[name]
         datasets.append((name, REGISTRY[name](ds_cfg)))
     return datasets
 
