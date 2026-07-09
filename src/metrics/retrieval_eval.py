@@ -84,8 +84,17 @@ def _build_cve_qrels_and_run(
             if index_metadata is None and r.get("cve_id") == query_cve:
                 q_qrels[doc_id] = 1
 
-        if q_run:
-            qrels_dict[qid] = q_qrels if q_qrels else {"__none__": 0}
+        if q_qrels:
+            # Register every query with known relevant docs, even when the
+            # embedder returned nothing (degenerate query vector). This keeps
+            # the denominator identical across embedders; an empty run is
+            # scored as a guaranteed miss instead of being dropped.
+            qrels_dict[qid] = q_qrels
+            run_dict[qid] = q_run if q_run else {"__miss__": 0.0}
+        elif q_run:
+            # No index metadata: relevance can only come from retrieved
+            # results, so an empty run cannot be judged and is skipped.
+            qrels_dict[qid] = {"__none__": 0}
             run_dict[qid] = q_run
 
     return qrels_dict, run_dict
@@ -116,13 +125,42 @@ def retrieve_all(
 ) -> list[tuple]:
     """Run retrieval for all pairs, returning (pair, results) tuples.
 
-    Pairs whose embedding has near-zero norm are silently skipped.
+    Every pair is returned so all embedders are scored on the SAME query
+    set. A pair whose embedding has near-zero norm (degenerate / unembeddable
+    query) is returned with an empty result list, i.e. a guaranteed miss,
+    rather than being silently dropped from the denominator.
+    Uses embedder.embed_many() for efficient batch processing on GPU.
     """
+    if not pairs:
+        return []
+    
+    print(f"[retrieve_all] Embedding {len(pairs)} graphs in batch...")
+    # Extract query graphs for all pairs
+    query_graphs = [_query_graph_for(pair) for pair in pairs]
+    
+    # Batch embed all at once (single GPU forward pass)
+    embeddings = embedder.embed_many(query_graphs)
+    
+    print(f"[retrieve_all] Running retrieval for {len(pairs)} queries...")
     out = []
-    for pair in pairs:
-        results = _retrieve_for(pair, embedder, retriever, top_k)
-        if results is not None:
-            out.append((pair, results))
+    valid_count = 0
+    for i, (pair, query_vec) in enumerate(zip(pairs, embeddings)):
+        if np.linalg.norm(query_vec) < 1e-6:
+            # Keep the query so every embedder shares the same denominator;
+            # an unembeddable query is a guaranteed miss (empty results).
+            out.append((pair, []))
+            continue
+        
+        results = retriever.query(query_vec, top_k=top_k)
+        out.append((pair, results))
+        valid_count += 1
+        
+        if (i + 1) % max(1, len(pairs) // 10) == 0:
+            print(f"  [{i + 1}/{len(pairs)}] queries processed")
+    
+    degenerate = len(pairs) - valid_count
+    print(f"[retrieve_all] Done! Embedded {valid_count}/{len(pairs)} queries"
+          + (f" ({degenerate} degenerate kept as misses)" if degenerate else ""))
     return out
 
 

@@ -59,7 +59,11 @@ def read_code_file(path: str | None) -> str:
 
 
 def get_target_code(pair) -> str:
-    """Get the vulnerable code for a query pair."""
+    """Get the vulnerable code for a query pair.
+
+    .. deprecated:: unused (2026-07). The active implementation is
+       ``batch_inference._get_target_code``; kept for backward compatibility.
+    """
     code = pair.meta.get("source_before", "")
     if not code:
         lines = []
@@ -71,7 +75,11 @@ def get_target_code(pair) -> str:
 
 
 def get_ground_truth_patch(pair) -> str:
-    """Get the patched code (ground truth) for evaluation."""
+    """Get the patched code (ground truth) for evaluation.
+
+    .. deprecated:: unused (2026-07). The active implementation is
+       ``batch_inference._get_ground_truth``; kept for backward compatibility.
+    """
     code = pair.meta.get("source_after", "")
     return strip_code_fences(code)
 
@@ -80,7 +88,11 @@ def get_ground_truth_patch(pair) -> str:
 
 
 def parse_patch(output: str) -> dict | None:
-    """Parse CoT and patched code from LLM output."""
+    """Parse CoT and patched code from LLM output.
+
+    .. deprecated:: unused (2026-07). Superseded by
+       ``AutoPatchPatcher.parse`` (marker-based, strict); kept for compatibility.
+    """
     try:
         cot_start = output.find("[CoT START]")
         cot_end = output.find("[CoT END]")
@@ -102,6 +114,3 @@ def parse_patch(output: str) -> dict | None:
     except Exception:
         pass
     return None
-
-
-
