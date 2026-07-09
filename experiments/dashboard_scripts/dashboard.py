@@ -106,6 +106,11 @@ def _code_block(code: str | None, lang: str = "c") -> str:
 #  Tab 1: Overview
 # ─────────────────────────────────────────────────────────────────────
 
+def _cve_block(cell: dict) -> dict:
+    """Same-CVE retrieval metrics; prefers new 'cve_retrieval', falls back to legacy 'self_retrieval'."""
+    return cell.get("cve_retrieval") or cell.get("self_retrieval") or {}
+
+
 def _tab_overview(results: dict, miss: dict | None, crossing: dict | None) -> str:
     cells = results.get("cells", [])
     approach_names = list(dict.fromkeys(c["embedder"] for c in cells))
@@ -117,13 +122,13 @@ def _tab_overview(results: dict, miss: dict | None, crossing: dict | None) -> st
         [
             {
                 "name": c["embedder"],
-                "hit1": c["self_retrieval"].get("hit@1", 0),
-                "hit5": c["self_retrieval"].get("hit@5", 0),
-                "hit10": c["self_retrieval"].get("hit@10", 0),
-                "mrr": c["self_retrieval"].get("mrr", 0),
+                "hit1": _cve_block(c).get("hit@1", 0),
+                "hit5": _cve_block(c).get("hit@5", 0),
+                "hit10": _cve_block(c).get("hit@10", 0),
+                "mrr": _cve_block(c).get("mrr", 0),
                 "cwe_rec": c["cwe_recall"].get("macro_avg", 0),
                 "lat": c.get("query_latency", {}).get("p50_ms", 0),
-                "n": c["self_retrieval"].get("n", 0),
+                "n": _cve_block(c).get("n", 0),
             }
             for c in cells
         ],
@@ -245,17 +250,17 @@ def _tab_retrieval(results: dict) -> str:
 
     # Build data for Chart.js grouped bar chart (hit@1/5/10/MRR)
     labels_js = json.dumps([c["embedder"] for c in cells])
-    hit1_js   = json.dumps([c["self_retrieval"].get("hit@1", 0) for c in cells])
-    hit5_js   = json.dumps([c["self_retrieval"].get("hit@5", 0) for c in cells])
-    hit10_js  = json.dumps([c["self_retrieval"].get("hit@10", 0) for c in cells])
-    mrr_js    = json.dumps([c["self_retrieval"].get("mrr", 0) for c in cells])
+    hit1_js   = json.dumps([_cve_block(c).get("hit@1", 0) for c in cells])
+    hit5_js   = json.dumps([_cve_block(c).get("hit@5", 0) for c in cells])
+    hit10_js  = json.dumps([_cve_block(c).get("hit@10", 0) for c in cells])
+    mrr_js    = json.dumps([_cve_block(c).get("mrr", 0) for c in cells])
     colors_js = json.dumps([_approach_color(approach_names, c["embedder"]) for c in cells])
 
     # CWE recall macro
     cwe_mac_js = json.dumps([c["cwe_recall"].get("macro_avg", 0) for c in cells])
 
     # Per-CWE recall table for best cell
-    best_cell = max(cells, key=lambda c: c["self_retrieval"].get("mrr", 0)) if cells else None
+    best_cell = max(cells, key=lambda c: _cve_block(c).get("mrr", 0)) if cells else None
     per_cwe_html = ""
     if best_cell:
         per_cwe = best_cell.get("cwe_recall", {}).get("per_cwe", {})
@@ -1021,12 +1026,12 @@ def _tab_code(results: dict, crossing: dict | None = None) -> str:
     if not cells:
         return '<section id="tab-code" class="tab-panel"><h2>Code Explorer</h2><p class="muted">No data.</p></section>'
 
-    first_queries = cells[0]["self_retrieval"].get("raw_queries", [])
+    first_queries = _cve_block(cells[0]).get("raw_queries", [])
 
     # Build per-query index: {query_idx: {approach_name: query_dict}}
     query_map: dict[int, dict[str, dict]] = {}
     for cell in cells:
-        qs = cell["self_retrieval"].get("raw_queries", [])
+        qs = _cve_block(cell).get("raw_queries", [])
         for i, q in enumerate(qs):
             if i not in query_map:
                 query_map[i] = {}
