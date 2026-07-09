@@ -25,7 +25,6 @@ raw source code
 
 | Dataset | Source | Format |
 |---|---|---|
-| BigVul | CSV with `func_before` / `func_after` columns | `data/raw/bigvul.csv` |
 | CVEFixes | SQLite database | `data/raw/CVEfixes.db` |
 | AutoPatch | Folder per CVE with `.txt` / `.c` source files | `data/raw/CVE-list/` |
 
@@ -77,6 +76,8 @@ pip install networkx pandas netlsd torch torch_geometric faiss-cpu scikit-learn 
 
 The `codebert` embedder requires the `microsoft/codebert-base` model weights. Choose one of the two options below.
 
+TODO: Add HF login 
+
 **Option A — download once and run offline (recommended)**
 ```bash
 python -c "
@@ -107,9 +108,6 @@ joern:
   workers: 8                       # parallel export jobs
 
 data:
-  bigvul:
-    csv_path: data/raw/bigvul.csv
-    graphml_root: data/graphs/bigvul
   cvefixes:
     db_path: data/raw/CVEfixes.db
     graphml_root: data/graphs/cvefixes
@@ -228,27 +226,6 @@ The evaluation pipeline produces:
 - `evaluation_dashboard.html` — interactive HTML dashboard
 - `patch_analysis.html` — detailed patch analysis with code triples
 
----
-
-## Using from ADK agents
-
-```python
-from agents import load_retriever
-import numpy as np
-
-# load index once at agent startup
-retriever = load_retriever('config.yaml')
-
-# query with a pre-computed embedding
-embedding = np.zeros(128, dtype=np.float32)   # replace with real embedding
-results = retriever.query(embedding, top_k=5)
-
-for r in results:
-    print(r['cve_id'], r['func_name'], r['score'])
-
-# or look up by CVE ID directly
-results = retriever.query_by_cve('CVE-2025-22017')
-```
 ---
 
 ## Experiment evaluation

@@ -1,0 +1,35 @@
+{
+  "training": {
+    "epochs_run": 16,
+    "final_train_loss": 0.7050208059946695,
+    "final_val_loss": 0.7014987155010826,
+    "final_train_acc": 0.5066666666666667,
+    "final_val_acc": 0.4473684210526316,
+    "train_time_s": 64.1,
+    "n_samples": 188
+  },
+  "clustering": {
+    "ari": 0.0179,
+    "homogeneity": 0.0621,
+    "nmi": 0.0738,
+    "n_samples": 94
+  },
+  "retrieval": {
+    "P@1": 0.2128,
+    "P@3": 0.2234,
+    "P@5": 0.2128,
+    "P@10": 0.1968,
+    "MAP": 0.2318,
+    "MRR": 0.4239
+  },
+  "config": {
+    "hidden_size": 128,
+    "num_gnn_layers": 4,
+    "max_nodes": 200,
+    "feature_dim": 11,
+    "dropout": 0.2,
+    "lr": 0.001,
+    "epochs": 80,
+    "batch_size": 16
+  }
+}

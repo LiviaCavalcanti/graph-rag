@@ -41,6 +41,13 @@
 \definecolor{c4}{RGB}{142,68,173}
 \definecolor{c5}{RGB}{230,126,34}
 \definecolor{c6}{RGB}{211,84,0}
+% \definecolor{banana}{RGB}{253, 231, 76} 
+% \definecolor{strongcyan}{RGB}{78, 205, 196}
+% \definecolor{spaceindigo}{RGB}{195, 195, 230}
+% \definecolor{powderblush}{RGB}{247, 177, 171}
+\definecolor{c7}{RGB}{63,81,181}
+\definecolor{c8}{RGB}{0,128,128}
+\definecolor{c9}{RGB}{219,39,119}
 \definecolor{hit}{RGB}{39,174,96}
 \definecolor{miss}{RGB}{192,57,43}
 \definecolor{warn}{RGB}{243,156,18}
@@ -124,11 +131,11 @@
       A \textbf{vulnerability} is a weakness in an information system, system security procedures, internal controls, or implementation that could be exploited by a threat source.
     \end{tcolorbox}
 
-    \vspace{0.4cm}
+    \vspace{0.2cm}
     \textbf{Example:}\\
     % \textit{CVE-2024-56605} — 
     % CWE-416: 
-     Use-After-Free\\[0.2cm]
+     Use-After-Free\\
     \footnotesize The program references memory after it has been freed, leading to undefined behavior.
 
     \column{0.55\textwidth}
@@ -158,7 +165,66 @@ struct sock *alloc_socket(
   \center{\tiny\textcolor{notecol}{Inspired by CVE-2024-56605 (Linux kernel) — a real-world use-after-free vulnerability.}}
 
   \end{columns}
+
+  
+ \begin{center}
+    \begin{tikzpicture}
+      \node[fill=slidebg, draw=labelcol!20, line width=0.5pt,
+        rounded corners=5pt, font=\small\sffamily, text=labelcol,
+        inner xsep=10pt, inner ysep=4pt,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+      ]{
+        \textbf{CWE} = vulnerability \emph{type} \quad$\longleftrightarrow$\quad \textbf{CVE} = vulnerability \emph{instance}
+      };
+    \end{tikzpicture}
+  \end{center}
 \end{frame}
+
+% =====================================================================
+% CVE vs CWE
+% =====================================================================
+% \begin{frame}{CVE vs.\ CWE: Classifying Vulnerabilities}
+
+%   \begin{columns}[T]
+%     \column{0.48\textwidth}
+%     \begin{tcolorbox}[colback=ccode!5, colframe=ccode!60!black, boxrule=0.6pt,
+%       left=6pt, right=6pt, top=6pt, bottom=6pt, arc=3pt,
+%       title={\scriptsize\bfseries CVE — Common Vulnerabilities and Exposures~\cite{mitre_cve}}]
+%       \small
+%       A \textbf{specific instance} of a vulnerability in a particular product or system.\\[4pt]
+%       \scriptsize
+%       \textbf{Example:} CVE-2024-56605\\
+%       Use-after-free in Linux kernel's Bluetooth L2CAP subsystem.\\[4pt]
+%       \textit{Each CVE is a unique, publicly disclosed security bug.}
+%     \end{tcolorbox}
+
+%     \column{0.48\textwidth}
+%     \begin{tcolorbox}[colback=c3!5, colframe=c3!60!black, boxrule=0.6pt,
+%       left=6pt, right=6pt, top=6pt, bottom=6pt, arc=3pt,
+%       title={\scriptsize\bfseries CWE — Common Weakness Enumeration~\cite{mitre_cwe}}]
+%       \small
+%       A \textbf{category} of software weaknesses that can lead to vulnerabilities.\\[4pt]
+%       \scriptsize
+%       \textbf{Example:} CWE-416 (Use After Free)\\
+%       Referencing memory after it has been freed.\\[4pt]
+%       \textit{Each CWE is a class of bugs — many CVEs share the same CWE.}
+%     \end{tcolorbox}
+%   \end{columns}
+
+%   \vspace{0.5cm}
+%   \begin{center}
+%     \begin{tikzpicture}
+%       \node[fill=slidebg, draw=labelcol!20, line width=0.5pt,
+%         rounded corners=5pt, font=\small\sffamily, text=labelcol,
+%         inner xsep=10pt, inner ysep=4pt,
+%         drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+%       ]{
+%         \textbf{CWE} = vulnerability \emph{type} \quad$\longleftrightarrow$\quad \textbf{CVE} = vulnerability \emph{instance}
+%       };
+%     \end{tikzpicture}
+%   \end{center}
+
+% \end{frame}
 
 % --- Slide 2: Highlight step 1 — allocation ---
 \begin{frame}[fragile]{Tracing the Vulnerability (1/4): Allocation}
@@ -638,37 +704,52 @@ struct sock *alloc_socket(
 \begin{frame}{Motivation: Why Current Approaches Fall Short}
 
 \begin{columns}[T]
-
-  %% LEFT: The Problem
   \begin{column}{0.48\textwidth}
-    \textbf{ The Gap}\\[0.4em]
+    \textbf{The Gap}\\[0.4em]
     Industrial compliance standards demand \emph{auditable}, automated remediation \cite{iso27001}\\[0.8em]
 
-    \textbf{ LLMs Failure}
-    \begin{itemize}
-      \item \textbf{84--94\%} of AI patches are bypassable \cite{mahmud2025systematic}
-      \item \textbf{91.6\%} failure in vulnerability identification \cite{McClanahan2024Meets}
-      \item Hallucinated fixes $\Rightarrow$ false sense of security \cite{zemicheal2024llm}
-    \end{itemize}
-  \end{column}
-
-  % \vrule{}
-
-  %% RIGHT: The Alternative
-  \begin{column}{0.48\textwidth}
-    \textbf{ Existing Tools Also Fall Short}
+    \textbf{Existing Approaches Fall Short}
     \begin{itemize}
       \item Graph classifiers: \emph{no knowledge reuse}
       \item Agentic approaches: \emph{ignore structure}
+      \item LLM failures:
+      \begin{itemize}
+        \item \textbf{84--94\%} of AI patches are still bypassable \cite{mahmud2025systematic}
+        \item \textbf{91.6\%} failure in vulnerability identification \cite{McClanahan2024Meets}
+      \end{itemize}
+    \end{itemize}
+    
+    \begin{center}
+      \begin{tikzpicture}
+        \node[fill=slidebg, draw=labelcol!20, line width=0.5pt,
+          rounded corners=5pt, font=\small\sffamily, text=labelcol,
+          inner xsep=10pt, inner ysep=4pt,
+          drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+        ]{
+          Hallucinated fixes $\Rightarrow$ false sense of security \cite{zemicheal2024llm}
+        };
+      \end{tikzpicture}
+    \end{center}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \textbf{Existing Approach Strengths}
+    \begin{itemize}
+      \item Static analysis for vulnerability detection is well-established \cite{joern}
+      \item Agentic RAG approaches show promising results in code repair \cite{Seo2025AutoPatchMF, bouzenia2025repairagent}
     \end{itemize}
 
     \vspace{0.6em}
     % \rule{\linewidth}{0.4pt}
     \vspace{0.4em}
 
-    \textbf{ Our Approach}\\[0.3em]
-    \textbf{Retrieve} known structural patterns\\
-    $\Rightarrow$ fixes that are \emph{correct \textbf{and} explainable}
+    \textbf{Our Approach}\\[0.3em]
+    \textbf{RAG + Static Analysis:} retrieve known structural patterns\\
+    % \begin{center}
+    % \textbf{$+$  }
+    % \end{center}
+     
+    \textbf{Agentic generation:} produce fixes that are \emph{correct \textbf{and} explainable}
   \end{column}
 
 \end{columns}
@@ -810,7 +891,7 @@ struct sock *alloc_socket(
         {New Code\\{\tiny candidate}};
 
   \node[chip=ccpg,  right=of qcode]  (qcpg)   {Joern\\CPG};
-  \node[chip=csub,  right=of qcpg]   (qslice) {Sink-Centered\\Subgraph};
+  \node[chip=csub,  right=of qcpg]   (qslice) {Source-Centered\\Subgraph};
   \node[chip=cemb,  right=of qslice] (qemb)   {Graph\\Embedding};
 
   % Online arrows
@@ -1179,141 +1260,6 @@ struct sock *alloc_socket(
   \end{center}
 \end{frame}
 
-% =====================================================================
-% GIN ARCHITECTURE DETAIL
-% =====================================================================
-% \begin{frame}{GIN: Graph Isomorphism Network (Xu et al., ICLR 2019)}
-
-%   \begin{columns}[T]
-%     \column{0.52\textwidth}
-
-%     % \textbf{Update rule} (provably most expressive GNN):
-%     % \vspace{0.1cm}
-%     % $$h_v^{(k)} = \text{MLP}^{(k)}\!\left((1+\epsilon)\cdot h_v^{(k-1)} + \sum_{u \in \mathcal{N}(v)} h_u^{(k-1)}\right)$$
-
-%     % \vspace{0.2cm}
-%     % \begin{tikzpicture}[
-%     %   node distance=0.35cm and 0.6cm,
-%     %   layer/.style={
-%     %     draw=ccpg!70, fill=ccpg!10,
-%     %     rounded corners=5pt,
-%     %     minimum width=3.6cm,
-%     %     minimum height=0.55cm,
-%     %     font=\tiny\sffamily\bfseries,
-%     %     align=center
-%     %   },
-%     %   op/.style={
-%     %     draw=c5!70, fill=c5!10,
-%     %     rounded corners=3pt,
-%     %     minimum width=2.4cm,
-%     %     minimum height=0.4cm,
-%     %     font=\tiny\sffamily,
-%     %     align=center
-%     %   },
-%     %   arr/.style={
-%     %     -{Stealth[length=3.5pt, width=3.5pt]},
-%     %     line width=0.8pt,
-%     %     color=notecol!80
-%     %   },
-%     %   lbl/.style={font=\tiny\sffamily, text=notecol}
-%     % ]
-%     %   % Input
-%     %   \node[layer, fill=csub!15, draw=csub!70] (input)
-%     %         {Node features $h^{(0)}$\\{\tiny 11-dim one-hot (CPG type)}};
-
-%     %   % Layer 1
-%     %   \node[op, below=0.35cm of input] (agg1)
-%     %         {$\Sigma$ neighbors + $(1{+}\epsilon) \cdot h_v$};
-%     %   \node[layer, below=0.25cm of agg1] (mlp1)
-%     %         {MLP$^{(1)}$: Linear(11$\to$128) $\to$ ReLU $\to$ Linear(128$\to$128)};
-
-%     %   % Layer 2
-%     %   \node[op, below=0.3cm of mlp1] (agg2)
-%     %         {$\Sigma$ neighbors + $(1{+}\epsilon) \cdot h_v$};
-%     %   \node[layer, below=0.25cm of agg2] (mlp2)
-%     %         {MLP$^{(2)}$: Linear(128$\to$128) $\to$ ReLU $\to$ Linear(128$\to$128)};
-
-%     %   % Layer 3
-%     %   \node[op, below=0.3cm of mlp2] (agg3)
-%     %         {$\Sigma$ neighbors + $(1{+}\epsilon) \cdot h_v$};
-%     %   \node[layer, below=0.25cm of agg3] (mlp3)
-%     %         {MLP$^{(3)}$: Linear(128$\to$128) $\to$ ReLU $\to$ Linear(128$\to$128)};
-
-%     %   % Arrows
-%     %   \draw[arr] (input) -- (agg1);
-%     %   \draw[arr] (agg1) -- (mlp1);
-%     %   \draw[arr] (mlp1) -- (agg2);
-%     %   \draw[arr] (agg2) -- (mlp2);
-%     %   \draw[arr] (mlp2) -- (agg3);
-%     %   \draw[arr] (agg3) -- (mlp3);
-
-%     %   % Labels
-%     %   \node[lbl, left=0.1cm of mlp1, xshift=-0.3cm] {\rotatebox{90}{Layer 1}};
-%     %   \node[lbl, left=0.1cm of mlp2, xshift=-0.3cm] {\rotatebox{90}{Layer 2}};
-%     %   \node[lbl, left=0.1cm of mlp3, xshift=-0.3cm] {\rotatebox{90}{Layer 3}};
-%     % \end{tikzpicture}
-
-%     \column{0.45\textwidth}
-
-%     \textbf{Graph-level readout:}
-
-%     \vspace{0.15cm}
-%     \begin{tikzpicture}[
-%       node distance=0.3cm,
-%       pool/.style={
-%         draw=cemb!70, fill=cemb!10,
-%         rounded corners=4pt,
-%         minimum width=3.2cm,
-%         minimum height=0.45cm,
-%         font=\tiny\sffamily\bfseries,
-%         align=center
-%       },
-%       outstyle/.style={
-%         draw=hit!70, fill=hit!10,
-%         rounded corners=4pt,
-%         minimum width=3.2cm,
-%         minimum height=0.45cm,
-%         font=\tiny\sffamily\bfseries,
-%         align=center
-%       },
-%       arr/.style={
-%         -{Stealth[length=3.5pt, width=3.5pt]},
-%         line width=0.8pt,
-%         color=notecol!80
-%       },
-%       lbl/.style={font=\tiny\sffamily, text=notecol}
-%     ]
-%       \node[pool] (mean) {MEAN pool over nodes};
-%       \node[pool, below=0.2cm of mean] (sum) {SUM pool over nodes};
-%       \node[outstyle, below=0.4cm of sum] (cat) {Concat: 128 + 128 = 256d};
-%       \node[outstyle, draw=ckb!70, fill=ckb!10, below=0.3cm of cat] (proj) {Linear projection $\to$ 128d};
-
-%       \draw[arr] (mean) -- (cat);
-%       \draw[arr] (sum) -- (cat);
-%       \draw[arr] (cat) -- (proj);
-
-%       \node[lbl, right=0.1cm of mean] {global};
-%       \node[lbl, right=0.1cm of sum] {global};
-%     \end{tikzpicture}
-
-%     \vspace{0.4cm}
-%     \begin{tcolorbox}[colback=warn!5, colframe=warn!60!black, boxrule=0.4pt,
-%       left=4pt, right=4pt, top=3pt, bottom=3pt, arc=3pt,
-%       title={\scriptsize\bfseries Key Properties}]
-%       \scriptsize
-%       \begin{itemize}
-%         \setlength\itemsep{2pt}
-%         \item[\faCheck] As powerful as WL test (injective aggregation)
-%         \item[\faCheck] Random weights, frozen --- no training needed
-%         \item[\faCheck] Captures $k$-hop structural neighborhoods
-%         \item[\faCheck] Node-type aware (unlike spectral methods)
-%       \end{itemize}
-%     \end{tcolorbox}
-
-%     \vspace{0.2cm}
-%     {\scriptsize\textit{Source: Xu et al., ``How Powerful are Graph Neural Networks?'', ICLR 2019 (arXiv:1810.00826)}}
-%   \end{columns}
-% \end{frame}
 
 % =====================================================================
 % PHASE 1: AUTOPATCH RESULTS
@@ -1356,7 +1302,7 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
     \begin{column}{0.48\textwidth}
       \begin{center}
       \textbf{\small CodeBERT (seq)}\\[4pt]
-      \begin{tikzpicture}[
+      \begin{tikzpicture}[remember picture,
         node distance=0.28cm,
         box/.style={draw=c1!60, fill=c1!8, rounded corners=3pt,
           minimum width=3.2cm, minimum height=0.4cm,
@@ -1367,11 +1313,11 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
         \node[box, below=of cpg] (collect) {Collect changed code\\{\tiny diff\_weight $>$ 0.3, sort by line}};
         \node[box, below=of collect] (tok) {Tokenize as flat sequence\\{\tiny ``sk = sk\_alloc(); sock->sk = sk; ...''}};
         \node[box, draw=c3!60, fill=c3!8, below=of tok] (bert) {CodeBERT [CLS]\\{\tiny 768d}};
-        \node[box, draw=hit!60, fill=hit!8, below=of bert] (out) {L2 Normalize\\{\tiny 768d embedding}};
+        \node[box, draw=hit!60, fill=hit!8, below=of bert] (out-seq) {L2 Normalize\\{\tiny 768d embedding}};
         \draw[arr] (cpg) -- (collect);
         \draw[arr] (collect) -- (tok);
         \draw[arr] (tok) -- (bert);
-        \draw[arr] (bert) -- (out);
+        \draw[arr] (bert) -- (out-seq);
       \end{tikzpicture}
       \end{center}
       {\scriptsize\centering Text-only: structure is \textbf{discarded}.\par}
@@ -1379,7 +1325,7 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
     \begin{column}{0.48\textwidth}
       \begin{center}
       \textbf{\small CodeBERT (pat)}\\[4pt]
-      \begin{tikzpicture}[
+      \begin{tikzpicture}[remember picture,
         node distance=0.28cm,
         box/.style={draw=c1!60, fill=c1!8, rounded corners=3pt,
           minimum width=3.2cm, minimum height=0.4cm,
@@ -1387,15 +1333,15 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
         arr/.style={-{Stealth[length=3pt, width=3pt]}, line width=0.7pt, color=notecol}
       ]
         \node[box] (cpg) {CPG (Joern)};
-        \node[box, below=of cpg, xshift=-2cm] (pat) {Vuln Pattern Features\\{\tiny 34d: UAF/NPD/race/\ldots}};
-        \node[box, below=of cpg, xshift=2cm] (code) {Changed Code\\{\tiny CodeBERT [CLS] 768d}};
-        \node[box, draw=c5!60, fill=c5!8, below=0.45cm of cpg, yshift=-0.7cm] (cat) {Concatenate\\{\tiny [pattern $\|$ CodeBERT] = 802d}};
+        \node[box, below=of cpg, xshift=2cm] (pat) {Vuln Pattern Features\\{\tiny 34d: UAF/NPD/race/\ldots}};
+        \node[box, draw=c8, fill=c8!8 , below=of cpg, xshift=-2cm] (code-pat) { CodeBERT (seq) \\{\tiny [CLS] 768d}};
+        \node[box, draw=c5!60, fill=c5!8, below=0.45cm of cpg, yshift=-0.7cm] (cat) {Concatenate\\{\tiny [pattern $\|$ CodeBERT (seq)] = 802d}};
         \node[box, draw=c3!60, fill=c3!8, below=of cat] (pca) {PCA reduce\\{\tiny 128d}};
         \node[box, draw=hit!60, fill=hit!8, below=of pca] (out) {L2 Normalize\\{\tiny 128d embedding}};
         \draw[arr] (cpg) -- (pat);
-        \draw[arr] (cpg) -- (code);
+        \draw[arr] (cpg) -- (code-pat);
         \draw[arr] (pat) |- (cat);
-        \draw[arr] (code) |- (cat);
+        \draw[arr] (code-pat) |- (cat);
         \draw[arr] (cat) -- (pca);
         \draw[arr] (pca) -- (out);
       \end{tikzpicture}
@@ -1403,6 +1349,11 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
       {\scriptsize\centering Fuses \textbf{graph structure} with semantics.\par}
     \end{column}
   \end{columns}
+
+  \begin{tikzpicture}[remember picture, overlay]
+    \draw[-{Stealth[length=3.5pt, width=3.5pt]}, line width=0.8pt, color=c8!70, dashed]
+      (out-seq.east) -- ++(1,0) |- (code-pat.west);
+  \end{tikzpicture}
   
 \end{frame}
 
@@ -1487,7 +1438,8 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
       \textbf{Embedder} & \textbf{Hit@1} & \textbf{Hit@5} & \textbf{MRR} & \textbf{CWE Recall} \\
       \midrule
       GIN & 0.259 & 0.778 & 0.315 & 0.202 \\
-      Combined & 0.111 & 0.778 & 0.223 & 0.189 \\
+      \rowcolor{warn!12}
+      Combined & \cmiss{0.111} & 0.778 & 0.223 & 0.189 \\
       CodeBERT (baseline) & 0.080 & 0.1518 & 0.098 & 0.141 \\
       \rowcolor{hit!12}
       \textbf{CodeBERT (seq)} & \textbf{0.556} & \textbf{0.926} & \textbf{0.555} & \textbf{0.264} \\
@@ -1518,7 +1470,7 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
   \setlength{\tabcolsep}{3.5pt}
   \begin{tabular}{l r rrr}
     \toprule
-    \textbf{CWE} & \textbf{N} & \textbf{@1} & \textbf{@5} & \textbf{@10} \\
+    \textbf{CWE} & \textbf{N} & \textbf{Hit@1} & \textbf{Hit@5} & \textbf{Hit@10} \\
     \midrule
     Integer Overflow (190) & 4 & \chit{75\%} & 100\% & 100\% \\
     Input Validation (20) & 4 & \chit{75\%} & 75\% & 100\% \\
@@ -1580,18 +1532,22 @@ CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
 % SUMMARY
 % =====================================================================
 \begin{frame}[fragile]{Next Steps: Research Question 2}
- \textbf{RQ2: }What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline?
-
+ 
+  \textbf{RQ1: }How effective are graph-based embeddings at retrieving relevant vulnerability fix patterns from the knowledge base?
+   \begin{itemize}
+    \item \textbf{Investigate}: Why does combined embedder perform worse than CodeBERT(seq) on CVEFixes?
+   \end{itemize}
  \begin{columns}
   \begin{column}{0.5\textwidth}
+  \textbf{RQ2: }What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline?
     \begin{enumerate}
             \item Integrate the retrieval layer with patch agent
-            \item Run comparative experiments against baseline approaches:
+            \item Run \textbf{comparative experiments} against baseline approaches:
                \begin{itemize}
-                \item zero-shot open-source models
-                \item AutoPatch
+                \item \small{zero-shot open-source models}
+                \item \small{AutoPatch}
                \end{itemize} 
-            \item Validate the end-to-end patching pipeline with industry professionals.
+            \item \textbf{Validate} the end-to-end patching \textbf{pipeline} with industry professionals.
         \end{enumerate}
 
   \end{column}

@@ -1,22 +1,25 @@
 import json
 import logging
-import os
 import re
 import time
 from pathlib import Path
 
-import litellm
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ValidationError
 
+from src.agents.backends import CompletionBackend, get_default_backend
 from src.agents.utils import MODEL_NAME, fmt_mapping, strip_code_fences
 
 logger = logging.getLogger(__name__)
 
 load_dotenv()
-# litellm._turn_on_debug()
 
 _PROMPTS_DIR = Path(__file__).parent / "prompts"
+
+# ── LLM invocation defaults (override per-call via AutoPatchPatcher(...) / config) ──
+DEFAULT_TEMPERATURE = 0.2
+DEFAULT_MAX_TOKENS = 4096
+DEFAULT_API_VERSION = "2024-12-01-preview"
 
 
 def _load_prompt(name: str) -> str:
@@ -74,12 +77,14 @@ _VARIANTS: dict[str, list[tuple[str, str]]] = {
 
 class PatchResult(BaseModel):
     """Structured output from the patcher LLM."""
+
     cot: str
     vuln_patch: str
 
 
 class InvocationRecord(BaseModel):
     """Everything needed to reproduce / debug a single LLM call."""
+
     model: str
     temperature: float
     max_tokens: int
@@ -93,6 +98,7 @@ class InvocationRecord(BaseModel):
     total_tokens: int = 0
     finish_reason: str = ""
     response_id: str = ""
+    cached: bool = False
 
     def save(self, path: str | Path) -> Path:
         """Persist record as JSON for later replay / debugging."""
@@ -105,7 +111,16 @@ class InvocationRecord(BaseModel):
 
 class AutoPatchPatcher:
 
-    def __init__(self, model_name: str | None = None, prompt_variant: str = "default"):
+    def __init__(
+        self,
+        model_name: str | None = None,
+        prompt_variant: str = "default",
+        *,
+        temperature: float = DEFAULT_TEMPERATURE,
+        max_tokens: int = DEFAULT_MAX_TOKENS,
+        api_version: str = DEFAULT_API_VERSION,
+        backend: CompletionBackend | None = None,
+    ):
         self.model_name = model_name or MODEL_NAME
         if prompt_variant not in _VARIANTS:
             raise ValueError(
@@ -114,6 +129,12 @@ class AutoPatchPatcher:
             )
         self.prompt_variant = prompt_variant
         self._templates = _VARIANTS[prompt_variant]
+        self.temperature = temperature
+        self.max_tokens = max_tokens
+        self.api_version = api_version
+        # Pluggable LLM backend (live / mock / replay / record). Resolved at
+        # construction so an active use_backend(...) scope is picked up.
+        self._backend = backend or get_default_backend()
 
     def _build_messages(self, input_dict: dict) -> list[dict]:
         fmt_vars = {**input_dict, "format_instructions": _FORMAT_INSTRUCTIONS}
@@ -135,7 +156,9 @@ class AutoPatchPatcher:
 
     def parse(self, output: str) -> PatchResult | None:
         cot = self._extract_between(output, "[CoT START]", "[CoT END]")
-        vuln_patch = self._extract_between(output, "[Patched Code START]", "[Patched Code END]")
+        vuln_patch = self._extract_between(
+            output, "[Patched Code START]", "[Patched Code END]"
+        )
 
         if cot is None or vuln_patch is None:
             logger.warning("Missing markers in LLM output (len=%d)", len(output))
@@ -149,47 +172,48 @@ class AutoPatchPatcher:
 
     def invoke(self, input_dict: dict) -> InvocationRecord:
         messages = self._build_messages(input_dict)
-        params = dict(
-            model=f"azure/{self.model_name}",
-            temperature=0.2,
-            max_tokens=4096,
-        )
+        model = f"azure/{self.model_name}"
         record = InvocationRecord(
-            model=params["model"],
-            temperature=params["temperature"],
-            max_tokens=params["max_tokens"],
+            model=model,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
             messages=messages,
         )
 
         logger.info(
-            "Invoking %s  (prompt_msgs=%d, max_tokens=%d)",
-            params["model"], len(messages), params["max_tokens"],
+            "Invoking %s  (backend=%s, prompt_msgs=%d, max_tokens=%d)",
+            model,
+            type(self._backend).__name__,
+            len(messages),
+            self.max_tokens,
         )
         t0 = time.perf_counter()
 
         try:
-            response = litellm.completion(
-                **params,
+            result = self._backend.complete(
+                model=model,
                 messages=messages,
-                api_key=os.getenv("AZURE_API_KEY"),
-                api_base=os.getenv("AZURE_API_BASEURL"),
-                api_version="2024-12-01-preview",
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
+                api_version=self.api_version,
             )
             record.elapsed_s = round(time.perf_counter() - t0, 3)
-            record.raw_output = response.choices[0].message.content or ""
-            record.finish_reason = response.choices[0].finish_reason or ""
-            record.response_id = getattr(response, "id", "") or ""
-
-            usage = getattr(response, "usage", None)
-            if usage:
-                record.prompt_tokens = getattr(usage, "prompt_tokens", 0) or 0
-                record.completion_tokens = getattr(usage, "completion_tokens", 0) or 0
-                record.total_tokens = getattr(usage, "total_tokens", 0) or 0
+            record.raw_output = result.content or ""
+            record.finish_reason = result.finish_reason or ""
+            record.response_id = result.response_id or ""
+            record.prompt_tokens = result.prompt_tokens
+            record.completion_tokens = result.completion_tokens
+            record.total_tokens = result.total_tokens
+            record.cached = result.cached
 
             logger.info(
-                "LLM responded  (tokens=%d/%d/%d, finish=%s, elapsed=%.1fs)",
-                record.prompt_tokens, record.completion_tokens, record.total_tokens,
-                record.finish_reason, record.elapsed_s,
+                "LLM responded  (tokens=%d/%d/%d, finish=%s, cached=%s, elapsed=%.1fs)",
+                record.prompt_tokens,
+                record.completion_tokens,
+                record.total_tokens,
+                record.finish_reason,
+                record.cached,
+                record.elapsed_s,
             )
 
             record.parsed = self.parse(record.raw_output)
@@ -200,7 +224,9 @@ class AutoPatchPatcher:
             record.elapsed_s = round(time.perf_counter() - t0, 3)
             record.error = str(exc)
             logger.error(
-                "LLM call failed after %.1fs: %s", record.elapsed_s, exc,
+                "LLM call failed after %.1fs: %s",
+                record.elapsed_s,
+                exc,
                 exc_info=True,
             )
             raise
@@ -220,6 +246,8 @@ def patch_one(
     trace_dir: str | Path | None = None,
     prompt_variant: str = "default",
     graph_context: str = "",
+    llm_params: dict | None = None,
+    backend: CompletionBackend | None = None,
 ) -> tuple[str, PatchResult | None, InvocationRecord]:
     """Build prompt, invoke LLM via litellm (google-adk Azure backend), parse result.
 
@@ -264,7 +292,9 @@ def patch_one(
         "target_graph_context": graph_context or "None",
     }
 
-    patcher = AutoPatchPatcher(model_name, prompt_variant=prompt_variant)
+    patcher = AutoPatchPatcher(
+        model_name, prompt_variant=prompt_variant, backend=backend, **(llm_params or {})
+    )
     record = patcher.invoke(input_dict)
 
     if trace_dir:

@@ -143,8 +143,13 @@ def get_cpg(joern_bin_dir, source_file, out_dir="cpg", export_for_visualization=
 
 
 if __name__ == "__main__":
-    # TODO: remove my path
-    JOERN_BIN_DIR = "/home/z0050s2b/bin/joern/joern-cli"
-    source_dir = "test_input.c"
+    import os
 
-    get_cpg(JOERN_BIN_DIR, source_dir)
+    joern_bin_dir = os.environ.get("JOERN_BIN_DIR", "")
+    source_dir = os.environ.get("JOERN_SOURCE", "test_input.c")
+    if not joern_bin_dir:
+        raise SystemExit(
+            "Set JOERN_BIN_DIR to your joern-cli directory, e.g.\n"
+            "  JOERN_BIN_DIR=~/bin/joern/joern-cli python -m src.graph.joern_graph"
+        )
+    get_cpg(joern_bin_dir, source_dir)

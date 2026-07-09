@@ -43,3 +43,18 @@ class BaseEmbedder(ABC):
     @property
     @abstractmethod
     def name(self) -> str: ...
+
+
+def resolve_codebert_path(cfg: dict) -> str:
+    """Resolve the local CodeBERT model path from an ``embeddings`` config.
+
+    Single source of truth for the CodeBERT-based embedders.  Prefers the
+    canonical ``codebert.model_path`` key, falls back to the legacy
+    ``rgcn.codebert_model`` key, then to a repo-relative default.  Keeping the
+    path in config (not hard-coded in source) makes the repo portable.
+    """
+    return (
+        cfg.get("codebert", {}).get("model_path")
+        or cfg.get("rgcn", {}).get("codebert_model")
+        or "models/codebert-base/"
+    )

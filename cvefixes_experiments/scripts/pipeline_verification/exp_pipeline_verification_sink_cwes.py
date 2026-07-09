@@ -2,6 +2,8 @@
 """
 Experiment: Pipeline Verification with Sink-Based CWEs
 
+Standardize the logic written in cvefixes/experiments/scripts/exp_pipeline_verification.py
+
 Same protocol as exp_pipeline_verification but using the refined dataset
 of CWEs suited to sink-based vulnerability detection:
   - CWE-190: Integer Overflow
@@ -446,7 +448,7 @@ def run_experiment(cfg_path: str = "config.yaml"):
             "n_samples": len(index_pairs),
             "embed_time_s": round(embed_time, 2),
             "space_stats": space_stats,
-            "self_retrieval": cve_metrics,
+            "cve_retrieval": cve_metrics,
             "cwe_recall": cwe_metrics,
             "cwe_hit": {f"hit@{k}": v for k, v in cwe_hit.items()},
             "per_cwe_hit": {cwe: {"n": info["n"], "hits": {f"hit@{k}": info["hits"][k] / info["n"] if info["n"] > 0 else 0 for k in KS}} for cwe, info in per_cwe_hit.items()},
@@ -497,7 +499,7 @@ def run_experiment(cfg_path: str = "config.yaml"):
     print("SUMMARY")
     print("=" * 70)
     for cell in cells:
-        sr = cell["self_retrieval"]
+        sr = cell.get("cve_retrieval") or cell.get("self_retrieval") or {}
         cwe = cell["cwe_recall"]
         ch = cell.get("cwe_hit", {})
         print(f"  {cell['embedder']:<20}  "
@@ -510,9 +512,9 @@ def run_experiment(cfg_path: str = "config.yaml"):
 
     # Correctness verdict
     if cells:
-        best_mrr = max(c["self_retrieval"].get("mrr", 0) for c in cells)
+        best_mrr = max((c.get("cve_retrieval") or c.get("self_retrieval") or {}).get("mrr", 0) for c in cells)
         best_cwe = max(c["cwe_recall"].get("macro_avg", 0) for c in cells)
-        best_hit5 = max(c["self_retrieval"].get("hit@5", 0) for c in cells)
+        best_hit5 = max((c.get("cve_retrieval") or c.get("self_retrieval") or {}).get("hit@5", 0) for c in cells)
         best_cwe_hit5 = max(c["cwe_hit"].get("hit@5", 0) for c in cells)
         print(f"\n  Best MRR:        {best_mrr:.3f} {'✓' if best_mrr > 0.2 else '✗'} (threshold: 0.2)")
         print(f"  Best CWE hit@5:  {best_cwe_hit5:.3f} {'✓' if best_cwe_hit5 > 0.5 else '✗'} (threshold: 0.5)")

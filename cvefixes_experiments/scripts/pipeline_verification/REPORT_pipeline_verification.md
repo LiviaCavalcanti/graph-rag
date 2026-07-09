@@ -313,7 +313,7 @@ The pipeline is **functioning correctly** — vulnerability structure is capture
 
 ```bash
 # From workspace root
-python -m cvefixes_experiments.scripts.exp_pipeline_verification
+python -m cvefixes_experiments.scripts.pipeline_verification.exp_pipeline_verification
 
 # Output:
 #   cvefixes_experiments/output/pipeline_verification/results.json

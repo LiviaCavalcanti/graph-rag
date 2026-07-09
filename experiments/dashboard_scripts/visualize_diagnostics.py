@@ -170,4 +170,9 @@ def plot_all(data: dict, out_dir='experiments/diagnostics'):
 
 
 if __name__ == '__main__':
-    plot_all(load())
+    import argparse
+    parser = argparse.ArgumentParser(description="Generate unified HTML dashboard for an experiment run.")
+    parser.add_argument("run_dir", nargs="?", help="Path to run directory (default: latest)")
+    args = parser.parse_args()
+    
+    plot_all(load(args.run_dir))

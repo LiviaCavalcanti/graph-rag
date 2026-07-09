@@ -4,7 +4,7 @@
 \usepackage[margin=1in, left=0.5in, right=1in]{geometry}
 \usepackage{graphicx}
 \usepackage{enumitem}
-\usepackage{xcolor}
+\usepackage[table]{xcolor}
 \usepackage{hyperref}
 \usepackage{fancyhdr}
 \usepackage{cite}
@@ -12,8 +12,117 @@
 \renewcommand{\familydefault}{\sfdefault} % Set the default font to Sans-Serif
 \usepackage[T1]{fontenc}
 \usepackage{float}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage[most]{tcolorbox}
+% \usepackage[backend=biber, style=numeric, sorting=none, maxnames=3, minnames=1]{biblatex}
+% \addbibresource{references.bib}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit, calc}
 
+% ── Palette (matching presentation) ──────────────────────────────────
+\definecolor{ccode}{RGB}{239, 68, 68}
+\definecolor{ccpg}{RGB}{59, 130, 246}
+\definecolor{csub}{RGB}{16, 185, 129}
+\definecolor{cemb}{RGB}{168, 85, 247}
+\definecolor{ckb}{RGB}{245, 158, 11}
+\definecolor{crank}{RGB}{236, 72, 153}
+\definecolor{notecol}{RGB}{100, 116, 139}
+\definecolor{shadowcol}{RGB}{101, 67, 33}
+\definecolor{slidebg}{RGB}{248, 250, 252}
 
+\definecolor{c1}{RGB}{41,128,185}
+\definecolor{c2}{RGB}{52,152,219}
+\definecolor{c3}{RGB}{155,89,182}
+\definecolor{c4}{RGB}{142,68,173}
+\definecolor{c5}{RGB}{230,126,34}
+\definecolor{c6}{RGB}{211,84,0}
+% \definecolor{banana}{RGB}{253, 231, 76} 
+% \definecolor{strongcyan}{RGB}{78, 205, 196}
+% \definecolor{spaceindigo}{RGB}{195, 195, 230}
+% \definecolor{powderblush}{RGB}{247, 177, 171}
+\definecolor{c7}{RGB}{63,81,181}
+\definecolor{c8}{RGB}{0,128,128}
+\definecolor{c9}{RGB}{219,39,119}
+\definecolor{hit}{RGB}{39,174,96}
+\definecolor{miss}{RGB}{192,57,43}
+\definecolor{warn}{RGB}{243,156,18}
+
+\tikzset{
+    % Cylinder style for databases
+    cylinder/.style = {
+        shape=cylinder,
+        cylinder body fill=ckb!25,
+        cylinder end fill=ckb!35,
+        draw=ckb!60,
+        line width=1.5pt,
+        shape aspect=0.6,
+        minimum width=2cm,
+        minimum height=1.5cm,
+        shape border rotate=90
+    },
+    % Folded box style for processing
+    foldedbox/.style = {
+        rectangle,
+        rounded corners=4pt,
+        % draw=gray,
+        line width=1.5pt,
+        minimum width=2.2cm,
+        minimum height=0.9cm,
+        align=center,
+        % font=\ttfamily\footnotesize,
+        font=\sffamily\scriptsize,
+        text=black!60,
+        path picture={
+            \draw[line width=1pt] 
+            ([shift={(3pt,-3pt)}]path picture bounding box.north east) 
+            -- (path picture bounding box.north east) 
+            -- ([shift={(3pt,-3pt)}]path picture bounding box.north east);
+        }
+    },
+    % Input box style (vulnerable - red)
+    inputbox/.style = {
+        foldedbox,
+        fill=ccode!15,
+        draw=ccode!50
+    },
+    % Input box style (patched - blue)
+    patchbox/.style = {
+        foldedbox,
+        fill=ccpg!15,
+        draw=ccpg!50
+    },
+    % Process box style (purple)
+    processbox/.style = {
+        foldedbox,
+        fill=cemb!12,
+        draw=cemb!50
+    },
+    % Output box style (green)
+    outputbox/.style = {
+        foldedbox,
+        fill=csub!15,
+        draw=csub!50
+    },
+    % Dashed grouping box
+    groupbox/.style = {
+        rectangle,
+        draw=notecol,
+        dashed,
+        line width=1.5pt,
+        rounded corners=8pt,
+        inner sep=15pt
+    },
+    % Arrow style
+    arrow/.style = {
+        ->,
+        >= Stealth,
+        line width=1pt,
+        draw=black!70
+    }
+}
 
 % Define TUM Blue
 \definecolor{tumblue}{RGB}{0, 101, 189}
@@ -65,6 +174,7 @@
 \vspace{0.8cm}
 % --- Body Content ---
 \section*{Context}
+\subsection{Research Background}
 To meet compliance requirements, organizations must adhere to International Standards and regulations such as ISO/IEC 27001 \cite{iso27001}. This standard establishes best practices for data protection, cyber-resilience, and operational excellence. 
 To accomplish that and improve development robustness, enterprises must anticipate and adapt to vulnerabilities and potential attacks. 
 For software companies, this goal demands evolving software development life cycles to rapidly identify, generate, and deploy risk mitigation for vulnerabilities. 
@@ -82,13 +192,30 @@ However, the current LLM approaches remain insufficient for security patching du
 
 \end{enumerate}
 
+\subsection{Problem Statement}
 These failures are aggravated by providing lengthy raw source code to the LLM. 
 In these cases, vulnerability-relevant logic is diluted by implementation details and boilerplate code, thereby degrading the quality of security analysis \cite{contextenhancedYang}.
 Empirical results from the same work suggest that this code noise induces what the authors term Analysis Focus Drift, wherein the model performs a code quality review rather than a vulnerability analysis.
 Thus, there is an opportunity to develop methodologies that enrich security-relevant information while filtering out implementation noise. 
 Moreover, although various studies show that knowledge bases improve LLM responses in security applications \cite{du2025vulragenhancingllmbasedvulnerability, seo2026autopatch, wang2025valign, guo2025bluecodeagentblueteamingagent}, it is unclear which approach optimizes patch quality effectively in multi-agent environments.
 
-This work contributes to the exploration of this gap by proposing a Retrieval-Augmented Generation (RAG) system that uses graph-based representations of code vulnerabilities to generate embeddings.
+% Example of graph definition from NetLSD
+% This work contributes to the exploration of this gap by proposing a Retrieval-Augmented Generation (RAG) system that uses graph-based representations of code vulnerabilities to generate embeddings.
+% An undirected graph is a pairG = (V, E), whereV = (v1, . . . ,vn),n =
+% |V | is the set of vertices and E ⊆ (V ×V ) the set of edges
+\subsection{Research Objectives}
+
+To evaluate the proposed framework, we address two primary research questions:
+ 
+\textbf{RQ1: }How effective are graph-based embeddings at retrieving relevant vulnerability fix patterns from the knowledge base?
+ 
+\textbf{RQ2: }What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline?
+
+If within reach, we aim to also address the following complementary research questions:
+ 
+\textbf{CRQ1: }How does the structure-aware RAG framework with a small model compare with existing approaches (e.g., zero-shot small models and AutoPatch)?
+
+\textbf{CRQ2: }What is the computational and financial cost of the approach (e.g., token usage, storage complexity and size, end-to-end pipeline costs)? 
 
 \section*{Related Work}
 Automated Program Repair (APR) aims to fix functional and security defects, which are critical in large-scale software systems.
@@ -104,6 +231,17 @@ Despite these advantages, RAG-based approaches identified in this review depend 
 This limitation creates a representational gap, causing these systems to fall back on the inherent capacity of the generative model, assuming that scale is the main lever for repair quality.
 Consequently, this dependency results in high repair costs and structural logic errors \cite{cao2024cutting}.
 
+TODO
+CVE vs CWE definition 
+source and sink definition
+
+Joern \cite{joern} is a static analysis tool that uses their own graph definition to represent the code, namely Code Property Graphs (CPGs). 
+It consists of nodes that contain the code and a label; and a set of edges that can represent either an edge from abstract syntax tree, control flow, data dependency or control dependency.
+Joern supports the graph generation and exportation; and disposes of a language for graph traversal with the aim of searching a developer defined vulnerability.
+As a consequence, it requires a technical knowledge of the vulnerability and the required language, besides a deep understanding of how the code flows (e.g. sinks and sources).
+Regardless, it is a powerful tool that can have lower false positives than other tools like (dog tool name here)  
+
+Define graphs
 Prior to the recent advancements in LLM-based code understanding \cite{llmcodeadvances}, static analysis techniques such as Code Property Graphs (CPGs) \cite{cpgyamaguchi} were already well established. 
 CPG is a code representation that merges abstract syntax trees, control flow graphs, and data flow graphs into a joint data structure, facilitating vulnerability detection through graph traversal.
 Although CPGs have been applied to vulnerability detection, their potential as a retrieval representation for automated vulnerability repair remains unexplored.
@@ -117,9 +255,9 @@ Rather than relying only on the generative capacity of frontier models, this app
 
 The vulnerable code will be represented using graph embeddings to retrieve structurally similar patches from a knowledge base at inference time.
 Beyond retrieval, we will apply the graph edit distance \cite{gao2010survey, li2019simgnn} to identify structural differences between vulnerable and patched code within the retrieved pairs.
-These structural differences will serve as a grounding repair orientation for the LLM to remediate a flaw. 
+These structural differences serves as a grounding repair orientation for the LLM to remediate a flaw. 
 
-We will investigate how this design leverages structural meaning encoded in graph representations to identify the lines that introduce security breaches.
+We investigated how this design leverages structural meaning encoded in graph representations to identify the lines that introduce security breaches.
 
 \subsection*{Architecture }
 
@@ -142,19 +280,373 @@ The system will use an agentic framework common in industrial applications and s
   \label{fig:sysdesign}
 \end{figure}
 
-To evaluate the proposed framework, we address two primary research questions:
- 
-\textbf{RQ1: }How effective are graph-based embeddings at retrieving relevant vulnerability fix patterns from the knowledge base?
- 
-\textbf{RQ2: }What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline?
-
-If within reach, we aim to also address the following complementary research questions:
- 
-\textbf{CRQ1: }How does the structure-aware RAG framework with a small model compare with existing approaches (e.g., zero-shot small models and AutoPatch)?
-
-\textbf{CRQ2: }What is the computational and financial cost of the approach (e.g., token usage, storage complexity and size, end-to-end pipeline costs)? 
-
  \subsection*{Data Pipeline}
+\subsection*{Graph Generation}
+This work utilizes Joern to generate the Code Property Graph (CPG) from a code snippet. 
+For snippets that are not well-formed C/C++ programs, the pipeline first wraps the code with the minimum necessary macros and type definitions (e.g. \ \verb|typedef unsigned int u32|, \verb|#define NULL ((void*)0)|) and writes a parseable source file.
+The C/C++ code files are exported to a binary graph  with the Joern shell command \verb|joern-parse --language newc|, where \verb|newc| specifies the C++ specifities avoiding will-formed graphs.  
+Then, the compiled graph is exported to GraphML format with the shell-command \verb|joern-export --repr cpg --format graphml|. 
+Each export generates a directory tree where each subdirectory contains an \verb|export.xml| file with a subgraph of the the whole CPG. 
+The nodes can have different labels (e.g.\ \verb|CALL|, \verb|IDENTIFIER|, \verb|CONTROL_STRUCTURE|), whereas the edges can belong to one of the following graph representation: 
+Abstract Syntax Tree (AST), Control Flow Graph (CFG), Call Dependency Graph (CDG), and Program Dependency Graph (PDG). % TODO: define these graphs
+% The output is grouped into folders. The <empthy> folder contains the symbols that are inate of the language.
+% For each operator we have subfolders. Each folder contains a export.xml file with the actual graph. 
+% The <includes> folder contains the imports definitions. Then we have the folder named after the C file that also contains an export.xml file. 
+% It main import nodes from the others folders. 
+
+The pipeline generates both \textit{vulnerable} and \textit{patched} code snippet graphs.  
+
+\subsection*{Graph Loading}
+The exported graph is imported into the pipeline using the NetworkX library as a \verb|MultiDiGraph|. %TODO: explain library 
+All the export.xml discovered by recursively exploring the subdirectories. Once the graph they store is imported to the pipeline, it is merged by reading each file with \verb|nx.read_graph|and updating the combined graph iteratively. 
+The NetworkX library considers each graph, node and edges as a dictionary and update the data structure by adding one graph set of nodes and edges at a time.
+The Joern definition of the graph is, that is, the node and edge attributes, is conserved, therefore, the graph consistency depends on the Joern export. 
+% The Joern-assigned node and edge attributes are preserved as-is;
+% however, the multi-file export may contain edges referencing nodes
+% outside the exported scope (e.g.\ language built-ins).
+% The loader removes such attributeless stub nodes and their
+% dangling edges to produce a self-contained graph.
+Once the graph is loaded, the following cleanups are applied:
+\begin{itemize}
+  \item Nodes with the label \verb|COMMENT| or \verb|UNKNOWN| are removed
+  \item Any remaining edges whose source or target were removed are pruned.
+\end{itemize}
+
+\subsection*{Graph Sampling}
+Once the CPG is loaded, it contains the full code, including the boilerplate added in the pipelene.
+Thefore it is necessary to isolate the subgraph related to the vulnerability from the irrelevant rest of the code. 
+For that, a subsample is calculated from the difference between the vulnerable graph and the patched graph, the so called $G_{\mathrm{vuln}}$. 
+By doing so we expect to be able to generalize the search for the vulnerability removing the specificities of a given system that are inprint in the graph.
+
+\paragraph{Bounded slicing}
+To include context that may be relevant, a bounded search is performed with the goal of include any relevant settings in which the vulnerability occurs.
+The slice is a configurable neighbourhood expansion ($n \in \{0,1,2,3\}$ hops). $n=0$ is the original sampled graph, that is, only directly changed nodes.
+    
+\paragraph{Semantic difference}
+Before perform the sampling, each node needs to be deterministically identifiable to avoid different results depending on runs or randomness resulting from non-deterministic ID assigned by Joern across runs.
+The nodes in the sample are further enriched with semantic labels resulting of the two graphs comparison.
+Each node of the sample is labeled as either:
+\begin{itemize}
+  \item Removed node: every node present in $G_\mathrm{orig}$ but absent in the $G_\mathrm{patch}$.
+  \item Fix-adjacent node: every node present in $G_\mathrm{orig}$ that is a removed node neighbor.
+  \item Edge-changed node: every node attached to an edge which any of the nodes changed between the two graphs. 
+\end{itemize}
+
+Besides the labelling, the $G_\mathrm{vuln}$ nodes also received weights. 
+\begin{center}
+\begin{tabular}{lc}
+  \textbf{Label} & \textbf{Weight} \\
+  \hline
+  \texttt{removed}       & 1.0 \\
+  \texttt{fix\_adjacent} & 0.8 \\
+  \texttt{edge\_changed} & 0.6 \\
+  \texttt{context}       & 0.2 \\
+\end{tabular}
+\end{center}
+
+These weights are directly proportional to the relation of the node to the vulnerability and will be integrated to the embedders for further prunning.
+
+\begin{tikzpicture}[node distance=0.8cm and 2.2cm]
+
+    % ===== TOP GROUP: CODE PARSING & ANALYSIS =====
+    \begin{scope}[local bounding box=analysis_group]
+        
+        % Vulnerable input
+        \node[inputbox] (vuln_code) {Vulnerable\\Code};
+        
+        % Joern Parse
+        \node[processbox, right=of vuln_code] (joern) {Joern Parse};
+        
+        % GraphML Export
+        \node[processbox, right=of joern] (export) {GraphML\\Export};
+        
+    \end{scope}
+
+    \begin{scope}[local bounding box=analysis_group_patched, yshift=-2.3cm]
+        
+        % Patched input
+        \node[inputbox] (patched_code) {Patched\\Code};
+        
+        % Joern Parse
+        \node[processbox, right=of patched_code] (joern2) {Joern Parse};
+        
+        % GraphML Export
+        \node[processbox, right=of joern2] (export2) {GraphML\\Export};
+        
+    \end{scope}
+    
+    % Graph DB - centered above the middle section
+    \node[cylinder, right=3cm of export, yshift=-1.15cm] (graphdb) {};
+    
+    % Dashed box around analysis (encompasses both scopes equally)
+    \node[groupbox, fit=(analysis_group) (analysis_group_patched), label={[anchor=north, yshift=-2pt]\textbf{CODE ANALYSIS}}] {};
+    
+    % ===== MIDDLE GROUP: GRAPH PROCESSING =====
+    \begin{scope}[local bounding box=processing_group, yshift=-5.5cm]
+        
+        % Graph Loading (aligned with the left of export)
+        \node[processbox] (load) {Graph Loading\\Merge XML,\\Filter Nodes};
+        
+        % Semantic Diff
+        \node[processbox, right=of load] (diff) {Semantic Diff\\Fingerprint\\Matching};
+        
+        % Graph Sampling
+        \node[processbox, right=of diff] (sampling) {Graph Sampling\\Extract\\Vulnerability};
+        
+    \end{scope}
+    
+    % Dashed box around processing
+    \node[groupbox, fit=(processing_group), label={[anchor=north, yshift=-2pt]\textbf{GRAPH PROCESSING}}] {};
+    
+    % ===== BOTTOM: OUTPUT (centered below sampling) =====
+    \node[outputbox, below=1.2cm of sampling] (output) {Vulnerability\\Subgraph\\with diff\_weight};
+    
+    % ===== ARROWS =====
+    
+    % Vulnerable group arrows
+    \draw[arrow] (vuln_code) -- (joern);
+    \draw[arrow] (joern) -- (export);
+    
+    % Perpendicular arrow from export to graphdb
+    \draw[arrow] (export.east) -- ++(1.1,0) |- (graphdb.west);
+
+    % Patched group arrows
+    \draw[arrow] (patched_code) -- (joern2);
+    \draw[arrow] (joern2) -- (export2);
+    
+    % Perpendicular arrow from export2 to graphdb
+    \draw[arrow] (export2.east) -- ++(1.1,0) |- (graphdb.west);
+    
+    % From graph DB to loading (routed cleanly)
+    \draw[arrow] (graphdb.south) -- ++(0,-1.6) -| (load.north);
+    
+    % Processing arrows
+    \draw[arrow] (load) -- (diff);
+    \draw[arrow] (diff) -- (sampling);
+    
+    % To output
+    \draw[arrow] (sampling) -- (output);
+    
+    % ===== LABELS =====
+    \node[left=0.6cm of vuln_code, yshift=-11pt, font=\small\bfseries] {INPUT};
+    \node[below=0.6cm of output, font=\small\bfseries] {OUTPUT};
+
+\end{tikzpicture}
+
+\subsection*{Embedders}
+For reference, we started with deterministic embedders that work either with heuristics or with well-defined mathematical formulations.
+All embedders are \textbf{unsupervised}, that is, no labelled training data required.
+By default their output is L2-normalised vectors with a default dimension of 128, but configurable.
+Besides that, the embedding may have a PCA.
+
+\begin{itemize}[leftmargin=*]
+
+  \item \textbf{NetLSD} (\textit{Network Laplacian Spectral Descriptor}) \cite{netlsd}.
+  Computes the heat trace of the normalised graph Laplacian across a timescale that aims to get graph expressive representations similar to random walk models.
+  It is node permutation-invariant and captures global spectral structure, adapting to scale encoding both local and global features, that is, it is scale-adaptable. 
+  It is also capable of comparing different size graphs. It supports weighted graphs. 
+  It was created to be an alternative to the NP-approach graph edit distance, being then efficiently computable, so the comparison calculation happens in a constant time. 
+
+  \item \textbf{WL} (\textit{Weisfeiler-Lehman Kernel}).
+    Iterative colour refinement over node types followed by weighted sum pooling and a linear projection. 
+    In this work, it was implemented in PyTorch Geometric with no external dependency. 
+    % \texttt{diff\_weight} biases pooling toward high-signal nodes.
+    WL test iteratively : 
+    (1) aggregates the labels of nodes and their neighborhoods, 
+    and (2) hashes theaggregated labels into unique new labels
+
+  \item \textbf{GIN} (\textit{Graph Isomorphism Network}) \cite{xu2019gin}
+   Message-passing neural Network that is as powerful as the Weisfeiler-Lehman graph isomorphism test, which evaluates whether two graphs are topologically identical.
+    A Graph Neural Network that represents each node by recursively aggregating the neighboring represention. 
+    The node representation is updated at each layer k, by aggregating the representations of its neighbors via a sum aggregator, followed by an MLP:
+    $$h_v^{(k)} = \text{MLP}^{(k)}\!\left((1+\epsilon)\cdot h_v^{(k-1)} + \sum_{u \in \mathcal{N}(v)} h_u^{(k-1)}\right)$$
+
+  Where $\epsilon$ is either a learnable paramet or a fixed scalar (TODO: check what is the case here).
+  $h_v^{(0)}$ is initialized from the node features. (TODO: explain network initialization).
+  The number of layers is equivalent to the number of neighbor hops that will be encoded by each node.
+  This choice is a trade-off of the amount of local structural pattern against the global one.  
+  Therefore it learns to embed the subtree in a low dimensional space, not only discriminating different structures but also mapping similar embeddings for similar structures and capturing dependencies between graph structures.
+  Graph-level embeddings are obtained via dual pooling concatenating sum pooling and mean pooling outputs. 
+  The sum pooling preserves structural size information, while mean pooling makes the normalized representations normalized.
+  $$\mathbf{h}_G = \left[\sum_{v} h_v^{(K)}\ \Big\|\ \frac{1}{|V|}\sum_{v} h_v^{(K)}\right]$$   
+    % Architecture
+    \vspace{0.2cm}
+    \begin{figure}[h!]
+      \centering
+      \begin{minipage}{0.48\textwidth}
+        \begin{tikzpicture}[
+        node distance=0.35cm and 0.6cm,
+        layer/.style={
+          draw=ccpg!70, fill=ccpg!10,
+          rounded corners=5pt,
+          minimum width=3.6cm,
+          minimum height=0.55cm,
+          font=\tiny\sffamily\bfseries,
+          align=center
+        },
+        op/.style={
+          draw=c5!70, fill=c5!10,
+          rounded corners=3pt,
+          minimum width=2.4cm,
+          minimum height=0.4cm,
+          font=\tiny\sffamily,
+          align=center
+        },
+        arr/.style={
+          -{Stealth[length=3.5pt, width=3.5pt]},
+          line width=0.8pt,
+          color=notecol!80
+        },
+        lbl/.style={font=\tiny\sffamily, text=notecol}
+      ]
+        % Input
+        \node[layer, fill=csub!15, draw=csub!70] (input)
+              {Node features $h^{(0)}$\\{\tiny 11-dim one-hot (CPG type)}};
+
+        % Layer 1
+        \node[op, below=0.35cm of input] (agg1)
+              {$\Sigma$ neighbors + $(1{+}\epsilon) \cdot h_v$};
+        \node[layer, below=0.25cm of agg1] (mlp1)
+              {MLP$^{(1)}$: Linear(11$\to$128) $\to$ ReLU $\to$ Linear(128$\to$128)};
+
+        % Layer 2
+        \node[op, below=0.3cm of mlp1] (agg2)
+              {$\Sigma$ neighbors + $(1{+}\epsilon) \cdot h_v$};
+        \node[layer, below=0.25cm of agg2] (mlp2)
+              {MLP$^{(2)}$: Linear(128$\to$128) $\to$ ReLU $\to$ Linear(128$\to$128)};
+
+        % Layer 3
+        \node[op, below=0.3cm of mlp2] (agg3)
+              {$\Sigma$ neighbors + $(1{+}\epsilon) \cdot h_v$};
+        \node[layer, below=0.25cm of agg3] (mlp3)
+              {MLP$^{(3)}$: Linear(128$\to$128) $\to$ ReLU $\to$ Linear(128$\to$128)};
+
+        % Arrows
+        \draw[arr] (input) -- (agg1);
+        \draw[arr] (agg1) -- (mlp1);
+        \draw[arr] (mlp1) -- (agg2);
+        \draw[arr] (agg2) -- (mlp2);
+        \draw[arr] (mlp2) -- (agg3);
+        \draw[arr] (agg3) -- (mlp3);
+
+        % Labels
+        \node[lbl, left=0.1cm of mlp1, xshift=-0.3cm] {\rotatebox{90}{Layer 1}};
+        \node[lbl, left=0.1cm of mlp2, xshift=-0.3cm] {\rotatebox{90}{Layer 2}};
+        \node[lbl, left=0.1cm of mlp3, xshift=-0.3cm] {\rotatebox{90}{Layer 3}};
+      \end{tikzpicture}
+      \end{minipage}
+      \hfill
+      \begin{minipage}{0.48\textwidth}
+        Graph level readout
+        \begin{tikzpicture}[
+        node distance=0.3cm,
+        pool/.style={
+          draw=cemb!70, fill=cemb!10,
+          rounded corners=4pt,
+          minimum width=3.2cm,
+          minimum height=0.45cm,
+          font=\tiny\sffamily\bfseries,
+          align=center
+        },
+        outstyle/.style={
+          draw=hit!70, fill=hit!10,
+          rounded corners=4pt,
+          minimum width=3.2cm,
+          minimum height=0.45cm,
+          font=\tiny\sffamily\bfseries,
+          align=center
+        },
+        arr/.style={
+          -{Stealth[length=3.5pt, width=3.5pt]},
+          line width=0.8pt,
+          color=notecol!80
+        },
+        lbl/.style={font=\tiny\sffamily, text=notecol}
+      ]
+        \node[pool] (mean) {MEAN pool over nodes};
+        \node[pool, right=0.2cm of mean] (sum) {SUM pool over nodes};
+        \node[outstyle, below=0.4cm of $(mean.south)!0.5!(sum.south)$] (cat) {Concat: 128 + 128 = 256d};
+        \node[outstyle, draw=ckb!70, fill=ckb!10, below=0.3cm of cat] (proj) {Linear projection $\to$ 128d};
+
+        \draw[arr] (mean) |- (cat);
+        \draw[arr] (sum) |- (cat);
+        \draw[arr] (cat) -- (proj);
+
+        \node[lbl, right=0.1cm of mean] {global};
+        \node[lbl, right=0.1cm of sum] {global};
+      \end{tikzpicture}
+
+      \end{minipage}
+    \end{figure}
+  
+\item \textbf{Combined.}
+    Concatenates NetLSD, WL and GIN descriptors ($3 \times 128 = 384$ dimensions) and reduces via PCA to the target dimension, by default 128.
+    It aims to be most robust to individual embedder failures.
+
+\end{itemize}
+
+      \begin{center}
+      \textbf{\small CodeBERT (seq)}\\[4pt]
+      \begin{tikzpicture}[remember picture,
+        node distance=0.28cm,
+        box/.style={draw=c1!60, fill=c1!8, rounded corners=3pt,
+          minimum width=3.2cm, minimum height=0.4cm,
+          font=\tiny\sffamily\bfseries, align=center},
+        arr/.style={-{Stealth[length=3pt, width=3pt]}, line width=0.7pt, color=notecol}
+      ]
+        \node[box] (cpg) {CPG (Joern)};
+        \node[box, below=of cpg] (collect) {Collect changed code\\{\tiny diff\_weight $>$ 0.3, sort by line}};
+        \node[box, below=of collect] (tok) {Tokenize as flat sequence\\{\tiny ``sk = sk\_alloc(); sock->sk = sk; ...''}};
+        \node[box, draw=c3!60, fill=c3!8, below=of tok] (bert) {CodeBERT [CLS]\\{\tiny 768d}};
+        \node[box, draw=hit!60, fill=hit!8, below=of bert] (out-seq) {L2 Normalize\\{\tiny 768d embedding}};
+        \draw[arr] (cpg) -- (collect);
+        \draw[arr] (collect) -- (tok);
+        \draw[arr] (tok) -- (bert);
+        \draw[arr] (bert) -- (out-seq);
+      \end{tikzpicture}
+      \end{center}
+      {\scriptsize\centering Text-only: structure is \textbf{discarded}.\par}
+    
+      \begin{center}
+      \textbf{\small CodeBERT (pat)}\\[4pt]
+      \begin{tikzpicture}[remember picture,
+        node distance=0.28cm,
+        box/.style={draw=c1!60, fill=c1!8, rounded corners=3pt,
+          minimum width=3.2cm, minimum height=0.4cm,
+          font=\tiny\sffamily\bfseries, align=center},
+        arr/.style={-{Stealth[length=3pt, width=3pt]}, line width=0.7pt, color=notecol}
+      ]
+        \node[box] (cpg) {CPG (Joern)};
+        \node[box, below=of cpg, xshift=2cm] (pat) {Vuln Pattern Features\\{\tiny 34d: UAF/NPD/race/\ldots}};
+        \node[box, draw=c8, fill=c8!8 , below=of cpg, xshift=-2cm] (code-pat) { CodeBERT (seq) \\{\tiny [CLS] 768d}};
+        \node[box, draw=c5!60, fill=c5!8, below=0.45cm of cpg, yshift=-0.7cm] (cat) {Concatenate\\{\tiny [pattern $\|$ CodeBERT (seq)] = 802d}};
+        \node[box, draw=c3!60, fill=c3!8, below=of cat] (pca) {PCA reduce\\{\tiny 128d}};
+        \node[box, draw=hit!60, fill=hit!8, below=of pca] (out) {L2 Normalize\\{\tiny 128d embedding}};
+        \draw[arr] (cpg) -- (pat);
+        \draw[arr] (cpg) -- (code-pat);
+        \draw[arr] (pat) |- (cat);
+        \draw[arr] (code-pat) |- (cat);
+        \draw[arr] (cat) -- (pca);
+        \draw[arr] (pca) -- (out);
+      \end{tikzpicture}
+      \end{center}
+      {\scriptsize\centering Fuses \textbf{graph structure} with semantics.\par}
+    
+
+      % TODO: fix the arrow position
+  % \begin{tikzpicture}[remember picture, overlay]
+  %   \draw[-{Stealth[length=3.5pt, width=3.5pt]}, line width=0.8pt, color=c8!70, dashed]
+  %     (out-seq.east) -- ++(1,0) |- (code-pat.west);
+  % \end{tikzpicture}
+
+PCA and L2 normalization Discussion with experiments
+
+FAISS and HNSW
+
+Agent 
+prompt
+iteration
+
 
 The pipeline begins by generating a graph embedding of the input vulnerable code snippet.
 This embedding is used to query the KB for the most structurally similar fix. 
@@ -172,6 +664,20 @@ As an ablation study, we would like to evaluate the performance of a small, open
 %verify if the metrics are answering the questions
 
 Evaluation will be conducted using a curated dataset of vulnerabilities drawn from the AutoPatch corpus.
+  \textbf{Metrics.}
+  We report the following, all computed at $k{=}5$ unless stated otherwise:
+  \begin{itemize}[nosep]
+    \item \textbf{hit@$k$}: fraction of queries whose correct CVE
+      appears in the top-$k$ retrieved results (micro-averaged).
+    \item \textbf{MRR}: mean reciprocal rank of the first correct
+      CVE across all queries.
+    \item \textbf{CWE Recall}: for each query, the fraction of
+      same-CWE items retrieved in top-$k$, macro-averaged across
+      CWE classes.
+    \item \textbf{Effective dimensionality}: the number of PCA
+      components needed to explain 90\% of the embedding variance,
+      measuring how many independent directions the embedder uses.
+  \end{itemize}
 
 \begin{itemize}
 \item \textbf{Retrieval Quality:} Measured via Hit@K, which calculates the fraction of true entities appearing in the top \textit{k} results of the ranked list. This metric evaluates the performance of the Graph-based search. % different results using the top-k results (maybe the same algorithm as autopatch IV-PQ, HNSW, include param-search ? irrelevant) 
@@ -182,7 +688,267 @@ Evaluation will be conducted using a curated dataset of vulnerabilities drawn fr
 \item \textbf{Storage complexity}: We will measure and compare the storage size of a KB using graph embeddings versus one using traditional text embeddings.
 \end{itemize}
 
+\section{Dataset}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{AutoPatch dataset (evaluation benchmark).}
+  We use AutoPatch as the main benchmark for end-to-end patching evaluation, enabling direct comparison with prior RAG-based vulnerability repair results.
+
+  \item \textbf{CVEfixes dataset (retrieval knowledge base).}
+  \begin{itemize}[leftmargin=*]
+    \item \textbf{Origin.} CVEfixes is a public vulnerability-fix dataset built by linking CVE/CWE records to real source-code commits across open-source repositories (DOI: \url{https://doi.org/10.5281/zenodo.4476563}).
+    \item \textbf{Collection method.} The dataset mines vulnerability-fixing commits and stores aligned metadata in SQLite tables (e.g., \texttt{cve}, \texttt{cwe\_classification}, \texttt{fixes}, \texttt{commits}, \texttt{file\_change}, \texttt{method\_change}). This provides both file-level snapshots (before/after) and method-level changes tied to the same vulnerability event.
+    \item \textbf{Composition used in this thesis.} We retrieve C/C++ entries and use CVE/CWE labels as retrieval supervision metadata. We keep both graph artifacts (for structural retrieval) and source code (for LLM grounding and patch generation).
+  \end{itemize}
+
+  \item \textbf{Observed CVEfixes file-level size in our local SQLite copy (\texttt{data/cvefixes/CVEfixes.db}).}
+  \begin{center}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{lr}
+    \toprule
+    \textbf{Metric on \texttt{file\_change.code\_before}} & \textbf{Value} \\
+    \midrule
+    Total rows in \texttt{file\_change} & 51,342 \\
+    Non-null rows & 51,342 \\
+    Non-empty rows & 51,342 \\
+    Min length (characters) & 1 \\
+    Mean length (characters) & 39,190.41 \\
+    Max length (characters) & 33,397,878 \\
+    Rows with length $\geq 1{,}000$ & 37,553 \\
+    Rows with length $\geq 10{,}000$ & 19,348 \\
+    Rows with length $\geq 100{,}000$ & 3,017 \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \item \textbf{Distribution buckets for \texttt{code\_before} length (characters).}
+  \begin{center}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{lr}
+    \toprule
+    \textbf{Bucket} & \textbf{Rows} \\
+    \midrule
+    $<100$ & 9,690 \\
+    100--999 & 4,099 \\
+    1,000--9,999 & 18,205 \\
+    10,000--99,999 & 16,331 \\
+    $\geq 100,000$ & 3,017 \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \item \textbf{Method input vs file input in our pipeline.}
+  \begin{center}
+  \small
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{p{3.2cm}p{5.5cm}p{5.5cm}}
+    \toprule
+    \textbf{Aspect} & \textbf{Method-level input} & \textbf{File-level input (current)} \\
+    \midrule
+    Source unit & \texttt{method\_change.code} (single function diff) & \texttt{file\_change.code\_before/code\_after} (full file snapshots) \\
+    Typical context size & Compact; high signal, lower surrounding context & Larger context; includes surrounding logic and declarations \\
+    Graph export granularity & One CPG per changed method & One CPG per file pair (before/after) or merged method CPGs \\
+    Best use case & Fine-grained pattern retrieval and focused localization & End-to-end patch generation with complete file context \\
+    Trade-off & May miss file-scope interactions & Higher compute/storage and more potential boilerplate noise \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+\end{itemize}
+
+\subsection*{Requirements for a Leakage-Safe Retrieval Split}
+
+The retrieval evaluation partitions the labelled pairs into an \emph{index} set,
+which forms the searchable knowledge base, and a disjoint \emph{query} set of
+held-out probes. Because the knowledge base simultaneously acts as the retrieval
+target, a careless partition can render the task either trivial --- when a
+near-identical copy of the answer is already present in the index --- or
+impossible --- when no valid answer is present at all. To obtain an unbiased
+estimate of retrieval generalisation, the split must satisfy the following
+requirements.
+
+\begin{enumerate}[leftmargin=*, label=R\arabic*.]
+  \item \textbf{No index/query leakage.} No query and its ground-truth evidence
+    may originate from an artefact that is also present, in identical or
+    near-identical form, in the index; otherwise retrieval degenerates into
+    recognising a memorised copy rather than generalising a vulnerability
+    pattern. Leakage of this kind is a well-documented source of over-optimistic
+    results both in general machine-learning pipelines \cite{kaufman2012leakage}
+    and, specifically, in machine-learning-for-security evaluations
+    \cite{arp2022dosdonts}.
+
+  \item \textbf{Guaranteed positive support (retrievability).} Every query must
+    have at least one valid positive in the index; otherwise the same-CVE
+    Hit@$k$ and MRR are undefined for that query, since the correct item cannot
+    be retrieved at any rank. The split therefore keeps at least one pair of each
+    queried CVE inside the index.
+
+  \item \textbf{Non-trivial positives.} The retained positive must not be a
+    duplicate or near-duplicate of the query. Duplicate and near-duplicate
+    samples are pervasive in vulnerability datasets and are known to
+    substantially inflate reported performance
+    \cite{chakraborty2020reveal, croft2023dataquality}.
+
+  \item \textbf{Representativeness (stratification).} The index and query sets
+    preserve the CWE distribution of the corpus, so that per-class metrics are
+    not dominated by a few majority classes; unrepresentative sampling otherwise
+    biases the estimate \cite{arp2022dosdonts}.
+
+  \item \textbf{Sufficient per-class support.} At least three distinct CVEs are
+    retained per CWE, so that macro-averaged CWE recall is computed over enough
+    groups to be stable rather than driven by a single vulnerability.
+
+  \item \textbf{Determinism.} A fixed seed and a fixed query ratio make the
+    partition reproducible across runs.
+\end{enumerate}
+
+Concretely, the split groups the pairs first by CWE and then by CVE. For every
+CVE with at least \texttt{min\_pairs\_per\_cve} entries it moves a fraction of the
+pairs to the query set while retaining at least one in the index; CVEs
+represented by a single pair remain in the index only. A final safety pass drops
+any query whose CVE lost all of its index support, enforcing~R2.
+
+\paragraph{Why the split must be at the CVE level and not only at the CWE level.}
+A CWE is a coarse category: a single weakness class such as CWE-787
+(out-of-bounds write) aggregates thousands of semantically unrelated defects, so
+same-CWE membership is far too weak to serve as retrieval ground truth. The
+precise positive is the \emph{same underlying vulnerability}, i.e.\ the same CVE.
+This distinction has two practical consequences that a CWE-only split cannot
+address. First, a single CVE typically spans several files and methods that share
+one root cause and a near-identical fix. If pairs are assigned to the index and
+query sets by CWE alone --- randomly, without regard to their CVE --- sibling
+pairs of the same CVE straddle the boundary, and each query is then answered by
+retrieving its own near-duplicate. This is exactly the near-duplicate leakage
+shown to inflate vulnerability-detection results
+\cite{chakraborty2020reveal, croft2023dataquality}, and it rewards memorisation
+over structural generalisation. Second, and symmetrically, an unconstrained
+CWE-level split can place \emph{all} pairs of a query's CVE outside the index,
+leaving that query with no valid positive and deflating (or undefining) its
+Hit@$k$ and MRR. Grouping by CVE --- and only then partitioning \emph{within}
+each CVE while keeping at least one pair in the index --- is the unique unit of
+division that simultaneously prevents trivial sibling leakage and guarantees
+every query a legitimate, non-identical positive; neither property is enforceable
+at the CWE granularity.
+
+Building on this leakage-safe partition, we additionally compare two CVE-aware
+samples of the corpus --- one that preserves the natural CWE distribution and one
+that balances it across classes --- to quantify how much the dataset's class
+distribution, rather than the embedding itself, drives the observed retrieval
+scores.
+
+\section{Experiments}
+  \begin{enumerate}[nosep]
+    \item \textbf{Slicing}: \emph{full} (the complete pre-patch CPG,
+      $G_{\mathrm{before}}$) vs.\ \emph{sliced} (the
+      fingerprint-diff subgraph $G_{\mathrm{vuln}}$, retaining only
+      nodes within 3~flow-edge hops of changed nodes).
+    \item \textbf{Diff labelling}: \emph{absent} (all \texttt{diff}
+      and \texttt{diff\_weight} node attributes stripped) vs.\
+      \emph{present} (each node annotated with its change class and
+      a weight $w \in \{1.0, 0.8, 0.6, 0.2\}$ for \texttt{removed},
+      \texttt{fix\_adjacent}, \texttt{edge\_changed}, and
+      \texttt{context} respectively).
+  \end{enumerate}
+
+  This yields four graph representations:
+
+  \begin{center}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{lccl}
+    \toprule
+    \textbf{Symbol} & \textbf{Sliced?} & \textbf{Labels?}
+      & \textbf{Construction} \\
+    \midrule
+    $G_{\mathrm{before}}$
+      & No & No
+      & Full pre-patch CPG; diff attributes removed. \\
+    $G_{\mathrm{before}}^{+\ell}$
+      & No & Yes
+      & Full pre-patch CPG; diff labels transferred from
+        $G_{\mathrm{vuln}}$; unmatched nodes default to
+        \texttt{context} ($w{=}0.2$). \\
+    $G_{\mathrm{vuln}}^{-\ell}$
+      & Yes & No
+      & Fingerprint-sliced subgraph; diff attributes stripped. \\
+    $G_{\mathrm{vuln}}$
+      & Yes & Yes
+      & Fingerprint-sliced subgraph with native diff labels
+        and weights. \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \subsubsection{Experimental Configurations}
+
+  The ablation was run under three configurations that differ in
+  \emph{query protocol} and \emph{PCA fitting procedure}, allowing
+  us to disentangle representation quality from methodological
+  artefacts.
+
+  \begin{center}
+  \small
+  \renewcommand{\arraystretch}{1.3}
+  \begin{tabular}{p{2.5cm}p{3.8cm}p{3.8cm}p{3.8cm}}
+    \toprule
+    & \textbf{Run~A} & \textbf{Run~B} & \textbf{Run~C} \\
+    \midrule
+    \textbf{Script}
+      & \texttt{slicing\_comparison}
+      & \texttt{slicing\_comparison}
+      & \texttt{runner.py} \\
+    \textbf{Query protocol}
+      & Symmetric: query graph uses the same variant as the index.
+      & Asymmetric: augmented queries use $G_{\mathrm{before}}$;
+        original queries use $G_{\mathrm{vuln}}$.
+      & Same as Run~B. \\
+    \textbf{PCA fitting}
+      & Index-only: \texttt{embed\_many} on index, then on queries
+        (PCA reused).
+      & Same as Run~A.
+      & Index-only: PCA fitted via \texttt{embed\_many} on
+        index; queries projected via \texttt{embed\_one}. \\
+    \textbf{Graph variants}
+      & All four.
+      & All four.
+      & $G_{\mathrm{vuln}}$ only. \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  Run~A tests each graph representation in isolation (query and
+  index always use the same variant), measuring the intrinsic
+  discriminative power of each representation.
+  Runs~B and~C use the \emph{asymmetric} protocol that reflects
+  a realistic deployment scenario: augmented (LLM-rewritten)
+  queries lack a patched version and can only provide the full
+  pre-patch CPG, while original CVE queries have access to the
+  vulnerability-sliced subgraph.
+  Runs~B and~C differ only in the embedding call path
+  (\texttt{embed\_many} vs.\ \texttt{embed\_one} for queries),
+  allowing a direct comparison of batch vs.\ single-query
+  embedding under identical data and PCA protocol.
+
 \subsection*{Discussion}
+
+{\small\textbf{Same-CWE Retrieval} {\scriptsize(n=109 index, 27 query)}}\\[6pt]
+  {\scriptsize
+  \renewcommand{\arraystretch}{1.35}
+  \setlength{\tabcolsep}{3.5pt}
+    \begin{tabular}{lrrrr}
+      \toprule
+      \textbf{Embedder} & \textbf{Hit@1} & \textbf{Hit@5} & \textbf{MRR} & \textbf{CWE Recall} \\
+      \midrule
+      GIN & 0.259 & 0.778 & 0.315 & 0.202 \\
+      \rowcolor{warn!12}
+      Combined & 0.111 & 0.778 & 0.223 & 0.189 \\
+      CodeBERT (baseline) & 0.080 & 0.1518 & 0.098 & 0.141 \\
+      \rowcolor{hit!12}
+      \textbf{CodeBERT (seq)} & \textbf{0.556} & \textbf{0.926} & \textbf{0.555} & \textbf{0.264} \\
+      \textbf{CodeBERT (pat)} & \textbf{0.519} & \textbf{0.889} & \textbf{0.549} & \textbf{0.276} \\
+      \bottomrule
+    \end{tabular}
+  }
 
 \section*{Deliverables}
 \begin{itemize}
@@ -192,6 +958,6 @@ Evaluation will be conducted using a curated dataset of vulnerabilities drawn fr
 
 
 \bibliographystyle{ieeetr} % Use 'plain', 'unsrt', or 'ieeetr' for different styles
-\bibliography{references}  % Points to your references.bib file
+\bibliography{../references}  % Points to your references.bib file
 
 \end{document}

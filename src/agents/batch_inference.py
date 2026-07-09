@@ -80,6 +80,7 @@ def _run_single_query(
     db_cache: dict,
     model_name: str,
     prompt_variant: str = "default",
+    llm_params: dict | None = None,
 ) -> dict:
     """
     Execute a single LLM patching query.
@@ -170,6 +171,7 @@ def _run_single_query(
             model_name=model_name,
             prompt_variant=prompt_variant,
             graph_context=graph_context,
+            llm_params=llm_params,
         )
         elapsed = time.perf_counter() - t0
     except Exception as e:
@@ -199,6 +201,7 @@ def _run_single_query(
         is_exact = gen_stripped == ref_stripped
         status = "success"
         from src.metrics.similarity import rouge_scores
+
         rouge = rouge_scores(parsed.vuln_patch, ground_truth)
     else:
         status = "parse_error"
@@ -241,6 +244,7 @@ def run_batch_inference(
     meta_extra: dict | None = None,
     output_dir: Path | None = None,
     prompt_variant: str = "default",
+    llm_params: dict | None = None,
 ) -> Path:
     """
     Run LLM patching in batches, writing results to JSONL incrementally.
@@ -274,6 +278,7 @@ def run_batch_inference(
             db_cache,
             resolved_model,
             prompt_variant=prompt_variant,
+            llm_params=llm_params,
         )
         status = result["status"]
         sim = result.get("similarity", "")
