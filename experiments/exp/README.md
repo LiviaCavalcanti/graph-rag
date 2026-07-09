@@ -68,7 +68,7 @@ Reimplements the legacy `runner.py` on top of the `Experiment` base class.
 |---|---|
 | `space_stats` | Effective dimensionality, mean pairwise similarity |
 | `latency` | Query latency p50 / p95 / p99 |
-| `cve_retrieval` | CVE-level (same-CVE) hit\@k, MRR, nDCG, MAP |
+| `self_retrieval` | CVE-level hit\@k, MRR, nDCG, MAP |
 | `cwe_recall` | Macro-average recall grouped by CWE class |
 | `leave_one_out` | *Optional, slow* — most honest evaluation |
 

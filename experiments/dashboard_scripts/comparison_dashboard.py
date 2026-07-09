@@ -58,7 +58,7 @@ def _extract_per_cwe_metrics(cells: list[dict]) -> dict:
 
     for cell in cells:
         emb = cell["embedder"]
-        raw = _cve_block(cell).get("raw_queries", [])
+        raw = cell["self_retrieval"].get("raw_queries", [])
         for q in raw:
             cwe = q.get("query_cwe", "Unknown")
             if cwe not in cwe_metrics:
@@ -101,9 +101,6 @@ def _compute_cwe_summary(cwe_metrics: dict) -> list[dict]:
 # ─────────────────────────────────────────────────────────────────────
 #  Tab 1: Embedder Comparison
 # ─────────────────────────────────────────────────────────────────────
-def _cve_block(cell: dict) -> dict:
-    """Same-CVE retrieval metrics; prefers new 'cve_retrieval', falls back to legacy 'self_retrieval'."""
-    return cell.get("cve_retrieval") or cell.get("self_retrieval") or {}
 
 def _tab_comparison(results: dict) -> str:
     cells = results.get("cells", [])
@@ -115,9 +112,9 @@ def _tab_comparison(results: dict) -> str:
 
     # Overall metrics table
     overall_rows = ""
-    for cell in sorted(cells, key=lambda c: _cve_block(c).get("mrr", 0), reverse=True):
+    for cell in sorted(cells, key=lambda c: c["self_retrieval"].get("mrr", 0), reverse=True):
         emb = cell["embedder"]
-        sr = _cve_block(cell)
+        sr = cell["self_retrieval"]
         col = colors[emb]
         overall_rows += f"""<tr>
           <td><span class="dot" style="background:{col}"></span>{_esc(emb)}</td>
@@ -304,12 +301,12 @@ def _tab_code_examples(results: dict) -> str:
     approach_names = [c["embedder"] for c in cells]
     colors = {nm: _approach_color(approach_names, nm) for nm in approach_names}
 
-    first_queries = _cve_block(cells[0]).get("raw_queries", [])
+    first_queries = cells[0]["self_retrieval"].get("raw_queries", [])
 
     # Build per-query map: {idx: {embedder: query_dict}}
     query_map: dict[int, dict[str, dict]] = {}
     for cell in cells:
-        qs = _cve_block(cell).get("raw_queries", [])
+        qs = cell["self_retrieval"].get("raw_queries", [])
         for i, q in enumerate(qs):
             if i not in query_map:
                 query_map[i] = {}

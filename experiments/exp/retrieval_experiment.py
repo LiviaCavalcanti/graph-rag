@@ -13,6 +13,7 @@ and run_cell processes one (embedder, backend, graph_variant) cell.
 from __future__ import annotations
 
 import time
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -30,12 +31,11 @@ from src.metrics.retrieval_eval import (
 from src.rag.hnsw import HNSWIndex
 from src.rag.utils import populate_index
 
+logger = logging.getLogger(__name__)
+
 BACKEND_REGISTRY = {
     "hnsw": HNSWIndex,
 }
-
-
-# ── Metric functions (MetricSpec-compatible signatures) ──────────────
 
 
 def _metric_space_stats(ctx: CellContext) -> dict:
@@ -43,8 +43,8 @@ def _metric_space_stats(ctx: CellContext) -> dict:
     return ctx.artifacts["space_stats"]
 
 
-def _metric_cve_retrieval(ctx: CellContext) -> dict:
-    """CVE-level hit@k / MRR via re-embedding queries (same-CVE retrieval)."""
+def _metric_self_retrieval(ctx: CellContext) -> dict:
+    """CVE-level hit@k / MRR via re-embedding queries."""
     qr = ctx.artifacts["query_results"]
     index_metadata = ctx.artifacts["index_metadata"]
     ks = ctx.cfg.get("experiment", {}).get("ks", [1, 5, 10])
@@ -123,7 +123,7 @@ class RetrievalGridExperiment(Experiment):
         ]
         if self._run_self_retrieval:
             specs.append(
-                MetricSpec("cve_retrieval", _metric_cve_retrieval, requires=["query_results"])
+                MetricSpec("self_retrieval", _metric_self_retrieval, requires=["query_results"])
             )
         specs.append(
             MetricSpec("cwe_recall", _metric_cwe_recall, requires=["query_results", "index_metadata"])
@@ -179,20 +179,6 @@ class RetrievalGridExperiment(Experiment):
         # ── retrieve all queries (batch) ─────────────────────────────
         qr = retrieve_all(query_pairs, embedder, retriever, top_k=max(ks))
 
-        # ── degenerate-embedding accounting ──────────────────────────
-        # Zero-norm (unembeddable) queries are kept as guaranteed misses with
-        # an empty result list; counting them exposes the drop rate as its own
-        # metric. With a populated index, empty results ⟺ degenerate query.
-        n_query_degenerate = sum(1 for _pair, results in qr if not results)
-        idx_norms = np.linalg.norm(index_embeddings, axis=1)
-        n_index_degenerate = int(np.sum(idx_norms < 1e-6))
-        if n_query_degenerate or n_index_degenerate:
-            print(
-                f"    degenerate embeddings: "
-                f"query={n_query_degenerate}/{len(query_pairs)} "
-                f"index={n_index_degenerate}/{len(index_pairs)}"
-            )
-
         # ── populate artifacts for MetricSpecs ───────────────────────
         ctx.artifacts["index_embeddings"] = index_embeddings
         ctx.artifacts["space_stats"] = cached["space_stats"]
@@ -207,10 +193,6 @@ class RetrievalGridExperiment(Experiment):
             "graph_variant": graph_variant,
             "n_index": len(index_pairs),
             "n_query": len(query_pairs),
-            "n_query_degenerate": n_query_degenerate,
-            "n_index_degenerate": n_index_degenerate,
-            "query_degenerate_rate": round(n_query_degenerate / len(query_pairs), 4) if query_pairs else 0.0,
-            "index_degenerate_rate": round(n_index_degenerate / len(index_pairs), 4) if index_pairs else 0.0,
             "embed_time_s": cached["embed_time_s"],
             "index_build_s": round(build_time, 3),
         }
@@ -273,16 +255,11 @@ def _to_legacy_format(output: ExperimentOutput) -> dict:
             "backend": m.get("backend", ""),
             "graph_variant": m.get("graph_variant", ""),
             "n_samples": m.get("n_index", 0),
-            "n_query": m.get("n_query", 0),
-            "n_query_degenerate": m.get("n_query_degenerate", 0),
-            "n_index_degenerate": m.get("n_index_degenerate", 0),
-            "query_degenerate_rate": m.get("query_degenerate_rate", 0),
-            "index_degenerate_rate": m.get("index_degenerate_rate", 0),
             "embed_time_s": m.get("embed_time_s", 0),
             "index_build_s": m.get("index_build_s", 0),
             "query_latency": m.get("latency", {}),
             "space_stats": m.get("space_stats", {}),
-            "cve_retrieval": m.get("cve_retrieval", {}),
+            "self_retrieval": m.get("self_retrieval", {}),
             "cwe_recall": m.get("cwe_recall", {}),
             "leave_one_out": m.get("leave_one_out", {}),
         })
@@ -308,20 +285,16 @@ def _write_summary(output: ExperimentOutput) -> None:
             **cell.coords_as_str(),
             "n_index": m.get("n_index", 0),
             "n_query": m.get("n_query", 0),
-            "n_query_degenerate": m.get("n_query_degenerate", 0),
-            "n_index_degenerate": m.get("n_index_degenerate", 0),
-            "query_degenerate_rate": m.get("query_degenerate_rate", 0),
-            "index_degenerate_rate": m.get("index_degenerate_rate", 0),
             "embed_time_s": m.get("embed_time_s", 0),
             "index_build_s": m.get("index_build_s", 0),
             "latency_p50_ms": m.get("latency", {}).get("p50_ms", 0),
             "latency_p99_ms": m.get("latency", {}).get("p99_ms", 0),
             "effective_dim": m.get("space_stats", {}).get("effective_dim", 0),
             "mean_pairwise_sim": m.get("space_stats", {}).get("mean_pairwise_sim", 0),
-            "sr_hit@1": m.get("cve_retrieval", {}).get("hit@1", 0),
-            "sr_hit@5": m.get("cve_retrieval", {}).get("hit@5", 0),
-            "sr_hit@10": m.get("cve_retrieval", {}).get("hit@10", 0),
-            "sr_mrr": m.get("cve_retrieval", {}).get("mrr", 0),
+            "sr_hit@1": m.get("self_retrieval", {}).get("hit@1", 0),
+            "sr_hit@5": m.get("self_retrieval", {}).get("hit@5", 0),
+            "sr_hit@10": m.get("self_retrieval", {}).get("hit@10", 0),
+            "sr_mrr": m.get("self_retrieval", {}).get("mrr", 0),
             "cwe_recall_macro": m.get("cwe_recall", {}).get("macro_avg", 0),
             "cwe_n_groups": m.get("cwe_recall", {}).get("n_cwes", 0),
             "loo_hit@1": m.get("leave_one_out", {}).get("hit@1", 0),
