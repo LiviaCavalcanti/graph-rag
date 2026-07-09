@@ -1,0 +1,2252 @@
+\documentclass[aspectratio=169,10pt]{beamer}
+\usetheme{Madrid}
+\usecolortheme{default}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{tikz}
+\usepackage{booktabs}
+\usepackage{fontawesome5}
+\usepackage{xcolor}
+\usepackage{mathtools}
+\usepackage{colortbl}
+\usepackage{multirow}
+\usepackage{bbm}
+\usepackage{listings}
+\usepackage{bookmark}
+\usepackage{amsmath}    % Essential for many math features
+\usepackage{amsfonts}   % Provides \mathbb
+\usepackage{amssymb}
+\usepackage[most]{tcolorbox}
+\usepackage[backend=biber, style=numeric, sorting=none, maxnames=3, minnames=1]{biblatex}
+\addbibresource{references.bib}
+\usetikzlibrary{arrows.meta,shadows,positioning,fit,shapes.geometric,calc, shadows.blur, backgrounds}
+
+\lstdefinestyle{ccode}{
+  language=C,
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\color{c1}\bfseries,
+  commentstyle=\color{hit!80!black}\itshape,
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=2,
+}
+\setbeamertemplate{enumerate item}{\arabic{enumi}.}
+\setbeamertemplate{itemize item}{--}
+\setbeamertemplate{itemize subitem}{--}
+
+% ── palette ──────────────────────────────────────────────────────────
+\definecolor{c1}{RGB}{41,128,185}
+\definecolor{c2}{RGB}{52,152,219}
+\definecolor{c3}{RGB}{155,89,182}
+\definecolor{c4}{RGB}{142,68,173}
+\definecolor{c5}{RGB}{230,126,34}
+\definecolor{c6}{RGB}{211,84,0}
+% \definecolor{banana}{RGB}{253, 231, 76} 
+% \definecolor{strongcyan}{RGB}{78, 205, 196}
+% \definecolor{spaceindigo}{RGB}{195, 195, 230}
+% \definecolor{powderblush}{RGB}{247, 177, 171}
+\definecolor{c7}{RGB}{63,81,181}
+\definecolor{c8}{RGB}{0,128,128}
+\definecolor{c9}{RGB}{219,39,119}
+\definecolor{hit}{RGB}{39,174,96}
+\definecolor{miss}{RGB}{192,57,43}
+\definecolor{warn}{RGB}{243,156,18}
+
+\setbeamercolor{frametitle}{bg=c1,fg=white}
+\setbeamercolor{title}{fg=white}
+\setbeamercolor{structure}{fg=c1}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\setbeamerfont{frametitle}{series=\bfseries}
+
+\newcommand{\chit}[1]{\cellcolor{hit!30} #1}
+\newcommand{\cmiss}[1]{\cellcolor{miss!25} #1}
+\newcommand{\cwarn}[1]{\cellcolor{warn!30} #1}
+\newcommand{\czero}{\cellcolor{black!4} }
+
+\definecolor{slidebg}{RGB}{248, 250, 252}
+\definecolor{trackoff}{RGB}{238, 242, 255}
+\definecolor{trackon}{RGB}{236, 253, 245}
+\definecolor{borderoff}{RGB}{99, 102, 241}
+\definecolor{borderon}{RGB}{16, 185, 129}
+
+% Node chips
+\definecolor{ccode}{RGB}{239, 68,  68}
+\definecolor{ccpg}{RGB}{59,  130, 246}
+\definecolor{csub}{RGB}{16,  185, 129}
+\definecolor{cemb}{RGB}{168, 85,  247}
+\definecolor{ckb}{RGB}{245, 158, 11}
+\definecolor{crank}{RGB}{236, 72,  153}
+
+% Text / labels
+\definecolor{labelcol}{RGB}{30,  41,  59}
+\definecolor{notecol}{RGB}{100, 116, 139}
+\definecolor{headcol}{RGB}{15,  23,  42}
+
+% Shadow color
+\definecolor{shadowcol}{RGB}{101, 67, 33}     % warm brown
+
+
+\definecolor{cvecolor}{RGB}{231,76,60}
+\definecolor{llmcolor}{RGB}{52,152,219}
+\definecolor{snippetcolor}{RGB}{155,89,182}
+\definecolor{augmentcolor}{RGB}{243,156,18}
+\definecolor{trivialcolor}{RGB}{39,174,96}
+\definecolor{nontrivialcolor}{RGB}{230,126,34}
+\definecolor{finalcolor}{RGB}{44,62,80}
+
+\setbeamercolor{background canvas}{bg=slidebg}
+% \setbeamercolor{frametitle}{fg=headcol}
+% \setbeamerfont{frametitle}{series=\bfseries, size=\large}
+
+
+\title{Vulnerability Patching via Structure-Aware Retrieval-Augmented Generation}
+\subtitle{Master's Thesis Progress}
+\author{Lívia Cavalcanti}
+\date{June 2026}
+
+% TODO: add supervisors names and affiliations if desired
+
+\begin{document}
+
+% =====================================================================
+% TITLE SLIDE
+% =====================================================================
+\begin{frame}[plain]
+  \titlepage
+  
+\end{frame}
+
+% =====================================================================
+% VULNERABILITY DEFINITION + CODE (progressive build)
+% =====================================================================
+
+% --- Slide 1: Definition + Code (no highlights) ---
+\begin{frame}[fragile]{What Is a Vulnerability?}
+  \begin{columns}
+    \column{0.45\textwidth}
+    \begin{tcolorbox}[colback=c1!5, colframe=c1!60!black, boxrule=0.6pt,
+      left=6pt, right=6pt, top=6pt, bottom=6pt, arc=3pt, title={\scriptsize\bfseries NIST FIPS 200~\cite{nist_fips200}}]
+      \small
+      A \textbf{vulnerability} is a weakness in an information system, system security procedures, internal controls, or implementation that could be exploited by a threat source.
+    \end{tcolorbox}
+
+    \vspace{0.2cm}
+    \textbf{Example:}\\
+    % \textit{CVE-2024-56605} — 
+    % CWE-416: 
+     Use-After-Free\\
+    \footnotesize The program references memory after it has been freed, leading to undefined behavior.
+
+    \column{0.55\textwidth}
+    \begin{tcolorbox}[colback=c1!3, colframe=c1!40!black, boxrule=0.5pt,
+      left=4pt, right=4pt, top=4pt, bottom=4pt, arc=3pt,
+      shadow={0.5mm}{-0.5mm}{0mm}{black!15}]
+    \begin{lstlisting}[style=ccode, basicstyle=\ttfamily\scriptsize\color{black!80},
+      keywordstyle=\color{c4}\bfseries, commentstyle=\color{c1!70!black}\itshape,
+      stringstyle=\color{c6}]
+struct sock *alloc_socket(
+    struct socket *sock) {
+  struct sock *sk;
+
+  sk = sk_alloc();       // allocate
+
+  sock->sk = sk;         // alias created
+
+  if (!chan_create()) {
+    sk_free(sk);         // free original
+    return NULL;    // BUG: alias dangling!
+  }
+  return sk;
+}
+    \end{lstlisting}
+    \end{tcolorbox}
+      % \vspace{0.2em}
+  \center{\tiny\textcolor{notecol}{Inspired by CVE-2024-56605 (Linux kernel) — a real-world use-after-free vulnerability.}}
+
+  \end{columns}
+
+  
+ \begin{center}
+    \begin{tikzpicture}
+      \node[fill=slidebg, draw=labelcol!20, line width=0.5pt,
+        rounded corners=5pt, font=\small\sffamily, text=labelcol,
+        inner xsep=10pt, inner ysep=4pt,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+      ]{
+        \textbf{CWE} = vulnerability \emph{type} \quad$\longleftrightarrow$\quad \textbf{CVE} = vulnerability \emph{instance}
+      };
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+% =====================================================================
+% CVE vs CWE
+% =====================================================================
+% \begin{frame}{CVE vs.\ CWE: Classifying Vulnerabilities}
+
+%   \begin{columns}[T]
+%     \column{0.48\textwidth}
+%     \begin{tcolorbox}[colback=ccode!5, colframe=ccode!60!black, boxrule=0.6pt,
+%       left=6pt, right=6pt, top=6pt, bottom=6pt, arc=3pt,
+%       title={\scriptsize\bfseries CVE — Common Vulnerabilities and Exposures~\cite{mitre_cve}}]
+%       \small
+%       A \textbf{specific instance} of a vulnerability in a particular product or system.\\[4pt]
+%       \scriptsize
+%       \textbf{Example:} CVE-2024-56605\\
+%       Use-after-free in Linux kernel's Bluetooth L2CAP subsystem.\\[4pt]
+%       \textit{Each CVE is a unique, publicly disclosed security bug.}
+%     \end{tcolorbox}
+
+%     \column{0.48\textwidth}
+%     \begin{tcolorbox}[colback=c3!5, colframe=c3!60!black, boxrule=0.6pt,
+%       left=6pt, right=6pt, top=6pt, bottom=6pt, arc=3pt,
+%       title={\scriptsize\bfseries CWE — Common Weakness Enumeration~\cite{mitre_cwe}}]
+%       \small
+%       A \textbf{category} of software weaknesses that can lead to vulnerabilities.\\[4pt]
+%       \scriptsize
+%       \textbf{Example:} CWE-416 (Use After Free)\\
+%       Referencing memory after it has been freed.\\[4pt]
+%       \textit{Each CWE is a class of bugs — many CVEs share the same CWE.}
+%     \end{tcolorbox}
+%   \end{columns}
+
+%   \vspace{0.5cm}
+%   \begin{center}
+%     \begin{tikzpicture}
+%       \node[fill=slidebg, draw=labelcol!20, line width=0.5pt,
+%         rounded corners=5pt, font=\small\sffamily, text=labelcol,
+%         inner xsep=10pt, inner ysep=4pt,
+%         drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+%       ]{
+%         \textbf{CWE} = vulnerability \emph{type} \quad$\longleftrightarrow$\quad \textbf{CVE} = vulnerability \emph{instance}
+%       };
+%     \end{tikzpicture}
+%   \end{center}
+
+% \end{frame}
+
+% --- Slide 2: Highlight step 1 — allocation ---
+% \begin{frame}[fragile]{Tracing the Vulnerability (1/4): Allocation}
+%   \begin{columns}
+%     \column{0.55\textwidth}
+%     \begin{tcolorbox}[colback=c1!3, colframe=c1!40!black, boxrule=0.5pt,
+%       left=4pt, right=4pt, top=4pt, bottom=4pt, arc=3pt,
+%       shadow={0.5mm}{-0.5mm}{0mm}{black!15}]
+%     \begin{lstlisting}[style=ccode, basicstyle=\ttfamily\scriptsize\color{black!80},
+%       keywordstyle=\color{c4}\bfseries, commentstyle=\color{c1!70!black}\itshape,
+%       stringstyle=\color{c6}, escapechar=@]
+% struct sock *alloc_socket(
+%     struct socket *sock) {
+%   struct sock *sk;
+
+%   @\colorbox{hit!30}{sk = sk\_alloc();}@       // allocate
+
+%   sock->sk = sk;         // alias created
+
+%   if (!chan_create()) {
+%     sk_free(sk);         // free original
+%     return NULL;
+%   }
+%   return sk;
+% }
+%     \end{lstlisting}
+%     \end{tcolorbox}
+
+%     \column{0.45\textwidth}
+%     \begin{enumerate}
+%       \item[\faCheckCircle] \textbf{\texttt{sk} is allocated} — a new object is created on the heap
+%     \end{enumerate}
+%   \end{columns}
+% \end{frame}
+
+% % --- Slide 3: Highlight step 2 — alias creation ---
+% \begin{frame}[fragile]{Tracing the Vulnerability (2/4): Alias Creation}
+%   \begin{columns}
+%     \column{0.55\textwidth}
+%     \begin{tcolorbox}[colback=c1!3, colframe=c1!40!black, boxrule=0.5pt,
+%       left=4pt, right=4pt, top=4pt, bottom=4pt, arc=3pt,
+%       shadow={0.5mm}{-0.5mm}{0mm}{black!15}]
+%     \begin{lstlisting}[style=ccode, basicstyle=\ttfamily\scriptsize\color{black!80},
+%       keywordstyle=\color{c4}\bfseries, commentstyle=\color{c1!70!black}\itshape,
+%       stringstyle=\color{c6}, escapechar=@]
+% struct sock *alloc_socket(
+%     struct socket *sock) {
+%   struct sock *sk;
+
+%   @\colorbox{hit!30}{sk = sk\_alloc();}@       // allocate
+
+%   @\colorbox{warn!30}{sock->sk = sk;}@         // alias created
+
+%   if (!chan_create()) {
+%     sk_free(sk);         // free original
+%     return NULL;
+%   }
+%   return sk;
+% }
+%     \end{lstlisting}
+%     \end{tcolorbox}
+
+%     \column{0.45\textwidth}
+%     \begin{enumerate}
+%       \item[\faCheckCircle] \texttt{sk} is allocated
+%       \item[\faCheckCircle] \textbf{\texttt{sock->sk} becomes an alias} — two pointers now reference the same object
+%     \end{enumerate}
+%   \end{columns}
+% \end{frame}
+
+% % --- Slide 4: Highlight step 3 — free ---
+% \begin{frame}[fragile]{Tracing the Vulnerability (3/4): Free}
+%   \begin{columns}
+%     \column{0.55\textwidth}
+%     \begin{tcolorbox}[colback=c1!3, colframe=c1!40!black, boxrule=0.5pt,
+%       left=4pt, right=4pt, top=4pt, bottom=4pt, arc=3pt,
+%       shadow={0.5mm}{-0.5mm}{0mm}{black!15}]
+%     \begin{lstlisting}[style=ccode, basicstyle=\ttfamily\scriptsize\color{black!80},
+%       keywordstyle=\color{c4}\bfseries, commentstyle=\color{c1!70!black}\itshape,
+%       stringstyle=\color{c6}, escapechar=@]
+% struct sock *alloc_socket(
+%     struct socket *sock) {
+%   struct sock *sk;
+
+%   @\colorbox{hit!30}{sk = sk\_alloc();}@       // allocate
+
+%   @\colorbox{warn!30}{sock->sk = sk;}@         // alias created
+
+%   if (!chan_create()) {
+%     @\colorbox{miss!25}{sk\_free(sk);}@         // free original
+%     return NULL;
+%   }
+%   return sk;
+% }
+%     \end{lstlisting}
+%     \end{tcolorbox}
+
+%     \column{0.45\textwidth}
+%     \begin{enumerate}
+%       \item[\faCheckCircle] \texttt{sk} is allocated
+%       \item[\faCheckCircle] \texttt{sock->sk} becomes an alias
+%       \item[\faCheckCircle] \textbf{On error, \texttt{sk} is freed} — the object is deallocated
+%     \end{enumerate}
+%   \end{columns}
+% \end{frame}
+
+% % --- Slide 5: Highlight step 4 — dangling pointer (the bug) ---
+% \begin{frame}[fragile]{Tracing the Vulnerability (4/4): Dangling Pointer}
+%   \begin{columns}
+%     \column{0.55\textwidth}
+%     \begin{tcolorbox}[colback=c1!3, colframe=c1!40!black, boxrule=0.5pt,
+%       left=4pt, right=4pt, top=4pt, bottom=4pt, arc=3pt,
+%       shadow={0.5mm}{-0.5mm}{0mm}{black!15}]
+%     \begin{lstlisting}[style=ccode, basicstyle=\ttfamily\scriptsize\color{black!80},
+%       keywordstyle=\color{c4}\bfseries, commentstyle=\color{c1!70!black}\itshape,
+%       stringstyle=\color{c6}, escapechar=@]
+% struct sock *alloc_socket(
+%     struct socket *sock) {
+%   struct sock *sk;
+
+%   @\colorbox{hit!30}{sk = sk\_alloc();}@       // allocate
+
+%   @\colorbox{warn!30}{sock->sk = sk;}@         // alias created
+
+%   if (!chan_create()) {
+%     @\colorbox{miss!25}{sk\_free(sk);}@         // free original
+%     @\colorbox{miss!25}{return NULL;}@    // BUG: alias dangling!
+%   }
+%   return sk;
+% }
+%     \end{lstlisting}
+%     \end{tcolorbox}
+
+%     \column{0.45\textwidth}
+%     \begin{enumerate}
+%       \item[\faCheckCircle] \texttt{sk} is allocated
+%       \item[\faCheckCircle] \texttt{sock->sk} becomes an alias
+%       \item[\faCheckCircle] On error, \texttt{sk} is freed
+%       \item[\textcolor{red}{\faBug}] \textbf{\texttt{sock->sk} still points to freed memory!}
+%     \end{enumerate}
+
+%     \vspace{0.5cm}
+%     \textbf{Pattern:}\\
+%     Free without nullifying all aliases\\
+%     $\Rightarrow$ \textcolor{red}{\textbf{Use-After-Free}}
+
+%     \vspace{0.3cm}
+%     \begin{tikzpicture}
+%       \node[
+%         fill=slidebg,
+%         draw=labelcol!20, line width=0.4pt,
+%         rounded corners=5pt,
+%         font=\tiny\sffamily,
+%         text=labelcol,
+%         inner xsep=8pt, inner ysep=3pt,
+%         align=center,
+%         text width=0.85\linewidth,
+%         drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+%       ]{
+%         \footnotesize{This pattern leaves a structural fingerprint in the code graph.}
+%       };
+%     \end{tikzpicture}
+    
+%   \end{columns}
+% \end{frame}
+
+
+
+
+% =====================================================================
+% CPG VISUALIZATION — Overview (raw Joern output)
+% =====================================================================
+% \begin{frame}{Code Property Graph: Full Joern \cite{joern} Output}
+%   \begin{columns}
+%     % TODO: add visualization with all the different edge types (AST, CFG, DDG, CDG) and node types (statements, expressions, variables, etc.)
+%     \column{0.3\textwidth}
+%     \centering
+%     \includegraphics[width=0.75\textwidth]{joern_cfg_raw.png}
+%     \column{0.45\textwidth}
+%     \textbf{What the CPG encodes:}
+%     \begin{itemize}
+%       \item \textbf{AST} — syntax structure
+%       \item \textbf{CFG} — execution order
+%       \item \textbf{DDG} — data flow (def $\to$ use)
+%       \item \textbf{CDG} — control dependencies
+%     \end{itemize}
+
+%     \vspace{0.3cm}
+%     \footnotesize
+%     Full graph is detailed — let's simplify to the vulnerability-relevant subgraph.
+%   \end{columns}
+% \end{frame}
+
+% =====================================================================
+% CPG VISUALIZATION — Simplified vulnerable vs. patched
+% =====================================================================
+\begin{frame}[fragile]{Structure Reveals the Vulnerability}
+
+  % -----------------------------------------------------------
+  %  Shared colour / style definitions (if not already global)
+  % -----------------------------------------------------------
+  % Assumes these are already defined from the pipeline slide:
+  %   shadowcol, notecol, labelcol, headcol, slidebg
+  %   ccode, ccpg, csub, ckb, crank
+  %   borderoff / borderon
+  % Plus two semantic colours for this slide:
+  \colorlet{miss}{ccode}          % red  — vulnerable side
+  \colorlet{hit}{borderon}        % emerald — patched side
+
+  \begin{columns}[T]
+
+    % ===========================================================
+    %  LEFT COLUMN — Vulnerable
+    % ===========================================================
+    \column{0.48\textwidth}
+    \begin{center}
+
+      % Column header badge
+      \tikz{
+        \node[
+          fill=miss, text=white,
+          rounded corners=4pt,
+          font=\scriptsize\sffamily\bfseries,
+          inner xsep=6pt, inner ysep=2pt,
+          drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.35, fill=shadowcol}
+        ]{$\times$ \ Vulnerable};
+      }
+
+      \vspace{0.1cm}
+
+      \begin{tikzpicture}[
+  node distance=0.35cm,
+  n/.style={
+    draw=none,
+    rounded corners=6pt,
+    minimum width=2.3cm,
+    minimum height=0.45cm,
+    font=\tiny\sffamily\bfseries,
+    align=center,
+    text=white,
+    drop shadow={shadow xshift=1.5pt, shadow yshift=-2pt, opacity=0.38, fill=shadowcol}
+  },
+  cfg/.style={
+    -{Stealth[length=4pt, width=4pt]},
+    line width=1.1pt,
+    color=notecol!80
+  },
+  ddg/.style={
+    -{Stealth[length=3.5pt, width=3.5pt]},
+    line width=0.9pt,
+    color=ccpg!50,
+    dashed,
+    dash pattern=on 3pt off 2pt
+  },
+  blbl/.style={
+    font=\tiny\sffamily\bfseries,
+    text=notecol,
+    inner sep=1.5pt,
+    fill=slidebg,
+    rounded corners=2pt
+  },
+  every node/.append style={inner sep=3pt}
+]
+
+  \node[n, fill=csub]    (alloc)  {sk = sk\_alloc()};
+  \node[n, fill=ckb,
+        below=of alloc]  (alias)  {sock->sk = sk};
+  \node[n, fill=ccpg!80,
+        below=of alias]  (branch) {if (!chan\_create())};
+
+  \node[n, fill=ccode,
+        below left=0.4cm and 0.0cm of branch]  (free)    {sk\_free(sk)};
+  \node[n, fill=ccpg!55,
+        below right=0.4cm and 0.0cm of branch] (ret)     {return sk};
+
+  \node[n, fill=ccode!70,
+        below=of free]   (retnull){return NULL};
+
+  \draw[cfg] (alloc)  -- (alias);
+  \draw[cfg] (alias)  -- (branch);
+  \draw[cfg] (branch) -- node[blbl, left=1pt]{T} (free);
+  \draw[cfg] (branch) -- node[blbl, right=1pt]{F} (ret);
+  \draw[cfg] (free)   -- (retnull);
+
+  \draw[ddg] (alloc) -- (alias);
+  \draw[ddg] (alloc.east) to[bend left=45] (free.east);
+
+  \draw[
+    miss!80, line width=1.8pt, dotted,
+    -{Stealth[length=4.5pt, width=4.5pt]}
+  ]
+    (free.west) to[bend left=30] (alias.west);
+
+  \node[
+    fill=miss!15, draw=miss, line width=0.5pt,
+    rounded corners=3pt,
+    font=\tiny\sffamily\bfseries,
+    text=miss,
+    inner xsep=3pt, inner ysep=1.5pt
+  ] at (-2.8cm, -1cm) {missing!};
+
+  \begin{scope}[on background layer]
+    \node[
+      fill=trackoff,
+      draw=borderoff, line width=0.6pt,
+      rounded corners=9pt,
+      fit=(alloc)(retnull)(ret),
+      inner xsep=10pt, inner ysep=8pt,
+      opacity=0.45
+    ] {};
+  \end{scope}
+
+\end{tikzpicture}
+
+      \vspace{0.05cm}
+      \tikz{
+        \node[
+          fill=miss!8, draw=miss, line width=0.5pt,
+          rounded corners=4pt,
+          font=\tiny\sffamily,
+          text=miss,
+          inner xsep=6pt, inner ysep=2pt,
+          drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+        ]{No nullification of alias after free};
+      }
+
+    \end{center}
+
+    % ===========================================================
+    %  RIGHT COLUMN — Patched
+    % ===========================================================
+    \column{0.48\textwidth}
+    \begin{center}
+
+      % Column header badge
+      \tikz{
+        \node[
+          fill=hit, text=white,
+          rounded corners=4pt,
+          font=\scriptsize\sffamily\bfseries,
+          inner xsep=6pt, inner ysep=2pt,
+          drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.35, fill=shadowcol}
+        ]{$\checkmark$ \ Patched};
+      }
+
+      \vspace{0.1cm}
+
+\begin{tikzpicture}[
+  node distance=0.35cm,
+  n/.style={
+    draw=none,
+    rounded corners=6pt,
+    minimum width=2.3cm,
+    minimum height=0.45cm,
+    font=\tiny\sffamily\bfseries,
+    align=center,
+    text=white,
+    drop shadow={shadow xshift=1.5pt, shadow yshift=-2pt, opacity=0.38, fill=shadowcol}
+  },
+  cfg/.style={
+    -{Stealth[length=4pt, width=4pt]},
+    line width=1.1pt,
+    color=notecol!80
+  },
+  ddg/.style={
+    -{Stealth[length=3.5pt, width=3.5pt]},
+    line width=0.9pt,
+    color=ccpg!50,
+    dashed,
+    dash pattern=on 3pt off 2pt
+  },
+  blbl/.style={
+    font=\tiny\sffamily\bfseries,
+    text=notecol,
+    inner sep=1.5pt,
+    fill=slidebg,
+    rounded corners=2pt
+  },
+  every node/.append style={inner sep=3pt}
+]
+
+  \node[n, fill=csub]    (alloc)  {sk = sk\_alloc()};
+  \node[n, fill=ckb,
+        below=of alloc]  (alias)  {sock->sk = sk};
+  \node[n, fill=ccpg!80,
+        below=of alias]  (branch) {if (!chan\_create())};
+
+  \node[n, fill=ccode,
+        below left=0.4cm and 0.0cm of branch]  (free)    {sk\_free(sk)};
+  \node[n, fill=ccpg!55,
+        below right=0.4cm and 0.0cm of branch] (ret)     {return sk};
+
+  \node[n, fill=csub!85,
+        below=of free]   (null)   {sock->sk = NULL};
+  \node[n, fill=ccpg!55,
+        below=of null]   (retnull){return NULL};
+
+  \draw[cfg] (alloc)  -- (alias);
+  \draw[cfg] (alias)  -- (branch);
+  \draw[cfg] (branch) -- node[blbl, left=1pt]{T} (free);
+  \draw[cfg] (branch) -- node[blbl, right=1pt]{F} (ret);
+  \draw[cfg] (free)   -- (null);
+  \draw[cfg] (null)   -- (retnull);
+
+  \draw[ddg] (alloc) -- (alias);
+  \draw[ddg] (alloc.east) to[bend left=45] (free.east);
+
+  \draw[
+    hit!80, line width=1.8pt,
+    -{Stealth[length=4.5pt, width=4.5pt]}
+  ]
+    (free.west) to[bend right=42] (null.west);
+
+  \node[
+    fill=hit!15, draw=hit, line width=0.5pt,
+    rounded corners=3pt,
+    font=\tiny\sffamily\bfseries,
+    text=hit,
+    inner xsep=3pt, inner ysep=1.5pt
+  ] at (-1.8cm, -2.85cm) {safety};
+
+  \begin{scope}[on background layer]
+    \node[
+      fill=trackon,
+      draw=borderon, line width=0.6pt,
+      rounded corners=9pt,
+      fit=(alloc)(retnull)(ret),
+      inner xsep=10pt, inner ysep=8pt,
+      opacity=0.45
+    ] {};
+  \end{scope}
+
+\end{tikzpicture}
+      \vspace{0.05cm}
+      \tikz{
+        \node[
+          fill=hit!8, draw=hit, line width=0.5pt,
+          rounded corners=4pt,
+          font=\tiny\sffamily,
+          text=hit,
+          inner xsep=6pt, inner ysep=2pt,
+          drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+        ]{Alias nullified $\Rightarrow$ no dangling pointer};
+      }
+
+    \end{center}
+  \end{columns}
+
+  % =============================================================
+  %  TAKEAWAY STRIP
+  % =============================================================
+  \vspace{0.08cm}
+  \begin{center}
+    \begin{tikzpicture}
+      \node[
+        fill=slidebg,
+        draw=labelcol!20, line width=0.5pt,
+        rounded corners=5pt,
+        font=\tiny\sffamily,
+        text=labelcol,
+        inner xsep=8pt, inner ysep=3pt,
+        align=center,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+      ]{
+        \textbf{Takeaway:} The structural difference between vulnerable and
+        patched code is a single edge/node --- vulnerabilities leave fingerprints in the graph.
+      };
+    \end{tikzpicture}
+  \end{center}
+
+\end{frame}
+
+
+% =====================================================================
+% MOTIVATION: PRIOR WORK LIMITATIONS
+% =====================================================================
+\begin{frame}{Motivation: Why Current Approaches Fall Short}
+
+\begin{columns}[T]
+  \begin{column}{0.48\textwidth}
+    \textbf{The Gap}\\[0.4em]
+    Industrial compliance standards demand \emph{auditable}, automated remediation \cite{iso27001}\\[0.8em]
+
+    \textbf{Existing Approaches Fall Short}
+    \begin{itemize}
+      \item Graph classifiers: \emph{no knowledge reuse}
+      \item Agentic approaches: \emph{ignore structure}
+      \item LLM failures:
+      \begin{itemize}
+        \item \textbf{84--94\%} of AI patches are still bypassable \cite{mahmud2025systematic}
+        \item \textbf{91.6\%} failure in vulnerability identification \cite{McClanahan2024Meets}
+      \end{itemize}
+    \end{itemize}
+    
+    \begin{center}
+      \begin{tikzpicture}
+        \node[fill=slidebg, draw=labelcol!20, line width=0.5pt,
+          rounded corners=5pt, font=\small\sffamily, text=labelcol,
+          inner xsep=10pt, inner ysep=4pt,
+          drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+        ]{
+          Hallucinated fixes $\Rightarrow$ false sense of security \cite{zemicheal2024llm}
+        };
+      \end{tikzpicture}
+    \end{center}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \textbf{Existing Approach Strengths}
+    \begin{itemize}
+      \item Static analysis for vulnerability detection is well-established \cite{joern}
+      \item Agentic RAG approaches show promising results in code repair \cite{Seo2025AutoPatchMF, bouzenia2025repairagent}
+    \end{itemize}
+
+    \vspace{0.6em}
+    % \rule{\linewidth}{0.4pt}
+    \vspace{0.4em}
+
+    \textbf{Our Approach}\\[0.3em]
+    \textbf{RAG + Static Analysis:} retrieve known structural patterns\\
+    % \begin{center}
+    % \textbf{$+$  }
+    % \end{center}
+     
+    \textbf{Agentic generation:} produce fixes that are \emph{correct \textbf{and} explainable}
+  \end{column}
+
+\end{columns}
+
+\end{frame}
+% =====================================================================
+% RESEARCH QUESTION
+% =====================================================================
+\begin{frame}{Research Questions}
+  \textbf{RQ1: }How effective are graph-based embeddings at retrieving relevant vulnerability fix patterns from the knowledge base?
+ 
+    \vspace{0.5cm}
+\textbf{RQ2: }What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline?
+
+\end{frame}
+
+% =====================================================================
+% RAG INTUITION 1 --- SAME BUG, DIFFERENT CODE
+% (for a RAG-literate audience: the "documents" are code graphs)
+% =====================================================================
+\begin{frame}[fragile]{Same Vulnerability, Different Code}
+
+  % Familiar RAG loop (muted) --- "you already know this"
+  \begin{center}
+  \begin{tikzpicture}[
+    node distance=0.4cm,
+    rchip/.style={draw=none, rounded corners=5pt,
+      minimum height=0.5cm, minimum width=1.7cm,
+      font=\scriptsize\sffamily\bfseries, align=center,
+      fill=notecol!20, text=labelcol},
+    rarr/.style={-{Stealth[length=4pt,width=4pt]}, line width=1pt, color=notecol!70}
+  ]
+    \node[rchip] (q)  {Query};
+    % \node[rchip, right=of q]  (e)  {Embed};
+    \node[rchip, right=of q]  (db) {Vector DB};
+    \node[rchip, right=of db] (k)  {Vulnerability};
+    \draw[rarr] (q)--(db); \draw[rarr] (db)--(k);
+  \end{tikzpicture}\\[2pt]
+  {\tiny\textcolor{notecol}{--- the retrieval loop you already know ---}}
+  \end{center}
+
+  \vspace{0.1cm}
+  \begin{columns}[T]
+    \column{0.49\textwidth}
+    \begin{center}\scriptsize\textbf{\textcolor{ccode!70!black}{Case A --- network socket}}\end{center}
+    \begin{tcolorbox}[colback=ccode!3, colframe=ccode!45!black, boxrule=0.5pt,
+      left=4pt, right=4pt, top=3pt, bottom=3pt, arc=3pt]
+    \begin{lstlisting}[style=ccode, basicstyle=\ttfamily\scriptsize\color{black!80},
+      keywordstyle=\color{c4}\bfseries, commentstyle=\color{notecol}\itshape]
+sk = sk_alloc();    // allocate
+sock->sk = sk;      // alias
+if (err) {
+  sk_free(sk);      // free
+  return NULL;      // alias dangles
+}
+    \end{lstlisting}
+    \end{tcolorbox}
+
+    \column{0.49\textwidth}
+    \begin{center}\scriptsize\textbf{\textcolor{csub!70!black}{Case B --- file buffer}}\end{center}
+    \begin{tcolorbox}[colback=csub!3, colframe=csub!45!black, boxrule=0.5pt,
+      left=4pt, right=4pt, top=3pt, bottom=3pt, arc=3pt]
+    \begin{lstlisting}[style=ccode, basicstyle=\ttfamily\scriptsize\color{black!80},
+      keywordstyle=\color{c4}\bfseries, commentstyle=\color{notecol}\itshape]
+buf = kmalloc(len); // allocate
+f->priv = buf;      // alias
+if (rc) {
+  kfree(buf);       // free
+  return -ENOMEM;   // alias dangles
+}
+    \end{lstlisting}
+    \end{tcolorbox}
+  \end{columns}
+
+  \vspace{0.12cm}
+  \begin{center}
+    \begin{tikzpicture}
+      \node[fill=slidebg, draw=labelcol!20, line width=0.5pt,
+        rounded corners=5pt, font=\scriptsize\sffamily, text=labelcol,
+        inner xsep=9pt, inner ysep=4pt, align=center, text width=0.92\linewidth,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+      ]{
+        Different words (\texttt{sk\_alloc} vs \texttt{kmalloc}, \texttt{sock} vs \texttt{f}) $\Rightarrow$
+        a \textbf{text} embedder sees two \emph{unrelated} snippets. \\
+        Both are the \emph{same} weakness --- \textcolor{miss}{\textbf{free without nullifying the alias}} (CWE-416).
+      };
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+% =====================================================================
+% EMBEDDING DEFINITION --- visual (graph -> vector -> space)
+% =====================================================================
+\begin{frame}[fragile]{What Is an Embedding?}
+
+  \vspace{0.25cm}
+  \begin{center}
+  \begin{tikzpicture}[
+    gnode/.style={draw=none, rounded corners=4pt, minimum width=1.5cm, minimum height=0.4cm,
+      font=\tiny\sffamily\bfseries, align=center, text=white,
+      drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.35, fill=shadowcol}},
+    cfg/.style={-{Stealth[length=3.5pt,width=3.5pt]}, line width=0.9pt, color=notecol!80},
+    ddg/.style={-{Stealth[length=3pt,width=3pt]}, line width=0.8pt, color=ccpg!55,
+      dashed, dash pattern=on 3pt off 2pt},
+    flow/.style={-{Stealth[length=7pt,width=7pt]}, line width=1.5pt, color=cemb!70},
+    flowlbl/.style={font=\scriptsize\sffamily\bfseries, text=cemb!55!black},
+    dot/.style={circle, fill=#1, minimum size=4.5pt, inner sep=0pt},
+    qstar/.style={star, star points=5, star point ratio=0.5, fill=cemb, draw=white,
+      line width=0.7pt, minimum size=11pt, inner sep=0pt}
+  ]
+
+    % ===== Stage 1: a small code graph =====
+    \node[gnode, fill=csub]                       (g1) at (0.85,3.0) {alloc};
+    \node[gnode, fill=ckb,     below=0.28cm of g1] (g2) {alias};
+    \node[gnode, fill=ccpg!80, below=0.28cm of g2] (g3) {branch};
+    \node[gnode, fill=ccode,   below=0.28cm of g3] (g4) {free};
+    \draw[cfg] (g1)--(g2); \draw[cfg] (g2)--(g3); \draw[cfg] (g3)--(g4);
+    \draw[ddg] (g1.west) to[bend right=50] (g4.west);
+    \node[font=\scriptsize\sffamily\bfseries, text=labelcol, above=3pt of g1] {a code graph};
+
+    % ===== embed arrow =====
+    \draw[flow] (1.85,1.95) -- node[flowlbl, above]{embed} (3.15,1.95);
+
+    % ===== Stage 2: the embedding vector (heatmap strip) =====
+    \foreach \i/\v in {0/70,1/25,2/85,3/40,4/60,5/15,6/90,7/35,8/55,9/22,10/78,11/45}
+      \draw[fill=cemb!\v, draw=white, line width=0.3pt]
+        ({3.45+\i*0.24},1.5) rectangle +(0.24,0.9);
+    \draw[cemb!70, line width=0.6pt] (3.45,1.5) rectangle ({3.45+12*0.24},2.4);
+    \node[flowlbl] at (4.89,2.72) {the embedding};
+    \node[font=\tiny\sffamily, text=notecol] at (4.89,1.22) {a vector $\in\mathbb{R}^{d}$ (e.g.\ 128)};
+
+    % ===== place arrow =====
+    \draw[flow] (6.5,1.95) -- node[flowlbl, above]{as a point} (7.75,1.95);
+
+    % ===== Stage 3: the embedding space =====
+    \node[draw=labelcol!20, rounded corners=8pt, line width=0.7pt, fill=white,
+      minimum width=3.9cm, minimum height=3.35cm] (space) at (9.7,1.9) {};
+    \node[font=\scriptsize\sffamily\bfseries, text=labelcol, above=1pt of space.north] {embedding space};
+
+    % similar cluster + our graph's point
+    \foreach \p in {(8.7,2.55),(9.2,2.8),(9.65,2.5),(8.9,2.1),(9.5,2.1)}
+      \node[dot=csub] at \p {};
+    \draw[csub!70, dashed, line width=0.7pt] (9.15,2.42) circle (0.72);
+    \node[qstar] at (9.15,2.42) {};
+    \node[font=\tiny\sffamily, text=csub!55!black] at (9.15,3.2) {similar graphs};
+    \node[font=\tiny\sffamily\bfseries, text=cemb!55!black] at (9.15,1.62) {our graph};
+
+    % different graphs (far)
+    \foreach \p in {(10.75,0.95),(11.05,1.25),(10.55,0.7)}
+      \node[dot=warn] at \p {};
+    \node[font=\tiny\sffamily, text=warn!60!black] at (10.75,0.4) {different};
+
+  \end{tikzpicture}
+  \end{center}
+
+  \vspace{0.3cm}
+  \begin{center}
+    \begin{tikzpicture}
+      \node[fill=slidebg, draw=labelcol!20, line width=0.5pt,
+        rounded corners=5pt, font=\small\sffamily, text=labelcol,
+        inner xsep=10pt, inner ysep=4pt, align=center, text width=0.9\linewidth,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+      ]{
+        An \textbf{embedding} turns a graph into a \textbf{point in space} ---
+        so that \emph{similar} graphs land \emph{close together}.
+      };
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+% =====================================================================
+% RAG INTUITION 2 --- STRUCTURE TO VECTOR (WL / GIN / NetLSD / Combined)
+% =====================================================================
+\begin{frame}[fragile]{Action 1 --- Turn the Structure Into a Vector}
+
+  \begin{columns}[T]
+    \column{0.36\textwidth}
+    \begin{center}
+    \textbf{\small Vulnerability subgraph}\\[6pt]
+    \begin{tikzpicture}[
+      node distance=0.34cm,
+      n/.style={draw=none, rounded corners=5pt, minimum width=1.8cm, minimum height=0.42cm,
+        font=\tiny\sffamily\bfseries, align=center, text=white,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.35, fill=shadowcol}},
+      cfg/.style={-{Stealth[length=3.5pt,width=3.5pt]}, line width=1pt, color=notecol!80},
+      ddg/.style={-{Stealth[length=3pt,width=3pt]}, line width=0.8pt, color=ccpg!55,
+        dashed, dash pattern=on 3pt off 2pt}
+    ]
+      \node[n, fill=csub]                (a) {alloc};
+      \node[n, fill=ckb,     below=of a] (b) {alias};
+      \node[n, fill=ccpg!80, below=of b] (c) {branch};
+      \node[n, fill=ccode,   below=of c] (d) {free};
+      \draw[cfg] (a)--(b); \draw[cfg] (b)--(c); \draw[cfg] (c)--(d);
+      \draw[ddg] (a.east) to[bend left=55] (d.east);
+    \end{tikzpicture}
+    \end{center}
+    \vspace{0.15cm}
+    
+    \column{0.62\textwidth}
+
+    {\centering\textbf{\scriptsize\textcolor{headcol}{Three structural embedders}}\par}
+    \vspace{0.06cm}
+    {\centering
+    \begin{tikzpicture}[
+      node distance=0.12cm,
+      ebox/.style={draw=#1!60, fill=#1!8, rounded corners=4pt,
+        minimum width=5.8cm, minimum height=0.44cm, inner xsep=7pt, inner ysep=2pt,
+        font=\tiny\sffamily, align=left, text=labelcol}
+    ]
+      \node[ebox=ccpg] (dnet)
+        {\textbf{\textcolor{ccpg!60!black}{NetLSD}} --- global shape signature};
+      \node[ebox=csub, below=of dnet] (dwl)
+        {\textbf{\textcolor{csub!60!black}{WL}} --- bag-of-neighbourhoods};
+      \node[ebox=cemb, below=of dwl] (dgin)
+        {\textbf{\textcolor{cemb!60!black}{GIN}} --- a random structural sketch};
+    \end{tikzpicture}\par}
+
+    \vspace{0.08cm}
+    {\centering\textbf{\scriptsize\textcolor{headcol}{Combined into one 128-d vector}}\par}
+    \vspace{0.04cm}
+    {\centering
+     \begin{tikzpicture}[
+      node distance=0.4cm,
+      box/.style={
+        draw=c1!60, fill=c1!8,
+        rounded corners=4pt,
+        minimum width=2.8cm,
+        minimum height=0.5cm,
+        font=\tiny\sffamily\bfseries,
+        align=center
+      },
+      arr/.style={
+        -{Stealth[length=3.5pt, width=3.5pt]},
+        line width=0.8pt,
+        color=notecol
+      },
+      lbl/.style={
+        font=\tiny\sffamily,
+        text=notecol
+      }
+    ]
+      \node[box, draw=ccpg!60, fill=ccpg!8] (netlsd) {NetLSD (128d)};
+      \node[box, draw=csub!60, fill=csub!8, below=0.12cm of netlsd] (wl) {WL (128d)};
+      \node[box, draw=cemb!60, fill=cemb!8, below=0.12cm of wl] (gin) {GIN (128d)};
+
+      \node[box, draw=c5!60, fill=c5!8,
+            below=0.42cm of wl, xshift=3.0cm] (concat)
+            {Concatenate\\384d};
+
+      \node[box, draw=c3!60, fill=c3!8,
+            below=0.34cm of concat] (pca)
+            {PCA\\128d};
+
+      \node[box, draw=hit!60, fill=hit!8,
+            below=0.34cm of pca] (norm)
+            {L2 Normalize};
+
+      \draw[arr] (netlsd.east) -| (concat.north);
+      \draw[arr] (wl.east) -| (concat.north);
+      \draw[arr] (gin.east) -| (concat.north);
+
+      \draw[arr] (concat) -- node[lbl, right, xshift=2pt]{reduce} (pca);
+      \draw[arr] (pca) -- node[lbl, right, xshift=2pt]{unit sphere} (norm);
+
+    \end{tikzpicture}\par}
+
+    \vspace{0.05cm}
+    {\scriptsize\centering Encodes \emph{shape}, not \emph{words} --- same interface as a text embedder.\par}
+  \end{columns}
+\end{frame}
+
+% =====================================================================
+% EMBEDDING VECTOR + CODEBERT (TOKEN) BASELINE
+% =====================================================================
+\begin{frame}[fragile]{Structural vs.\ Token Embeddings --- the CodeBERT Baseline}
+
+  % ---- two abstract embedding vectors ----
+  \begin{columns}[T]
+    \column{0.5\textwidth}
+    \begin{center}
+      {\scriptsize\textbf{\textcolor{ccpg!60!black}{Structural embedder}}
+        {\tiny\textcolor{notecol}{(output of Action 1)}}}\\[4pt]
+      \begin{tikzpicture}[x=0.30cm, y=0.36cm]
+        \foreach \i/\v in {0/70,1/25,2/85,3/40,4/55,5/15,6/90,7/35,8/60,9/20,10/78,11/45,12/30,13/68}
+          \draw[fill=ccpg!\v, draw=white, line width=0.3pt] (\i,0) rectangle ++(1,1);
+        \draw[ccpg!70, line width=0.6pt] (0,0) rectangle (14,1);
+      \end{tikzpicture}\\[4pt]
+      {\scriptsize $\mathbf{e}_{\text{struct}}\in\mathbb{R}^{128}$ --- encodes \textbf{graph shape}}
+    \end{center}
+
+    \column{0.5\textwidth}
+    \begin{center}
+      {\scriptsize\textbf{\textcolor{c5!70!black}{CodeBERT --- token LM}}
+        {\tiny\textcolor{notecol}{(baseline)}}}\\[4pt]
+      \begin{tikzpicture}[x=0.30cm, y=0.36cm]
+        \foreach \i/\v in {0/30,1/65,2/20,3/80,4/45,5/60,6/15,7/72,8/38,9/55,10/25,11/68,12/42,13/58,14/18,15/75,16/33,17/62,18/28,19/70}
+          \draw[fill=c5!\v, draw=white, line width=0.3pt] (\i,0) rectangle ++(1,1);
+        \draw[c5!70, line width=0.6pt] (0,0) rectangle (20,1);
+      \end{tikzpicture}\\[4pt]
+      {\scriptsize $\mathbf{e}_{\text{code}}\in\mathbb{R}^{768}$ --- encodes \textbf{token semantics}}
+    \end{center}
+  \end{columns}
+
+  \vspace{0.12cm}
+  % ---- CodeBERT definition + rationale ----
+  \begin{tcolorbox}[colback=c5!5, colframe=c5!55!black, boxrule=0.4pt,
+    left=6pt, right=6pt, top=3pt, bottom=3pt, arc=3pt]
+    \scriptsize
+    \textbf{CodeBERT}~\cite{feng2020codebert}: a transformer \textbf{pretrained on source code}
+    (masked-language modeling over 6 languages). We embed the \emph{linearized code} via its
+    \texttt{[CLS]} token --- our \textbf{token-based baseline}: pretrained $\Rightarrow$ a strong
+    semantic prior at \emph{zero training cost}, and the standard test of whether
+    \textbf{structure alone} can compete.
+  \end{tcolorbox}
+
+  \vspace{0.12cm}
+  % ---- side-by-side comparison ----
+  \begin{center}
+  {\scriptsize
+  \renewcommand{\arraystretch}{1.25}
+  \setlength{\tabcolsep}{6pt}
+  \begin{tabular}{l l l}
+    \toprule
+     & \cellcolor{ccpg!12}\textbf{\textcolor{ccpg!60!black}{Structural}}
+     & \cellcolor{c5!12}\textbf{\textcolor{c5!70!black}{CodeBERT (baseline)}} \\
+    \midrule
+    \textbf{Input}      & CPG --- graph structure       & token sequence --- text \\
+    \textbf{Training}   & none (deterministic / frozen) & pretrained transformer (MLM) \\
+    \textbf{Hardware}   & CPU --- cheap \& fast         & GPU for practical speed \\
+    \textbf{Captures}   & control/data-flow shape       & lexical + semantic patterns \\
+    \textbf{Invariance} & name-invariant                & sensitive to identifiers \\
+    \textbf{Output}     & 128-d vector                  & 768-d vector \\
+    \bottomrule
+  \end{tabular}}
+  \end{center}
+
+\end{frame}
+
+% =====================================================================
+% RAG INTUITION 3 --- RETRIEVAL BY STRUCTURAL SIMILARITY
+% =====================================================================
+\begin{frame}[fragile]{Action 2 --- Retrieve by Structural Similarity}
+
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+    \begin{center}
+    \textbf{\small Structural embedding space}\\[4pt]
+    \begin{tikzpicture}[
+      dot/.style={circle, fill=#1, minimum size=4.5pt, inner sep=0pt},
+      qstar/.style={star, star points=5, star point ratio=0.5,
+        fill=miss, draw=white, line width=0.7pt, minimum size=9pt, inner sep=0pt}
+    ]
+      \draw[draw=labelcol!18, rounded corners=6pt, line width=0.6pt] (-0.2,-0.2) rectangle (5.5,4.1);
+
+      % UAF cluster (green) --- ringed around the query
+      \foreach \p in {(0.70,3.15),(1.15,3.55),(1.60,3.15),(0.75,2.65),(1.55,2.70),(1.15,2.55)}
+        \node[dot=csub] at \p {};
+      \node[font=\tiny\sffamily\bfseries, text=csub!55!black] at (1.15,3.95) {UAF (416)};
+
+      % OOB cluster (orange)
+      \foreach \p in {(4.4,1.3),(4.7,1.6),(4.2,1.0),(4.6,0.9),(4.9,1.4)}
+        \node[dot=warn] at \p {};
+      \node[font=\tiny\sffamily\bfseries, text=warn!60!black] at (4.5,2.1) {OOB (787)};
+
+      % NPD cluster (blue)
+      \foreach \p in {(1.4,0.8),(1.7,1.1),(1.1,1.2),(1.6,0.7),(1.0,0.9)}
+        \node[dot=ccpg] at \p {};
+      \node[font=\tiny\sffamily\bfseries, text=ccpg!60!black] at (1.35,1.55) {NPD (476)};
+
+      % top-k neighbourhood + query
+      \draw[miss!70, dashed, line width=0.8pt] (1.15,3.05) circle (0.82);
+      \node[qstar] at (1.15,3.02) {};
+      \node[font=\tiny\sffamily, text=miss] at (2.45,3.6) {top-$k$};
+    \end{tikzpicture}\\[2pt]
+    {\scriptsize New code (\textcolor{miss}{$\bigstar$}) lands among known \textbf{UAF} CVEs.}
+    \end{center}
+
+    \column{0.46\textwidth}
+    \textbf{How the match is computed}\\[3pt]
+    \begin{tcolorbox}[colback=c1!4, colframe=c1!55!black, boxrule=0.5pt,
+      left=6pt, right=6pt, top=4pt, bottom=4pt, arc=3pt]
+      \centering
+      $\displaystyle \mathrm{sim}(q,d)=\frac{\mathbf{e}_q\cdot\mathbf{e}_d}{\lVert\mathbf{e}_q\rVert\,\lVert\mathbf{e}_d\rVert}$\\[4pt]
+      {\scriptsize L2-normalized $\Rightarrow$ cosine $=$ dot product; keep the $k$ nearest patterns.}
+    \end{tcolorbox}
+
+    \vspace{0.25cm}
+    \textbf{Why structure wins here}
+    \begin{itemize}\itemsep3pt
+      \item \textbf{Name-invariant} --- \texttt{sk}/\texttt{buf}, \texttt{kfree}/\texttt{sk\_free} are irrelevant
+      \item \textbf{Cross-project} --- one pattern matches unrelated codebases
+      \item Clusters by \textbf{weakness (CWE)}, not by vocabulary
+    \end{itemize}
+  \end{columns}
+
+  \vspace{0.1cm}
+  \begin{center}
+    \begin{tikzpicture}
+      \node[fill=slidebg, draw=labelcol!20, line width=0.5pt,
+        rounded corners=5pt, font=\scriptsize\sffamily, text=labelcol,
+        inner xsep=9pt, inner ysep=3pt, align=center, text width=0.92\linewidth,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+      ]{
+        The retrieved CVE patches become the \textbf{context} for the patch agent ---
+        the RAG loop you know, now running over \emph{graphs}.
+      };
+    \end{tikzpicture}
+  \end{center}
+\end{frame}
+
+% =====================================================================
+% RETRIEVER ARCHITECTURE OVERVIEW
+% =====================================================================
+\begin{frame}[fragile]{System Architecture: Graph-RAG Pipeline}
+  \begin{center}
+    \begin{tikzpicture}[
+    node distance=0.38cm and 0.85cm,
+    %-----------------------------------------------------------
+    % Chip: coloured pill node
+    %-----------------------------------------------------------
+    chip/.style={
+      draw=none,
+      rounded corners=6pt,
+      minimum height=0.72cm,
+      minimum width=2.25cm,
+      font=\scriptsize\sffamily\bfseries,
+      align=center,
+      fill=#1,
+      text=white,
+      drop shadow={
+        shadow xshift=1.5pt, shadow yshift=-2pt,
+        opacity=0.40, fill=shadowcol
+      }
+    },
+    %-----------------------------------------------------------
+    % KB hub: taller amber chip
+    %-----------------------------------------------------------
+    kbhub/.style={
+      draw=none,
+      rounded corners=8pt,
+      minimum height=1.45cm,
+      minimum width=2.3cm,
+      font=\scriptsize\sffamily\bfseries,
+      align=center,
+      fill=ckb,
+      text=white,
+      drop shadow={
+        shadow xshift=1.5pt, shadow yshift=-2.5pt,
+        opacity=0.42, fill=shadowcol
+      }
+    },
+    %-----------------------------------------------------------
+    % Lane box style (with brownish shadow)
+    %-----------------------------------------------------------
+    lanebox/.style={
+      rounded corners=10pt,
+      line width=0.8pt,
+      drop shadow={
+        shadow xshift=2.5pt, shadow yshift=-3pt,
+        opacity=0.30, fill=shadowcol
+      }
+    },
+    %-----------------------------------------------------------
+    % Arrows
+    %-----------------------------------------------------------
+    arr/.style={
+      -{Stealth[length=4.5pt, width=4.5pt]},
+      line width=1.1pt,
+      color=notecol
+    },
+    arrhi/.style={
+      -{Stealth[length=5pt, width=5pt]},
+      line width=1.4pt,
+      color=ckb!70
+    },
+    arrrk/.style={
+      -{Stealth[length=5pt, width=5pt]},
+      line width=1.4pt,
+      color=crank!70
+    },
+    %-----------------------------------------------------------
+    % Labels
+    %-----------------------------------------------------------
+    note/.style={
+      font=\tiny\sffamily,
+      text=notecol
+    },
+    phaselbl/.style={
+      font=\scriptsize\sffamily\bfseries,
+      text=labelcol,
+      anchor=west
+    }
+  ]
+
+  % ===========================================================
+  %  OFFLINE TRACK
+  % ===========================================================
+  \node[phaselbl] (offlbl) at (0, 2.5)
+        {\textcolor{borderoff}{$\blacktriangleright$}\enspace
+         \textcolor{borderoff}{OFFLINE} \textcolor{labelcol}{— Build Knowledge Base}};
+
+  \node[chip=ccode,
+        below=0.28cm of offlbl.south west,
+        anchor=north west] (kvuln)
+        {Known Vuln.\\{\tiny CVE patches}};
+
+  \node[chip=ccpg,  right=of kvuln]  (kcpg)   {Joern\\CPG};
+  \node[chip=csub,  right=of kcpg]   (kslice) {Vuln-Centered\\Subgraph};
+  \node[chip=cemb,  right=of kslice] (kemb)   {Graph\\Embedding};
+
+  % KB hub
+  \node[kbhub, right=1.1cm of kemb, yshift=-0.82cm] (kb)
+        {Vector\\Index\\{\tiny (KB)}};
+
+  % Offline arrows
+  \draw[arr]   (kvuln)  -- node[note, above]{\strut parse}  (kcpg);
+  \draw[arr]   (kcpg)   -- node[note, above]{\strut slice}  (kslice);
+  \draw[arr]   (kslice) -- node[note, above]{\strut encode} (kemb);
+  \draw[arrhi] (kemb)   --
+        node[note, above, sloped, yshift=1pt]{\strut store}
+        (kb.north west);
+
+  % ===========================================================
+  %  ONLINE TRACK
+  % ===========================================================
+  \node[phaselbl] (onlbl) at (0, 0.05)
+        {\textcolor{borderon}{$\blacktriangleright$}\enspace
+         \textcolor{borderon}{ONLINE} \textcolor{labelcol}{— Query \& Rank}};
+
+  \node[chip=ccode,
+        below=0.28cm of onlbl.south west,
+        anchor=north west] (qcode)
+        {New Code\\{\tiny candidate}};
+
+  \node[chip=ccpg,  right=of qcode]  (qcpg)   {Joern\\CPG};
+  \node[chip=csub,  right=of qcpg]   (qslice) {Source-Centered\\Subgraph};
+  \node[chip=cemb,  right=of qslice] (qemb)   {Graph\\Embedding};
+
+  % Online arrows
+  \draw[arr]   (qcode)  -- node[note, above]{\strut parse}      (qcpg);
+  \draw[arr]   (qcpg)   -- node[note, above]{\strut slice}      (qslice);
+  \draw[arr]   (qslice) -- node[note, above]{\strut encode}     (qemb);
+  \draw[arrhi] (qemb)   --
+        node[note, below, sloped, yshift=-1pt]{\strut cosine sim.}
+        (kb.south west);
+
+  % ===========================================================
+  %  OUTPUT
+  % ===========================================================
+  \node[chip=crank, below=0.85cm of kb] (rank)
+        {Ranked\\Matches};
+  \draw[arrrk] (kb) --
+        node[note, right, xshift=3pt]{top-$k$} (rank);
+
+  % ===========================================================
+  %  BACKGROUND LANE BOXES (with brownish drop shadow)
+  % ===========================================================
+  \begin{scope}[on background layer]
+
+    % Offline lane shadow (manual warm brown rectangle, slightly offset)
+    \node[
+      fill=shadowcol, opacity=0.18,
+      rounded corners=10pt,
+      fit=(offlbl)(kvuln)(kemb),
+      inner xsep=10pt, inner ysep=9pt,
+      xshift=3pt, yshift=-3.5pt
+    ] {};
+
+    % Offline lane
+    \node[
+      fill=trackoff,
+      draw=borderoff, line width=0.8pt,
+      rounded corners=10pt,
+      fit=(offlbl)(kvuln)(kemb),
+      inner xsep=10pt, inner ysep=9pt
+    ] (offbox) {};
+
+    % Online lane shadow
+    \node[
+      fill=shadowcol, opacity=0.18,
+      rounded corners=10pt,
+      fit=(onlbl)(qcode)(qemb),
+      inner xsep=10pt, inner ysep=9pt,
+      xshift=3pt, yshift=-3.5pt
+    ] {};
+
+    % Online lane
+    \node[
+      fill=trackon,
+      draw=borderon, line width=0.8pt,
+      rounded corners=10pt,
+      fit=(onlbl)(qcode)(qemb),
+      inner xsep=10pt, inner ysep=9pt
+    ] (onbox) {};
+
+  \end{scope}
+
+  \end{tikzpicture}
+  \end{center}
+
+  % ----------------------------------------------------------
+  %  Footer key-idea strip
+  % ----------------------------------------------------------
+  \vspace{0.1cm}
+  \begin{beamercolorbox}[
+      wd=\textwidth, ht=0.62cm, dp=0.2cm,
+      leftskip=0.4cm, rightskip=0.4cm
+  ]{block body}
+    \color{notecol}\scriptsize\sffamily
+    \textcolor{headcol}{\textbf{Key idea:}}\ 
+    Identical pipeline for both tracks — only the \emph{input} differs.\enspace
+    \textcolor{borderoff}{\textbf{Offline}} indexes \emph{known} vulnerability
+    patterns;\enspace
+    \textcolor{borderon}{\textbf{Online}} queries \emph{unseen} code against them.
+  \end{beamercolorbox}
+\end{frame}
+
+\begin{frame}[fragile]{Feasibility Study: AutoPatch Dataset (n=225)}
+
+  \textbf{Goal:} Validate the concept using a controlled dataset and define baselines.
+
+  \vspace{0.3cm}
+  \begin{columns}[T]
+    \column{0.52\textwidth}
+      \textbf{AutoPatch Dataset:}
+      \begin{itemize}
+        \item 75 CVE functions (65 Linux Kernel, 10 Chromium)
+        \item 5 LLMs re-implement each $\rightarrow$ 375 variant pairs
+        % \item Total: 449 (vuln, patched) pairs
+        % \item Split: 225 index / 73 query
+      \end{itemize}
+
+      \vspace{0.3cm}
+
+        \begin{tcolorbox}[colback=c1!5, colframe=c1!60!black, boxrule=0.5pt,
+      left=6pt, right=6pt, top=4pt, bottom=4pt, arc=3pt, width=0.92\textwidth]
+         \small  Can structural graph embeddings capture vulnerability patterns as effectively as pretrained CodeBERT?
+
+      
+    \end{tcolorbox}
+    
+
+    \column{0.44\textwidth}
+    
+    % \textbf{Embeddings compared:}
+    % \begin{enumerate}
+    %   \item Structure-only: NetLSD + WL + GIN (combined)
+    %   \item Semantic baseline: CodeBERT
+    % \end{enumerate}
+    % \vspace{0.3cm}
+
+
+    \begin{tikzpicture}[
+    node distance=0.3cm and 0.5cm,
+    chip/.style={
+      draw=none,
+      rounded corners=5pt,
+      minimum height=0.55cm,
+      minimum width=1.5cm,
+      font=\tiny\sffamily\bfseries,
+      align=center,
+      fill=#1,
+      text=white,
+      drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.35, fill=shadowcol}
+    },
+    arr/.style={
+      -{Stealth[length=3.5pt, width=3.5pt]},
+      line width=0.9pt,
+      color=notecol
+    },
+    note/.style={
+      font=\tiny\sffamily,
+      text=notecol
+    }
+  ]
+
+    % --- Row 1: CVE → LLMs → Variants ---
+    \node[chip=ccode] (cve)
+          {75 CVE Funcs\\{\tiny 65 Linux + 10 Chrome}};
+
+    \node[chip=ccpg, right=0.5cm of cve] (llm)
+          {5 LLMs\\{\tiny Re-implement}};
+
+    \node[chip=cemb, right=0.5cm of llm] (variants)
+          {375 Variants\\{\tiny (vuln + patched)}};
+
+    \draw[arr] (cve) -- node[note, above]{\strut $\times$5} (llm);
+    \draw[arr] (llm) -- (variants);
+
+    % --- Row 2: Merge into total ---
+    \node[chip=ckb, below=0.8cm of llm, minimum width=3.2cm] (total)
+          {450 Total Pairs\\{\tiny 75 orig.\ + 375 LLM}};
+
+    \draw[arr] (cve.south) -- ++(0,-0.25) -| ($(total.north west)!0.35!(total.north)$);
+    \draw[arr] (variants.south) -- ++(0,-0.25) -| ($(total.north east)!0.35!(total.north)$);
+
+    % --- Row 3: Split ---
+    \node[chip=csub, below left=0.6cm and 0.1cm of total] (index)
+          {225 Index\\{\tiny 75 real + 150 aug.}};
+
+    \node[chip=crank, below right=0.6cm and 0.1cm of total] (query)
+          {75 Query\\{\tiny LLM variants}};
+
+    \draw[arr] (total.south) -- ++(0,-0.2) -| (index.north);
+    \draw[arr] (total.south) -- ++(0,-0.2) -| (query.north);
+
+  \end{tikzpicture}
+  
+  \end{columns}
+
+  % \vspace{0.4cm}
+  % \begin{center}
+  %   \begin{tcolorbox}[colback=c1!5, colframe=c1!60!black, boxrule=0.5pt,
+  %     left=6pt, right=6pt, top=4pt, bottom=4pt, arc=3pt, width=0.92\textwidth]
+  %     \small\textbf{Hypothesis:} Structural graph representations are as effective as semantic code models for vulnerability pattern matching, and allow high-quality retrieval.
+  %   \end{tcolorbox}
+  % \end{center}
+\end{frame}
+
+\begin{frame}[fragile]{Evaluation Metrics}
+
+  \begin{center}
+  \begin{tikzpicture}[
+    node distance=0.6cm and 1.2cm,
+    mcard/.style={
+      draw=#1!60, fill=#1!8,
+      rounded corners=6pt,
+      minimum width=3cm,
+      minimum height=2.4cm,
+      inner ysep=8pt,
+      font=\scriptsize\sffamily,
+      align=center,
+      drop shadow={shadow xshift=1.5pt, shadow yshift=-2pt, opacity=0.3, fill=shadowcol}
+    },
+    mtitle/.style={
+      font=\scriptsize\sffamily\bfseries,
+      text=#1!80!black
+    },
+    micon/.style={
+      font=\Large,
+      text=#1
+    }
+  ]
+
+    % --- Card 1: Hit@1 ---
+    \node[mcard=ccode] (h1) {
+      % \textcolor{ccode}{\faBuilding}\\[4pt]
+      {\scriptsize\bfseries\textcolor{ccode!80!black}{Hit@1}}\\[6pt]
+      {\tiny\textit{Success rate at rank 1}}\\[5pt]
+      $\displaystyle\frac{1}{|Q|}\sum_{q} \mathbbm{1}[\text{rank}_q = 1]$\\[6pt]
+      {\tiny Fraction of queries where the}\\[-1pt]
+      {\tiny correct match is ranked \textbf{first}.}
+    };
+
+    % --- Card 2: Hit@5 ---
+    \node[mcard=ccpg, right=0.8cm of h1] (h5) {
+      % \textcolor{ccpg}{\faListOl}\\[4pt]
+      {\scriptsize\bfseries\textcolor{ccpg!80!black}{Hit@5}}\\[6pt]
+      {\tiny\textit{Success rate in top 5}}\\[5pt]
+      $\displaystyle\frac{1}{|Q|}\sum_{q} \mathbbm{1}[\text{rank}_q \leq 5]$\\[6pt]
+      {\tiny Fraction of queries where the}\\[-1pt]
+      {\tiny correct match appears in \textbf{top 5}.}
+    };
+
+    % --- Card 3: MRR ---
+    \node[mcard=cemb, right=0.8cm of h5] (mrr) {
+      % \textcolor{cemb}{\faSortAmountDown}\\[4pt]
+      {\scriptsize\bfseries\textcolor{cemb!80!black}{MRR}}\\[6pt]
+      {\tiny\textit{Mean Reciprocal Rank}}\\[5pt]
+      $\displaystyle\frac{1}{|Q|}\sum_{q} \frac{1}{\text{rank}_q}$\\[6pt]
+      {\tiny Average inverse rank across}\\[-1pt]
+      {\tiny queries — rewards \textbf{higher} placements.}
+    };
+
+    % --- Card 4: CWE Recall ---
+    \node[mcard=csub, right=0.8cm of mrr] (cwe) {
+      \\[-0.5pt]
+      % \textcolor{csub}{\faProjectDiagram}\\[4pt]
+      {\scriptsize\bfseries\textcolor{csub!80!black}{CWE Recall}}\\[6pt]
+      {\tiny\textit{Type coverage}}\\[7pt]
+      $\displaystyle\frac{|\text{CWE}_{\text{retrieved}}|}{|\text{CWE}_{\text{index}}|}$\\[6pt]
+      {\tiny Fraction of distinct CWE types}\\[-1pt]
+      {\tiny correctly retrieved \textbf{at least once}.}
+      % \\[-0.01pt]
+    };
+
+  \end{tikzpicture}
+  \end{center}
+ 
+
+\end{frame}
+% =====================================================================
+% EMBEDDING PIPELINE DEFINITION
+% =====================================================================
+% \begin{frame}{Embedding Pipeline: From Graph to Vector}
+
+%   \begin{columns}[T]
+%     \column{0.55\textwidth}
+
+%     \textbf{Structure-Only Embedders} (no training required):
+
+%     \vspace{0.2cm}
+%     \begin{table}
+%       \centering
+%       \scriptsize
+%       \begin{tabular}{lcp{4.2cm}}
+%         \toprule
+%         \textbf{Embedder} & \textbf{Dim} & \textbf{Mechanism} \\
+%         \midrule
+%         NetLSD \cite{netlsd} & 128 & Heat kernel trace on graph Laplacian spectrum (100 timescales $10^{-2}$--$10^{2}$) \\[3pt]
+%         WL \cite{shervashidze2011wl} & 128 & Weisfeiler-Lehman color refinement (4 iters) $\rightarrow$ sum pool $\rightarrow$ linear proj. \\[3pt]
+%         GIN \cite{xu2019gin} & 128 & 3-layer Graph Isomorphism Network (random weights, frozen) $\rightarrow$ mean+sum readout \\
+%         \bottomrule
+%       \end{tabular}
+%     \end{table}
+
+%     \vspace{0.3cm}
+%     \textbf{Semantic Baseline:}
+%     \begin{table}
+%       \centering
+%       \scriptsize
+%       \begin{tabular}{lcp{4.2cm}}
+%         \toprule
+%         \textbf{Embedder} & \textbf{Dim} & \textbf{Mechanism} \\
+%         \midrule
+%         CodeBERT \cite{feng2020codebert} & 768 & Pretrained transformer; CLS token on linearized code \\
+%         \bottomrule
+%       \end{tabular}
+%     \end{table}
+
+%     \column{0.42\textwidth}
+%     \textbf{Combined Pipeline:}
+
+%     \vspace{0.2cm}
+%     \begin{tikzpicture}[
+%       node distance=0.4cm,
+%       box/.style={
+%         draw=c1!60, fill=c1!8,
+%         rounded corners=4pt,
+%         minimum width=2.8cm,
+%         minimum height=0.5cm,
+%         font=\tiny\sffamily\bfseries,
+%         align=center
+%       },
+%       arr/.style={
+%         -{Stealth[length=3.5pt, width=3.5pt]},
+%         line width=0.8pt,
+%         color=notecol
+%       },
+%       lbl/.style={
+%         font=\tiny\sffamily,
+%         text=notecol
+%       }
+%     ]
+%       \node[box] (netlsd) {NetLSD (128d)};
+%       \node[box, below=0.15cm of netlsd] (wl) {WL (128d)};
+%       \node[box, below=0.15cm of wl] (gin) {GIN (128d)};
+
+%       \node[box, draw=c5!60, fill=c5!8,
+%             below=0.5cm of wl, xshift=3.0cm] (concat)
+%             {Concatenate\\384d};
+
+%       \node[box, draw=c3!60, fill=c3!8,
+%             below=0.4cm of concat] (pca)
+%             {PCA\\128d};
+
+%       \node[box, draw=hit!60, fill=hit!8,
+%             below=0.4cm of pca] (norm)
+%             {L2 Normalize};
+
+%       \draw[arr] (netlsd.east) -| (concat.north);
+%       \draw[arr] (wl.east) -| (concat.north);
+%       \draw[arr] (gin.east) -| (concat.north);
+
+%       \draw[arr] (concat) -- node[lbl, right, xshift=2pt]{reduce} (pca);
+%       \draw[arr] (pca) -- node[lbl, right, xshift=2pt]{unit sphere} (norm);
+
+%     \end{tikzpicture}
+
+%     \vspace{0.3cm}
+%     \begin{tcolorbox}[colback=c3!5, colframe=c3!60!black, boxrule=0.4pt,
+%       left=4pt, right=4pt, top=3pt, bottom=3pt, arc=3pt]
+%       \scriptsize
+%       \textbf{PCA:} fit on index set, retains $>$95\% variance.\\
+%       All final vectors: \textbf{128d}, L2-normalized.
+%     \end{tcolorbox}
+%   \end{columns}
+
+%   \vspace{0.2cm}
+%   \begin{center}
+%     \begin{tikzpicture}
+%       \node[
+%         fill=slidebg, draw=labelcol!20, line width=0.5pt,
+%         rounded corners=5pt,
+%         font=\tiny\sffamily, text=labelcol,
+%         inner xsep=8pt, inner ysep=3pt,
+%         drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.2, fill=shadowcol}
+%       ]{
+%         \textbf{Node features:} 11-class CPG node type (one-hot) --- METHOD, CALL, IDENTIFIER, LITERAL, RETURN, CONTROL\_STRUCTURE, \ldots
+%       };
+%     \end{tikzpicture}
+%   \end{center}
+% \end{frame}
+
+
+% =====================================================================
+% PHASE 1: AUTOPATCH RESULTS
+% =====================================================================
+\begin{frame}{Phase 1: Feasibility — AutoPatch Dataset (n=225)}
+  % \textbf{Goal:} Validate that structural embeddings match CodeBERT performance.
+
+  \vspace{0.3cm}
+  \begin{table}
+    \centering
+    \small
+    \begin{tabular}{lrrrr}
+      \toprule
+      \textbf{Embedder} & \textbf{H@1} & \textbf{H@5} & \textbf{MRR} & \textbf{CWE R.} \\
+      \midrule
+      \multicolumn{5}{c}{\textit{Structure-Only}} \\
+      \midrule
+      \textbf{Combined} & \textbf{0.8904} & \textbf{0.9589} & \textbf{0.9162} & \textbf{0.4978} \\
+      GIN & 0.7260 & 0.8767 & 0.7879 & 0.4427 \\
+      WL & 0.6986 & 0.7945 & 0.7363 & 0.4386 \\
+      \midrule
+      \multicolumn{5}{c}{\textit{CodeBERT pretrained}} \\
+      \midrule
+      CodeBERT (baseline) & 0.1533 & 0.2200 & 0.1826 & 0.2933 \\
+      CodeBERT (seq) & 0.7534 & 0.8630 & 0.7927 & 0.4121 \\
+CodeBERT (pat) & 0.7123 & 0.8356 & 0.7677 & 0.4147 \\      \bottomrule
+    \end{tabular}
+    \\[2pt]
+    {\tiny\textcolor{notecol}{Source: \texttt{experiments/output/checkpoint5/20260505\_141347\_experiment\_f59ab1/results.json}}}
+  \end{table}
+
+  
+  \textbf{RQ1:} validated — structural \textit{graph} representations are \textit{effective} for vulnerability pattern retrieval in a synthetic dataset.
+\end{frame}
+
+\begin{frame}{CodeBERT Embeddings — Sequence vs. Pattern}
+
+  \vspace{0.2cm}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{center}
+      \textbf{\small CodeBERT (seq)}\\[4pt]
+      \begin{tikzpicture}[remember picture,
+        node distance=0.28cm,
+        box/.style={draw=c1!60, fill=c1!8, rounded corners=3pt,
+          minimum width=3.2cm, minimum height=0.4cm,
+          font=\tiny\sffamily\bfseries, align=center},
+        arr/.style={-{Stealth[length=3pt, width=3pt]}, line width=0.7pt, color=notecol}
+      ]
+        \node[box] (cpg) {CPG (Joern)};
+        \node[box, below=of cpg] (collect) {Collect changed code\\{\tiny diff\_weight $>$ 0.3, sort by line}};
+        \node[box, below=of collect] (tok) {Tokenize as flat sequence\\{\tiny ``sk = sk\_alloc(); sock->sk = sk; ...''}};
+        \node[box, draw=c3!60, fill=c3!8, below=of tok] (bert) {CodeBERT [CLS]\\{\tiny 768d}};
+        \node[box, draw=hit!60, fill=hit!8, below=of bert] (out-seq) {L2 Normalize\\{\tiny 768d embedding}};
+        \draw[arr] (cpg) -- (collect);
+        \draw[arr] (collect) -- (tok);
+        \draw[arr] (tok) -- (bert);
+        \draw[arr] (bert) -- (out-seq);
+      \end{tikzpicture}
+      \end{center}
+      {\scriptsize\centering Text-only: structure is \textbf{discarded}.\par}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{center}
+      \textbf{\small CodeBERT (pat)}\\[4pt]
+      \begin{tikzpicture}[remember picture,
+        node distance=0.28cm,
+        box/.style={draw=c1!60, fill=c1!8, rounded corners=3pt,
+          minimum width=3.2cm, minimum height=0.4cm,
+          font=\tiny\sffamily\bfseries, align=center},
+        arr/.style={-{Stealth[length=3pt, width=3pt]}, line width=0.7pt, color=notecol}
+      ]
+        \node[box] (cpg) {CPG (Joern)};
+        \node[box, below=of cpg, xshift=2cm] (pat) {Vuln Pattern Features\\{\tiny 34d: UAF/NPD/race/\ldots}};
+        \node[box, draw=c8, fill=c8!8 , below=of cpg, xshift=-2cm] (code-pat) { CodeBERT (seq) \\{\tiny [CLS] 768d}};
+        \node[box, draw=c5!60, fill=c5!8, below=0.45cm of cpg, yshift=-0.7cm] (cat) {Concatenate\\{\tiny [pattern $\|$ CodeBERT (seq)] = 802d}};
+        \node[box, draw=c3!60, fill=c3!8, below=of cat] (pca) {PCA reduce\\{\tiny 128d}};
+        \node[box, draw=hit!60, fill=hit!8, below=of pca] (out) {L2 Normalize\\{\tiny 128d embedding}};
+        \draw[arr] (cpg) -- (pat);
+        \draw[arr] (cpg) -- (code-pat);
+        \draw[arr] (pat) |- (cat);
+        \draw[arr] (code-pat) |- (cat);
+        \draw[arr] (cat) -- (pca);
+        \draw[arr] (pca) -- (out);
+      \end{tikzpicture}
+      \end{center}
+      {\scriptsize\centering Fuses \textbf{graph structure} with semantics.\par}
+    \end{column}
+  \end{columns}
+
+  \begin{tikzpicture}[remember picture, overlay]
+    \draw[-{Stealth[length=3.5pt, width=3.5pt]}, line width=0.8pt, color=c8!70, dashed]
+      (out-seq.east) -- ++(1,0) |- (code-pat.west);
+  \end{tikzpicture}
+  
+\end{frame}
+
+% =====================================================================
+% PHASE 2: CVEFIXES RESULTS
+% =====================================================================
+\begin{frame}{Phase 2: Generalization — CVEfixes Dataset}
+  
+  \textbf{Question:} Does the approach generalize to real-world vulnerabilities?
+  \vspace{0.3cm}
+  
+\begin{columns}[T]
+\begin{column}{0.48\textwidth}
+
+  \textbf{Real-World Dataset}\\[3pt]
+  {\small CVEFixes \cite{bhandari2021cvefixes} datasets is large dataset with real-world CVEs collected from the U.S. National Vulnerability Database, patches, and code changes.\\}
+  
+  \vspace{0.5em}
+  \begin{center}
+    
+  \scriptsize
+  \begin{tabular}{lr}
+    \toprule
+    \textbf{Metric} & \textbf{Value} \\
+    \midrule
+    CVEs & 11,873 \\
+    Fix commits & 12,107 \\
+    File changes & 51,342 \\
+    Method changes & 277,948 \\
+    Repositories & 4,249 \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+\end{column}
+\begin{column}{0.50\textwidth}
+    {\small\textbf{Sampling criteria}}\\[3pt]
+  {\scriptsize
+  \begin{itemize}\itemsep1pt
+      \setbeamertemplate{itemize item}{}
+    \item Structurally distinshable CWEs (e.g. UAF vs. OOB) to test pattern matching, not just code similarity
+    \item Balanced superclass(CWE) up to 20 entries and subclasses (CVE) to ensure retrieval feasibility
+  \end{itemize}}
+      \vspace{0.5em}
+    \begin{center}
+
+  {\scriptsize
+  \renewcommand{\arraystretch}{1.2}
+  \begin{tabular}{lr}
+    \toprule
+    \textbf{Parameter} & \textbf{Value} \\
+    \midrule
+    Total pairs & 136 \\
+    Index set & 109 \\
+    Query set & 27 \\
+    Unique CVEs (index) & 60 \\
+    Unique CVEs (query) & 25 \\
+    CWE classes & 7 \\
+    % Slice depth & 2-hop \\
+    % Min/max lines & 10 / 120 \\
+    \bottomrule
+  \end{tabular}}
+
+    \end{center}
+  
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{Phase 2: Pipeline Verification Results}
+
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+
+  \begin{center}
+    {\small\textbf{Same-CWE Retrieval} {\scriptsize(n=109 index, 27 query)}}\\[6pt]
+  {\scriptsize
+  \renewcommand{\arraystretch}{1.35}
+  \setlength{\tabcolsep}{3.5pt}
+    \begin{tabular}{lrrrr}
+      \toprule
+      \textbf{Embedder} & \textbf{Hit@1} & \textbf{Hit@5} & \textbf{MRR} & \textbf{CWE Recall} \\
+      \midrule
+      GIN & 0.259 & 0.778 & 0.315 & 0.202 \\
+      \rowcolor{warn!12}
+      Combined & \cmiss{0.111} & 0.778 & 0.223 & 0.189 \\
+      CodeBERT (baseline) & 0.080 & 0.1518 & 0.098 & 0.141 \\
+      \rowcolor{hit!12}
+      \textbf{CodeBERT (seq)} & \textbf{0.556} & \textbf{0.926} & \textbf{0.555} & \textbf{0.264} \\
+      \textbf{CodeBERT (pat)} & \textbf{0.519} & \textbf{0.889} & \textbf{0.549} & \textbf{0.276} \\
+      \bottomrule
+    \end{tabular}
+  }
+
+  \vspace{0.3em}
+  {\tiny\textcolor{notecol}{Source: \texttt{cvefixes\_experiments/output/pipeline\_verification/results.json}}}
+
+  \vspace{0.3em}
+  \begin{tcolorbox}[colback=hit!5, colframe=hit!60!black, boxrule=0.3pt,
+    left=3pt, right=2pt, top=2pt, bottom=1pt, arc=2pt, width=0.7\linewidth]
+    \scriptsize
+    \textbf{RQ1 validated} on real-world dataset with same-CWE retrieval up to 93\% at $k{=}5$.
+  \end{tcolorbox}
+  
+  \end{center}
+  
+    \end{column}
+    \begin{column}{0.5\textwidth}
+
+  \begin{center}
+  {\small\textbf{Per-CWE Breakdown} {\scriptsize(CodeBERT Pattern, CWE Hit@$k$)}}\\[6pt]
+  {\scriptsize
+  \renewcommand{\arraystretch}{1.35}
+  \setlength{\tabcolsep}{3.5pt}
+  \begin{tabular}{l r rrr}
+    \toprule
+    \textbf{CWE} & \textbf{N} & \textbf{Hit@1} & \textbf{Hit@5} & \textbf{Hit@10} \\
+    \midrule
+    Integer Overflow (190) & 4 & \chit{75\%} & 100\% & 100\% \\
+    Input Validation (20) & 4 & \chit{75\%} & 75\% & 100\% \\
+    Resource Consump.\ (400) & 3 & \chit{67\%} & 100\% & 100\% \\
+    Use After Free (416) & 4 & 50\% & 100\% & 100\% \\
+    NULL Ptr Deref (476) & 5 & \cwarn{40\%} & 80\% & 80\% \\
+    Race Condition (362) & 3 & \cwarn{33\%} & 100\% & 100\% \\
+    OOB Write (787) & 4 & \cmiss{25\%} & 75\% & 75\% \\
+    \midrule
+    \textbf{Overall} & \textbf{27} & \textbf{51.9\%} & \textbf{88.9\%} & \textbf{92.6\%} \\
+    \bottomrule
+  \end{tabular}}
+
+  \vspace{0.2em}
+  {\tiny\textcolor{notecol}{Source: same file (CodeBERT Pattern cell)}}
+
+  \vspace{0.2em}
+  {\scriptsize\textcolor{notecol}{Highlights areas for improvement in embedding design or slicing strategy.}}
+  \end{center}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% \begin{frame}{Phase 2: Generalization — CVEfixes Dataset}
+%   \textbf{Question:} Does the approach generalize to real-world vulnerabilities?
+%   \vspace{0.3cm}
+%   \begin{table}
+%     \centering
+%     \tiny
+%     \begin{tabular}{lrrrr}
+%       \toprule
+%       \textbf{Embedder} & \textbf{H@1} & \textbf{H@5} & \textbf{MRR} & \textbf{CWE R.} \\
+%       \midrule
+%       \multicolumn{5}{c}{\textit{Structure-Only (n=109 index, 27 query, depth-2)}} \\
+%       \midrule
+%       Combined & 0.2857 & 0.5510 & 0.2592 & 0.1417 \\
+%       GIN & 0.2041 & 0.4490 & 0.1973 & 0.1437 \\
+%       \midrule
+%       \multicolumn{5}{c}{\textit{CodeBERT (Baseline)}} \\
+%       \midrule
+%       CodeBERT (pat) & 0.5102 & 0.7755 & 0.5435 & 0.3032 \\
+%       \bottomrule
+%     \end{tabular}
+%   \end{table}
+
+%   \vspace{0.3cm}
+%   \textbf{The Generalization Gap:} Structure-only drops from 0.8904 to 0.2857 (32\% of Phase 1); CodeBERT retains 0.5102 (68\%).
+  
+%   \vspace{0.3cm}
+%   \textbf{Root Causes:}
+%   \begin{itemize}
+%     \item GIN embedding space nearly-collapsed (mean pairwise sim 0.99, 8 effective dims)
+%     \item Combined fusion poorly calibrated (4.3 effective dims)
+%     \item CVEfixes code is far more complex than AutoPatch
+%   \end{itemize}
+% \end{frame}
+
+% =====================================================================
+% SUMMARY
+% =====================================================================
+\begin{frame}[fragile]{Next Steps: Research Question 2}
+ 
+  \textbf{RQ1: }How effective are graph-based embeddings at retrieving relevant vulnerability fix patterns from the knowledge base?
+   \begin{itemize}
+    \item \textbf{Investigate}: Why does combined embedder perform worse than CodeBERT(seq) on CVEFixes?
+   \end{itemize}
+ \begin{columns}
+  \begin{column}{0.5\textwidth}
+  \textbf{RQ2: }What are the trade-offs of using Graph-RAG in the vulnerability patching pipeline?
+    \begin{enumerate}
+            \item Integrate the retrieval layer with patch agent
+            \item Run \textbf{comparative experiments} against baseline approaches:
+               \begin{itemize}
+                \item \small{zero-shot open-source models}
+                \item \small{AutoPatch}
+               \end{itemize} 
+            \item \textbf{Validate} the end-to-end patching \textbf{pipeline} with industry professionals.
+        \end{enumerate}
+
+  \end{column}
+
+  \begin{column}{0.5\textwidth}
+    \begin{center}
+    \begin{tikzpicture}[
+      node distance=0.32cm,
+      chip/.style={
+        draw=none,
+        rounded corners=5pt,
+        minimum width=2.6cm,
+        minimum height=0.5cm,
+        font=\tiny\sffamily\bfseries,
+        align=center,
+        fill=#1,
+        text=white,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.35, fill=shadowcol}
+      },
+      arr/.style={
+        -{Stealth[length=3.5pt, width=3.5pt]},
+        line width=0.9pt,
+        color=notecol!80
+      },
+      lbl/.style={font=\tiny\sffamily, text=notecol}
+    ]
+      % --- Done (full saturation) ---
+      \node[chip=ccode]                    (code)  {Vulnerable Code};
+      \node[chip=ccpg, below=of code]      (graph) {Joern CPG};
+      \node[chip=cemb, below=of graph]     (retr)  {Graph-RAG\\Retrieval};
+      % --- TODO (desaturated / 30% opacity fill) ---
+      \node[chip=csub!35, below=of retr]   (agent) {LLM Agent\\{\tiny patch generation}};
+      \node[chip=ckb!35, below=of agent]   (out)   {Candidate Patch};
+      \node[chip=crank!35, below=of out]   (eval)  {Evaluation\\{\tiny LLM-as-judge + human}};
+
+      % Done arrows
+      \draw[arr] (code)  -- node[lbl, right, xshift=2pt]{parse}    (graph);
+      \draw[arr] (graph) -- node[lbl, right, xshift=2pt]{embed}    (retr);
+      % TODO arrows (lighter)
+      \draw[arr, color=notecol!35] (retr)  -- node[lbl, right, xshift=2pt]{top-$k$}  (agent);
+      \draw[arr, color=notecol!35] (agent) -- node[lbl, right, xshift=2pt]{generate} (out);
+      \draw[arr, color=notecol!35] (out)   -- node[lbl, right, xshift=2pt]{score}    (eval);
+
+      % % Legend
+      % \node[font=\tiny\sffamily, text=labelcol, anchor=north west]
+      %   at ([yshift=-0.25cm]eval.south west)
+      %   {\textcolor{cemb}{$\blacksquare$} Done \quad
+      %    \textcolor{csub!35}{$\blacksquare$} To implement};
+
+      \begin{scope}[on background layer]
+        \node[
+          fill=trackoff, draw=borderoff, line width=0.5pt,
+          rounded corners=8pt,
+          fit=(code)(eval),
+          inner xsep=10pt, inner ysep=8pt,
+          opacity=0.4
+        ] {};
+      \end{scope}
+    \end{tikzpicture}
+    \end{center}
+  \end{column}
+ \end{columns}
+   
+\end{frame}
+
+% ── closing ───────────────────────────────────────────────────────────
+\begin{frame}[plain]
+\centering
+\vspace{3em}
+{\LARGE\bfseries\color{c1} Questions?}\\[2em]
+\begin{tikzpicture}
+  \node[draw=c1!30, rounded corners=6pt, fill=c1!5,
+        minimum width=9cm, minimum height=1.4cm,
+        font=\small\sffamily\color{notecol}, align=center]
+    {Lívia Cavalcanti\quad\textbar\quad\faIcon{github}\ \texttt{graph-rag/}};
+\end{tikzpicture}
+\end{frame}
+% =====================================================================
+% BACKUP: DETAILED CPG
+% =====================================================================
+\begin{frame}{Appendix: CPG Deep Dive}
+  The Code Property Graph encodes four types of relationships:
+
+  \vspace{0.5cm}
+  \begin{description}
+    \item[AST:] Abstract syntax tree (structure of code)
+    \item[CFG:] Control flow graph (which statements execute in sequence)
+    \item[DDG:] Data dependency graph (variable definitions and uses)
+    \item[CDG:] Control dependency graph (which statements depend on conditionals)
+  \end{description}
+
+  \vspace{0.5cm}
+
+  \vspace{0.5cm}
+  Joern exposes all four via traversals; KB retrieval compares the combined structure to find similar vulnerabilities.
+\end{frame}
+
+% =====================================================================
+% JOERN QUERY
+% =====================================================================
+\begin{frame}[fragile]{Appendix: Joern Query - Finding the Pattern}
+  \textbf{Goal:} Find \texttt{free()} calls with dangling aliases.
+
+  \vspace{0.15cm}
+  \tiny
+  \begin{verbatim}
+val uafCandidates = cpg.call.name(".*free.*")
+  .map { freeCall =>
+    val freedVar = freeCall.argument(1).code
+    val aliases = freeCall.method.assignment
+      .where(_.source.isIdentifier.name(freedVar))
+      .target.code.l
+    val freeLineNo = freeCall.lineNumber.get
+    val nullified = freeCall.method.assignment
+      .where(_.lineNumber.map(_ > freeLineNo))
+      .target.code.l
+    val dangling = aliases.filterNot(nullified.contains)
+    (freeCall, dangling)
+  }
+  \end{verbatim}
+
+  \normalsize
+  \textbf{Output:} \texttt{[UAF] sk\_free(sk) — dangling: sock->sk}
+\end{frame}
+
+% =====================================================================
+% APPENDIX: CODE SLICING ALGORITHM
+% =====================================================================
+\begin{frame}[fragile]{Appendix: Vulnerability-Aware Code Slicing}
+
+  \begin{columns}[T]
+    \column{0.48\textwidth}
+
+    \textbf{Goal:} Extract a minimal subgraph capturing the vulnerability context from the full CPG.
+
+    \vspace{0.3cm}
+    \textbf{Algorithm (3 phases):}
+    \begin{enumerate}
+      \item \textbf{Semantic Node Diff} — Match nodes by fingerprint \texttt{(labelV, CODE, LINE\_NUMBER)} between pre-/post-patch CPGs. Identify removed, added, and fix-adjacent nodes.
+      \item \textbf{Semantic Edge Diff} — Detect structural changes (rewired control/data flow).
+      \item \textbf{Bounded Program Slice} — BFS $k{=}3$ hops along flow edges (CFG, CDG, REACHING\_DEF, PDG, DDG) from seed nodes.
+    \end{enumerate}
+
+    \column{0.48\textwidth}
+
+    \begin{center}
+    \begin{tikzpicture}[
+      node distance=0.3cm,
+      chip/.style={
+        draw=none, rounded corners=5pt,
+        minimum width=2.8cm, minimum height=0.5cm,
+        font=\tiny\sffamily\bfseries, align=center,
+        fill=#1, text=white,
+        drop shadow={shadow xshift=1pt, shadow yshift=-1.5pt, opacity=0.35, fill=shadowcol}
+      },
+      arr/.style={-{Stealth[length=3.5pt, width=3.5pt]}, line width=0.9pt, color=notecol!80},
+      lbl/.style={font=\tiny\sffamily, text=notecol}
+    ]
+      \node[chip=ccode]                     (before) {CPG$_{\text{before}}$};
+      \node[chip=csub, right=0.8cm of before] (after)  {CPG$_{\text{after}}$};
+
+      \node[chip=ccpg, below=0.6cm of $(before)!0.5!(after)$] (diff) {Semantic Diff\\{\tiny node + edge fingerprints}};
+
+      \node[chip=ckb, below=0.5cm of diff] (seeds) {Seed Nodes\\{\tiny removed $|$ fix-adjacent $|$ edge-changed}};
+
+      \node[chip=cemb, below=0.5cm of seeds] (slice) {BFS Slice ($k{=}3$)\\{\tiny along CFG/CDG/DDG}};
+
+      \node[chip=crank, below=0.5cm of slice] (out) {Vulnerability Subgraph};
+
+      \draw[arr] (before) -- (diff);
+      \draw[arr] (after) -- (diff);
+      \draw[arr] (diff) -- (seeds);
+      \draw[arr] (seeds) -- (slice);
+      \draw[arr] (slice) -- (out);
+    \end{tikzpicture}
+    \end{center}
+
+    % \vspace{0.1cm}
+    \begin{center}
+    {\scriptsize
+    \renewcommand{\arraystretch}{1.1}
+    \begin{tabular}{lc}
+      \toprule
+      \textbf{Diff Label} & \textbf{Weight} \\
+      \midrule
+      removed & 1.0 \\
+      fix\_adjacent & 0.8 \\
+      edge\_changed & 0.6 \\
+      context & 0.2 \\
+      \bottomrule
+    \end{tabular}}
+    \end{center}
+
+  \end{columns}
+\end{frame}
+
+% =====================================================================
+% APPENDIX: CODEBERT PATTERN EMBEDDING DETAIL
+% =====================================================================
+\begin{frame}[fragile]{Appendix: CodeBERT Pattern Embedding — Detail}
+
+  \begin{columns}[T]
+    \column{0.55\textwidth}
+
+    \textbf{34d Feature Vector — 5 Groups:}\\[4pt]
+    {\scriptsize All features require CPG edge connectivity (REACHING\_DEF, CDG, CFG).}
+
+    \vspace{0.15cm}
+    {\tiny
+    \renewcommand{\arraystretch}{1.15}
+    \begin{tabular}{clp{4.8cm}}
+      \toprule
+      \textbf{Grp} & \textbf{Dim} & \textbf{Features \& Mechanism} \\
+      \midrule
+      \multirow{8}{*}{\rotatebox{90}{\textbf{A: Vuln Flow (8)}}}
+        & A1 & UAF: free $\xrightarrow{\text{REACH\_DEF}}$ identifier (2-hop) \\
+        & A2 & NPD: ptr deref w/o null-check in CDG preds \\
+        & A3 & Unchecked return: CALL $\not\to$ CONTROL\_STRUCT \\
+        & A4 & Lock/unlock imbalance: $|L{-}U|/(L{+}U{+}1)$ \\
+        & A5 & Unguarded arithmetic: no bounds in CDG neighbourhood \\
+        & A6 & Use w/o def: IDENTIFIER w/o incoming REACH\_DEF \\
+        & A7 & Alloc/free imbalance: $|A{-}F|/(A{+}F{+}1)$ \\
+        & A8 & Cast in data flow: cast $\xleftrightarrow{\text{REACH\_DEF}}$ changed \\
+      \midrule
+      \multirow{2}{*}{\rotatebox{90}{\textbf{B (8)}}}
+        & B1--8 & Edge type distribution among changed nodes \\
+        &       & {\tiny AST, CFG, CDG, REACH\_DEF, REF, ARG, RECV, CALL} \\
+      \midrule
+      \multirow{2}{*}{\rotatebox{90}{\textbf{C (6)}}}
+        & C1--6 & Boundary flow: changed$\to$ctx vs ctx$\to$changed \\
+        &       & {\tiny per CFG, CDG, REACHING\_DEF (2 dirs $\times$ 3 types)} \\
+      \midrule
+      \multirow{2}{*}{\rotatebox{90}{\textbf{D (6)}}}
+        & D1--6 & Diff topology: changed frac, density, \#components, \\
+        &       & {\tiny mean/max degree, internal vs crossing edge ratio} \\
+      \midrule
+      \multirow{2}{*}{\rotatebox{90}{\textbf{E (6)}}}
+        & E1--6 & Node role distribution of changed nodes \\
+        &       & {\tiny CALL, CTRL\_STRUCT, ID, LITERAL, BLOCK, OTHER} \\
+      \bottomrule
+    \end{tabular}}
+
+    \vspace{0.2cm}
+    {\scriptsize Node classification uses regex on \texttt{CODE} attr (e.g.\ \texttt{free|kfree|vfree} for free nodes). Flow features traverse CPG edges.}
+
+    \column{0.42\textwidth}
+
+    \begin{center}
+    \textbf{Full Pipeline:}\\[6pt]
+    \begin{tikzpicture}[
+      node distance=0.3cm,
+      box/.style={draw=c1!60, fill=c1!8, rounded corners=3pt,
+        minimum width=2.6cm, minimum height=0.45cm,
+        font=\tiny\sffamily\bfseries, align=center},
+      arr/.style={-{Stealth[length=3pt, width=3pt]}, line width=0.7pt, color=notecol},
+      lbl/.style={font=\tiny\sffamily, text=notecol}
+    ]
+      \node[box] (cpg) {Vulnerability Subgraph\\{\tiny (from slicing)}};
+
+      \node[box, below=0.4cm of cpg, xshift=-1.4cm] (pat)
+            {Pattern Extractor\\{\tiny 34 features (A--E)}};
+      \node[box, below=0.4cm of cpg, xshift=1.4cm] (code)
+            {Changed Code\\{\tiny diff\_weight $>$ 0.3}};
+
+      \node[box, draw=c3!60, fill=c3!8, below=0.35cm of code] (bert)
+            {CodeBERT [CLS]\\{\tiny 768d}};
+
+      \node[box, draw=c5!60, fill=c5!8, below=0.4cm of bert] (cat)
+            {Concatenate\\{\tiny [34d $\|$ 768d] = 802d}};
+
+      \node[box, draw=c3!60, fill=c3!8, below=0.35cm of cat] (pca)
+            {PCA\\{\tiny 802d $\to$ 128d}};
+
+      \node[box, draw=hit!60, fill=hit!8, below=0.35cm of pca] (norm)
+            {L2 Normalize\\{\tiny 128d final embedding}};
+
+      \draw[arr] (cpg) -- (pat);
+      \draw[arr] (cpg) -- (code);
+      \draw[arr] (code) -- (bert);
+      \draw[arr] (pat) |- (cat);
+      \draw[arr] (bert) -- (cat);
+      \draw[arr] (cat) -- (pca);
+      \draw[arr] (pca) -- (norm);
+    \end{tikzpicture}
+    \end{center}
+
+    % \begin{tcolorbox}[colback=c3!5, colframe=c3!60!black, boxrule=0.3pt,
+    %   left=3pt, right=3pt, top=2pt, bottom=2pt, arc=2pt]
+    %   \scriptsize
+    %   \textbf{Key insight:} Pattern features inject \emph{graph-derived} vulnerability signals into the semantic embedding space — every feature requires edge traversal.
+    % \end{tcolorbox}
+
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Appendix: Joern Generated graph}
+  TODO: add graphml example 
+\end{frame}
+
+% =====================================================================
+% REFERENCES
+% =====================================================================
+\begin{frame}[allowframebreaks]{References}
+  \scriptsize
+  \printbibliography[heading=none]
+\end{frame}
+
+\end{document}
