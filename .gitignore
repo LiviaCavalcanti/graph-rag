@@ -7,6 +7,27 @@ experiments/diagnostics/
 src/rag/*.index
 src/rag/metadata.json
 
+# Large data files (>100MB GitHub limit)
+CVEfixes_v1.0.8/
+cvefixes_experiments/data/cvefixes_filtered_by_cwe_with_files.json
+cvefixes_experiments/scripts/graph_analysis/cvefixes_experiments/
+cvefixes_experiments/scripts/graph_analysis/workspace/
+*.sqlite
+*.db
+
+# Large binary/model files
+models/
+*.pt
+*.pth
+*.onnx
+*.safetensors
+
+# Data outputs and caches
+graphml_*/
+data/
+cvefixes_experiments/output/
+experiments/output/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
