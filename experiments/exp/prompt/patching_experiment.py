@@ -38,6 +38,9 @@ class PatchingExperiment(Experiment):
         resume: str | None = None,
         prompt_variant: str = "default",
         cve_filter: set[str] | None = None,
+        cve_root: str | None = None,
+        include_variants: bool | None = None,
+        dataset: str = "autopatch",
     ):
         self._retriever_modes = retriever_modes or ["oracle"]
         self._model_names = model_names
@@ -49,19 +52,45 @@ class PatchingExperiment(Experiment):
         self._resume = resume
         self._prompt_variant = prompt_variant
         self._cve_filter = cve_filter
+        self._cve_root = cve_root
+        self._include_variants = include_variants
+        if dataset not in ("autopatch", "cvefixes"):
+            raise ValueError(
+                f"Unknown dataset {dataset!r} for patching; expected "
+                "'autopatch' or 'cvefixes'."
+            )
+        self._dataset = dataset
 
     @property
     def name(self) -> str:
         return "patching"
 
     def load_data(self, cfg: dict) -> dict[str, Any]:
-        """Load lightweight pairs (no CPGs), split, and load db_cache."""
-        from experiments.common import build_split
-        from src.data import load_pairs_lightweight
-        from src.data.autopatch import AutoPatchDataset
+        """Load lightweight pairs (no CPGs), split, and build a db_cache.
 
-        pairs = load_pairs_lightweight(cfg)
-        print(f"Loaded {len(pairs)} lightweight pairs (no CPGs)")
+        ``dataset`` (constructor arg / ``--dataset`` CLI flag) selects the
+        source, independent of ``cfg["data"]["active"]`` — which only
+        controls the embedding/retrieval pipeline's datasets:
+
+        - ``"autopatch"`` (default): AutoPatch CVE-list, db_entry.json fields
+          (root_cause/fix_list/...) feed the prompt builder directly.
+        - ``"cvefixes"``: CVEfixes SQLite DB. It has no db_entry.json, so
+          db_cache is derived from the SAME pairs (cve_id/cwe_id/code only;
+          root_cause/fix_list are unavailable and default to "Unknown"/"None"
+          in the prompt builder). Every pair uses a single implicit variant
+          (``"original"``), so retrieval decisions from a prior ``--mode
+          query --dataset cvefixes`` run line up by (cve_id, variant).
+
+        Pairs and db_cache always come from the *same* loaded pairs so they
+        can never silently diverge.
+        """
+        from experiments.common import build_split
+
+        if self._dataset == "cvefixes":
+            pairs, db_cache = self._load_cvefixes_data(cfg)
+        else:
+            pairs, db_cache = self._load_autopatch_data(cfg)
+
         index_pairs, query_pairs, split_info = build_split(pairs, cfg)
 
         if self._cve_filter:
@@ -71,11 +100,6 @@ class PatchingExperiment(Experiment):
         if self._max_queries:
             query_pairs = query_pairs[: self._max_queries]
 
-        # Load db_cache (shared across all cells)
-        cve_root = Path(cfg["data"]["autopatch"]["root"])
-        db_cache = AutoPatchDataset.load_db_cache(cve_root)
-        print(f"Cached {len(db_cache)} db_entries")
-
         return {
             "pairs": pairs,
             "index_pairs": index_pairs,
@@ -83,6 +107,82 @@ class PatchingExperiment(Experiment):
             "split_info": split_info,
             "db_cache": db_cache,
         }
+
+    def _load_autopatch_data(self, cfg: dict) -> tuple[list, dict]:
+        """Load AutoPatch pairs (lightweight) + db_cache from db_entry.json.
+
+        The CVE-list root is resolved in priority order:
+        1. ``cve_root`` constructor arg / ``--cve-root`` CLI flag
+        2. ``data.autopatch.root`` in config.yaml
+        """
+        from src.data.autopatch import AutoPatchDataset
+
+        cve_root = self._resolve_cve_root(cfg)
+        autopatch_cfg = cfg.get("data", {}).get("autopatch", {}) or {}
+        include_variants = (
+            self._include_variants
+            if self._include_variants is not None
+            else autopatch_cfg.get("include_variants", True)
+        )
+
+        dataset = AutoPatchDataset(
+            {"root": str(cve_root), "include_variants": include_variants}
+        )
+        pairs = dataset.load_lightweight()
+        print(f"Loaded {len(pairs)} lightweight AutoPatch pairs from {cve_root}")
+
+        # db_cache (shared across all cells) is keyed by dir_name, from the
+        # SAME root as pairs.
+        db_cache = AutoPatchDataset.load_db_cache(cve_root)
+        print(f"Cached {len(db_cache)} db_entries")
+        return pairs, db_cache
+
+    def _load_cvefixes_data(self, cfg: dict) -> tuple[list, dict]:
+        """Load CVEfixes pairs (lightweight) + a db_cache derived from them."""
+        from src.data.cvefixes import CVEFixesDataset
+
+        cvefixes_cfg = cfg.get("data", {}).get("cvefixes", {}) or {}
+        if not cvefixes_cfg.get("db_path"):
+            raise KeyError(
+                "No CVEfixes DB configured for patching. Set data.cvefixes.db_path "
+                "in config.yaml."
+            )
+
+        dataset = CVEFixesDataset(cvefixes_cfg)
+        pairs = dataset.load_lightweight()
+        print(f"Loaded {len(pairs)} lightweight CVEfixes pairs")
+
+        # CVEfixes has no db_entry.json; build an equivalent db_cache directly
+        # from the same pairs' own metadata (single source of truth).
+        db_cache = {
+            p.meta["dir_name"]: {
+                "cve_id": p.cve_id,
+                "cwe_type": p.cwe_id,
+                "function_name": p.func_name,
+                "original_code": p.meta.get("source_before", ""),
+                "vuln_patch": p.meta.get("source_after", ""),
+                "root_cause": "",
+                "fix_list": [],
+            }
+            for p in pairs
+        }
+        print(f"Cached {len(db_cache)} db_entries (derived from CVEfixes pairs)")
+        return pairs, db_cache
+
+    def _resolve_cve_root(self, cfg: dict) -> Path:
+        """Resolve and validate the AutoPatch CVE-list root directory."""
+        autopatch_cfg = cfg.get("data", {}).get("autopatch", {}) or {}
+        root = self._cve_root or autopatch_cfg.get("root")
+        if not root:
+            raise KeyError(
+                "No CVE-list root configured for patching. Set data.autopatch.root "
+                "in config.yaml, pass --cve-root on the CLI, or "
+                "PatchingExperiment(cve_root=...)."
+            )
+        path = Path(root)
+        if not path.is_dir():
+            raise FileNotFoundError(f"CVE-list root directory not found: {path}")
+        return path
 
     def axes(self, cfg: dict) -> list[Axis]:
         agent_cfg = cfg.get("agents", {})
@@ -268,6 +368,8 @@ def run_patching_experiment(
     prompt_variant: str = "default",
     architecture: str = "single_turn",
     cve_filter: set[str] | None = None,
+    cve_root: str | None = None,
+    dataset: str = "autopatch",
 ) -> Path:
     """Run the LLM patching experiment.
 
@@ -286,6 +388,8 @@ def run_patching_experiment(
         resume=resume,
         prompt_variant=prompt_variant,
         cve_filter=cve_filter,
+        cve_root=cve_root,
+        dataset=dataset,
     )
 
     output = exp.run(cfg, output_dir=output_dir) if output_dir else exp.run(cfg)
