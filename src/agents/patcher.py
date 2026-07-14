@@ -7,6 +7,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from pydantic import BaseModel, ValidationError
 
+from src.agents import prompt_registry
 from src.agents.backends import CompletionBackend, get_default_backend
 from src.agents.utils import MODEL_NAME, fmt_mapping, strip_code_fences
 
@@ -46,33 +47,11 @@ def sanitize_after_index(s, start, until):
 
 _FORMAT_INSTRUCTIONS = _load_prompt("format_instructions.txt")
 
-# Prompt variant → (system, user_example, assistant, user_target) templates
-_VARIANTS: dict[str, list[tuple[str, str]]] = {
-    "default": [
-        ("system", _load_prompt("system.txt")),
-        ("user", _load_prompt("user_example.txt")),
-        ("assistant", _load_prompt("assistant.txt")),
-        ("user", _load_prompt("user_target.txt")),
-    ],
-    "graph": [
-        ("system", _load_prompt("graph_system.txt")),
-        ("user", _load_prompt("user_example.txt")),
-        ("assistant", _load_prompt("assistant.txt")),
-        ("user", _load_prompt("graph_user_target.txt")),
-    ],
-    "graph_v2": [
-        ("system", _load_prompt("graph_system_v2.txt")),
-        ("user", _load_prompt("user_example.txt")),
-        ("assistant", _load_prompt("assistant_v2.txt")),
-        ("user", _load_prompt("graph_user_target_v2.txt")),
-    ],
-    "default_v2": [
-        ("system", _load_prompt("system_v2.txt")),
-        ("user", _load_prompt("user_example.txt")),
-        ("assistant", _load_prompt("assistant.txt")),
-        ("user", _load_prompt("user_target.txt")),
-    ],
-}
+# Prompt variants are loaded from the declarative registry
+# (prompts/registry.yaml). Kept as a module-level dict of the historical shape
+# ``name → [(role, template), ...]`` so the harness (src.agents.harness.registry)
+# and runtime variant registration keep working unchanged.
+_VARIANTS: dict[str, list[tuple[str, str]]] = prompt_registry.load_variants()
 
 
 class PatchResult(BaseModel):
@@ -237,34 +216,19 @@ class AutoPatchPatcher:
 # ── single-shot patcher ─────────────────────────────────────────────
 
 
-def patch_one(
+def build_input_dict(
     example_db: dict,
     target_db: dict,
     target_code: str,
     target_supplementary: str = "",
-    model_name: str | None = None,
-    trace_dir: str | Path | None = None,
-    prompt_variant: str = "default",
     graph_context: str = "",
-    llm_params: dict | None = None,
-    backend: CompletionBackend | None = None,
-) -> tuple[str, PatchResult | None, InvocationRecord]:
-    """Build prompt, invoke LLM via litellm (google-adk Azure backend), parse result.
+) -> dict:
+    """Assemble the prompt template variables from the retrieved example and target.
 
-    Returns (raw_output, parsed, record) where *parsed* is a PatchResult
-    with 'cot' and 'vuln_patch' fields (or None on parse failure), and
-    *record* is an InvocationRecord capturing everything for reproducibility.
-
-    If *trace_dir* is provided, the record is saved as a JSON file there.
-
-    Args:
-        prompt_variant: "default" for original AutoPatch prompts,
-                        "graph" for graph-enhanced prompts.
-        graph_context:  Serialized graph analysis text (from
-                        graph_context.serialize_graph_context). Only used
-                        when prompt_variant="graph".
+    Shared by :func:`patch_one` and the harness prompt registry so that debug /
+    diff tooling renders exactly the same prompt the agent would send.
     """
-    input_dict = {
+    return {
         "example_target_cwe_type": example_db.get("cwe_type", "Unknown"),
         "example_target_cve_id": example_db.get("cve_id", "Unknown"),
         "example_anonymized_target_fix_list": example_db.get("fix_list", "None"),
@@ -291,6 +255,40 @@ def patch_one(
         "target_code": target_code,
         "target_graph_context": graph_context or "None",
     }
+
+
+def patch_one(
+    example_db: dict,
+    target_db: dict,
+    target_code: str,
+    target_supplementary: str = "",
+    model_name: str | None = None,
+    trace_dir: str | Path | None = None,
+    prompt_variant: str = "default",
+    graph_context: str = "",
+    llm_params: dict | None = None,
+    backend: CompletionBackend | None = None,
+) -> tuple[str, PatchResult | None, InvocationRecord]:
+    """Build prompt, invoke the LLM backend, and parse the result.
+
+    Returns (raw_output, parsed, record) where *parsed* is a PatchResult
+    with 'cot' and 'vuln_patch' fields (or None on parse failure), and
+    *record* is an InvocationRecord capturing everything for reproducibility.
+
+    If *trace_dir* is provided, the record is saved as a JSON file there.
+
+    Args:
+        prompt_variant: "default" for original AutoPatch prompts,
+                        "graph" for graph-enhanced prompts.
+        graph_context:  Serialized graph analysis text (from
+                        graph_context.serialize_graph_context). Only used
+                        when prompt_variant="graph".
+        backend:        Optional CompletionBackend override (live/mock/replay/
+                        record). Defaults to the process-wide backend.
+    """
+    input_dict = build_input_dict(
+        example_db, target_db, target_code, target_supplementary, graph_context
+    )
 
     patcher = AutoPatchPatcher(
         model_name, prompt_variant=prompt_variant, backend=backend, **(llm_params or {})
