@@ -141,9 +141,11 @@ def _run_single_query(
     example_db = db_cache.get(example_dir)
     target_db = db_cache.get(target_dir)
 
-    # fallback: when dir_name is empty (e.g. older precomputed results),
-    # scan db_cache for a matching cve_id
-    if not example_db and example_dir == "":
+    # fallback: when the exact dir_name isn't found in db_cache (e.g. empty
+    # dir_name in older precomputed results, or a dir_name naming scheme
+    # mismatch — such as reusing a file-level retrieval index with a
+    # method-level db_cache), scan db_cache for a matching cve_id.
+    if not example_db:
         ex_cve = getattr(example_pair, "cve_id", None) or example_pair.meta.get(
             "cve_id", ""
         )
@@ -151,7 +153,7 @@ def _run_single_query(
             if db.get("cve_id") == ex_cve or dname.startswith(ex_cve):
                 example_db = db
                 break
-    if not target_db and target_dir == "":
+    if not target_db:
         for dname, db in db_cache.items():
             if db.get("cve_id") == cve_id or dname.startswith(cve_id):
                 target_db = db
