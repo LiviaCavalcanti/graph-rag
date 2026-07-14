@@ -2,6 +2,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import yaml
+
 
 @dataclass
 class PathsConfig:
@@ -102,6 +104,122 @@ class AppConfig:
     variants: List[VariantConfig]
     rag: Dict  # Your existing RAG config
     data: Dict  # Your existing data config
+    raw: Dict[str, Any] = field(default_factory=dict, repr=False)
+    """Original YAML dict, kept for call sites that still need raw/legacy access."""
+
+    @classmethod
+    def from_yaml(cls, path: "str | Path") -> "AppConfig":
+        """Load ``path`` as YAML and build a typed :class:`AppConfig`."""
+        with open(path) as f:
+            cfg = yaml.safe_load(f)
+        return cls.from_dict(cfg)
+
+    @classmethod
+    def from_dict(cls, cfg: dict) -> "AppConfig":
+        """Build a typed :class:`AppConfig` from a raw (legacy-shaped) config dict."""
+        cls._validate(cfg)
+
+        paths_raw = cfg.get("paths", {})
+        joern_bin = (
+            paths_raw.get("joern_bin_dir") or cfg.get("joern", {}).get("bin_dir") or ""
+        )
+
+        rag_cfg = cfg.get("rag", {})
+        index_path = rag_cfg.get("index_path", "indexes/faiss.index")
+        inferred_index_dir = str(Path(index_path).parent) if index_path else "indexes"
+
+        paths_cfg = PathsConfig(
+            joern_bin_dir=Path(joern_bin),
+            output_dir=Path(paths_raw.get("output_dir", "experiments/output")),
+            models_cache_dir=Path(paths_raw.get("models_cache_dir", "models")),
+            index_dir=Path(paths_raw.get("index_dir", inferred_index_dir)),
+        )
+
+        graph_raw = cfg.get("graph_processing", {})
+        graph_cfg = GraphProcessingConfig(
+            slice_depth=graph_raw.get("slice_depth", 3),
+            change_weight=graph_raw.get(
+                "change_weight",
+                {
+                    "function_added": 1.0,
+                    "function_deleted": 1.0,
+                    "parameter_changed": 0.5,
+                },
+            ),
+            noise_types=graph_raw.get("noise_types", ["add_noise", "drop_noise"]),
+        )
+
+        emb_root = cfg.get("embeddings", {})
+        active_embedders = emb_root.get("active", [])
+        if not active_embedders and cfg.get("rag", {}).get("embedding_variant"):
+            active_embedders = [cfg["rag"]["embedding_variant"]]
+            print(f"No active embeddings. Using {active_embedders} instead")
+
+        embeddings_cfg: Dict[str, EmbeddingConfig] = {}
+        for name in active_embedders:
+            sub = (
+                emb_root.get(name, {})
+                if isinstance(emb_root.get(name, {}), dict)
+                else {}
+            )
+            model_checkpoint = sub.get("checkpoint_path") or sub.get(
+                "model_checkpoint"
+            )
+            model_name = sub.get("model_name") or sub.get("model_path") or name
+
+            embeddings_cfg[name] = EmbeddingConfig(
+                variant=name,
+                dim=emb_root.get("dim", 128),
+                model_name=str(model_name),
+                model_checkpoint=Path(model_checkpoint) if model_checkpoint else None,
+                wl_iterations=emb_root.get("wl", {}).get("num_iterations", 4),
+                wl_color_space=emb_root.get("wl", {}).get("color_space", 8192),
+                hidden_dim=sub.get(
+                    "hidden_dim", emb_root.get("wl", {}).get("hidden_dim", 64)
+                ),
+            )
+
+        variants_cfg: List[VariantConfig] = []
+        for raw_variant in cfg.get("variants", []):
+            if not isinstance(raw_variant, dict):
+                continue
+            name = raw_variant.get("name")
+            model = raw_variant.get("model")
+            if not name or not model:
+                continue
+            variants_cfg.append(
+                VariantConfig(
+                    name=name,
+                    model=model,
+                    llm_output_file=raw_variant.get(
+                        "llm_output_file", f"{name}_response.json"
+                    ),
+                    patch_file=raw_variant.get("patch_file", f"{name}_patch.py"),
+                )
+            )
+
+        return cls(
+            paths=paths_cfg,
+            graph=graph_cfg,
+            embeddings=embeddings_cfg,
+            variants=variants_cfg,
+            rag=cfg.get("rag", {}),
+            data=cfg.get("data", {}),
+            raw=cfg,
+        )
+
+    @staticmethod
+    def _validate(cfg: dict) -> None:
+        """Fail fast on missing top-level config sections used by main modes."""
+        required = ["data", "rag", "embeddings"]
+        missing = [k for k in required if k not in cfg]
+        if missing:
+            raise KeyError(f"Missing required config keys: {missing}")
+
+        if "joern" not in cfg and "paths" not in cfg:
+            raise KeyError(
+                "Missing joern/path configuration. Need cfg['joern'] or cfg['paths']"
+            )
 
 
 @dataclass
