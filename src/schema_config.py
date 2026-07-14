@@ -52,6 +52,47 @@ class EmbeddingConfig:
 
 
 @dataclass
+class AgentConfig:
+    """Patching-agent architecture + prompt selection (config ``agents:`` block).
+
+    Typed accessor for the ``agents:`` section of ``config.yaml``. Read from a
+    raw config dict via :meth:`from_cfg`; the batch runner and experiments vary
+    ``architecture`` / ``prompt_variant`` as grid axes.
+    """
+
+    architecture: str = "single_turn"
+    prompt_variant: str = "default"
+    model: Optional[str] = None
+    temperature: float = 0.2
+    max_tokens: int = 4096
+    max_tool_iters: int = 6
+    tools: Dict[str, Any] = field(default_factory=lambda: {"provider": "none"})
+    multistep: Dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def from_cfg(cls, cfg: dict) -> "AgentConfig":
+        """Build from a full config dict, falling back to legacy locations."""
+        raw = (cfg or {}).get("agents", {}) or {}
+        return cls(
+            architecture=raw.get("architecture", "single_turn"),
+            prompt_variant=(
+                raw.get("prompt_variant")
+                or (cfg or {}).get("rag", {}).get("prompt_variant", "default")
+            ),
+            model=raw.get("model"),
+            temperature=raw.get("temperature", 0.2),
+            max_tokens=raw.get("max_tokens", 4096),
+            max_tool_iters=raw.get("max_tool_iters", 6),
+            tools=raw.get("tools", {"provider": "none"}),
+            multistep=raw.get("multistep", {}),
+        )
+
+    def llm_params(self) -> dict:
+        """Kwargs for ``AutoPatchPatcher`` / agent builders."""
+        return {"temperature": self.temperature, "max_tokens": self.max_tokens}
+
+
+@dataclass
 class AppConfig:
     """Root config, loaded from YAML."""
 
