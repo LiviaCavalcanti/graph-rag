@@ -33,30 +33,16 @@ MODES:
 
 import argparse
 import json
-from enum import Enum, auto
-from functools import partial
-from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any
 
-from tqdm import tqdm
-
-from src.data.autopatch import AutoPatchDataset
-from src.data.base import ExportJob
-from src.data.cvefixes import CVEFixesDataset
-from src.data.pipeline import run_joern_export, write_c_file
+from src.data import entries_cache
+from src.data.export import run_export
 from src.embeddings import build_embedders
 from src.rag.faiss_index import FAISSIndex
 from src.rag.indexing import build_index
+from src.rag.query import run_batch_query, run_query
 from src.schema_config import AppConfig, RetrievalResult
-
-DATASETS = {"autopatch": AutoPatchDataset, "cvefixes": CVEFixesDataset}
-
-
-class JobStatus(Enum):
-    OK = auto()
-    SKIPPED = auto()
-    FAILED = auto()
 
 
 def _write_json(path: Path, payload: Any) -> None:
@@ -78,92 +64,6 @@ def apply_split_overrides(cfg: dict, args) -> None:
         split_cfg["test_ratio"] = args.split_test_ratio
     if args.aug_train_ratio is not None:
         split_cfg["augmented_train_ratio"] = args.aug_train_ratio
-
-
-def _process_job(job: ExportJob, joern_bin_dir: str) -> tuple[JobStatus, str]:
-    out_dir = Path(job.out_dir)
-    label = f"{job.cve_id}/{job.variant}/{job.version}"
-    existing = list(out_dir.glob("**/export.xml"))
-    if existing:
-        return JobStatus.SKIPPED, f"skip {label} already exists"
-
-    c_file = out_dir / f"{job.func_name or 'function'}.cpp"
-    graph_folder = out_dir / "graph"
-
-    try:
-        write_c_file(job.source_code, c_file, supplementary_code=job.supplementary_code)
-    except Exception as e:
-        return JobStatus.FAILED, f"write failed {job.cve_id}: {e}"
-
-    success = run_joern_export(joern_bin_dir, c_file, str(out_dir), str(graph_folder))
-    if success:
-        return JobStatus.OK, f"ok {label}"
-    return JobStatus.FAILED, f"FAIL {label}"
-
-
-def run_export(cfg: dict, dataset_name: str | None = None, level: str = "method"):
-    """Export CPGs for specified dataset(s).
-
-    Args:
-        cfg: AppConfig with paths and dataset configs
-        dataset_name: Specific dataset to export ('autopatch', 'cvefixes', etc).
-                     If None, uses all datasets in config.data.active
-        level: 'method' (legacy per-function) or 'file' (one CPG per file)
-    """
-    joern_bin_dir = str(cfg.paths.joern_bin_dir)
-    if not joern_bin_dir:
-        raise KeyError("Joern path not found. Set paths.joern_bin_dir or joern.bin_dir")
-
-    workers = max(1, cpu_count() - 1)
-
-    # Determine which datasets to process
-    if dataset_name:
-        # Explicit dataset requested
-        active = [dataset_name] if DATASETS.get(dataset_name) else []
-    else:
-        # Use config's active datasets, defaulting to all if not specified
-        if isinstance(cfg, AppConfig):
-            active = cfg.raw.get("data", {}).get("active", list(DATASETS.keys()))
-        else:
-            active = cfg.get("data", {}).get("active", list(DATASETS.keys()))
-
-    # Filter to configured datasets
-    active = [n for n in active if cfg.data.get(n)]
-
-    if not active:
-        print("ERROR: No active datasets configured. Check config.yaml: data.active")
-        return
-
-    for ds_name in active:
-        ds_cfg = cfg.data[ds_name]
-        dataset = DATASETS[ds_name](ds_cfg)
-        graphml_root = ds_cfg["graphml_root"]
-
-        print(
-            f"\n -------------- exporting {dataset.name()} (level={level})--------------"
-        )
-        if level == "file" and hasattr(dataset, "export_jobs_file_level"):
-            jobs = list(dataset.export_jobs_file_level(graphml_root))
-        else:
-            jobs = list(dataset.export_jobs(graphml_root))
-        print(f" {len(jobs)} jobs & {workers} workers")
-
-        worker_fn = partial(_process_job, joern_bin_dir=joern_bin_dir)
-
-        ok = fail = skipped = 0
-        with Pool(processes=workers) as pool:
-            with tqdm(total=len(jobs), desc=ds_name, unit="job") as pbar:
-                for status, msg in pool.imap_unordered(worker_fn, jobs, chunksize=4):
-                    if status == JobStatus.SKIPPED:
-                        skipped += 1
-                    elif status == JobStatus.FAILED:
-                        fail += 1
-                        tqdm.write(f" {msg}")
-                    else:
-                        ok += 1
-                    pbar.set_postfix(ok=ok, skip=skipped, fail=fail)
-                    pbar.update(1)
-        print(f"Done \n    ok: {ok}  -  skipped: {skipped}  -  fail: {fail}")
 
 
 def run_query(cfg: dict, cve_id: str):
@@ -302,17 +202,48 @@ def _leave_one_out_from_index(
     return rows
 
 
+def _resolve_query_pairs(cfg: dict, args):
+    """Load the pairs to embed/query for batch retrieval (query/full modes).
+
+    By default, CVEfixes runs are restricted to a pinned JSON entries
+    subset (``data.cvefixes.input_file``, default
+    ``experiments_cves/selected_entries.json`` — the same sample used by
+    ``cvefixes_experiments/scripts/performance/exp_method_vs_file_level.py``)
+    instead of streaming the entire DB. Pass ``--input-file <path>`` to use a
+    different subset, or ``--full-dataset`` to bypass the subset entirely.
+    """
+    from src.data import load_pairs, load_pairs_from_file
+
+    if args.full_dataset:
+        return load_pairs(cfg)
+
+    input_file = args.input_file
+    if input_file is None and "cvefixes" in cfg.get("data", {}).get("active", []):
+        input_file = cfg.get("data", {}).get("cvefixes", {}).get(
+            "input_file", entries_cache.DEFAULT_ENTRIES_FILE
+        )
+
+    if input_file:
+        print(f"Loading pinned CVEfixes subset from {input_file}")
+        return load_pairs_from_file(input_file, cfg)
+
+    return load_pairs(cfg)
+
+
 def run_batch_query(cfg: dict, args):
     """Batch retrieval: produce a per-query results.jsonl reusable by
     ``--mode batch --query-run <this run dir>``.
 
-    Two modes:
+    Three modes:
       --index-dir <dir>: reuse a PERSISTED retrieval-experiment index (fast,
         offline, no CPGs) via leave-one-out reconstruction. Use this to reuse
         e.g. a prior ``--mode experiment`` run's ``indices/`` directory
         (looks for ``<embedding-variant>__hnsw.index`` + ``_meta.json``).
-      (default): live retrieval — embeds all pairs from cfg["data"]["active"]
-        (needs CPGs) against the global index built by ``--mode index``.
+      --input-file / default: embeds a pinned CVEfixes subset (see
+        ``_resolve_query_pairs``) against the global index built by
+        ``--mode index``.
+      --full-dataset: embeds ALL pairs from cfg["data"]["active"] (needs
+        CPGs for the whole dataset).
     """
     if args.index_dir:
         rows = _leave_one_out_from_index(
@@ -322,11 +253,10 @@ def run_batch_query(cfg: dict, args):
         )
         return _write_query_results(rows, "query_indexed")
 
-    from src.data import load_pairs
     from src.metrics.retrieval_eval import retrieve_all
     from src.rag.retriever import Retriever
 
-    pairs = load_pairs(cfg)
+    pairs = _resolve_query_pairs(cfg, args)
     if args.max_queries:
         pairs = pairs[: args.max_queries]
 
@@ -373,7 +303,6 @@ def run_full_pipeline(cfg: dict, args):
     """End-to-end: retrieval → LLM patching → evaluation."""
     from experiments.exp.prompt.patching_experiment import run_patching_experiment
     from experiments.exp.retrieval_experiment import run_experiment as run_retrieval_exp
-    from src.data import load_pairs
     from src.io.read_write import make_run_dir
 
     run_id, run_dir = make_run_dir("full")
@@ -385,7 +314,7 @@ def run_full_pipeline(cfg: dict, args):
     print(f"\n{'━'*60}")
     print(f"  STEP 1/3 — Retrieval (embed + FAISS top-k)")
     print(f"{'━'*60}")
-    full_pairs = load_pairs(cfg)
+    full_pairs = _resolve_query_pairs(cfg, args)
     if args.max_queries:
         full_pairs = full_pairs[: args.max_queries]
     run_retrieval_exp(full_pairs, cfg, output_dir=run_dir)
@@ -591,6 +520,21 @@ if __name__ == "__main__":
         "--embedding-variant",
         default=None,
         help="embedder name to use for query mode (default: config rag.embedding_variant).",
+    )
+    parser.add_argument(
+        "--input-file",
+        default=None,
+        help="path to a pinned JSON entries file (e.g. "
+        "experiments_cves/selected_entries.json) restricting batch query mode "
+        "to a fixed CVEfixes subset, instead of the full DB. Defaults to "
+        f"'{entries_cache.DEFAULT_ENTRIES_FILE}' for cvefixes runs unless "
+        "--full-dataset is passed (query/full modes).",
+    )
+    parser.add_argument(
+        "--full-dataset",
+        action="store_true",
+        help="bypass the default pinned entries subset and load the full "
+        "CVEfixes dataset for batch query mode (query/full modes).",
     )
 
     args = parser.parse_args()
