@@ -14,7 +14,8 @@ import networkx as nx
 from tqdm import tqdm
 
 from .base import BaseDataset, ExportJob, FunctionPair
-from .pipeline import compute_graph_diff, cpg_dir_for, graph_diff_params, load_cpg_dir
+from .pipeline import (compute_graph_diff, cpg_dir_for, graph_diff_params,
+                       load_cpg_dir)
 
 _QUERY_METHODS = """\
 SELECT
@@ -272,6 +273,41 @@ class CVEFixesDataset(BaseDataset):
                     "source_after": row["file_code_after"],
                 },
             )
+
+    def load_lightweight(self) -> list[FunctionPair]:
+        """Load pairs with metadata only — no CPG/graph loading.
+
+        Mirrors :meth:`stream` (method-level query) but skips Joern graph
+        loading, so it works without a ``graphml_root`` export and without
+        the (slow) CPG parse — suitable for patch generation, which only
+        needs the code text + CVE/CWE metadata, not the graph.
+        """
+        _empty = nx.MultiDiGraph()
+        pairs: list[FunctionPair] = []
+        for row in tqdm(self._iter_rows(), desc="Loading CVEFixes pairs (lightweight)"):
+            row_id = self._row_id(row)
+            pairs.append(
+                FunctionPair(
+                    cve_id=row["cve_id"],
+                    cwe_id=row["cwe_id"] or "UNKNOWN",
+                    func_name=row["func_name"] or "",
+                    project=row["repo_url"] or "",
+                    G_before=_empty,
+                    G_after=_empty,
+                    G_vuln=_empty,
+                    meta={
+                        "dataset": self.name(),
+                        "variant": "original",
+                        "method_change_id": row["method_change_id"],
+                        "filename": row["filename"] or "",
+                        "language": row["programming_language"],
+                        "dir_name": row_id,
+                        "source_before": row["file_code_before"],
+                        "source_after": row["file_code_after"],
+                    },
+                )
+            )
+        return pairs
 
     def _iter_file_rows(self):
         """Yield file_change rows from the database, applying filters."""
