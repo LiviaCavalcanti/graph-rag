@@ -47,13 +47,8 @@ from src.data.cvefixes import CVEFixesDataset
 from src.data.pipeline import run_joern_export, write_c_file
 from src.embeddings import build_embedders
 from src.rag.faiss_index import FAISSIndex
-from src.schema_config import (
-    AppConfig,
-    DatasetBatch,
-    EmbeddedBatch,
-    IndexUpdateResult,
-    RetrievalResult,
-)
+from src.rag.indexing import build_index
+from src.schema_config import AppConfig, RetrievalResult
 
 DATASETS = {"autopatch": AutoPatchDataset, "cvefixes": CVEFixesDataset}
 
@@ -169,152 +164,6 @@ def run_export(cfg: dict, dataset_name: str | None = None, level: str = "method"
                     pbar.set_postfix(ok=ok, skip=skipped, fail=fail)
                     pbar.update(1)
         print(f"Done \n    ok: {ok}  -  skipped: {skipped}  -  fail: {fail}")
-
-
-def run_pipeline(cfg):
-    active_datasets = [name for name in DATASETS if name in cfg["data"]["active"]]
-    rag_cfg = cfg["rag"]
-    variant = rag_cfg["embedding_variant"]
-    embedders = build_embedders(cfg)
-
-    indexer = next((e for e in embedders if e.name == variant), None)
-    if indexer is None:
-        available = [e.name for e in embedders]
-        raise ValueError(
-            f"Embedding variant '{variant}' not found. Available embedders: {available}"
-        )
-
-    index = FAISSIndex(
-        dim=cfg["embeddings"]["dim"],
-        index_path=rag_cfg["index_path"],
-        metadata_path=rag_cfg["metadata_path"],
-    )
-
-    total = 0
-    contract_batches: list[DatasetBatch] = []
-    contract_embedded: list[EmbeddedBatch] = []
-
-    # Batch embedding configuration
-    BATCH_SIZE = 32  # Embed in batches for efficiency
-
-    graph_cfg = cfg.get("graph", {})
-    for ds_name in active_datasets:
-        # Inject the shared graph-processing section so compute_graph_diff
-        # parameters (slice_depth, ...) flow into the dataset stream.
-        ds_cfg = {**cfg["data"][ds_name], "graph": graph_cfg}
-        # instantiate the dataset class with the config params
-        dataset = DATASETS[ds_name](ds_cfg)
-        print(f"-----------{dataset.name()}-----------")
-
-        # Pre-fit PCA-based embedders on full corpus before batched indexing
-        if hasattr(indexer, "fit") and not getattr(indexer, "_fitted", True):
-            print(f"  [pre-fit] Loading all graphs to fit PCA embedder '{variant}'...")
-            all_pairs = list(dataset.stream())
-            all_graphs = [p.G_vuln for p in all_pairs]
-            indexer.fit(all_graphs)
-            print(f"  [pre-fit] PCA fitted on {len(all_graphs)} graphs")
-        else:
-            all_pairs = None
-
-        ds_total = 0
-        batch_pairs = []
-
-        stream = iter(all_pairs) if all_pairs is not None else dataset.stream()
-        for pair in stream:
-            try:
-                batch_pairs.append(pair)
-
-                # Process batch when full
-                if len(batch_pairs) >= BATCH_SIZE:
-                    try:
-                        graphs = [p.G_vuln for p in batch_pairs]
-                        embeddings = indexer.embed_many(graphs)
-
-                        for p, emb in zip(batch_pairs, embeddings):
-                            index.add(p, emb, variant)
-                            total += 1
-                            ds_total += 1
-
-                        if total % 50 == 0:
-                            print(f" indexed {total} pairs.. ")
-                        batch_pairs = []
-                    except Exception as e:
-                        print(f"   batch error: {e}")
-                        batch_pairs = []
-
-            except Exception as e:
-                print(f"   skip {pair.cve_id} / {pair.func_name}:  {e}")
-
-        # Process remaining pairs in final batch
-        if batch_pairs:
-            try:
-                graphs = [p.G_vuln for p in batch_pairs]
-                embeddings = indexer.embed_many(graphs)
-
-                for p, emb in zip(batch_pairs, embeddings):
-                    index.add(p, emb, variant)
-                    total += 1
-                    ds_total += 1
-
-                print(f" indexed {total} pairs.. (final batch)")
-            except Exception as e:
-                print(f"   final batch error: {e}")
-
-        contract_batches.append(
-            DatasetBatch(
-                batch_id=f"{ds_name}-index",
-                run_id="index",
-                pairs=[],
-                metadata={
-                    "dataset": ds_name,
-                    "streaming": True,
-                    "indexed_count": ds_total,
-                },
-            )
-        )
-        contract_embedded.append(
-            EmbeddedBatch(
-                batch_id=f"{ds_name}-embed",
-                run_id="index",
-                embedder_name=variant,
-                embedder_version=None,
-                dim=cfg["embeddings"]["dim"],
-                pairs=[],
-                embeddings=[],
-                metadata={
-                    "dataset": ds_name,
-                    "streaming": True,
-                    "embedded_count": ds_total,
-                },
-            )
-        )
-
-    index.save()
-
-    index_contract = IndexUpdateResult(
-        run_id="index",
-        index_backend="faiss",
-        index_path=Path(rag_cfg["index_path"]),
-        index_version=variant,
-        added_count=total,
-        total_count=total,
-        metadata_path=Path(rag_cfg["metadata_path"]),
-        metadata={"active_datasets": active_datasets},
-    )
-
-    contracts_path = Path(rag_cfg["metadata_path"]).with_name(
-        f"{Path(rag_cfg['metadata_path']).stem}_contracts.json"
-    )
-    _write_json(
-        contracts_path,
-        {
-            "dataset_batches": [b.__dict__ for b in contract_batches],
-            "embedded_batches": [b.__dict__ for b in contract_embedded],
-            "index_update": index_contract.__dict__,
-        },
-    )
-    print(f"\nDone. \nTotal indexed: {total}")
-    print(f"Contracts snapshot: {contracts_path}")
 
 
 def run_query(cfg: dict, cve_id: str):
@@ -770,7 +619,7 @@ if __name__ == "__main__":
     if args.mode == "export":
         run_export(app_cfg, args.dataset, level=getattr(args, "level", "method"))
     elif args.mode == "index":
-        run_pipeline(cfg)
+        build_index(cfg)
     elif args.mode == "query":
         if args.cve:
             run_query(cfg, args.cve)
