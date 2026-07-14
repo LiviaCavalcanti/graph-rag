@@ -39,7 +39,6 @@ from multiprocessing import Pool, cpu_count
 from pathlib import Path
 from typing import Any
 
-import yaml
 from tqdm import tqdm
 
 from src.data.autopatch import AutoPatchDataset
@@ -52,12 +51,8 @@ from src.schema_config import (
     AppConfig,
     DatasetBatch,
     EmbeddedBatch,
-    EmbeddingConfig,
-    GraphProcessingConfig,
     IndexUpdateResult,
-    PathsConfig,
     RetrievalResult,
-    VariantConfig,
 )
 
 DATASETS = {"autopatch": AutoPatchDataset, "cvefixes": CVEFixesDataset}
@@ -67,102 +62,6 @@ class JobStatus(Enum):
     OK = auto()
     SKIPPED = auto()
     FAILED = auto()
-
-
-def _validate_cfg(cfg: dict) -> None:
-    """Fail fast on missing top-level config sections used by main modes."""
-    required = ["data", "rag", "embeddings"]
-    missing = [k for k in required if k not in cfg]
-    if missing:
-        raise KeyError(f"Missing required config keys: {missing}")
-
-    if "joern" not in cfg and "paths" not in cfg:
-        raise KeyError(
-            "Missing joern/path configuration. Need cfg['joern'] or cfg['paths']"
-        )
-
-
-def _instantiate_app_config(cfg: dict) -> AppConfig:
-    """Instantiate typed AppConfig from current (legacy-compatible) YAML shape."""
-    paths_raw = cfg.get("paths", {})
-    joern_bin = (
-        paths_raw.get("joern_bin_dir") or cfg.get("joern", {}).get("bin_dir") or ""
-    )
-
-    rag_cfg = cfg.get("rag", {})
-    index_path = rag_cfg.get("index_path", "indexes/faiss.index")
-    inferred_index_dir = str(Path(index_path).parent) if index_path else "indexes"
-
-    paths_cfg = PathsConfig(
-        joern_bin_dir=Path(joern_bin),
-        output_dir=Path(paths_raw.get("output_dir", "experiments/output")),
-        models_cache_dir=Path(paths_raw.get("models_cache_dir", "models")),
-        index_dir=Path(paths_raw.get("index_dir", inferred_index_dir)),
-    )
-
-    graph_raw = cfg.get("graph_processing", {})
-    graph_cfg = GraphProcessingConfig(
-        slice_depth=graph_raw.get("slice_depth", 3),
-        change_weight=graph_raw.get(
-            "change_weight",
-            {
-                "function_added": 1.0,
-                "function_deleted": 1.0,
-                "parameter_changed": 0.5,
-            },
-        ),
-        noise_types=graph_raw.get("noise_types", ["add_noise", "drop_noise"]),
-    )
-
-    emb_root = cfg.get("embeddings", {})
-    active_embedders = emb_root.get("active", [])
-    if not active_embedders and cfg.get("rag", {}).get("embedding_variant"):
-        active_embedders = [cfg["rag"]["embedding_variant"]]
-        print(f"No active embeddings. Using {active_embedders} instead")
-
-    embeddings_cfg: dict[str, EmbeddingConfig] = {}
-    for name in active_embedders:
-        sub = emb_root.get(name, {}) if isinstance(emb_root.get(name, {}), dict) else {}
-        model_checkpoint = sub.get("checkpoint_path") or sub.get("model_checkpoint")
-        model_name = sub.get("model_name") or sub.get("model_path") or name
-
-        embeddings_cfg[name] = EmbeddingConfig(
-            variant=name,
-            dim=emb_root.get("dim", 128),
-            model_name=str(model_name),
-            model_checkpoint=Path(model_checkpoint) if model_checkpoint else None,
-            wl_iterations=emb_root.get("wl", {}).get("num_iterations", 4),
-            wl_color_space=emb_root.get("wl", {}).get("color_space", 8192),
-            hidden_dim=sub.get(
-                "hidden_dim", emb_root.get("wl", {}).get("hidden_dim", 64)
-            ),
-        )
-
-    variants_cfg: list[VariantConfig] = []
-    for raw in cfg.get("variants", []):
-        if not isinstance(raw, dict):
-            continue
-        name = raw.get("name")
-        model = raw.get("model")
-        if not name or not model:
-            continue
-        variants_cfg.append(
-            VariantConfig(
-                name=name,
-                model=model,
-                llm_output_file=raw.get("llm_output_file", f"{name}_response.json"),
-                patch_file=raw.get("patch_file", f"{name}_patch.py"),
-            )
-        )
-
-    return AppConfig(
-        paths=paths_cfg,
-        graph=graph_cfg,
-        embeddings=embeddings_cfg,
-        variants=variants_cfg,
-        rag=cfg.get("rag", {}),
-        data=cfg.get("data", {}),
-    )
 
 
 def _write_json(path: Path, payload: Any) -> None:
@@ -228,15 +127,8 @@ def run_export(cfg: dict, dataset_name: str | None = None, level: str = "method"
         active = [dataset_name] if DATASETS.get(dataset_name) else []
     else:
         # Use config's active datasets, defaulting to all if not specified
-        from src.schema_config import AppConfig
-
         if isinstance(cfg, AppConfig):
-            raw_cfg = getattr(cfg, "_raw_cfg", None)
-            active = (
-                raw_cfg.get("data", {}).get("active", list(DATASETS.keys()))
-                if raw_cfg
-                else list(DATASETS.keys())
-            )
+            active = cfg.raw.get("data", {}).get("active", list(DATASETS.keys()))
         else:
             active = cfg.get("data", {}).get("active", list(DATASETS.keys()))
 
@@ -425,49 +317,207 @@ def run_pipeline(cfg):
     print(f"Contracts snapshot: {contracts_path}")
 
 
-# def run_query(cfg: dict, cve_id: str):
-#     from src.rag.retriever import Retriever
+def run_query(cfg: dict, cve_id: str):
+    """Direct metadata lookup for a single CVE against the built global index."""
+    from src.rag.retriever import Retriever
 
-#     rag_cfg = cfg["rag"]
-#     index = FAISSIndex(
-#         dim=cfg["embeddings"]["dim"],
-#         index_path=rag_cfg["index_path"],
-#         metadata_path=rag_cfg["metadata_path"],
-#     )
-#     index.load()
-#     retriever = Retriever(index, top_k=rag_cfg["top_k"])
-#     raw_results = retriever.query_by_cve(cve_id)
-#     for r in raw_results:
-#         print(r)
+    rag_cfg = cfg["rag"]
+    index = FAISSIndex(
+        dim=cfg["embeddings"]["dim"],
+        index_path=rag_cfg["index_path"],
+        metadata_path=rag_cfg["metadata_path"],
+    )
+    index.load()
+    retriever = Retriever(index, top_k=rag_cfg["top_k"])
+    raw_results = retriever.query_by_cve(cve_id)
+    for r in raw_results:
+        print(r)
 
-#     retrieval_contract = RetrievalResult(
-#         run_id="query",
-#         query_id=cve_id,
-#         query_cve=cve_id,
-#         retriever_name="metadata_lookup",
-#         top_k=len(raw_results),
-#         hit_ids=[str(r.get("_idx", i)) for i, r in enumerate(raw_results)],
-#         hit_scores=[float(r.get("score", 1.0)) for r in raw_results],
-#         hit_metadata=raw_results,
-#         metadata={"result_count": len(raw_results)},
-#     )
+    retrieval_contract = RetrievalResult(
+        run_id="query",
+        query_id=cve_id,
+        query_cve=cve_id,
+        retriever_name="metadata_lookup",
+        top_k=len(raw_results),
+        hit_ids=[str(r.get("_idx", i)) for i, r in enumerate(raw_results)],
+        hit_scores=[float(r.get("score", 1.0)) for r in raw_results],
+        hit_metadata=raw_results,
+        metadata={"result_count": len(raw_results)},
+    )
 
-#     query_contract_path = Path(rag_cfg["metadata_path"]).with_name(
-#         f"query_{cve_id}_retrieval_contract.json"
-#     )
-#     _write_json(query_contract_path, retrieval_contract.__dict__)
-#     print(f"Retrieval contract: {query_contract_path}")
+    query_contract_path = Path(rag_cfg["metadata_path"]).with_name(
+        f"query_{cve_id}_retrieval_contract.json"
+    )
+    _write_json(query_contract_path, retrieval_contract.__dict__)
+    print(f"Retrieval contract: {query_contract_path}")
 
 
-# def run_batch_query(cfg: dict, args):
-#     """Batch query: thin wrapper around retrieval experiment."""
-#     from experiments.exp.retrieval_experiment import run_experiment
-#     from src.data import load_pairs
+def _precomputed_row(query_meta: dict, example_meta: dict | None, score: float) -> dict:
+    """Build one ``PrecomputedRetriever``-compatible JSONL row.
 
-#     pairs = load_pairs(cfg)
-#     if args.max_queries:
-#         pairs = pairs[: args.max_queries]
-#     return run_experiment(pairs, cfg)
+    ``query_meta``/``example_meta`` follow the FAISS/HNSW metadata shape
+    (cve_id, cwe_id, variant, dir_name, ...) so this works whether the hit
+    came from a live query or a reconstructed persisted index.
+    """
+    query_row = {
+        "query_cve": query_meta.get("cve_id"),
+        "query_cwe": query_meta.get("cwe_id"),
+        "query_variant": query_meta.get("variant", ""),
+    }
+    if example_meta is None:
+        return {**query_row, "status": "no_match"}
+    return {
+        **query_row,
+        "status": "success",
+        "example_cve": example_meta.get("cve_id"),
+        "example_cwe": example_meta.get("cwe_id"),
+        "example_variant": example_meta.get("variant", ""),
+        "example_dir": example_meta.get("dir_name", ""),
+        "retrieval": {
+            "cve_match": example_meta.get("cve_id") == query_meta.get("cve_id"),
+            "cwe_match": example_meta.get("cwe_id") == query_meta.get("cwe_id"),
+            "score": float(score),
+        },
+    }
+
+
+def _write_query_results(rows: list[dict], run_tag: str) -> Path:
+    """Write query-retrieval rows as results.jsonl in a new run dir.
+
+    The output is consumable by ``--mode batch --query-run <run_dir>``
+    (src.rag.precomputed.PrecomputedRetriever).
+    """
+    from src.io.read_write import make_run_dir
+
+    _run_id, run_dir = make_run_dir(run_tag)
+    out_path = run_dir / "results.jsonl"
+    with open(out_path, "w") as f:
+        for row in rows:
+            f.write(json.dumps(row, default=str) + "\n")
+    print(f"Wrote {len(rows)} query results → {out_path}")
+    return run_dir
+
+
+def _leave_one_out_from_index(
+    index_dir: Path, embedding_variant: str, max_queries: int | None
+) -> list[dict]:
+    """Reuse a PERSISTED retrieval-experiment index with NO re-embedding and
+    NO CPGs needed: every indexed item's own vector is reconstructed straight
+    from the FAISS/HNSW index (``index.reconstruct_n``) and queried against
+    the index excluding itself; the best OTHER match becomes "the retrieved
+    example" for that item (leave-one-out).
+
+    Looks for ``<index_dir>/<embedding_variant>__hnsw.index`` + ``_meta.json``
+    — the naming convention written by RetrievalGridExperiment /
+    EvaluateIndexExperiment (e.g. a prior ``--mode experiment`` run's
+    ``indices/`` directory).
+    """
+    import faiss
+
+    index_path = index_dir / f"{embedding_variant}__hnsw.index"
+    meta_path = index_dir / f"{embedding_variant}__hnsw_meta.json"
+    if not index_path.exists() or not meta_path.exists():
+        available = sorted(
+            p.name[: -len("__hnsw.index")] for p in index_dir.glob("*__hnsw.index")
+        )
+        raise FileNotFoundError(
+            f"No persisted index for embedder {embedding_variant!r} in {index_dir}. "
+            f"Available: {available or 'none found'}"
+        )
+
+    index = faiss.read_index(str(index_path))
+    metadata = json.loads(meta_path.read_text())
+    n = index.ntotal
+    if n != len(metadata):
+        print(
+            f"WARNING: index has {n} vectors but metadata has {len(metadata)} entries"
+        )
+
+    vectors = index.reconstruct_n(0, n)
+    n_queries = n if not max_queries else min(max_queries, n)
+    search_k = min(n, 10)
+
+    rows = []
+    for i in range(n_queries):
+        distances, indices = index.search(vectors[i : i + 1], search_k)
+        best = None
+        for dist, idx in zip(distances[0], indices[0]):
+            if idx == -1 or idx == i:
+                continue
+            best = (idx, dist)
+            break
+        query_meta = metadata[i]
+        example_meta = metadata[best[0]] if best else None
+        score = float(best[1]) if best else 0.0
+        rows.append(_precomputed_row(query_meta, example_meta, score))
+    return rows
+
+
+def run_batch_query(cfg: dict, args):
+    """Batch retrieval: produce a per-query results.jsonl reusable by
+    ``--mode batch --query-run <this run dir>``.
+
+    Two modes:
+      --index-dir <dir>: reuse a PERSISTED retrieval-experiment index (fast,
+        offline, no CPGs) via leave-one-out reconstruction. Use this to reuse
+        e.g. a prior ``--mode experiment`` run's ``indices/`` directory
+        (looks for ``<embedding-variant>__hnsw.index`` + ``_meta.json``).
+      (default): live retrieval — embeds all pairs from cfg["data"]["active"]
+        (needs CPGs) against the global index built by ``--mode index``.
+    """
+    if args.index_dir:
+        rows = _leave_one_out_from_index(
+            Path(args.index_dir),
+            args.embedding_variant or cfg["rag"]["embedding_variant"],
+            args.max_queries,
+        )
+        return _write_query_results(rows, "query_indexed")
+
+    from src.data import load_pairs
+    from src.metrics.retrieval_eval import retrieve_all
+    from src.rag.retriever import Retriever
+
+    pairs = load_pairs(cfg)
+    if args.max_queries:
+        pairs = pairs[: args.max_queries]
+
+    rag_cfg = cfg["rag"]
+    variant = args.embedding_variant or rag_cfg["embedding_variant"]
+    embedders = build_embedders(cfg)
+    embedder = next((e for e in embedders if e.name == variant), None)
+    if embedder is None:
+        raise ValueError(
+            f"Embedding variant {variant!r} not found. "
+            f"Available: {[e.name for e in embedders]}"
+        )
+
+    index = FAISSIndex(
+        dim=cfg["embeddings"]["dim"],
+        index_path=rag_cfg["index_path"],
+        metadata_path=rag_cfg["metadata_path"],
+    )
+    index.load()
+
+    if hasattr(embedder, "fit") and not getattr(embedder, "_fitted", True):
+        print(f"Fitting PCA embedder {variant!r} on {len(pairs)} query graphs...")
+        embedder.fit([p.G_vuln for p in pairs])
+
+    retriever = Retriever(index, top_k=rag_cfg["top_k"])
+    query_results = retrieve_all(pairs, embedder, retriever, top_k=rag_cfg["top_k"])
+
+    rows = [
+        _precomputed_row(
+            {
+                "cve_id": pair.cve_id,
+                "cwe_id": pair.cwe_id,
+                "variant": pair.meta.get("variant", ""),
+            },
+            hits[0] if hits else None,
+            hits[0].get("score", 0.0) if hits else 0.0,
+        )
+        for pair, hits in query_results
+    ]
+    return _write_query_results(rows, "query")
 
 
 def run_full_pipeline(cfg: dict, args):
@@ -509,6 +559,7 @@ def run_full_pipeline(cfg: dict, args):
         prompt_variant=getattr(args, "prompt_variant", None)
         or cfg.get("agents", {}).get("prompt_variant")
         or cfg.get("rag", {}).get("prompt_variant", "default"),
+        cve_root=getattr(args, "cve_root", None),
     )
     print(f"\n  ✓ Patching complete: {run_dir / 'results.jsonl'}")
 
@@ -673,12 +724,29 @@ if __name__ == "__main__":
         help="prompt variant from src/agents/prompts/registry.yaml "
         "(batch/full mode). Overrides config agents.prompt_variant.",
     )
+    parser.add_argument(
+        "--cve-root",
+        default=None,
+        help="path to the AutoPatch CVE-list directory (batch/full mode). "
+        "Overrides config data.autopatch.root.",
+    )
+    parser.add_argument(
+        "--index-dir",
+        default=None,
+        help="reuse a persisted retrieval-experiment index directory (query mode), "
+        "e.g. a prior '--mode experiment' run's indices/ folder. Looks for "
+        "<embedding-variant>__hnsw.index + _meta.json and does leave-one-out "
+        "retrieval reconstruction — no CPGs or re-embedding needed.",
+    )
+    parser.add_argument(
+        "--embedding-variant",
+        default=None,
+        help="embedder name to use for query mode (default: config rag.embedding_variant).",
+    )
 
     args = parser.parse_args()
-    with open(args.config) as f:
-        cfg = yaml.safe_load(f)
-
-    app_cfg = _instantiate_app_config(cfg)
+    app_cfg = AppConfig.from_yaml(args.config)
+    cfg = app_cfg.raw
     cfg.setdefault("paths", {})
     cfg["paths"].update(
         {
@@ -688,8 +756,6 @@ if __name__ == "__main__":
             "index_dir": str(app_cfg.paths.index_dir),
         }
     )
-
-    _validate_cfg(cfg)
 
     # Print CVEfixes workflow info for relevant modes
     if args.mode in ("export", "index") and "cvefixes" in cfg.get("data", {}).get(
@@ -743,6 +809,8 @@ if __name__ == "__main__":
             prompt_variant=args.prompt_variant
             or agent_cfg.get("prompt_variant")
             or cfg.get("rag", {}).get("prompt_variant", "default"),
+            cve_root=args.cve_root,
+            dataset=args.dataset or "autopatch",
         )
 
     elif args.mode == "full":
