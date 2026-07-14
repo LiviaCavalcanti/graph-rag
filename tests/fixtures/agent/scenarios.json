@@ -1,0 +1,76 @@
+{
+  "scenarios": [
+    {
+      "id": "cwe476-null-deref",
+      "cve_id": "CVE-2099-0476",
+      "cwe_id": "CWE-476",
+      "example_db": {
+        "cve_id": "CVE-2098-0476",
+        "cwe_type": "CWE-476",
+        "function_name": "handle_request",
+        "function_prototype": "int handle_request(struct session *s)",
+        "root_cause": "Pointer returned by lookup() may be NULL and is dereferenced without a check.",
+        "fix_list": ["Add a NULL check before dereferencing the pointer."],
+        "vulnerability_related_variables": {"s": "session pointer that may be NULL"},
+        "vulnerability_related_functions": {"lookup": "may return NULL"},
+        "original_code": "int handle_request(struct session *s) {\n    return s->id + 1;\n}",
+        "patch_cot": "The session pointer can be NULL, so guard the dereference.",
+        "vuln_patch": "int handle_request(struct session *s) {\n    if (!s)\n        return -1;\n    return s->id + 1;\n}"
+      },
+      "target_db": {
+        "cve_id": "CVE-2099-0476",
+        "cwe_type": "CWE-476",
+        "function_name": "process",
+        "function_prototype": "int process(struct node *n)",
+        "language": "c",
+        "root_cause": "n may be NULL when the list is empty; dereferenced unconditionally.",
+        "vulnerability_related_variables": {"n": "node pointer that may be NULL"},
+        "vulnerability_related_functions": {}
+      },
+      "target_code": "int process(struct node *n) {\n    return n->value * 2;\n}",
+      "ground_truth": "int process(struct node *n) {\n    if (!n)\n        return -1;\n    return n->value * 2;\n}",
+      "graph_context": "None",
+      "expected": {
+        "must_parse": true,
+        "contains": ["if"],
+        "min_similarity": 0.4
+      }
+    },
+    {
+      "id": "cwe787-oob-write",
+      "cve_id": "CVE-2099-0787",
+      "cwe_id": "CWE-787",
+      "example_db": {
+        "cve_id": "CVE-2098-0787",
+        "cwe_type": "CWE-787",
+        "function_name": "set_label",
+        "function_prototype": "void set_label(char *dst, const char *src)",
+        "root_cause": "Unbounded copy into a fixed-size buffer overflows on long input.",
+        "fix_list": ["Use a bounded copy and NUL-terminate."],
+        "vulnerability_related_variables": {"dst": "fixed-size destination buffer"},
+        "vulnerability_related_functions": {"strcpy": "unbounded copy"},
+        "original_code": "void set_label(char *dst, const char *src) {\n    strcpy(dst, src);\n}",
+        "patch_cot": "Bound the copy to the destination size and NUL-terminate.",
+        "vuln_patch": "void set_label(char *dst, size_t dstsz, const char *src) {\n    strncpy(dst, src, dstsz - 1);\n    dst[dstsz - 1] = '\\0';\n}"
+      },
+      "target_db": {
+        "cve_id": "CVE-2099-0787",
+        "cwe_type": "CWE-787",
+        "function_name": "copy_name",
+        "function_prototype": "void copy_name(char *dst, const char *src)",
+        "language": "c",
+        "root_cause": "strcpy writes past the end of dst for long src.",
+        "vulnerability_related_variables": {"dst": "fixed-size destination buffer"},
+        "vulnerability_related_functions": {"strcpy": "unbounded copy"}
+      },
+      "target_code": "void copy_name(char *dst, const char *src) {\n    strcpy(dst, src);\n}",
+      "ground_truth": "void copy_name(char *dst, size_t dstsz, const char *src) {\n    strncpy(dst, src, dstsz - 1);\n    dst[dstsz - 1] = '\\0';\n}",
+      "graph_context": "None",
+      "expected": {
+        "must_parse": true,
+        "contains": ["strncpy"],
+        "not_contains": ["strcpy("]
+      }
+    }
+  ]
+}
