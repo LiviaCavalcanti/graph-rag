@@ -18,8 +18,9 @@ import re
 import time
 from pathlib import Path
 
-from src.agents.graph_context import serialize_graph_context
-from src.agents.patcher import patch_one
+from src.agents import prompt_registry
+from src.agents.base import PatchContext
+from src.agents.registry import build_agent
 from src.agents.utils import MODEL_NAME, strip_code_fences
 from src.metrics.similarity import code_similarity
 
@@ -29,6 +30,33 @@ META_FILENAME = "run_meta.json"
 
 class ForbiddenError(Exception):
     """Raised when the API returns HTTP 403 — signals immediate abort."""
+
+
+# ── reproducibility helpers ─────────────────────────────────────────
+
+
+def _git_commit() -> str:
+    """Short git SHA of the working tree, or '' if unavailable."""
+    import subprocess
+
+    try:
+        out = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        return out.stdout.strip() if out.returncode == 0 else ""
+    except Exception:
+        return ""
+
+
+def _variant_fingerprint(prompt_variant: str) -> str:
+    """Content fingerprint of a prompt variant for reproducible run metadata."""
+    try:
+        return prompt_registry.variant_fingerprint(prompt_variant)
+    except Exception:
+        return ""
 
 
 # ── code extraction helpers ─────────────────────────────────────────
@@ -78,12 +106,10 @@ def _run_single_query(
     query_pair,
     retriever,
     db_cache: dict,
-    model_name: str,
-    prompt_variant: str = "default",
-    llm_params: dict | None = None,
+    agent,
 ) -> dict:
     """
-    Execute a single LLM patching query.
+    Execute a single LLM patching query with a pre-built agent.
 
     db_cache is keyed by dir_name (e.g. 'CVE-2025-21809_1').
     Returns a result dict.  Raises ForbiddenError on HTTP 403.
@@ -154,25 +180,19 @@ def _run_single_query(
             "retrieval": retrieval_info,
         }
 
-    # serialize graph context for graph-enhanced prompts
-    graph_context = ""
-    if prompt_variant == "graph":
-        G_vuln = getattr(query_pair, "G_vuln", None)
-        graph_context = serialize_graph_context(G_vuln)
-
-    # invoke patcher (prompt build → LLM → parse)
+    # invoke the agent (prompt build → LLM turn(s) → parse). The agent owns
+    # architecture-specific behaviour (graph-context serialization, multi-step,
+    # tool calls); this runner stays architecture-agnostic.
     t0 = time.perf_counter()
     try:
-        raw_output, parsed, record = patch_one(
+        ctx = PatchContext(
             example_db=example_db,
             target_db=target_db,
             target_code=target_code,
             target_supplementary=target_supplementary,
-            model_name=model_name,
-            prompt_variant=prompt_variant,
-            graph_context=graph_context,
-            llm_params=llm_params,
+            query_pair=query_pair,
         )
+        result = agent.run(ctx)
         elapsed = time.perf_counter() - t0
     except Exception as e:
         elapsed = time.perf_counter() - t0
@@ -188,6 +208,7 @@ def _run_single_query(
             "elapsed_s": round(elapsed, 2),
         }
 
+    parsed = result.parsed
     cve_match = retrieval_info.get("cve_match", False)
     cwe_match = retrieval_info.get("cwe_match", False)
 
@@ -219,14 +240,18 @@ def _run_single_query(
         "rouge": rouge,
         "elapsed_s": round(elapsed, 2),
         "retrieval": retrieval_info,
-        "raw_output_len": len(raw_output),
+        "raw_output_len": len(result.raw_output),
         "generated_patch": parsed.vuln_patch if parsed else None,
         "ground_truth_patch": ground_truth,
-        "prompt_tokens": record.prompt_tokens,
-        "completion_tokens": record.completion_tokens,
-        "total_tokens": record.total_tokens,
-        "finish_reason": record.finish_reason,
-        "prompt_variant": prompt_variant,
+        "prompt_tokens": result.prompt_tokens,
+        "completion_tokens": result.completion_tokens,
+        "total_tokens": result.total_tokens,
+        "finish_reason": result.finish_reason,
+        "prompt_variant": result.prompt_variant,
+        "architecture": result.architecture,
+        "prompt_fingerprint": result.prompt_fingerprint,
+        "n_turns": result.n_turns,
+        "n_tool_calls": result.n_tool_calls,
     }
 
 
@@ -245,6 +270,7 @@ def run_batch_inference(
     output_dir: Path | None = None,
     prompt_variant: str = "default",
     llm_params: dict | None = None,
+    architecture: str = "single_turn",
 ) -> Path:
     """
     Run LLM patching in batches, writing results to JSONL incrementally.
@@ -258,7 +284,8 @@ def run_batch_inference(
         run_tag:      tag for the output directory name
         resume_dir:   path to a previous run dir to resume
         meta_extra:   extra metadata to save in run_meta.json
-        prompt_variant: "default" or "graph"
+        prompt_variant: prompt variant from prompts/registry.yaml
+        architecture: patching-agent architecture (src.agents.registry)
 
     Returns the path to the run directory.
     """
@@ -266,20 +293,22 @@ def run_batch_inference(
 
     resolved_model = model_name or MODEL_NAME
 
+    # Build the agent once for the whole run. The backend is resolved lazily per
+    # LLM call, so an active use_backend(...) scope is still honoured.
+    agent = build_agent(
+        architecture,
+        prompt_variant=prompt_variant,
+        model_name=resolved_model,
+        llm_params=llm_params,
+    )
+
     # ── per-query callback ───────────────────────────────────────────
     def process_one(query_pair, current: int, total: int) -> dict:
         label = (
             f"  [{current}/{total}] "
             f"{query_pair.cve_id} ({query_pair.meta.get('variant', '?')})"
         )
-        result = _run_single_query(
-            query_pair,
-            retriever,
-            db_cache,
-            resolved_model,
-            prompt_variant=prompt_variant,
-            llm_params=llm_params,
-        )
+        result = _run_single_query(query_pair, retriever, db_cache, agent)
         status = result["status"]
         sim = result.get("similarity", "")
         elapsed = result.get("elapsed_s", "")
@@ -303,7 +332,10 @@ def run_batch_inference(
         meta={
             "model": resolved_model,
             "batch_size": batch_size,
+            "architecture": architecture,
             "prompt_variant": prompt_variant,
+            "prompt_fingerprint": _variant_fingerprint(prompt_variant),
+            "git_commit": _git_commit(),
             **(meta_extra or {}),
         },
         abort_on=(ForbiddenError,),
