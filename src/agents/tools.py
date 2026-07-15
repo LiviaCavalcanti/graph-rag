@@ -385,7 +385,9 @@ def _llm_verify(
     backend, diagnosis: str, patch: str, original: str, cwe_id: str, ctx: dict
 ) -> str:
     """Call a cheap LLM to judge patch correctness."""
-    model = ctx.get("verify_model", "azure/gpt-4o-mini")
+    from src.agents.utils import MODEL_NAME
+
+    model = ctx.get("verify_model") or f"azure/{MODEL_NAME}"
     messages = [
         {
             "role": "system",
