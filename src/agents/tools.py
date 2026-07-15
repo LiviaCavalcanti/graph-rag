@@ -187,19 +187,7 @@ def _tool_analyze_example_fix(args: dict, ctx: dict) -> str:
     example_cwe = example_db.get("cwe_type", "Unknown")
     example_cve = example_db.get("cve_id", "Unknown")
 
-    # Generate unified diff
-    diff_lines = list(
-        difflib.unified_diff(
-            code_before.splitlines(keepends=True),
-            code_after.splitlines(keepends=True),
-            fromfile="vulnerable",
-            tofile="patched",
-            lineterm="",
-        )
-    )
-    diff_text = "\n".join(diff_lines[:100])  # cap for prompt size
-    if len(diff_lines) > 100:
-        diff_text += f"\n... ({len(diff_lines) - 100} more lines)"
+    diff_text = _smart_diff(code_before, code_after, token_budget=2000)
 
     sections = [
         f"## Example: {example_cve} ({example_cwe})",
@@ -214,6 +202,80 @@ def _tool_analyze_example_fix(args: dict, ctx: dict) -> str:
         "- Consider whether the same pattern applies to the target code",
     ]
     return "\n".join(sections)
+
+
+def _smart_diff(before: str, after: str, token_budget: int = 2000) -> str:
+    """Produce a diff that fits within a token budget (~4 chars/token).
+
+    Strategy:
+    1. If the full unified diff fits, use it.
+    2. Otherwise, extract only the hunks (changed lines + 2 lines context).
+    3. If still too large, show a summary + the first N hunks.
+    """
+    char_budget = token_budget * 4
+
+    # Full diff with reduced context (2 lines instead of default 3)
+    diff_lines = list(
+        difflib.unified_diff(
+            before.splitlines(keepends=True),
+            after.splitlines(keepends=True),
+            fromfile="vulnerable",
+            tofile="patched",
+            lineterm="",
+            n=2,
+        )
+    )
+
+    full_text = "\n".join(diff_lines)
+    if len(full_text) <= char_budget:
+        return full_text
+
+    # Extract only the change lines (+ and - lines) with minimal context
+    hunks = _extract_hunks(diff_lines)
+    total_hunks = len(hunks)
+
+    # Build output hunk by hunk until budget is exhausted
+    output_parts = []
+    chars_used = 0
+    summary = (
+        f"[{total_hunks} change hunks, showing those that fit in budget]\n"
+        f"[Total diff: {len(diff_lines)} lines, "
+        f"{sum(1 for l in diff_lines if l.startswith('+') and not l.startswith('+++'))} additions, "
+        f"{sum(1 for l in diff_lines if l.startswith('-') and not l.startswith('---'))} deletions]\n"
+    )
+    chars_used += len(summary)
+    output_parts.append(summary)
+
+    for i, hunk in enumerate(hunks):
+        hunk_text = "\n".join(hunk)
+        if chars_used + len(hunk_text) + 2 > char_budget:
+            remaining = total_hunks - i
+            output_parts.append(f"\n... ({remaining} more hunks omitted)")
+            break
+        output_parts.append(hunk_text)
+        chars_used += len(hunk_text) + 1
+
+    return "\n".join(output_parts)
+
+
+def _extract_hunks(diff_lines: list[str]) -> list[list[str]]:
+    """Split unified diff lines into individual hunks (each starting with @@)."""
+    hunks: list[list[str]] = []
+    current: list[str] = []
+
+    for line in diff_lines:
+        if line.startswith("@@"):
+            if current:
+                hunks.append(current)
+            current = [line]
+        elif line.startswith("---") or line.startswith("+++"):
+            continue  # skip file headers
+        elif current:
+            current.append(line)
+
+    if current:
+        hunks.append(current)
+    return hunks
 
 
 def _tool_check_c_syntax(args: dict, ctx: dict) -> str:
