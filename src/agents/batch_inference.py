@@ -257,6 +257,7 @@ def _run_single_query(
         "elapsed_s": round(elapsed, 2),
         "retrieval": retrieval_info,
         "raw_output_len": len(result.raw_output),
+        "target_code": target_code,
         "generated_patch": parsed.vuln_patch if parsed else None,
         "ground_truth_patch": ground_truth,
         "prompt_tokens": result.prompt_tokens,
