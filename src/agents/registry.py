@@ -80,7 +80,7 @@ def _register_builtins() -> None:
             backend=backend,
             max_iterations=extra.get("max_iterations", 6),
             verify_backend=extra.get("verify_backend"),
-            verify_model=extra.get("verify_model", "azure/gpt-4o-mini"),
+            verify_model=extra.get("verify_model"),  # None → same deployment as model_name
         )
 
     register_agent("tool_calling", _tool_calling)
