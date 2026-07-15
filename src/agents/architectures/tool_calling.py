@@ -261,8 +261,15 @@ class ToolCallingAgent:
 
     @staticmethod
     def _try_extract_code(text: str) -> str | None:
-        """Try to extract code from markdown fences or markers."""
-        # Try marker format first
+        """Try to extract code from the LLM's free-form response.
+
+        Priority order:
+        1. Explicit markers ([Patched Code START]...[Patched Code END])
+        2. Longest ```c fenced block (most likely the full patched function)
+        3. Longest ``` fenced block
+        4. If the text looks like bare C code (has braces, semicolons), use it directly
+        """
+        # 1. Explicit markers
         start_marker = "[Patched Code START]"
         end_marker = "[Patched Code END]"
         if start_marker in text and end_marker in text:
@@ -270,16 +277,32 @@ class ToolCallingAgent:
             e = text.index(end_marker)
             return text[s:e].strip()
 
-        # Try code fence
+        # 2. Longest ```c block (pick the largest — most likely the full patch)
         if "```c" in text:
+            blocks = []
             parts = text.split("```c")
-            if len(parts) > 1:
-                code_part = parts[-1].split("```")[0]
-                return code_part.strip()
+            for part in parts[1:]:
+                if "```" in part:
+                    blocks.append(part.split("```")[0].strip())
+            if blocks:
+                return max(blocks, key=len)
 
+        # 3. Longest ``` block
         if "```" in text:
             parts = text.split("```")
-            if len(parts) >= 3:
-                return parts[1].strip()
+            # Odd-indexed parts are inside fences
+            blocks = [parts[i].strip() for i in range(1, len(parts), 2) if parts[i].strip()]
+            if blocks:
+                return max(blocks, key=len)
+
+        # 4. Bare code heuristic: if it has function signatures and braces
+        stripped = text.strip()
+        if (
+            stripped.count("{") >= 1
+            and stripped.count("}") >= 1
+            and stripped.count(";") >= 1
+            and "{" in stripped[:200]  # function body starts near the top
+        ):
+            return stripped
 
         return None
