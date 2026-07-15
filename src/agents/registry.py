@@ -70,5 +70,20 @@ def _register_builtins() -> None:
 
     register_agent("single_turn", _single_turn)
 
+    from src.agents.architectures.tool_calling import ToolCallingAgent
+
+    def _tool_calling(*, prompt_variant, model_name, llm_params, backend, **extra):
+        return ToolCallingAgent(
+            prompt_variant=prompt_variant,
+            model_name=model_name,
+            llm_params=llm_params,
+            backend=backend,
+            max_iterations=extra.get("max_iterations", 6),
+            verify_backend=extra.get("verify_backend"),
+            verify_model=extra.get("verify_model", "azure/gpt-4o-mini"),
+        )
+
+    register_agent("tool_calling", _tool_calling)
+
 
 _register_builtins()
