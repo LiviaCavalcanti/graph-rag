@@ -62,6 +62,21 @@ def _variant_fingerprint(prompt_variant: str) -> str:
 # ── code extraction helpers ─────────────────────────────────────────
 
 
+def _path_exists(s: str) -> bool:
+    """Safely check whether ``s`` is an existing filesystem path.
+
+    ``s`` may instead be inline source code (thousands of chars), in which
+    case ``Path.exists()`` can raise ``OSError: [Errno 36] File name too
+    long`` on Linux rather than returning False. Guard against that.
+    """
+    if len(s) > 255:
+        return False
+    try:
+        return Path(s).exists()
+    except OSError:
+        return False
+
+
 def _get_target_code(query_pair, target_db: dict) -> str:
     """Get the vulnerable source code for the target.
 
@@ -71,7 +86,7 @@ def _get_target_code(query_pair, target_db: dict) -> str:
     code = query_pair.meta.get("source_before", "")
     if code:
         # For original variants, source_before is a file path — prefer db_entry
-        if query_pair.meta.get("variant") == "original" and Path(code).exists():
+        if query_pair.meta.get("variant") == "original" and _path_exists(code):
             return strip_code_fences(target_db.get("original_code", ""))
         # inline code (augmented variant)
         return strip_code_fences(code)
@@ -87,10 +102,9 @@ def _get_ground_truth(query_pair, target_db: dict) -> str:
     """
     source_after = query_pair.meta.get("source_after", "")
     if source_after:
-        p = Path(source_after)
-        if p.exists():
+        if _path_exists(source_after):
             try:
-                return strip_code_fences(p.read_text(errors="replace"))
+                return strip_code_fences(Path(source_after).read_text(errors="replace"))
             except OSError:
                 pass
         elif len(source_after) > 50:
