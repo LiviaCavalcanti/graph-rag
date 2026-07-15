@@ -22,8 +22,13 @@ def build_record(result: dict, evaluation: dict, base_dir: Path) -> dict:
     cve_id = result.get("query_cve", "")
     variant = result.get("query_variant", "")
 
-    input_code = load_input_code(cve_id, base_dir)
-    ground_truth = load_ground_truth(cve_id, variant, base_dir)
+    # Prefer code persisted inline in results.jsonl (works for any dataset,
+    # e.g. CVEfixes); fall back to the AutoPatch CVE-list/ file layout,
+    # which only has entries for AutoPatch-sourced CVEs.
+    input_code = result.get("target_code") or load_input_code(cve_id, base_dir)
+    ground_truth = result.get("ground_truth_patch") or load_ground_truth(
+        cve_id, variant, base_dir
+    )
     generated = (result.get("generated_patch") or "").strip()
 
     retrieval = result.get("retrieval", {})
