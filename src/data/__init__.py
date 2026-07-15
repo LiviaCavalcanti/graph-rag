@@ -5,10 +5,12 @@ from __future__ import annotations
 from .autopatch import AutoPatchDataset
 from .base import BaseDataset, FunctionPair
 from .cvefixes import CVEFixesDataset
+from .cvefixes_file import CVEFixesFileDataset
 
 REGISTRY: dict[str, type[BaseDataset]] = {
     "autopatch": AutoPatchDataset,
     "cvefixes": CVEFixesDataset,
+    "cvefixes_file": CVEFixesFileDataset,
 }
 
 
@@ -16,14 +18,16 @@ def _resolve_datasets(cfg: dict) -> list[tuple[str, "BaseDataset"]]:
     """Instantiate active datasets from config."""
     data_cfg = cfg["data"]
     graph_cfg = cfg.get("graph", {})
+    joern_cfg = cfg.get("joern", {})
     active = data_cfg.get("active", [k for k in data_cfg if k in REGISTRY])
     datasets = []
     for name in active:
         if name not in REGISTRY:
             continue
-        # Inject the shared graph-processing section so compute_graph_diff
-        # parameters (slice_depth, ...) flow into the dataset stream.
-        ds_cfg = {**data_cfg[name], "graph": graph_cfg} if graph_cfg else data_cfg[name]
+        # Inject the shared graph-processing/joern sections so
+        # compute_graph_diff parameters (slice_depth, ...) and the Joern
+        # binary path flow into the dataset stream.
+        ds_cfg = {**data_cfg[name], "graph": graph_cfg, "joern": joern_cfg}
         datasets.append((name, REGISTRY[name](ds_cfg)))
     return datasets
 
