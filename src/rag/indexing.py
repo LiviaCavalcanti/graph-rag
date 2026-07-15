@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.data import REGISTRY
+from src.data import _resolve_datasets
 from src.embeddings import build_embedders
 from src.io.read_write import save_json
 from src.rag.faiss_index import FAISSIndex
@@ -19,7 +19,6 @@ BATCH_SIZE = 32  # Embed in batches for efficiency
 
 def build_index(cfg: dict) -> None:
     """Embed CPGs from ``cfg["data"]["active"]`` datasets and build the FAISS index."""
-    active_datasets = [name for name in REGISTRY if name in cfg["data"]["active"]]
     rag_cfg = cfg["rag"]
     variant = rag_cfg["embedding_variant"]
     embedders = build_embedders(cfg)
@@ -41,13 +40,9 @@ def build_index(cfg: dict) -> None:
     contract_batches: list[DatasetBatch] = []
     contract_embedded: list[EmbeddedBatch] = []
 
-    graph_cfg = cfg.get("graph", {})
-    for ds_name in active_datasets:
-        # Inject the shared graph-processing section so compute_graph_diff
-        # parameters (slice_depth, ...) flow into the dataset stream.
-        ds_cfg = {**cfg["data"][ds_name], "graph": graph_cfg}
-        # instantiate the dataset class with the config params
-        dataset = REGISTRY[ds_name](ds_cfg)
+    datasets = _resolve_datasets(cfg)
+    active_datasets = [ds_name for ds_name, _ds in datasets]
+    for ds_name, dataset in datasets:
         print(f"-----------{dataset.name()}-----------")
 
         # Pre-fit PCA-based embedders on full corpus before batched indexing

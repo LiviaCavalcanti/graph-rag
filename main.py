@@ -34,7 +34,6 @@ MODES:
 import argparse
 from pathlib import Path
 
-from src.data import entries_cache
 from src.data.export import run_export
 from src.rag.indexing import build_index
 from src.rag.query import run_batch_query, run_query
@@ -56,40 +55,17 @@ def apply_split_overrides(cfg: dict, args) -> None:
         split_cfg["augmented_train_ratio"] = args.aug_train_ratio
 
 
-def _resolve_query_pairs(cfg: dict, args):
-    """Load the pairs to embed/query for batch retrieval (query/full modes).
-
-    By default, CVEfixes runs are restricted to a pinned JSON entries
-    subset (``data.cvefixes.input_file``, default
-    ``experiments_cves/selected_entries.json`` — the same sample used by
-    ``cvefixes_experiments/scripts/performance/exp_method_vs_file_level.py``)
-    instead of streaming the entire DB. Pass ``--input-file <path>`` to use a
-    different subset, or ``--full-dataset`` to bypass the subset entirely.
-    """
-    from src.data import load_pairs, load_pairs_from_file
-
-    if args.full_dataset:
-        return load_pairs(cfg)
-
-    input_file = args.input_file
-    if input_file is None and "cvefixes" in cfg.get("data", {}).get("active", []):
-        input_file = (
-            cfg.get("data", {})
-            .get("cvefixes", {})
-            .get("input_file", entries_cache.DEFAULT_ENTRIES_FILE)
-        )
-
-    if input_file:
-        print(f"Loading pinned CVEfixes subset from {input_file}")
-        return load_pairs_from_file(input_file, cfg)
-
-    return load_pairs(cfg)
-
-
 def run_full_pipeline(cfg: dict, args):
-    """End-to-end: retrieval → LLM patching → evaluation."""
+    """End-to-end: retrieval → LLM patching → evaluation.
+
+    Retrieval pairs come from ``src.data.load_pairs(cfg)`` — i.e. whichever
+    dataset(s) are in ``data.active``. Point ``data.active`` at
+    ``cvefixes_file`` (with ``data.cvefixes_file.input_file``/``sample_mode``)
+    for a pinned, CWE-sampled CVEfixes subset instead of the full DB.
+    """
     from experiments.exp.prompt.patching_experiment import run_patching_experiment
     from experiments.exp.retrieval_experiment import run_experiment as run_retrieval_exp
+    from src.data import load_pairs
     from src.io.read_write import make_run_dir
 
     run_id, run_dir = make_run_dir("full")
@@ -101,7 +77,7 @@ def run_full_pipeline(cfg: dict, args):
     print(f"\n{'━'*60}")
     print(f"  STEP 1/3 — Retrieval (embed + FAISS top-k)")
     print(f"{'━'*60}")
-    full_pairs = _resolve_query_pairs(cfg, args)
+    full_pairs = load_pairs(cfg)
     if args.max_queries:
         full_pairs = full_pairs[: args.max_queries]
     run_retrieval_exp(full_pairs, cfg, output_dir=run_dir)
@@ -307,21 +283,6 @@ if __name__ == "__main__":
         "--embedding-variant",
         default=None,
         help="embedder name to use for query mode (default: config rag.embedding_variant).",
-    )
-    parser.add_argument(
-        "--input-file",
-        default=None,
-        help="path to a pinned JSON entries file (e.g. "
-        "experiments_cves/selected_entries.json) restricting batch query mode "
-        "to a fixed CVEfixes subset, instead of the full DB. Defaults to "
-        f"'{entries_cache.DEFAULT_ENTRIES_FILE}' for cvefixes runs unless "
-        "--full-dataset is passed (query/full modes).",
-    )
-    parser.add_argument(
-        "--full-dataset",
-        action="store_true",
-        help="bypass the default pinned entries subset and load the full "
-        "CVEfixes dataset for batch query mode (query/full modes).",
     )
 
     args = parser.parse_args()
