@@ -112,10 +112,17 @@ def read_code_file(path: str | None, max_chars: int = 4000) -> str:
     """Read source code from a file path or inline string, truncating if needed."""
     if not path:
         return ""
-    p = Path(path)
-    if p.exists():
+    # `path` may instead be inline source code (thousands of chars); Path.exists()
+    # can raise OSError: [Errno 36] File name too long on Linux in that case.
+    exists = False
+    if len(path) <= 255:
         try:
-            text = p.read_text(errors="replace")
+            exists = Path(path).exists()
+        except OSError:
+            exists = False
+    if exists:
+        try:
+            text = Path(path).read_text(errors="replace")
             return text[:max_chars] + (
                 f"\n... [truncated at {max_chars} chars]"
                 if len(text) > max_chars
