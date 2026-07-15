@@ -54,10 +54,10 @@ class PatchingExperiment(Experiment):
         self._cve_filter = cve_filter
         self._cve_root = cve_root
         self._include_variants = include_variants
-        if dataset not in ("autopatch", "cvefixes"):
+        if dataset not in ("autopatch", "cvefixes", "cvefixes_file"):
             raise ValueError(
                 f"Unknown dataset {dataset!r} for patching; expected "
-                "'autopatch' or 'cvefixes'."
+                "'autopatch', 'cvefixes', or 'cvefixes_file'."
             )
         self._dataset = dataset
 
@@ -80,6 +80,10 @@ class PatchingExperiment(Experiment):
           in the prompt builder). Every pair uses a single implicit variant
           (``"original"``), so retrieval decisions from a prior ``--mode
           query --dataset cvefixes`` run line up by (cve_id, variant).
+        - ``"cvefixes_file"``: pinned CVEfixes subset loaded from a JSON
+          entries file (``data.cvefixes_file.input_file``), with optional
+          CVE-aware CWE resampling. Same db_cache derivation as
+          ``"cvefixes"`` (no db_entry.json / root_cause / fix_list).
 
         Pairs and db_cache always come from the *same* loaded pairs so they
         can never silently diverge.
@@ -88,6 +92,8 @@ class PatchingExperiment(Experiment):
 
         if self._dataset == "cvefixes":
             pairs, db_cache = self._load_cvefixes_data(cfg)
+        elif self._dataset == "cvefixes_file":
+            pairs, db_cache = self._load_cvefixes_file_data(cfg)
         else:
             pairs, db_cache = self._load_autopatch_data(cfg)
 
@@ -167,6 +173,35 @@ class PatchingExperiment(Experiment):
             for p in pairs
         }
         print(f"Cached {len(db_cache)} db_entries (derived from CVEfixes pairs)")
+        return pairs, db_cache
+
+    def _load_cvefixes_file_data(self, cfg: dict) -> tuple[list, dict]:
+        """Load CVEfixes-file pairs (lightweight) + a db_cache derived from them."""
+        from src.data.cvefixes_file import CVEFixesFileDataset
+
+        cvefixes_file_cfg = cfg.get("data", {}).get("cvefixes_file", {}) or {}
+
+        dataset = CVEFixesFileDataset(cvefixes_file_cfg)
+        pairs = dataset.load_lightweight()
+        print(f"Loaded {len(pairs)} lightweight CVEfixes-file pairs")
+
+        # CVEfixes-file has no db_entry.json; build an equivalent db_cache
+        # directly from the same pairs' own metadata (single source of truth).
+        db_cache = {
+            p.meta["dir_name"]: {
+                "cve_id": p.cve_id,
+                "cwe_type": p.cwe_id,
+                "function_name": p.func_name,
+                "original_code": p.meta.get("source_before", ""),
+                "vuln_patch": p.meta.get("source_after", ""),
+                "root_cause": "",
+                "fix_list": [],
+            }
+            for p in pairs
+        }
+        print(
+            f"Cached {len(db_cache)} db_entries (derived from CVEfixes-file pairs)"
+        )
         return pairs, db_cache
 
     def _resolve_cve_root(self, cfg: dict) -> Path:
