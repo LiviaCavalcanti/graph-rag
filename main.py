@@ -181,9 +181,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--dataset",
-        choices=["autopatch", "cvefixes"],
+        choices=["autopatch", "cvefixes", "cvefixes_file"],
         default=None,
-        help="Dataset to process ('cvefixes' for CVEfixes SQLite, 'autopatch' for CVE-list folder). "
+        help="Dataset to process ('cvefixes' for CVEfixes SQLite, 'cvefixes_file' for a "
+        "pinned CVEfixes entries JSON, 'autopatch' for CVE-list folder). "
         "If not specified, uses config.data.active",
     )
     parser.add_argument(
