@@ -1,19 +1,17 @@
-"""Dataset splitting utilities — variant filtering, stratified splits, sampling."""
+"""Dataset splitting utilities — stratified splits, sampling.
+
+Generic and dataset-agnostic: ``build_split`` produces an index/query split
+by CWE-stratified sampling. AutoPatch-specific "real vs. LLM-augmented
+variant" splitting lives in ``AutoPatchDataset.build_split``
+(``src/data/autopatch.py``); ``build_split`` here transparently delegates to
+it whenever any of the given pairs came from AutoPatch
+(``pair.project == "autopatch"``), so callers never need to know or care.
+"""
 
 from __future__ import annotations
 
 import random
 from collections import defaultdict
-
-
-def _is_original(pair) -> bool:
-    return pair.meta.get("variant") == "original"
-
-
-def _split_by_variant(pairs):
-    original = [p for p in pairs if _is_original(p)]
-    augmented = [p for p in pairs if not _is_original(p)]
-    return original, augmented
 
 
 def _stratified_split(pairs, test_ratio, seed):
@@ -69,6 +67,14 @@ def build_split(pairs: list, cfg: dict, seed_override: int | None = None) -> tup
     Split pairs into index / query sets.
 
     Backwards-compatible: returns (pairs, pairs, info) when split is disabled.
+
+    Dataset-agnostic: produces a plain CWE-stratified (or shuffled, if
+    ``stratified: false``) train/test split over all given pairs. If any of
+    the pairs came from ``AutoPatchDataset`` (``pair.project ==
+    "autopatch"``), delegates transparently to
+    ``AutoPatchDataset.build_split`` instead, which understands the
+    AutoPatch-specific real/augmented-variant split. Callers never need to
+    branch on dataset type.
     """
     split_cfg = (cfg or {}).get("experiment", {}).get("split", {})
     enabled = bool(split_cfg.get("enabled", False))
@@ -81,63 +87,34 @@ def build_split(pairs: list, cfg: dict, seed_override: int | None = None) -> tup
             "mode": "all_vs_all",
         }
 
+    if pairs and any(getattr(p, "project", None) == "autopatch" for p in pairs):
+        from .autopatch import AutoPatchDataset
+
+        return AutoPatchDataset.build_split(pairs, cfg, seed_override=seed_override)
+
     seed = seed_override if seed_override is not None else int(split_cfg.get("seed", 42))
     test_ratio = float(split_cfg.get("test_ratio", 0.2))
     stratified = bool(split_cfg.get("stratified", True))
-    include_real = bool(split_cfg.get("include_real_in_index", True))
-    aug_train_ratio = float(split_cfg.get("augmented_train_ratio", 1.0))
-    query_source = str(split_cfg.get("query_source", "augmented_test"))
-
-    real, aug = _split_by_variant(pairs)
 
     if stratified:
-        aug_train, aug_test = _stratified_split(aug, test_ratio, seed)
+        index_pairs, query_pairs = _stratified_split(pairs, test_ratio, seed)
     else:
         rng = random.Random(seed)
-        shuffled = aug[:]
+        shuffled = pairs[:]
         rng.shuffle(shuffled)
         cut = int(round(len(shuffled) * (1.0 - max(0.0, min(0.9, test_ratio)))))
-        aug_train, aug_test = shuffled[:cut], shuffled[cut:]
-
-    aug_train_kept = _sample_pairs(aug_train, aug_train_ratio, seed + 13)
-
-    index_pairs = []
-    if include_real:
-        index_pairs.extend(real)
-    index_pairs.extend(aug_train_kept)
-
-    if query_source == "augmented_test":
-        query_pairs = aug_test
-    elif query_source == "all_test":
-        _, real_test = _stratified_split(real, test_ratio, seed + 31)
-        query_pairs = aug_test + real_test
-    elif query_source == "augmented_train":
-        query_pairs = aug_train_kept
-    else:
-        query_pairs = aug_test
-
-    if not index_pairs:
-        index_pairs = real[:] if real else aug_train_kept[:]
-    if not query_pairs:
-        query_pairs = aug_test[:] if aug_test else index_pairs[:]
+        index_pairs, query_pairs = shuffled[:cut], shuffled[cut:]
 
     info = {
         "enabled": True,
         "seed": seed,
         "stratified": stratified,
         "test_ratio": test_ratio,
-        "query_source": query_source,
-        "include_real_in_index": include_real,
-        "augmented_train_ratio": aug_train_ratio,
         "counts": {
             "total": len(pairs),
-            "real_total": len(real),
-            "aug_total": len(aug),
-            "aug_train_total": len(aug_train),
-            "aug_train_used": len(aug_train_kept),
-            "aug_test_total": len(aug_test),
             "index_total": len(index_pairs),
             "query_total": len(query_pairs),
         },
     }
     return index_pairs, query_pairs, info
+
