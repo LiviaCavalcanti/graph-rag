@@ -33,7 +33,7 @@ class CombinedEmbedder(BaseEmbedder):
             return self._norm_vec(raw)
         if not self._fitted:
             raise RuntimeError("Call embed_many() first to fit PCA")
-        
+
         # Safety check: if PCA was fitted with different input dim, raise clear error
         if self._pca.n_features_in_ != raw.shape[0]:
             raise ValueError(
@@ -42,7 +42,7 @@ class CombinedEmbedder(BaseEmbedder):
                 f"This usually means embedder config changed or cached PCA is stale. "
                 f"Try deleting cached embedder files and refitting."
             )
-        
+
         proj = self._pca.transform(raw.reshape(1, -1))[0].astype(np.float32)
         return self._norm_vec(proj)
 
@@ -63,7 +63,9 @@ class CombinedEmbedder(BaseEmbedder):
         self._fitted = True
         self.dim = n_components
         explained = self._pca.explained_variance_ratio_.sum()
-        print(f"    [combined] PCA fitted — dim={n_components}, explained variance: {explained:.2%}")
+        print(
+            f"    [combined] PCA fitted — dim={n_components}, explained variance: {explained:.2%}"
+        )
 
     def embed_many(self, graphs: list[nx.MultiDiGraph]) -> np.ndarray:
         # Batch embed with each sub-embedder (more efficient than per-graph calls)
@@ -71,11 +73,11 @@ class CombinedEmbedder(BaseEmbedder):
         b_all = self._wl.embed_many(graphs)
         c_all = self._gin.embed_many(graphs)
 
-        print('[COMBINED] All graphs embedded')
-        
+        print("[COMBINED] All graphs embedded")
+
         # Concatenate along feature dimension
-        raws = np.concatenate([ b_all, c_all], axis=1).astype(np.float32)
-        print('concatenation done')
+        raws = np.concatenate([b_all, c_all], axis=1).astype(np.float32)
+        print("concatenation done")
         if self.projection == "none":
             self.dim = raws.shape[1]
             print(f"    [combined] no projection — dim={self.dim}")
@@ -90,12 +92,16 @@ class CombinedEmbedder(BaseEmbedder):
             self._fitted = True
             self.dim = n_components
             explained = self._pca.explained_variance_ratio_.sum()
-            print(f"    [combined] PCA fitted on batch (n={raws.shape[0]}) — dim={n_components}, explained variance: {explained:.2%}")
+            print(
+                f"    [combined] PCA fitted on batch (n={raws.shape[0]}) — dim={n_components}, explained variance: {explained:.2%}"
+            )
             if raws.shape[0] < 10:
-                print(f"    [combined] WARNING: PCA fitted on only {raws.shape[0]} samples — quality may be poor. "
-                      f"Pass all graphs to fit() first for a stable projection.")
+                print(
+                    f"    [combined] WARNING: PCA fitted on only {raws.shape[0]} samples — quality may be poor. "
+                    f"Pass all graphs to fit() first for a stable projection."
+                )
 
-        print('doing the projection')
+        print("doing the projection")
         projected = self._pca.transform(raws).astype(np.float32)
         return self._norm_mat(projected)
 
@@ -126,7 +132,7 @@ class CombinedEnrichedEmbedder(BaseEmbedder):
             return self._norm_vec(raw)
         if not self._fitted:
             raise RuntimeError("Call embed_many() first to fit PCA")
-        
+
         # Safety check: if PCA was fitted with different input dim, raise clear error
         if self._pca.n_features_in_ != raw.shape[0]:
             raise ValueError(
@@ -135,7 +141,7 @@ class CombinedEnrichedEmbedder(BaseEmbedder):
                 f"This usually means embedder config changed or cached PCA is stale. "
                 f"Try deleting cached embedder files and refitting."
             )
-        
+
         proj = self._pca.transform(raw.reshape(1, -1))[0].astype(np.float32)
         return self._norm_vec(proj)
 
@@ -150,7 +156,7 @@ class CombinedEnrichedEmbedder(BaseEmbedder):
         a_all = self._netlsd.embed_many(graphs)
         b_all = self._wl.embed_many(graphs)
         c_all = self._gin.embed_many(graphs)
-        
+
         # Concatenate along feature dimension
         raws = np.concatenate([a_all, b_all, c_all], axis=1).astype(np.float32)
 
@@ -160,14 +166,16 @@ class CombinedEnrichedEmbedder(BaseEmbedder):
             return self._norm_mat(raws)
 
         if not self._fitted:
-            print('Not fitted')
+            print("Not fitted")
             n_components = max(1, min(self.dim, raws.shape[0] - 1, raws.shape[1]))
             self._pca = PCA(n_components=n_components, random_state=42)
             self._pca.fit(raws)
             self._fitted = True
             self.dim = n_components
             explained = self._pca.explained_variance_ratio_.sum()
-            print(f"    [combined_enriched] PCA fitted — dim={n_components}, explained variance: {explained:.2%}")
+            print(
+                f"    [combined_enriched] PCA fitted — dim={n_components}, explained variance: {explained:.2%}"
+            )
 
         projected = self._pca.transform(raws).astype(np.float32)
         return self._norm_mat(projected)

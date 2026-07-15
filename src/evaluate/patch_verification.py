@@ -35,11 +35,15 @@ from pathlib import Path
 import numpy as np
 
 from src.data import load_pairs
-from src.io.read_write import load_config
+from src.data.pipeline import (
+    compute_graph_diff,
+    load_cpg_dir,
+    run_joern_export,
+    write_c_file,
+)
 from src.data.split import build_split
-from src.data.pipeline import (compute_graph_diff, load_cpg_dir,
-                               run_joern_export, write_c_file)
 from src.embeddings import build_embedders
+from src.io.read_write import load_config
 from src.rag.faiss_index import FAISSIndex
 from src.rag.retriever import Retriever
 from src.rag.utils import populate_index
@@ -58,13 +62,15 @@ def _extract_diff_lines(G_diff) -> list[dict]:
         code = str(attrs.get("CODE", "")).strip()
         if not code:
             continue
-        lines.append({
-            "line": attrs.get("LINE_NUMBER"),
-            "code": code,
-            "labelV": attrs.get("labelV", ""),
-            "diff": attrs.get("diff", "context"),
-            "diff_weight": attrs.get("diff_weight", 0.2),
-        })
+        lines.append(
+            {
+                "line": attrs.get("LINE_NUMBER"),
+                "code": code,
+                "labelV": attrs.get("labelV", ""),
+                "diff": attrs.get("diff", "context"),
+                "diff_weight": attrs.get("diff_weight", 0.2),
+            }
+        )
     lines.sort(key=lambda x: (x["line"] or 0, x["code"]))
     return lines
 
@@ -159,7 +165,9 @@ def _build_index_and_retriever(
         index = FAISSIndex(
             dim=dim, index_path=str(idx_path), metadata_path=str(meta_path)
         )
-        retriever = populate_index(index, index_pairs, embeddings, embedder.name, top_k=top_k)
+        retriever = populate_index(
+            index, index_pairs, embeddings, embedder.name, top_k=top_k
+        )
         print(f"Built and saved index: {index.index.ntotal} vectors → {idx_path}")
     else:
         retriever = Retriever(index, top_k=top_k)
@@ -267,10 +275,16 @@ def verify_one(
 
     # Extract code lines from the generated-patch diff
     patch_diff_lines = _extract_diff_lines(G_diff) if n_diff_nodes > 0 else []
-    patch_diff_summary = _summarize_diff_lines(patch_diff_lines) if patch_diff_lines else {}
+    patch_diff_summary = (
+        _summarize_diff_lines(patch_diff_lines) if patch_diff_lines else {}
+    )
 
     # Extract code lines from the ground-truth vulnerability diff (G_vuln)
-    gt_vuln_lines = _extract_diff_lines(qp.G_vuln) if qp.G_vuln and qp.G_vuln.number_of_nodes() > 0 else []
+    gt_vuln_lines = (
+        _extract_diff_lines(qp.G_vuln)
+        if qp.G_vuln and qp.G_vuln.number_of_nodes() > 0
+        else []
+    )
     gt_vuln_summary = _summarize_diff_lines(gt_vuln_lines) if gt_vuln_lines else {}
 
     if n_diff_nodes == 0:

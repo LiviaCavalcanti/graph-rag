@@ -71,7 +71,9 @@ def compute_summary(meta: dict, records: list[dict]) -> dict:
     cve_hits = sum(1 for r in evaluated if r.get("cve_match"))
     cwe_hits = sum(1 for r in evaluated if r.get("cwe_match"))
 
-    similarities = [r["similarity"] for r in successful if r.get("similarity") is not None]
+    similarities = [
+        r["similarity"] for r in successful if r.get("similarity") is not None
+    ]
     exact_matches = sum(1 for r in successful if r.get("exact_match"))
 
     elapsed_times = [r["elapsed_s"] for r in records if r.get("elapsed_s") is not None]
@@ -87,7 +89,11 @@ def compute_summary(meta: dict, records: list[dict]) -> dict:
         "successful_parses": n_success,
         "skipped": len(skipped),
         "errors": len(errors),
-        "completeness": total / meta.get("total_queries", total) if meta.get("total_queries") else 1.0,
+        "completeness": (
+            total / meta.get("total_queries", total)
+            if meta.get("total_queries")
+            else 1.0
+        ),
         "retrieval": {
             "cve_recall": cve_hits / n_evaluated if n_evaluated > 0 else 0.0,
             "cwe_recall": cwe_hits / n_evaluated if n_evaluated > 0 else 0.0,
@@ -96,7 +102,9 @@ def compute_summary(meta: dict, records: list[dict]) -> dict:
         },
         "patching": {
             "mean_similarity": float(np.mean(similarities)) if similarities else 0.0,
-            "median_similarity": float(np.median(similarities)) if similarities else 0.0,
+            "median_similarity": (
+                float(np.median(similarities)) if similarities else 0.0
+            ),
             "std_similarity": float(np.std(similarities)) if similarities else 0.0,
             "min_similarity": float(np.min(similarities)) if similarities else 0.0,
             "max_similarity": float(np.max(similarities)) if similarities else 0.0,
@@ -106,16 +114,23 @@ def compute_summary(meta: dict, records: list[dict]) -> dict:
         },
         "timing": {
             "mean_elapsed_s": float(np.mean(elapsed_times)) if elapsed_times else 0.0,
-            "median_elapsed_s": float(np.median(elapsed_times)) if elapsed_times else 0.0,
+            "median_elapsed_s": (
+                float(np.median(elapsed_times)) if elapsed_times else 0.0
+            ),
             "total_elapsed_s": float(np.sum(elapsed_times)) if elapsed_times else 0.0,
         },
     }
 
     # ── CWE-level breakdown ──────────────────────────────────────────
-    cwe_stats = defaultdict(lambda: {
-        "total": 0, "cve_hits": 0, "cwe_hits": 0,
-        "similarities": [], "exact_matches": 0,
-    })
+    cwe_stats = defaultdict(
+        lambda: {
+            "total": 0,
+            "cve_hits": 0,
+            "cwe_hits": 0,
+            "similarities": [],
+            "exact_matches": 0,
+        }
+    )
     for r in evaluated:
         cwe = r.get("query_cwe", "Unknown")
         cwe_stats[cwe]["total"] += 1
@@ -129,12 +144,20 @@ def compute_summary(meta: dict, records: list[dict]) -> dict:
             cwe_stats[cwe]["exact_matches"] += 1
 
     cwe_breakdown = {}
-    for cwe, stats in sorted(cwe_stats.items(), key=lambda x: x[1]["total"], reverse=True):
+    for cwe, stats in sorted(
+        cwe_stats.items(), key=lambda x: x[1]["total"], reverse=True
+    ):
         cwe_breakdown[cwe] = {
             "total": stats["total"],
-            "cve_recall": stats["cve_hits"] / stats["total"] if stats["total"] > 0 else 0,
-            "cwe_recall": stats["cwe_hits"] / stats["total"] if stats["total"] > 0 else 0,
-            "mean_similarity": float(np.mean(stats["similarities"])) if stats["similarities"] else 0,
+            "cve_recall": (
+                stats["cve_hits"] / stats["total"] if stats["total"] > 0 else 0
+            ),
+            "cwe_recall": (
+                stats["cwe_hits"] / stats["total"] if stats["total"] > 0 else 0
+            ),
+            "mean_similarity": (
+                float(np.mean(stats["similarities"])) if stats["similarities"] else 0
+            ),
             "exact_matches": stats["exact_matches"],
         }
     summary["cwe_breakdown"] = cwe_breakdown
@@ -143,36 +166,44 @@ def compute_summary(meta: dict, records: list[dict]) -> dict:
     misses = []
     for r in records:
         if r.get("status") == "skipped":
-            misses.append({
-                "type": "skip",
-                "query_cve": r["query_cve"],
-                "query_cwe": r.get("query_cwe", ""),
-                "reason": r.get("reason", "unknown"),
-            })
+            misses.append(
+                {
+                    "type": "skip",
+                    "query_cve": r["query_cve"],
+                    "query_cwe": r.get("query_cwe", ""),
+                    "reason": r.get("reason", "unknown"),
+                }
+            )
         elif r.get("status") == "error":
-            misses.append({
-                "type": "error",
-                "query_cve": r["query_cve"],
-                "query_cwe": r.get("query_cwe", ""),
-                "error": r.get("error", ""),
-            })
+            misses.append(
+                {
+                    "type": "error",
+                    "query_cve": r["query_cve"],
+                    "query_cwe": r.get("query_cwe", ""),
+                    "error": r.get("error", ""),
+                }
+            )
         elif r.get("status") == "parse_error":
-            misses.append({
-                "type": "parse_error",
-                "query_cve": r["query_cve"],
-                "query_cwe": r.get("query_cwe", ""),
-                "example_cve": r.get("example_cve", ""),
-            })
+            misses.append(
+                {
+                    "type": "parse_error",
+                    "query_cve": r["query_cve"],
+                    "query_cwe": r.get("query_cwe", ""),
+                    "example_cve": r.get("example_cve", ""),
+                }
+            )
         elif r.get("status") == "success" and r.get("similarity", 0) < 0.5:
-            misses.append({
-                "type": "low_similarity",
-                "query_cve": r["query_cve"],
-                "query_cwe": r.get("query_cwe", ""),
-                "example_cve": r.get("example_cve", ""),
-                "cve_match": r.get("cve_match", False),
-                "cwe_match": r.get("cwe_match", False),
-                "similarity": r.get("similarity", 0),
-            })
+            misses.append(
+                {
+                    "type": "low_similarity",
+                    "query_cve": r["query_cve"],
+                    "query_cwe": r.get("query_cwe", ""),
+                    "example_cve": r.get("example_cve", ""),
+                    "cve_match": r.get("cve_match", False),
+                    "cwe_match": r.get("cwe_match", False),
+                    "similarity": r.get("similarity", 0),
+                }
+            )
     summary["misses"] = misses
 
     # ── status distribution ──────────────────────────────────────────
@@ -221,9 +252,13 @@ def print_summary(summary: dict):
     print(f"  Mean similarity:  {pat.get('mean_similarity', 0):.3f}")
     print(f"  Median similarity:{pat.get('median_similarity', 0):.3f}")
     print(f"  Std similarity:   {pat.get('std_similarity', 0):.3f}")
-    print(f"  Min/Max:          {pat.get('min_similarity', 0):.3f} / {pat.get('max_similarity', 0):.3f}")
-    print(f"  Exact matches:    {pat.get('exact_matches', 0)}/{summary['successful_parses']} "
-          f"({pat.get('exact_match_rate', 0):.1%})")
+    print(
+        f"  Min/Max:          {pat.get('min_similarity', 0):.3f} / {pat.get('max_similarity', 0):.3f}"
+    )
+    print(
+        f"  Exact matches:    {pat.get('exact_matches', 0)}/{summary['successful_parses']} "
+        f"({pat.get('exact_match_rate', 0):.1%})"
+    )
     print(f"  Parse errors:     {pat.get('parse_errors', 0)}")
     print()
 
@@ -245,9 +280,11 @@ def print_summary(summary: dict):
     if cwe_breakdown:
         print(f"  CWE Breakdown:")
         for cwe, s in cwe_breakdown.items():
-            print(f"    {cwe:30s}  n={s['total']:3d}  CVE_R={s['cve_recall']:.2f}  "
-                  f"CWE_R={s['cwe_recall']:.2f}  sim={s['mean_similarity']:.3f}  "
-                  f"exact={s.get('exact_matches', 0)}")
+            print(
+                f"    {cwe:30s}  n={s['total']:3d}  CVE_R={s['cve_recall']:.2f}  "
+                f"CWE_R={s['cwe_recall']:.2f}  sim={s['mean_similarity']:.3f}  "
+                f"exact={s.get('exact_matches', 0)}"
+            )
         print()
 
     # error breakdown
@@ -279,12 +316,16 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-    parser.add_argument("run_dir", type=str,
-                        help="Path to the batch run directory")
-    parser.add_argument("--format", choices=["json", "table"], default="table",
-                        help="Output format (default: table)")
-    parser.add_argument("--no-save", action="store_true",
-                        help="Don't save results.json (just print)")
+    parser.add_argument("run_dir", type=str, help="Path to the batch run directory")
+    parser.add_argument(
+        "--format",
+        choices=["json", "table"],
+        default="table",
+        help="Output format (default: table)",
+    )
+    parser.add_argument(
+        "--no-save", action="store_true", help="Don't save results.json (just print)"
+    )
     args = parser.parse_args()
 
     run_dir = Path(args.run_dir)

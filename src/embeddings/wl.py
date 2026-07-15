@@ -2,7 +2,7 @@ import networkx as nx
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch_geometric.data import Data, Batch
+from torch_geometric.data import Batch, Data
 from torch_geometric.nn import WLConv, global_add_pool
 
 from .base import BaseEmbedder
@@ -111,14 +111,14 @@ class WLEmbedder(BaseEmbedder):
 
         seed = cfg.get("wl", {}).get("seed", 42)
         torch.manual_seed(seed)
-        
+
         # set device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.convs = torch.nn.ModuleList([WLConv() for _ in range(self.num_iterations)])
         self.embedding = torch.nn.Embedding(8192, self.hidden_dim)
         self.proj = torch.nn.Linear(self.hidden_dim * self.num_iterations, self.dim)
-        
+
         # move model components to device
         self.convs = self.convs.to(self.device)
         self.embedding = self.embedding.to(self.device)
@@ -153,7 +153,7 @@ class WLEmbedder(BaseEmbedder):
         out = self.proj(out).detach().cpu().numpy()[0]  # (dim,)
 
         return self._norm_vec(out) if self.apply_norm else out
-    
+
     def embed_many(self, graphs: list[nx.MultiDiGraph]) -> np.ndarray:
         """Batch process multiple graphs for efficiency."""
         # convert graphs to PyG format, filtering out invalid ones
@@ -170,20 +170,20 @@ class WLEmbedder(BaseEmbedder):
                 valid_indices.append(i)
             if (i + 1) % max(1, len(graphs) // 10) == 0:
                 print(f"  [{i + 1}/{len(graphs)}] graphs processed")
-        
+
         # allocate result array
         results = np.zeros((len(graphs), self.dim), dtype=np.float32)
-        
+
         if not pyg_data_list:
-            print('  [WL] Warning: No valid graphs. Returning zeroed results')
+            print("  [WL] Warning: No valid graphs. Returning zeroed results")
             return results  # all graphs invalid
-        
+
         print(f"[WL] Batching {len(pyg_data_list)} valid graphs...")
         # batch all valid graphs
         batch_data = Batch.from_data_list(pyg_data_list)
         # move batch to device
         batch_data = batch_data.to(self.device)
-        
+
         print(f"[WL] Running forward pass on GPU batch...")
         colours = batch_data.x
         pooled = []
@@ -191,15 +191,17 @@ class WLEmbedder(BaseEmbedder):
             colours = conv(colours, batch_data.edge_index)
             colours = colours % self.embedding.num_embeddings
             emb = self.embedding(colours)
-            pooled.append(global_add_pool(emb, batch_data.batch))  # (batch_size, hidden_dim)
-        
+            pooled.append(
+                global_add_pool(emb, batch_data.batch)
+            )  # (batch_size, hidden_dim)
+
         out = torch.cat(pooled, dim=1)  # (batch_size, hidden_dim * num_iterations)
         out = self.proj(out).detach().cpu().numpy()  # (batch_size, dim)
-        
+
         print(f"[WL] Normalizing embeddings...")
         # assign normalized embeddings to valid indices
         for i, valid_idx in enumerate(valid_indices):
             results[valid_idx] = self._norm_vec(out[i]) if self.apply_norm else out[i]
-        
+
         print(f"[WL] Done! Embedded {len(pyg_data_list)}/{len(graphs)} graphs")
         return results

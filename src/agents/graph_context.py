@@ -57,17 +57,22 @@ def format_diff(G: nx.MultiDiGraph) -> str:
         lv = attrs.get("labelV", "")
         # Skip generic parameter stubs without line numbers
         if line is None and lv in (
-            "METHOD_PARAMETER_IN", "METHOD_PARAMETER_OUT", "METHOD", "BLOCK",
+            "METHOD_PARAMETER_IN",
+            "METHOD_PARAMETER_OUT",
+            "METHOD",
+            "BLOCK",
         ):
             continue
         # Skip full function body nodes (redundant with [Target Code])
         if lv in ("METHOD", "BLOCK") and "\n" in code:
             continue
-        by_cat[cat].append({
-            "line": line,
-            "code": code,
-            "labelV": lv,
-        })
+        by_cat[cat].append(
+            {
+                "line": line,
+                "code": code,
+                "labelV": lv,
+            }
+        )
 
     # Sort each category by line number
     for entries in by_cat.values():
@@ -88,7 +93,8 @@ def format_diff(G: nx.MultiDiGraph) -> str:
 def format_data_flow(G: nx.MultiDiGraph) -> str:
     """REACHING_DEF chains starting from changed nodes."""
     seed_nodes = {
-        n for n, attrs in G.nodes(data=True)
+        n
+        for n, attrs in G.nodes(data=True)
         if attrs.get("diff") in ("removed", "fix_adjacent", "edge_changed")
     }
     if not seed_nodes:
@@ -149,7 +155,8 @@ def format_data_flow(G: nx.MultiDiGraph) -> str:
 def format_control_deps(G: nx.MultiDiGraph) -> str:
     """CDG edges showing what conditions guard the vulnerable code."""
     seed_nodes = {
-        n for n, attrs in G.nodes(data=True)
+        n
+        for n, attrs in G.nodes(data=True)
         if attrs.get("diff") in ("removed", "fix_adjacent", "edge_changed")
     }
     if not seed_nodes:
@@ -180,11 +187,11 @@ def format_control_deps(G: nx.MultiDiGraph) -> str:
             if key in seen:
                 continue
             seen.add(key)
-            deps.append(
-                f"  {_node_label(G, n)} controls: {_node_label(G, tgt)}"
-            )
+            deps.append(f"  {_node_label(G, n)} controls: {_node_label(G, tgt)}")
 
-    return "\n".join(deps) if deps else "No control-dependency edges in the program slice."
+    return (
+        "\n".join(deps) if deps else "No control-dependency edges in the program slice."
+    )
 
 
 # ── main entry point ────────────────────────────────────────────────

@@ -6,7 +6,6 @@ All metrics work without ground-truth query→CVE labels.
 import time
 from collections import defaultdict
 
-
 import numpy as np
 from sklearn.metrics import ndcg_score
 
@@ -27,7 +26,9 @@ def mean_reciprocal_rank(results: list[dict], query_cve: str) -> float:
 # ── IR metric helpers ────────────────────────────────────────────────
 
 
-def _reciprocal_rank(ranked_docs: list[tuple[str, float]], qrels: dict[str, int], k: int) -> float:
+def _reciprocal_rank(
+    ranked_docs: list[tuple[str, float]], qrels: dict[str, int], k: int
+) -> float:
     """Reciprocal rank of the first relevant document within the top-k.
 
     Scans the ranked list from position 1 to k and returns 1/rank for the
@@ -320,6 +321,7 @@ def _cwe_recall_summary(
 #         "n": n,
 #     }
 
+
 # DEPRECATED
 def leave_one_out_metrics(
     embeddings: np.ndarray,
@@ -403,8 +405,8 @@ def _effective_dim(embeddings: np.ndarray) -> float:
     """
     Participation ratio: (sum eigenvalues)^2 / sum(eigenvalues^2).
     = 1 means one dominant direction (collapsed), = d means uniform.
-    
-    Ansuini, A., Laio, A., Macke, J.H., & Zoccolan, D. (2019). 
+
+    Ansuini, A., Laio, A., Macke, J.H., & Zoccolan, D. (2019).
     "Intrinsic dimension of data representations in deep neural networks."
     NeurIPS 2019.
     """

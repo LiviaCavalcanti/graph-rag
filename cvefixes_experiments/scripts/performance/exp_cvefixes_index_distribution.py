@@ -56,7 +56,7 @@ from typing import Any
 import numpy as np
 import yaml
 
-from cvefixes_experiments.scripts.pipeline_verification.exp_cvefixes_retrieval_grid_file_level import (
+from cvefixes_experiments.scripts.performance.exp_cvefixes_retrieval_grid_file_level import (
     CVEFixesFileLevelRetrievalExperiment,
     _normalize_embedder_name,
     _prepare_cfg,

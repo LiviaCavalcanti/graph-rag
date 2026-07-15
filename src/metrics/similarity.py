@@ -164,7 +164,11 @@ def rouge_l(gen: str, ref: str) -> dict[str, float]:
     lcs = _lcs_length(gen_tokens, ref_tokens)
     precision = lcs / len(gen_tokens)
     recall = lcs / len(ref_tokens)
-    f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+    f1 = (
+        (2 * precision * recall) / (precision + recall)
+        if (precision + recall) > 0
+        else 0.0
+    )
 
     return {"precision": precision, "recall": recall, "f1": f1}
 
@@ -194,7 +198,11 @@ def rouge_n(gen: str, ref: str, n: int = 1) -> dict[str, float]:
     overlap = sum((gen_ng & ref_ng).values())
     precision = overlap / sum(gen_ng.values())
     recall = overlap / sum(ref_ng.values())
-    f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+    f1 = (
+        (2 * precision * recall) / (precision + recall)
+        if (precision + recall) > 0
+        else 0.0
+    )
 
     return {"precision": precision, "recall": recall, "f1": f1}
 
@@ -291,9 +299,7 @@ def _get_bertscore_model(
 ) -> tuple:
     global _bertscore_model, _bertscore_tokenizer, _bertscore_device
     if _bertscore_model is None:
-        _bertscore_device = torch.device(
-            "cuda" if torch.cuda.is_available() else "cpu"
-        )
+        _bertscore_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         _bertscore_tokenizer = AutoTokenizer.from_pretrained(
             model_name, local_files_only=True
         )
@@ -329,12 +335,12 @@ def bertscore_pair(
 
     model, tokenizer, device = _get_bertscore_model(model_name)
 
-    pred_enc = tokenizer(
-        gen, truncation=True, max_length=512, return_tensors="pt"
-    ).to(device)
-    ref_enc = tokenizer(
-        ref, truncation=True, max_length=512, return_tensors="pt"
-    ).to(device)
+    pred_enc = tokenizer(gen, truncation=True, max_length=512, return_tensors="pt").to(
+        device
+    )
+    ref_enc = tokenizer(ref, truncation=True, max_length=512, return_tensors="pt").to(
+        device
+    )
 
     with torch.no_grad():
         p_emb = model(**pred_enc).last_hidden_state[0]  # (Lp, D)
@@ -478,4 +484,3 @@ def bertscore(
         "mean_recall": round(float(np.mean(all_recall)), 4),
         "mean_f1": round(float(np.mean(all_f1)), 4),
     }
-

@@ -1,33 +1,40 @@
 import math
 
 import numpy as np
+import scipy.sparse as sp
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+from dgl import function as fn
+from dgl.nn import TypedLinear
+from torch.nn.modules.module import Module
 from torch.nn.parameter import Parameter
 from torch_geometric.nn import RGCNConv
-import torch.nn.functional as F
-from torch.nn.modules.module import Module
-from dgl.nn import TypedLinear
-from dgl import function as fn
-import scipy.sparse as sp
 
-att_op_dict = {
-    'sum': 'sum',
-    'mul': 'mul',
-    'concat': 'concat'
-}
+att_op_dict = {"sum": "sum", "mul": "mul", "concat": "concat"}
 
 """GatedGNN with residual connection"""
+
+
 class ReGGNN(nn.Module):
-    def __init__(self, feature_dim_size, hidden_size, num_GNN_layers, dropout, act=nn.functional.relu,
-                 residual=True, att_op='mul', alpha_weight=1.0):
+    def __init__(
+        self,
+        feature_dim_size,
+        hidden_size,
+        num_GNN_layers,
+        dropout,
+        act=nn.functional.relu,
+        residual=True,
+        att_op="mul",
+        alpha_weight=1.0,
+    ):
         super(ReGGNN, self).__init__()
         self.num_GNN_layers = num_GNN_layers
         self.residual = residual
         self.att_op = att_op
         self.alpha_weight = alpha_weight
         self.out_dim = hidden_size
-        if self.att_op == att_op_dict['concat']:
+        if self.att_op == att_op_dict["concat"]:
             self.out_dim = hidden_size * 2
 
         self.emb_encode = nn.Linear(feature_dim_size, hidden_size).double()
@@ -62,7 +69,9 @@ class ReGGNN(nn.Module):
         x = x * mask
         for idx_layer in range(self.num_GNN_layers):
             if self.residual:
-                x = x + self.gatedGNN(x.double(), adj.double()) * mask.double()  # add residual connection, can use a weighted sum
+                x = (
+                    x + self.gatedGNN(x.double(), adj.double()) * mask.double()
+                )  # add residual connection, can use a weighted sum
             else:
                 x = self.gatedGNN(x.double(), adj.double()) * mask.double()
         # soft attention
@@ -72,19 +81,33 @@ class ReGGNN(nn.Module):
         # sum/mean and max pooling
 
         # sum and max pooling
-        if self.att_op == att_op_dict['sum']:
+        if self.att_op == att_op_dict["sum"]:
             graph_embeddings = torch.sum(x, 1) + torch.amax(x, 1)
-        elif self.att_op == att_op_dict['concat']:
+        elif self.att_op == att_op_dict["concat"]:
             graph_embeddings = torch.cat((torch.sum(x, 1), torch.amax(x, 1)), 1)
         else:
             graph_embeddings = torch.sum(x, 1) * torch.amax(x, 1)
 
-        return graph_embeddings  
+        return graph_embeddings
+
 
 """GCNs with residual connection"""
+
+
 class ReGCN(nn.Module):
-    def __init__(self, feature_dim_size, hidden_size, num_GNN_layers, dropout, num_relations=3, num_bases=3, act=nn.functional.relu,
-                 residual=True, att_op="mul", alpha_weight=1.0):
+    def __init__(
+        self,
+        feature_dim_size,
+        hidden_size,
+        num_GNN_layers,
+        dropout,
+        num_relations=3,
+        num_bases=3,
+        act=nn.functional.relu,
+        residual=True,
+        att_op="mul",
+        alpha_weight=1.0,
+    ):
         super(ReGCN, self).__init__()
         self.num_GNN_layers = num_GNN_layers
         self.residual = residual
@@ -92,15 +115,33 @@ class ReGCN(nn.Module):
         self.alpha_weight = alpha_weight
         self.hidden_size = hidden_size
         self.out_dim = hidden_size
-        if self.att_op == att_op_dict['concat']:
+        if self.att_op == att_op_dict["concat"]:
             self.out_dim = hidden_size * 2
 
         self.gnnlayers = torch.nn.ModuleList()
         for layer in range(self.num_GNN_layers):
             if layer == 0:
-                self.gnnlayers.append(RelationalGraphConvLayer(feature_dim_size, hidden_size, num_bases, num_relations, dropout, bias=True))  # bias=False
+                self.gnnlayers.append(
+                    RelationalGraphConvLayer(
+                        feature_dim_size,
+                        hidden_size,
+                        num_bases,
+                        num_relations,
+                        dropout,
+                        bias=True,
+                    )
+                )  # bias=False
             else:
-                self.gnnlayers.append(RelationalGraphConvLayer(hidden_size, hidden_size, num_bases, num_relations, dropout, bias=True))
+                self.gnnlayers.append(
+                    RelationalGraphConvLayer(
+                        hidden_size,
+                        hidden_size,
+                        num_bases,
+                        num_relations,
+                        dropout,
+                        bias=True,
+                    )
+                )
         self.soft_att0 = nn.Linear(32, 1).double()
         self.ln0 = nn.Linear(1, 32).double()
 
@@ -110,7 +151,7 @@ class ReGCN(nn.Module):
         self.soft_att = nn.Linear(hidden_size, 1).double()
         self.ln = nn.Linear(hidden_size, hidden_size).double()
         self.act = act
-       
+
     def forward(self, inputs, adj, mask):
         x = inputs
         x = x.permute(0, 1, 3, 2)
@@ -124,7 +165,9 @@ class ReGCN(nn.Module):
                 x = self.gnnlayers[idx_layer](adj, x) * mask
             else:
                 if self.residual:
-                    x = 0.4 * x + 0.6 * self.gnnlayers[idx_layer](adj, x) * mask  # Residual Connection, can use a weighted sum
+                    x = (
+                        0.4 * x + 0.6 * self.gnnlayers[idx_layer](adj, x) * mask
+                    )  # Residual Connection, can use a weighted sum
                 else:
                     x = self.gnnlayers[idx_layer](adj, x) * mask
         # soft attention
@@ -141,8 +184,17 @@ class ReGCN(nn.Module):
 
 
 """GatedGNN"""
+
+
 class GGGNN(nn.Module):
-    def __init__(self, feature_dim_size, hidden_size, num_GNN_layers, dropout, act=nn.functional.relu):
+    def __init__(
+        self,
+        feature_dim_size,
+        hidden_size,
+        num_GNN_layers,
+        dropout,
+        act=nn.functional.relu,
+    ):
         super(GGGNN, self).__init__()
         self.num_GNN_layers = num_GNN_layers
         self.emb_encode = nn.Linear(feature_dim_size, hidden_size).double()
@@ -181,6 +233,8 @@ class GGGNN(nn.Module):
 
 
 """ Simple GCN layer, similar to https://arxiv.org/abs/1609.02907 """
+
+
 class GraphConvolution(torch.nn.Module):
     def __init__(self, in_features, out_features, dropout, act=torch.relu, bias=False):
         super(GraphConvolution, self).__init__()
@@ -188,7 +242,7 @@ class GraphConvolution(torch.nn.Module):
         if bias:
             self.bias = Parameter(torch.FloatTensor(out_features))
         else:
-            self.register_parameter('bias', None)
+            self.register_parameter("bias", None)
         self.reset_parameters()
 
         self.act = act
@@ -210,7 +264,15 @@ class GraphConvolution(torch.nn.Module):
 
 
 class RGCN(torch.nn.Module):
-    def __init__(self, in_channels, hidden_channels, out_channels, num_relations, n_layers=2, dropout=0.5):
+    def __init__(
+        self,
+        in_channels,
+        hidden_channels,
+        out_channels,
+        num_relations,
+        n_layers=2,
+        dropout=0.5,
+    ):
         super().__init__()
         self.convs = torch.nn.ModuleList()
         self.relu = torch.relu
@@ -227,9 +289,11 @@ class RGCN(torch.nn.Module):
             x = self.dropout(x, p=self.dropout, training=self.training)
         return x
 
+
 class RelationalGraphConvLayer(Module):
     def __init__(
-        self, input_size, output_size, num_bases, num_rel, dropout, bias=False):
+        self, input_size, output_size, num_bases, num_rel, dropout, bias=False
+    ):
         super(RelationalGraphConvLayer, self).__init__()
         self.input_size = input_size
         self.output_size = output_size
@@ -239,10 +303,14 @@ class RelationalGraphConvLayer(Module):
         self.dropout = nn.Dropout(dropout)
         # R-GCN weights
         if num_bases > 0:
-            self.w_bases = Parameter(torch.FloatTensor(self.num_bases, self.input_size, self.output_size))
+            self.w_bases = Parameter(
+                torch.FloatTensor(self.num_bases, self.input_size, self.output_size)
+            )
             self.w_rel = Parameter(torch.FloatTensor(self.num_rel, self.num_bases))
         else:
-            self.w = Parameter(torch.FloatTensor(self.num_rel, self.input_size, self.output_size))
+            self.w = Parameter(
+                torch.FloatTensor(self.num_rel, self.input_size, self.output_size)
+            )
         # R-GCN bias
         if bias:
             self.bias = Parameter(torch.FloatTensor(self.output_size))
@@ -259,7 +327,6 @@ class RelationalGraphConvLayer(Module):
             nn.init.xavier_uniform_(self.w.data)
         if self.bias is not None:
             nn.init.xavier_uniform_(self.bias.data.unsqueeze(0))
-
 
     def forward(self, A, X):
         X = self.dropout(X)
@@ -310,6 +377,7 @@ def csr2tensor(A, cuda):
     else:
         out = torch.sparse.FloatTensor(i, v, torch.Size(shape))
     return out
+
 
 class RelGraphConv(torch.nn.Module):
     r"""Relational graph convolution layer from `Modeling Relational Data with Graph
@@ -399,17 +467,20 @@ class RelGraphConv(torch.nn.Module):
             [-0.4323, -0.1440],
             [-0.1309, -1.0000]], grad_fn=<AddBackward0>)
     """
-    def __init__(self,
-                 in_feat,
-                 out_feat,
-                 num_rels,
-                 regularizer=None,
-                 num_bases=None,
-                 bias=True,
-                 activation=None,
-                 self_loop=True,
-                 dropout=0.0,
-                 layer_norm=False):
+
+    def __init__(
+        self,
+        in_feat,
+        out_feat,
+        num_rels,
+        regularizer=None,
+        num_bases=None,
+        bias=True,
+        activation=None,
+        self_loop=True,
+        dropout=0.0,
+        layer_norm=False,
+    ):
         super().__init__()
         if regularizer is not None and num_bases is None:
             num_bases = num_rels
@@ -433,16 +504,18 @@ class RelGraphConv(torch.nn.Module):
         # weight for self loop
         if self.self_loop:
             self.loop_weight = nn.Parameter(torch.Tensor(in_feat, out_feat))
-            nn.init.xavier_uniform_(self.loop_weight, gain=nn.init.calculate_gain('relu'))
+            nn.init.xavier_uniform_(
+                self.loop_weight, gain=nn.init.calculate_gain("relu")
+            )
 
         self.dropout = nn.Dropout(dropout)
 
     def message(self, edges):
         """Message function."""
-        m = self.linear_r(edges.src['h'], edges.data['etype'], self.presorted)
-        if 'norm' in edges.data:
-            m = m * edges.data['norm']
-        return {'m' : m}
+        m = self.linear_r(edges.src["h"], edges.data["etype"], self.presorted)
+        if "norm" in edges.data:
+            m = m * edges.data["norm"]
+        return {"m": m}
 
     def forward(self, feat, adj, etypes, norm=None, *, presorted=False):
         """Forward computation.
@@ -470,24 +543,25 @@ class RelGraphConv(torch.nn.Module):
         """
         self.presorted = presorted
         with g.local_scope():
-            g.srcdata['h'] = feat
+            g.srcdata["h"] = feat
             if norm is not None:
-                g.edata['norm'] = norm
-            g.edata['etype'] = etypes
+                g.edata["norm"] = norm
+            g.edata["etype"] = etypes
             # message passing
-            g.update_all(self.message, fn.sum('m', 'h'))
+            g.update_all(self.message, fn.sum("m", "h"))
             # apply bias and activation
-            h = g.dstdata['h']
+            h = g.dstdata["h"]
             if self.layer_norm:
                 h = self.layer_norm_weight(h)
             if self.bias:
                 h = h + self.h_bias
             if self.self_loop:
-                h = h + feat[:g.num_dst_nodes()] @ self.loop_weight
+                h = h + feat[: g.num_dst_nodes()] @ self.loop_weight
             if self.activation:
                 h = self.activation(h)
             h = self.dropout(h)
             return h
 
+
 weighted_graph = False
-print('using default unweighted graph')
+print("using default unweighted graph")

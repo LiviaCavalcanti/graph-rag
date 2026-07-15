@@ -13,7 +13,6 @@ import numpy as np
 from scipy.stats import spearmanr
 from sklearn.neighbors import NearestNeighbors
 
-
 # ─────────────────────────────────────────────────────────────────────
 #  Single-space intrinsic metrics
 # ─────────────────────────────────────────────────────────────────────
@@ -58,8 +57,12 @@ def hubness(embeddings: np.ndarray, k: int = 10) -> dict:
     """
     n = len(embeddings)
     if n < k + 1:
-        return {"k_occurrence_mean": 0, "k_occurrence_std": 0,
-                "k_skewness": 0, "hub_fraction": 0}
+        return {
+            "k_occurrence_mean": 0,
+            "k_occurrence_std": 0,
+            "k_skewness": 0,
+            "hub_fraction": 0,
+        }
 
     nn = NearestNeighbors(n_neighbors=k + 1, metric="cosine")
     nn.fit(embeddings)
@@ -130,7 +133,7 @@ def alignment_uniformity(
                 pos_dists.append(np.sum((group[i] - group[j]) ** 2))
     if pos_dists:
         pos_dists = np.array(pos_dists)
-        alignment = float(np.mean(pos_dists**((t_align / 2))))
+        alignment = float(np.mean(pos_dists ** ((t_align / 2))))
     else:
         alignment = 0.0
 
@@ -498,15 +501,22 @@ def compare_spaces(
     # Drop per_sample_overlap from summary (keep mean only)
     if "per_sample_overlap" in report["knn_overlap"]:
         report["knn_overlap"] = {
-            k_: v for k_, v in report["knn_overlap"].items()
+            k_: v
+            for k_, v in report["knn_overlap"].items()
             if k_ != "per_sample_overlap"
         }
 
     if labels is not None:
         report["combined_class_separation"] = intra_inter_ratio(emb_combined, labels)
-        report["individual_class_separation"] = intra_inter_ratio(emb_individual, labels)
-        report["combined_alignment_uniformity"] = alignment_uniformity(emb_combined, labels)
-        report["individual_alignment_uniformity"] = alignment_uniformity(emb_individual, labels)
+        report["individual_class_separation"] = intra_inter_ratio(
+            emb_individual, labels
+        )
+        report["combined_alignment_uniformity"] = alignment_uniformity(
+            emb_combined, labels
+        )
+        report["individual_alignment_uniformity"] = alignment_uniformity(
+            emb_individual, labels
+        )
 
     if emb_high is not None:
         report["trustworthiness"] = trustworthiness(emb_high, emb_combined, k=k)

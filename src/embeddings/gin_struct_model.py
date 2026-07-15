@@ -10,17 +10,15 @@ effective while learning a metric space aligned with the retrieval task.
 
 from __future__ import annotations
 
+import networkx as nx
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch_geometric.data import Batch, Data
 from torch_geometric.nn import GINConv, global_add_pool, global_mean_pool
 
-import networkx as nx
-import numpy as np
-
-from .wl import NODE_TYPES, NODE_TYPE_IDX, nx_to_pyg
-
+from .wl import NODE_TYPE_IDX, NODE_TYPES, nx_to_pyg
 
 NUM_NODE_TYPES = len(NODE_TYPES)
 
@@ -138,7 +136,9 @@ class GINStructModel(nn.Module):
             self.readout[0].weight.data.copy_(frozen.readout.weight.data)
             self.readout[0].bias.data.copy_(frozen.readout.bias.data)
 
-        print(f"  [gin_struct] Warm-started from frozen GIN (seed={cfg.get('gin', {}).get('seed', 42)}, compat={self.frozen_compat})")
+        print(
+            f"  [gin_struct] Warm-started from frozen GIN (seed={cfg.get('gin', {}).get('seed', 42)}, compat={self.frozen_compat})"
+        )
 
     def forward(self, data: Batch) -> torch.Tensor:
         """

@@ -643,9 +643,88 @@ PCA and L2 normalization Discussion with experiments
 
 FAISS and HNSW
 
-Agent 
-prompt
-iteration
+\subsection*{Agent Architecture}
+
+The patching stage is organised as a modular \emph{agentic framework} that
+decouples four concerns behind stable interfaces: the reasoning strategy (the
+\emph{architecture}), the language-model transport (the \emph{backend}), the
+\emph{prompt} templates, and the static-analysis \emph{tools}. This separation
+mirrors the anatomy of modern agent harnesses \cite{langchain_agent_harness} and,
+crucially, lets us treat the agent design itself as an experimental variable
+rather than a fixed pipeline. The overall two-agent structure follows
+AutoPatch \cite{Seo2025AutoPatchMF}, but every prompt is grounded in the
+structural context $G_{\mathrm{vuln}}$ that constitutes our contribution.
+
+\paragraph{Agent roles.}
+\begin{itemize}[leftmargin=*, nosep]
+  \item \textbf{Patcher Agent} --- receives the retrieved fix exemplar and the
+    structural diff and produces a chain-of-thought rationale together with a
+    candidate patch.
+  \item \textbf{Verifier Agent} --- re-parses the generated patch with Joern
+    \cite{joern}, rebuilds its CPG, and tests whether the localised
+    vulnerability still holds; a negative verdict can trigger a bounded repair
+    loop.
+\end{itemize}
+
+\paragraph{Structure-aware prompt construction.} The Patcher prompt is assembled
+from four grounded blocks:
+\begin{itemize}[leftmargin=*, nosep]
+  \item \textbf{Structural context} --- $G_{\mathrm{vuln}}$ serialised into
+    (i) diff-annotated lines grouped by change class, (ii) \texttt{REACHING\_DEF}
+    data-flow chains from changed nodes, and (iii) \texttt{CDG} control
+    dependencies.
+  \item \textbf{Retrieved exemplar} --- the most structurally similar
+    vulnerable/patched pair from the KB, with its root cause and fix list.
+  \item \textbf{Target} --- the vulnerable function to repair.
+  \item \textbf{Output contract} --- delimited \verb|[CoT ...]| /
+    \verb|[Patched Code ...]| markers enabling deterministic parsing.
+\end{itemize}
+
+\paragraph{Patching architectures (experimental axis).} The Patcher is a
+swappable component; we implement and compare:
+\begin{itemize}[leftmargin=*, nosep]
+  \item \textbf{Single-turn} --- one LLM call with a few-shot exemplar and
+    chain-of-thought reasoning \cite{wei2022cot}; the baseline.
+  \item \textbf{Multi-step} --- a \emph{generate $\to$ self-critique $\to$
+    refine} loop that improves the patch through self-feedback without external
+    tools \cite{madaan2023selfrefine}.
+  \item \textbf{Tool-using} --- a ReAct-style loop \cite{yao2023react} that
+    interleaves reasoning with on-demand CPG queries (bounded iterations), in the
+    spirit of RepairAgent's tool-driven repair \cite{bouzenia2025repairagent}.
+  \item \textbf{MCP-based} --- the same analysis tools exposed through the Model
+    Context Protocol \cite{mcp2024}, decoupling the tool server from the agent
+    for interoperability.
+\end{itemize}
+
+\paragraph{Structure-aware tooling.} The tool-using and MCP agents share two
+interchangeable providers:
+\begin{itemize}[leftmargin=*, nosep]
+  \item \textbf{In-process} --- deterministic queries over the already-built
+    NetworkX CPGs ($G_{\mathrm{vuln}}$, $G_{\mathrm{before}}$); offline and
+    reproducible.
+  \item \textbf{Live Joern} --- a Joern/CPGQL server \cite{joern} answering
+    data-flow, caller, and control-dependency traversals at inference time.
+\end{itemize}
+
+\paragraph{Backend abstraction.} Every LLM call is routed through a single
+backend interface with four implementations --- \emph{live} (via the
+\texttt{litellm} gateway \cite{litellm}), \emph{mock}, \emph{record}, and
+\emph{replay}. The same agent code therefore runs online, under deterministic
+unit tests, or as byte-exact offline replay from recorded cassettes, which is the
+seam that makes the pipeline testable and reproducible without network access.
+
+\paragraph{Versioned prompts.} Prompts are treated as data: each variant is a
+declarative, content-fingerprinted manifest of role-tagged templates. The prompt
+variant is thus a first-class experimental axis, and each run records the exact
+fingerprint it used.
+
+\paragraph{Reproducibility and cost tracking.} Each run persists its full
+configuration, git commit, model and decoding parameters, architecture name, and
+prompt fingerprint, and is executed as a grid over \emph{architecture $\times$
+prompt $\times$ retriever $\times$ model} so that any cell can be reproduced and
+compared. Cost is logged per run in tokens (as in RepairAgent
+\cite{bouzenia2025repairagent}) and USD (as in AutoPatch
+\cite{Seo2025AutoPatchMF}), addressing CRQ2.
 
 
 The pipeline begins by generating a graph embedding of the input vulnerable code snippet.
@@ -658,6 +737,8 @@ This output is then forwarded to a Vulnerability Verifier Agent for validation.
 To manage the indices, the infrastructure requires a graph database or a specialized vector store.
 
 As an ablation study, we would like to evaluate the performance of a small, open-source LLM  as the patch generator, comparing its results with and without the KB context enrichment.
+
+
 
 \subsection*{Evaluation}
 

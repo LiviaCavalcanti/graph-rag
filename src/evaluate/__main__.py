@@ -39,8 +39,12 @@ def run_all(
     print(f"\n{'━'*60}")
     print(f"  STEP 2/2 — Patch Analysis Dashboard")
     print(f"{'━'*60}")
-    from experiments.dashboard_scripts.patch.analyze_patches import analyze as _analyze_patches
-    from experiments.dashboard_scripts.patch.analyze_patches import _render_html as _render_patch_html
+    from experiments.dashboard_scripts.patch.analyze_patches import (
+        _render_html as _render_patch_html,
+    )
+    from experiments.dashboard_scripts.patch.analyze_patches import (
+        analyze as _analyze_patches,
+    )
 
     eval_jsonl = run_dir / "evaluation.jsonl"
     patch_html = run_dir / "patch_analysis.html"
@@ -49,12 +53,16 @@ def run_all(
         patch_html.write_text(_render_patch_html(analysis))
         print(f"  Patch analysis: {patch_html}")
     else:
-        print("  WARNING: evaluation.jsonl not found, skipping patch analysis dashboard")
+        print(
+            "  WARNING: evaluation.jsonl not found, skipping patch analysis dashboard"
+        )
 
     return patch_html
 
 
-def _run_patch_eval(results_path: Path, base_dir: Path, *, strip_comments: bool = True) -> None:
+def _run_patch_eval(
+    results_path: Path, base_dir: Path, *, strip_comments: bool = True
+) -> None:
     """Run patch evaluation programmatically (avoid argparse)."""
     import json
 

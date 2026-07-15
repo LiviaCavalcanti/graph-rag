@@ -229,12 +229,14 @@ class TestRunSingleQuery:
         assert result["reason"] == "no_example_found"
 
     def test_skips_when_target_db_missing(self):
-        """If db_cache doesn't have the query's dir_name, should skip."""
-        query = _make_pair(dir_name="CVE-2025-0001")
-        example = _make_pair(dir_name="CVE-2025-0002")
+        """If db_cache has no entry for the query's CVE at all, should skip."""
+        query = _make_pair(cve_id="CVE-2025-0001", dir_name="CVE-2025-0001")
+        example = _make_pair(cve_id="CVE-2025-0002", dir_name="CVE-2025-0002")
         retriever = self._make_retriever(example_pair=example)
-        # db_cache has example but not query
-        db_cache = {"CVE-2025-0002": SAMPLE_DB}
+        # db_cache has an entry for the example's CVE only; the query's CVE is
+        # entirely absent (not just a dir_name mismatch), so no fallback match.
+        unrelated_db = {**SAMPLE_DB, "cve_id": "CVE-2025-0002"}
+        db_cache = {"CVE-2025-0002": unrelated_db}
         result = _run_single_query(
             query, retriever, db_cache, _FakeAgent(result=_agent_result())
         )
@@ -242,17 +244,37 @@ class TestRunSingleQuery:
         assert result["reason"] == "missing_db_entry"
 
     def test_skips_when_example_db_missing(self):
-        """If db_cache doesn't have the example's dir_name, should skip."""
-        query = _make_pair(dir_name="CVE-2025-0001")
-        example = _make_pair(dir_name="CVE-2025-0002")
+        """If db_cache has no entry for the example's CVE at all, should skip."""
+        query = _make_pair(cve_id="CVE-2025-0001", dir_name="CVE-2025-0001")
+        example = _make_pair(cve_id="CVE-2025-0002", dir_name="CVE-2025-0002")
         retriever = self._make_retriever(example_pair=example)
-        # db_cache has query but not example
-        db_cache = {"CVE-2025-0001": SAMPLE_DB}
+        # db_cache has an entry for the query's CVE only; the example's CVE is
+        # entirely absent (not just a dir_name mismatch), so no fallback match.
+        unrelated_db = {**SAMPLE_DB, "cve_id": "CVE-2025-0001"}
+        db_cache = {"CVE-2025-0001": unrelated_db}
         result = _run_single_query(
             query, retriever, db_cache, _FakeAgent(result=_agent_result())
         )
         assert result["status"] == "skipped"
         assert result["reason"] == "missing_db_entry"
+
+    def test_falls_back_by_cve_id_when_dir_name_scheme_differs(self):
+        """Regression: reusing a retrieval index with a different dir_name
+        naming scheme (e.g. file-level '_f123' vs method-level '_m123')
+        must still resolve db_cache by CVE id, not skip as missing."""
+        query = _make_pair(cve_id="CVE-2025-0001", dir_name="CVE-2025-0001_m1")
+        example = _make_pair(cve_id="CVE-2025-0002", dir_name="CVE-2025-0002_f9")
+        retriever = self._make_retriever(example_pair=example)
+        # db_cache keyed by a DIFFERENT dir_name scheme than the pairs use,
+        # but sharing the same CVE id prefix.
+        db_cache = {
+            "CVE-2025-0001_other": {**SAMPLE_DB, "cve_id": "CVE-2025-0001"},
+            "CVE-2025-0002_other": {**SAMPLE_DB, "cve_id": "CVE-2025-0002"},
+        }
+        result = _run_single_query(
+            query, retriever, db_cache, _FakeAgent(result=_agent_result())
+        )
+        assert result["status"] != "skipped"
 
     def test_uses_dir_name_not_cve_id_for_db_lookup(self):
         """Regression: db_cache must be keyed by dir_name, not cve_id.

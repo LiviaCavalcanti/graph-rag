@@ -88,6 +88,7 @@ Respond with ONLY the following JSON (no markdown fences, no extra text):
 
 # ── LLM Call ─────────────────────────────────────────────────────────────────
 
+
 def call_llm(system: str, user: str, model: str = DEFAULT_MODEL) -> str:
     """Make a single LLM call and return the response text."""
     response = litellm.completion(
@@ -133,6 +134,7 @@ def parse_llm_response(raw: str) -> dict:
 
 
 # ── Core Evaluation Logic ────────────────────────────────────────────────────
+
 
 def load_vulnerable_code(cve_id: str) -> str:
     """Load the original vulnerable code for a CVE."""
@@ -229,6 +231,7 @@ def evaluate_single(
 
 # ── Batch Evaluation ─────────────────────────────────────────────────────────
 
+
 def evaluate_results_file(
     results_path: Path,
     output_path: Path | None = None,
@@ -285,7 +288,11 @@ def evaluate_results_file(
             if key in completed_keys:
                 continue
 
-            print(f"  [{i+1}/{len(results)}] {query_cve} ({query_variant})...", end=" ", flush=True)
+            print(
+                f"  [{i+1}/{len(results)}] {query_cve} ({query_variant})...",
+                end=" ",
+                flush=True,
+            )
 
             try:
                 evaluation = evaluate_single(
@@ -353,16 +360,26 @@ def evaluate_results_file(
         pct = count / total * 100 if total > 0 else 0
         print(f"  {v:<12}: {count:>4} ({pct:.1f}%)")
 
-    fix_rate = (verdict_counts.get("FIXED", 0) + verdict_counts.get("PARTIAL", 0)) / total * 100 if total else 0
+    fix_rate = (
+        (verdict_counts.get("FIXED", 0) + verdict_counts.get("PARTIAL", 0))
+        / total
+        * 100
+        if total
+        else 0
+    )
     print(f"\n  Fix rate (FIXED+PARTIAL): {fix_rate:.1f}%")
 
     # CWE breakdown
-    print(f"\n{'CWE Type':<45} {'FIXED':>6} {'PARTIAL':>8} {'NOT_FIXED':>10} {'Total':>6}")
+    print(
+        f"\n{'CWE Type':<45} {'FIXED':>6} {'PARTIAL':>8} {'NOT_FIXED':>10} {'Total':>6}"
+    )
     print(f"{'-'*45} {'-'*6} {'-'*8} {'-'*10} {'-'*6}")
     for cwe in sorted(cwe_verdicts.keys()):
         d = cwe_verdicts[cwe]
         t = sum(d.values())
-        print(f"{cwe:<45} {d.get('FIXED',0):>6} {d.get('PARTIAL',0):>8} {d.get('NOT_FIXED',0):>10} {t:>6}")
+        print(
+            f"{cwe:<45} {d.get('FIXED',0):>6} {d.get('PARTIAL',0):>8} {d.get('NOT_FIXED',0):>10} {t:>6}"
+        )
 
     # Save summary JSON
     summary_path = output_path.with_name("llm_vulnerability_eval_summary.json")
@@ -383,6 +400,7 @@ def evaluate_results_file(
 
 # ── CLI ──────────────────────────────────────────────────────────────────────
 
+
 def main():
     import argparse
 
@@ -398,9 +416,18 @@ def main():
     )
     parser.add_argument("results", type=Path, help="Path to results.jsonl file")
     parser.add_argument("--output", "-o", type=Path, help="Output JSONL path")
-    parser.add_argument("--model", "-m", default=DEFAULT_MODEL, help=f"Model name (default: {DEFAULT_MODEL})")
-    parser.add_argument("--max", type=int, default=None, help="Max items to evaluate (for testing)")
-    parser.add_argument("--delay", type=float, default=1.0, help="Delay between LLM calls in seconds")
+    parser.add_argument(
+        "--model",
+        "-m",
+        default=DEFAULT_MODEL,
+        help=f"Model name (default: {DEFAULT_MODEL})",
+    )
+    parser.add_argument(
+        "--max", type=int, default=None, help="Max items to evaluate (for testing)"
+    )
+    parser.add_argument(
+        "--delay", type=float, default=1.0, help="Delay between LLM calls in seconds"
+    )
 
     args = parser.parse_args()
 

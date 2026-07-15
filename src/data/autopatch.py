@@ -6,13 +6,8 @@ import networkx as nx
 from tqdm import tqdm
 
 from .base import BaseDataset, ExportJob, FunctionPair
-from .pipeline import (
-    compute_graph_diff,
-    cpg_dir_for,
-    graph_diff_params,
-    load_cpg_dir,
-    read_supplementary_code,
-)
+from .pipeline import (compute_graph_diff, cpg_dir_for, graph_diff_params,
+                       load_cpg_dir, read_supplementary_code)
 
 # augmented versions
 _VARIANTS = [

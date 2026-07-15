@@ -162,9 +162,7 @@ class AppConfig:
                 if isinstance(emb_root.get(name, {}), dict)
                 else {}
             )
-            model_checkpoint = sub.get("checkpoint_path") or sub.get(
-                "model_checkpoint"
-            )
+            model_checkpoint = sub.get("checkpoint_path") or sub.get("model_checkpoint")
             model_name = sub.get("model_name") or sub.get("model_path") or name
 
             embeddings_cfg[name] = EmbeddingConfig(

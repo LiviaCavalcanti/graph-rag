@@ -12,13 +12,12 @@ from pathlib import Path
 import networkx as nx
 import numpy as np
 import torch
+import torch.nn.functional as F
 from torch_geometric.data import Batch
 
 from .base import BaseEmbedder
 from .gin_struct_model import GINStructModel
 from .wl import NODE_TYPES, nx_to_pyg
-
-import torch.nn.functional as F
 
 
 class GINStructEmbedder(BaseEmbedder):
@@ -42,8 +41,7 @@ class GINStructEmbedder(BaseEmbedder):
         self._num_layers = gs_cfg.get("num_layers", 3)
         self._dropout = gs_cfg.get("dropout", 0.2)
         self._device = (
-            "cuda" if torch.cuda.is_available()
-            else gs_cfg.get("device", "cpu")
+            "cuda" if torch.cuda.is_available() else gs_cfg.get("device", "cpu")
         )
         self._model: GINStructModel | None = None
         self._loaded = False
@@ -53,6 +51,7 @@ class GINStructEmbedder(BaseEmbedder):
             return
         if self._checkpoint_path and Path(self._checkpoint_path).exists():
             from src.training.struct_trainer import StructTripletTrainer
+
             self._model = StructTripletTrainer.load_checkpoint(
                 Path(self._checkpoint_path), device=self._device
             )
@@ -67,7 +66,9 @@ class GINStructEmbedder(BaseEmbedder):
             ).to(self._device)
             self._model.eval()
             if self._checkpoint_path:
-                print(f"  [gin_struct] No checkpoint at {self._checkpoint_path}, using random init")
+                print(
+                    f"  [gin_struct] No checkpoint at {self._checkpoint_path}, using random init"
+                )
             else:
                 print(f"  [gin_struct] No checkpoint configured, using random init")
         self._loaded = True
@@ -113,7 +114,7 @@ class GINStructEmbedder(BaseEmbedder):
         all_embs = []
         with torch.no_grad():
             for start in range(0, len(data_list), batch_size):
-                batch = Batch.from_data_list(data_list[start:start + batch_size])
+                batch = Batch.from_data_list(data_list[start : start + batch_size])
                 batch = batch.to(self._device)
                 embs = self._model(batch).cpu().numpy()
                 all_embs.append(embs)

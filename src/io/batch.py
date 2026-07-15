@@ -133,7 +133,9 @@ def run_batched(
                 except tuple(abort_on) if abort_on else () as e:
                     print(f"\n{'!'*60}")
                     print(f"  ABORT: {e}")
-                    print(f"  Writing {len(batch_results)} results from current batch before exit.")
+                    print(
+                        f"  Writing {len(batch_results)} results from current batch before exit."
+                    )
                     print(f"{'!'*60}")
                     if batch_results:
                         writer.write(batch_results)

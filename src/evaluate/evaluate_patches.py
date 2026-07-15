@@ -23,12 +23,20 @@ from pathlib import Path
 
 from src.data.autopatch import AutoPatchDataset
 from src.evaluate.preprocessing import extract_function_body
-from src.metrics.similarity import (bertscore_pair, bleu_score,
-                                    compute_diff_details, exact_match,
-                                    line_level_ratio, normalised_edit_distance,
-                                    normalised_exact_match, rouge_scores,
-                                    sequence_matcher_ratio, token_jaccard,
-                                    token_jaccard_multiset, tokenize)
+from src.metrics.similarity import (
+    bertscore_pair,
+    bleu_score,
+    compute_diff_details,
+    exact_match,
+    line_level_ratio,
+    normalised_edit_distance,
+    normalised_exact_match,
+    rouge_scores,
+    sequence_matcher_ratio,
+    token_jaccard,
+    token_jaccard_multiset,
+    tokenize,
+)
 
 # ── main evaluation ──────────────────────────────────────────────────
 
@@ -213,11 +221,13 @@ def _aggregate_by_field(evaluated: list[dict], field: str) -> dict:
                 4,
             ),
             "avg_bertscore_f1": round(
-                sum(r["metrics_vs_function_body"].get("bertscore_f1", 0) for r in recs) / n,
+                sum(r["metrics_vs_function_body"].get("bertscore_f1", 0) for r in recs)
+                / n,
                 4,
             ),
             "avg_rougeL_f1": round(
-                sum(r["metrics_vs_function_body"].get("rougeL_f1", 0) for r in recs) / n,
+                sum(r["metrics_vs_function_body"].get("rougeL_f1", 0) for r in recs)
+                / n,
                 4,
             ),
             "exact_matches": sum(

@@ -24,7 +24,7 @@ class GINEmbedder(BaseEmbedder):
 
         seed = cfg.get("gin", {}).get("seed", 42)
         torch.manual_seed(seed)
-        
+
         # set device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -41,7 +41,7 @@ class GINEmbedder(BaseEmbedder):
             self.bns.append(torch.nn.BatchNorm1d(hidden_dim))
 
         self.readout = torch.nn.Linear(hidden_dim * 2, self.dim)
-        
+
         # move model components to device
         self.input_proj = self.input_proj.to(self.device)
         self.convs = self.convs.to(self.device)
@@ -90,7 +90,7 @@ class GINEmbedder(BaseEmbedder):
         out = self.readout(out).detach().cpu().numpy()[0]
 
         return self._norm_vec(out) if self.apply_norm else out
-    
+
     def embed_many(self, graphs: list[nx.MultiDiGraph]) -> np.ndarray:
         # convert graphs to PyG format
         pyg_data_list = []
@@ -106,7 +106,7 @@ class GINEmbedder(BaseEmbedder):
 
         results = np.zeros((len(graphs), self.dim), dtype=np.float32)
         if not pyg_data_list:
-            print('  [GIN] Warning: No valid graphs. Returning zeroed results')
+            print("  [GIN] Warning: No valid graphs. Returning zeroed results")
             return results
 
         print(f"[GIN] Batching {len(pyg_data_list)} valid graphs...")
@@ -145,6 +145,7 @@ class GINEmbedder(BaseEmbedder):
         print(f"[GIN] Done! Embedded {len(pyg_data_list)}/{len(graphs)} graphs")
         return results
 
+
 class GINEnrichedEmbedder(BaseEmbedder):
     """
     GIN with enriched node features: [labelV(11) || diff(4) || diff_weight(1) || token_entry(1)]
@@ -165,7 +166,7 @@ class GINEnrichedEmbedder(BaseEmbedder):
 
         seed = cfg.get("gin", {}).get("seed", 42)
         torch.manual_seed(seed)
-        
+
         # set device
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         print(f"running Gin with device {self.device}")
@@ -182,7 +183,7 @@ class GINEnrichedEmbedder(BaseEmbedder):
             self.bns.append(torch.nn.BatchNorm1d(hidden_dim))
 
         self.readout = torch.nn.Linear(hidden_dim * 2, self.dim)
-        
+
         # move model components to device
         self.input_proj = self.input_proj.to(self.device)
         self.convs = self.convs.to(self.device)
@@ -230,12 +231,14 @@ class GINEnrichedEmbedder(BaseEmbedder):
         out = self.readout(out).detach().cpu().numpy()[0]
 
         return self._norm_vec(out) if self.apply_norm else out
-    
+
     def embed_many(self, graphs: list[nx.MultiDiGraph]) -> np.ndarray:
         # convert graphs to PyG enriched format
         pyg_data_list = []
         valid_indices = []
-        print(f"[GIN Enriched] Converting {len(graphs)} graphs to enriched PyG format...")
+        print(
+            f"[GIN Enriched] Converting {len(graphs)} graphs to enriched PyG format..."
+        )
         for i, G in enumerate(graphs):
             data = nx_to_pyg_enriched(G)
             if data is not None and data.x.shape[0] >= 2:
@@ -246,7 +249,7 @@ class GINEnrichedEmbedder(BaseEmbedder):
 
         results = np.zeros((len(graphs), self.dim), dtype=np.float32)
         if not pyg_data_list:
-            print('  [GIN Enriched] Warning: No valid graphs. Returning zeroed results')
+            print("  [GIN Enriched] Warning: No valid graphs. Returning zeroed results")
             return results
 
         print(f"[GIN Enriched] Batching {len(pyg_data_list)} valid graphs...")
@@ -278,5 +281,7 @@ class GINEnrichedEmbedder(BaseEmbedder):
         for i, valid_idx in enumerate(valid_indices):
             results[valid_idx] = self._norm_vec(out[i]) if self.apply_norm else out[i]
 
-        print(f"[GIN Enriched] Done! Embedded {len(pyg_data_list)}/{len(graphs)} graphs")
+        print(
+            f"[GIN Enriched] Done! Embedded {len(pyg_data_list)}/{len(graphs)} graphs"
+        )
         return results

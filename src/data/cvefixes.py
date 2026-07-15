@@ -14,8 +14,7 @@ import networkx as nx
 from tqdm import tqdm
 
 from .base import BaseDataset, ExportJob, FunctionPair
-from .pipeline import (compute_graph_diff, cpg_dir_for, graph_diff_params,
-                       load_cpg_dir)
+from .pipeline import compute_graph_diff, cpg_dir_for, graph_diff_params, load_cpg_dir
 
 _QUERY_METHODS = """\
 SELECT

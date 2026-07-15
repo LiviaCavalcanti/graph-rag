@@ -49,6 +49,21 @@ def load_pairs(cfg: dict) -> list[FunctionPair]:
     return pairs
 
 
+def load_pairs_from_file(entries_path, cfg: dict) -> list[FunctionPair]:
+    """Load FunctionPair objects from a pinned JSON entries subset file.
+
+    Used to restrict ``--mode query`` / ``batch`` / ``full`` to a fixed
+    CVEfixes sample (e.g. ``experiments_cves/selected_entries.json``)
+    instead of streaming the entire DB. See ``src.data.entries_cache`` for
+    cache-resolution details.
+    """
+    from .entries_cache import resolve_pairs_from_entries
+
+    cve_cfg = cfg.get("data", {}).get("cvefixes", {})
+    cache_dirs = cve_cfg.get("entries_cache_dirs")
+    return resolve_pairs_from_entries(entries_path, cfg, cache_dirs=cache_dirs)
+
+
 def load_pairs_lightweight(cfg: dict) -> list[FunctionPair]:
     """Load pairs with metadata only — no CPG/graph loading.
 

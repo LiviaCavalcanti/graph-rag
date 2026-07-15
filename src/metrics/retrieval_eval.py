@@ -7,21 +7,21 @@ the experiment runner's orchestration logic.
 
 import os
 from collections import defaultdict
+
 import numpy as np
 
 from src.io import read_code_file
 from src.metrics.metrics import (
-    _reciprocal_rank,
-    _hit_rate_at_k,
-    _precision_at_k,
-    _recall_at_k,
-    _ndcg_at_k,
     _average_precision_at_k,
     _compute_metrics,
-    _cwe_standard_recall,
     _cwe_recall_summary,
+    _cwe_standard_recall,
+    _hit_rate_at_k,
+    _ndcg_at_k,
+    _precision_at_k,
+    _recall_at_k,
+    _reciprocal_rank,
 )
-
 
 # ── ranx helpers ─────────────────────────────────────────────────────
 
@@ -133,14 +133,14 @@ def retrieve_all(
     """
     if not pairs:
         return []
-    
+
     print(f"[retrieve_all] Embedding {len(pairs)} graphs in batch...")
     # Extract query graphs for all pairs
     query_graphs = [_query_graph_for(pair) for pair in pairs]
-    
+
     # Batch embed all at once (single GPU forward pass)
     embeddings = embedder.embed_many(query_graphs)
-    
+
     print(f"[retrieve_all] Running retrieval for {len(pairs)} queries...")
     out = []
     valid_count = 0
@@ -150,17 +150,19 @@ def retrieve_all(
             # an unembeddable query is a guaranteed miss (empty results).
             out.append((pair, []))
             continue
-        
+
         results = retriever.query(query_vec, top_k=top_k)
         out.append((pair, results))
         valid_count += 1
-        
+
         if (i + 1) % max(1, len(pairs) // 10) == 0:
             print(f"  [{i + 1}/{len(pairs)}] queries processed")
-    
+
     degenerate = len(pairs) - valid_count
-    print(f"[retrieve_all] Done! Embedded {valid_count}/{len(pairs)} queries"
-          + (f" ({degenerate} degenerate kept as misses)" if degenerate else ""))
+    print(
+        f"[retrieve_all] Done! Embedded {valid_count}/{len(pairs)} queries"
+        + (f" ({degenerate} degenerate kept as misses)" if degenerate else "")
+    )
     return out
 
 
@@ -377,8 +379,13 @@ def evaluate_retrieval(
 
     # Build index metadata for full-index qrels
     index_metadata = [
-        {"cve_id": p.cve_id, "cwe_id": p.cwe_id, "func_name": p.func_name,
-         "variant": p.meta.get("variant", ""), **p.meta}
+        {
+            "cve_id": p.cve_id,
+            "cwe_id": p.cwe_id,
+            "func_name": p.func_name,
+            "variant": p.meta.get("variant", ""),
+            **p.meta,
+        }
         for p in index_pairs
     ]
 
@@ -406,18 +413,25 @@ def evaluate_retrieval(
         per_cve_hits[pair.cve_id].append(binary_hit)
         per_cve_recalls[pair.cve_id].append(recall)
 
-        raw_queries.append({
-            "query_cve": pair.cve_id,
-            "query_cwe": pair.cwe_id,
-            "hit": mrr > 0,
-            "mrr": mrr,
-            "cve_binary_hit": binary_hit,
-            "cve_recall": recall,
-            "retrieved": [
-                {"rank": j + 1, "cve_id": r.get("cve_id"), "cwe_id": r.get("cwe_id"), "score": r.get("score")}
-                for j, r in enumerate(res)
-            ],
-        })
+        raw_queries.append(
+            {
+                "query_cve": pair.cve_id,
+                "query_cwe": pair.cwe_id,
+                "hit": mrr > 0,
+                "mrr": mrr,
+                "cve_binary_hit": binary_hit,
+                "cve_recall": recall,
+                "retrieved": [
+                    {
+                        "rank": j + 1,
+                        "cve_id": r.get("cve_id"),
+                        "cwe_id": r.get("cwe_id"),
+                        "score": r.get("score"),
+                    }
+                    for j, r in enumerate(res)
+                ],
+            }
+        )
         n += 1
 
     if n == 0:
@@ -501,9 +515,17 @@ def evaluate_retrieval_from_records(records: list[dict]) -> dict:
     total = len(retrieved)
 
     if total == 0:
-        return {"matched": 0, "top_k": 5, "hit_at_1": 0, "hit_rate_at_1": 0,
-                "hit_cve_at_k": 0, "hit_rate_at_k": 0, "mrr": 0,
-                "cwe_hit_at_k": 0, "cwe_hit_rate_at_k": 0}
+        return {
+            "matched": 0,
+            "top_k": 5,
+            "hit_at_1": 0,
+            "hit_rate_at_1": 0,
+            "hit_cve_at_k": 0,
+            "hit_rate_at_k": 0,
+            "mrr": 0,
+            "cwe_hit_at_k": 0,
+            "cwe_hit_rate_at_k": 0,
+        }
 
     # Determine k from first record
     sample_topk = retrieved[0].get("retrieval", {}).get("top_k", [])
@@ -517,11 +539,13 @@ def evaluate_retrieval_from_records(records: list[dict]) -> dict:
         # Convert top_k entries to the format expected by _build_cve_qrels_and_run
         results = []
         for entry in r.get("retrieval", {}).get("top_k", []):
-            results.append({
-                "cve_id": entry.get("cve_id"),
-                "cwe_id": entry.get("cwe_id"),
-                "score": entry.get("score", 0.0),
-            })
+            results.append(
+                {
+                    "cve_id": entry.get("cve_id"),
+                    "cwe_id": entry.get("cwe_id"),
+                    "score": entry.get("score", 0.0),
+                }
+            )
         query_results.append((qid, query_cve, results))
 
     # Use existing infrastructure for CVE hit metrics

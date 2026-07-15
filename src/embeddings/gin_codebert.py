@@ -42,8 +42,7 @@ class GINCodeBERTEmbedder(BaseEmbedder):
         self._num_layers = gc_cfg.get("num_layers", 3)
         self._dropout = gc_cfg.get("dropout", 0.3)
         self._device = (
-            "cuda" if torch.cuda.is_available()
-            else gc_cfg.get("device", "cpu")
+            "cuda" if torch.cuda.is_available() else gc_cfg.get("device", "cpu")
         )
 
         # Node encoder (shared, caches to disk)
@@ -58,6 +57,7 @@ class GINCodeBERTEmbedder(BaseEmbedder):
             return
         if self._checkpoint_path and Path(self._checkpoint_path).exists():
             from src.training import TripletTrainer
+
             self._model = TripletTrainer.load_checkpoint(
                 Path(self._checkpoint_path), device=self._device
             )
@@ -73,7 +73,9 @@ class GINCodeBERTEmbedder(BaseEmbedder):
             ).to(self._device)
             self._model.eval()
             if self._checkpoint_path:
-                print(f"  [gin_codebert] No checkpoint at {self._checkpoint_path}, using random init")
+                print(
+                    f"  [gin_codebert] No checkpoint at {self._checkpoint_path}, using random init"
+                )
             else:
                 print(f"  [gin_codebert] No checkpoint configured, using random init")
         self._loaded = True
@@ -121,7 +123,7 @@ class GINCodeBERTEmbedder(BaseEmbedder):
         all_embs = []
         with torch.no_grad():
             for start in range(0, len(data_list), batch_size):
-                batch = Batch.from_data_list(data_list[start:start + batch_size])
+                batch = Batch.from_data_list(data_list[start : start + batch_size])
                 batch = batch.to(self._device)
                 embs = self._model(batch).cpu().numpy()
                 all_embs.append(embs)

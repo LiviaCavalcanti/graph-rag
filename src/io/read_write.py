@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import json
 import os
 import threading
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from queue import Queue
-import uuid
 
 import yaml
 
@@ -17,12 +17,14 @@ OUTPUT_DIR = Path("experiments/output")
 
 # ── config ───────────────────────────────────────────────────────────
 
+
 def load_config(path: str = "config.yaml") -> dict:
     with open(path) as f:
         return yaml.safe_load(f)
 
 
 # ── run directory ────────────────────────────────────────────────────
+
 
 def make_run_dir(tag: str = "", output_dir: Path | None = None) -> tuple[str, Path]:
     """Create a timestamped run directory.  Returns (run_id, run_dir)."""
@@ -33,6 +35,7 @@ def make_run_dir(tag: str = "", output_dir: Path | None = None) -> tuple[str, Pa
     run_dir = base / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     return run_id, run_dir
+
 
 def load_completed(jsonl_path: Path) -> set[tuple[str, str]]:
     """Load already-completed (cve_id, variant) keys from a JSONL file."""
@@ -113,7 +116,11 @@ def read_code_file(path: str | None, max_chars: int = 4000) -> str:
     if p.exists():
         try:
             text = p.read_text(errors="replace")
-            return text[:max_chars] + (f"\n... [truncated at {max_chars} chars]" if len(text) > max_chars else "")
+            return text[:max_chars] + (
+                f"\n... [truncated at {max_chars} chars]"
+                if len(text) > max_chars
+                else ""
+            )
         except Exception:
             return ""
     if len(path) > 20:

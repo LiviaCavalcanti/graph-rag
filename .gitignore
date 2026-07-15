@@ -14,6 +14,8 @@ cvefixes_experiments/scripts/graph_analysis/cvefixes_experiments/
 cvefixes_experiments/scripts/graph_analysis/workspace/
 *.sqlite
 *.db
+rag
+./*.json
 
 # Large binary/model files
 models/

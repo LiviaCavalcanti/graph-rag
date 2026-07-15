@@ -1,10 +1,14 @@
 data:
   # CVEfixes is now the primary dataset for ingestion and graph generation
   active: [cvefixes]
-  # autopatch:
-  #   root: CVE-list
-  #   graphml_root: graphml_cvefixes_files
-  #   include_variants: true
+  # AutoPatch dataset config. NOTE: patching (--mode batch/full) ALWAYS uses this
+  # dataset (independent of `active` above) since db_entry.json fields like
+  # root_cause/fix_list are AutoPatch-specific and required by the prompt
+  # builder. Override the root via --cve-root or PatchingExperiment(cve_root=...).
+  autopatch:
+    root: CVE-list
+    graphml_root: graphml_cvefixes_files
+    include_variants: true
   # CVEfixes dataset configuration
   # Source: https://zenodo.org/record/4476563 (DOI: 10.5281/zenodo.4476563)
   # After downloading: gzcat CVEfixes.sql.gz | sqlite3 data/cvefixes/CVEfixes.db
@@ -18,6 +22,11 @@ data:
     # Optional: filter to specific CWEs (empty = load all CWEs)
     # Common choices: [CWE-20, CWE-476, CWE-362, CWE-416, CWE-787, CWE-400, CWE-190]
     target_cwes: [CWE-20, CWE-476, CWE-362, CWE-416, CWE-787, CWE-400, CWE-190]
+    # Pinned entries subset used by default for `main.py --mode query` (and
+    # therefore `--mode batch`/`full`), instead of streaming the whole DB.
+    # Matches cvefixes_experiments/scripts/performance/exp_method_vs_file_level.py.
+    # Override with --input-file <path>, or bypass with --full-dataset.
+    input_file: experiments_cves/selected_entries.json
 joern:
   workers: 8
   timeout_s: 120

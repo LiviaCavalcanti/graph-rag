@@ -75,11 +75,15 @@ class StructTripletDataset:
         # All valid indices for negative sampling (including singletons)
         self._all_neg_pool = self._all_valid_idx + self._singleton_idx
 
-        print(f"  [struct_triplet] {len(self._valid_classes)} classes with ≥2 samples, "
-              f"{len(self._all_valid_idx)} valid graphs, "
-              f"{len(self._singleton_classes)} singletons")
+        print(
+            f"  [struct_triplet] {len(self._valid_classes)} classes with ≥2 samples, "
+            f"{len(self._all_valid_idx)} valid graphs, "
+            f"{len(self._singleton_classes)} singletons"
+        )
 
-    def sample_triplets(self, n_triplets: int, seed: int | None = None) -> list[tuple[int, int, int]]:
+    def sample_triplets(
+        self, n_triplets: int, seed: int | None = None
+    ) -> list[tuple[int, int, int]]:
         """
         Sample (anchor_idx, positive_idx, negative_idx) tuples.
 
@@ -94,13 +98,17 @@ class StructTripletDataset:
             anchor_idx = rng.choice(self._class_to_idx[anchor_class])
 
             # Pick positive from same class (different sample)
-            pos_candidates = [i for i in self._class_to_idx[anchor_class] if i != anchor_idx]
+            pos_candidates = [
+                i for i in self._class_to_idx[anchor_class] if i != anchor_idx
+            ]
             if not pos_candidates:
                 continue
             pos_idx = rng.choice(pos_candidates)
 
             # Pick negative from different class
-            neg_candidates = [i for i in self._all_neg_pool if self._labels[i] != anchor_class]
+            neg_candidates = [
+                i for i in self._all_neg_pool if self._labels[i] != anchor_class
+            ]
             if not neg_candidates:
                 continue
             neg_idx = rng.choice(neg_candidates)
@@ -147,7 +155,7 @@ def semi_hard_mine_struct(
 
     with torch.no_grad():
         for start in range(0, len(all_idx), batch_size):
-            batch_idx = all_idx[start:start + batch_size]
+            batch_idx = all_idx[start : start + batch_size]
             data_list = [dataset.get_data(i) for i in batch_idx]
             batch = Batch.from_data_list(data_list).to(device)
             embs = model(batch).cpu().numpy()
@@ -162,7 +170,7 @@ def semi_hard_mine_struct(
         neg_idx = [i for i in all_idx if dataset._labels[i] != cls]
 
         for i, anchor_i in enumerate(cls_idx):
-            for pos_i in cls_idx[i + 1:]:
+            for pos_i in cls_idx[i + 1 :]:
                 if anchor_i not in embeddings or pos_i not in embeddings:
                     continue
                 a_emb = embeddings[anchor_i]
@@ -228,10 +236,14 @@ class StructTripletTrainer:
         patience_counter = 0
         best_state = None
 
-        print(f"\n  [struct_trainer] Starting training: {self.epochs} epochs, "
-              f"margin={self.margin}, lr={self.lr}")
-        print(f"  [struct_trainer] {self.triplets_per_epoch} triplets/epoch, "
-              f"batch_size={self.batch_size}, patience={self.patience}")
+        print(
+            f"\n  [struct_trainer] Starting training: {self.epochs} epochs, "
+            f"margin={self.margin}, lr={self.lr}"
+        )
+        print(
+            f"  [struct_trainer] {self.triplets_per_epoch} triplets/epoch, "
+            f"batch_size={self.batch_size}, patience={self.patience}"
+        )
 
         for epoch in range(self.epochs):
             t0 = time.perf_counter()
@@ -244,7 +256,9 @@ class StructTripletTrainer:
                 if len(triplets) > self.triplets_per_epoch:
                     triplets = random.sample(triplets, self.triplets_per_epoch)
                 if not triplets:
-                    triplets = dataset.sample_triplets(self.triplets_per_epoch, seed=epoch)
+                    triplets = dataset.sample_triplets(
+                        self.triplets_per_epoch, seed=epoch
+                    )
             else:
                 triplets = dataset.sample_triplets(self.triplets_per_epoch, seed=epoch)
 
@@ -258,8 +272,10 @@ class StructTripletTrainer:
             n_batches = 0
 
             for start in range(0, len(triplets), self.batch_size):
-                batch_triplets = triplets[start:start + self.batch_size]
-                anchor_batch, pos_batch, neg_batch = dataset.collate_triplet_batch(batch_triplets)
+                batch_triplets = triplets[start : start + self.batch_size]
+                anchor_batch, pos_batch, neg_batch = dataset.collate_triplet_batch(
+                    batch_triplets
+                )
 
                 anchor_batch = anchor_batch.to(self.device)
                 pos_batch = pos_batch.to(self.device)
@@ -298,25 +314,33 @@ class StructTripletTrainer:
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
                     patience_counter = 0
-                    best_state = {k: v.cpu().clone() for k, v in self.model.state_dict().items()}
+                    best_state = {
+                        k: v.cpu().clone() for k, v in self.model.state_dict().items()
+                    }
                 else:
                     patience_counter += 1
             else:
                 if avg_loss < best_val_loss:
                     best_val_loss = avg_loss
                     patience_counter = 0
-                    best_state = {k: v.cpu().clone() for k, v in self.model.state_dict().items()}
+                    best_state = {
+                        k: v.cpu().clone() for k, v in self.model.state_dict().items()
+                    }
                 else:
                     patience_counter += 1
 
             if (epoch + 1) % 10 == 0 or epoch == 0:
                 val_str = f", val_loss={val_loss:.4f}" if val_loss is not None else ""
                 lr_now = self.scheduler.get_last_lr()[0]
-                print(f"    Epoch {epoch + 1:3d}/{self.epochs}: "
-                      f"loss={avg_loss:.4f}{val_str}, lr={lr_now:.2e} ({elapsed:.1f}s)")
+                print(
+                    f"    Epoch {epoch + 1:3d}/{self.epochs}: "
+                    f"loss={avg_loss:.4f}{val_str}, lr={lr_now:.2e} ({elapsed:.1f}s)"
+                )
 
             if patience_counter >= self.patience:
-                print(f"    Early stopping at epoch {epoch + 1} (patience={self.patience})")
+                print(
+                    f"    Early stopping at epoch {epoch + 1} (patience={self.patience})"
+                )
                 break
 
         # Restore best weights
@@ -338,8 +362,10 @@ class StructTripletTrainer:
         n_batches = 0
         with torch.no_grad():
             for start in range(0, len(triplets), self.batch_size):
-                batch_triplets = triplets[start:start + self.batch_size]
-                a_batch, p_batch, n_batch = dataset.collate_triplet_batch(batch_triplets)
+                batch_triplets = triplets[start : start + self.batch_size]
+                a_batch, p_batch, n_batch = dataset.collate_triplet_batch(
+                    batch_triplets
+                )
                 a_batch = a_batch.to(self.device)
                 p_batch = p_batch.to(self.device)
                 n_batch = n_batch.to(self.device)

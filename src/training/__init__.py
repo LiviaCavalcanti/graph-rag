@@ -66,10 +66,14 @@ class TripletDataset:
         self._all_valid_idx = [
             i for c in self._valid_classes for i in self._class_to_idx[c]
         ]
-        print(f"  [triplet] {len(self._valid_classes)} classes with ≥2 samples, "
-              f"{len(self._all_valid_idx)} valid graphs")
+        print(
+            f"  [triplet] {len(self._valid_classes)} classes with ≥2 samples, "
+            f"{len(self._all_valid_idx)} valid graphs"
+        )
 
-    def sample_triplets(self, n_triplets: int, seed: int | None = None) -> list[tuple[int, int, int]]:
+    def sample_triplets(
+        self, n_triplets: int, seed: int | None = None
+    ) -> list[tuple[int, int, int]]:
         """
         Sample n_triplets (anchor_idx, positive_idx, negative_idx) tuples.
 
@@ -84,13 +88,17 @@ class TripletDataset:
             anchor_idx = rng.choice(self._class_to_idx[anchor_class])
 
             # Pick positive from same class (different sample)
-            pos_candidates = [i for i in self._class_to_idx[anchor_class] if i != anchor_idx]
+            pos_candidates = [
+                i for i in self._class_to_idx[anchor_class] if i != anchor_idx
+            ]
             if not pos_candidates:
                 continue
             pos_idx = rng.choice(pos_candidates)
 
             # Pick negative from different class
-            neg_class = rng.choice([c for c in self._valid_classes if c != anchor_class])
+            neg_class = rng.choice(
+                [c for c in self._valid_classes if c != anchor_class]
+            )
             neg_idx = rng.choice(self._class_to_idx[neg_class])
 
             triplets.append((anchor_idx, pos_idx, neg_idx))
@@ -137,7 +145,7 @@ def semi_hard_mine(
 
     with torch.no_grad():
         for start in range(0, len(all_idx), batch_size):
-            batch_idx = all_idx[start:start + batch_size]
+            batch_idx = all_idx[start : start + batch_size]
             data_list = [dataset.get_data(i) for i in batch_idx]
             batch = Batch.from_data_list(data_list).to(device)
             embs = model(batch).cpu().numpy()
@@ -152,7 +160,7 @@ def semi_hard_mine(
         neg_idx = [i for i in all_idx if dataset._labels[i] != cls]
 
         for i, anchor_i in enumerate(cls_idx):
-            for pos_i in cls_idx[i + 1:]:
+            for pos_i in cls_idx[i + 1 :]:
                 a_emb = embeddings[anchor_i]
                 p_emb = embeddings[pos_i]
                 ap_dist = np.linalg.norm(a_emb - p_emb)
@@ -215,10 +223,14 @@ class TripletTrainer:
         patience_counter = 0
         best_state = None
 
-        print(f"\n  [trainer] Starting training: {self.epochs} epochs, "
-              f"margin={self.margin}, lr={self.lr}")
-        print(f"  [trainer] {self.triplets_per_epoch} triplets/epoch, "
-              f"batch_size={self.batch_size}, patience={self.patience}")
+        print(
+            f"\n  [trainer] Starting training: {self.epochs} epochs, "
+            f"margin={self.margin}, lr={self.lr}"
+        )
+        print(
+            f"  [trainer] {self.triplets_per_epoch} triplets/epoch, "
+            f"batch_size={self.batch_size}, patience={self.patience}"
+        )
 
         for epoch in range(self.epochs):
             t0 = time.perf_counter()
@@ -243,8 +255,10 @@ class TripletTrainer:
             n_batches = 0
 
             for start in range(0, len(triplets), self.batch_size):
-                batch_triplets = triplets[start:start + self.batch_size]
-                anchor_batch, pos_batch, neg_batch = dataset.collate_triplet_batch(batch_triplets)
+                batch_triplets = triplets[start : start + self.batch_size]
+                anchor_batch, pos_batch, neg_batch = dataset.collate_triplet_batch(
+                    batch_triplets
+                )
 
                 anchor_batch = anchor_batch.to(self.device)
                 pos_batch = pos_batch.to(self.device)
@@ -277,24 +291,32 @@ class TripletTrainer:
                 if val_loss < best_val_loss:
                     best_val_loss = val_loss
                     patience_counter = 0
-                    best_state = {k: v.cpu().clone() for k, v in self.model.state_dict().items()}
+                    best_state = {
+                        k: v.cpu().clone() for k, v in self.model.state_dict().items()
+                    }
                 else:
                     patience_counter += 1
             else:
                 if avg_loss < best_val_loss:
                     best_val_loss = avg_loss
                     patience_counter = 0
-                    best_state = {k: v.cpu().clone() for k, v in self.model.state_dict().items()}
+                    best_state = {
+                        k: v.cpu().clone() for k, v in self.model.state_dict().items()
+                    }
                 else:
                     patience_counter += 1
 
             if (epoch + 1) % 5 == 0 or epoch == 0:
                 val_str = f", val_loss={val_loss:.4f}" if val_loss is not None else ""
-                print(f"    Epoch {epoch + 1:3d}/{self.epochs}: "
-                      f"loss={avg_loss:.4f}{val_str} ({elapsed:.1f}s)")
+                print(
+                    f"    Epoch {epoch + 1:3d}/{self.epochs}: "
+                    f"loss={avg_loss:.4f}{val_str} ({elapsed:.1f}s)"
+                )
 
             if patience_counter >= self.patience:
-                print(f"    Early stopping at epoch {epoch + 1} (patience={self.patience})")
+                print(
+                    f"    Early stopping at epoch {epoch + 1} (patience={self.patience})"
+                )
                 break
 
         # Restore best weights
@@ -316,8 +338,10 @@ class TripletTrainer:
         n_batches = 0
         with torch.no_grad():
             for start in range(0, len(triplets), self.batch_size):
-                batch_triplets = triplets[start:start + self.batch_size]
-                a_batch, p_batch, n_batch = dataset.collate_triplet_batch(batch_triplets)
+                batch_triplets = triplets[start : start + self.batch_size]
+                a_batch, p_batch, n_batch = dataset.collate_triplet_batch(
+                    batch_triplets
+                )
                 a_batch = a_batch.to(self.device)
                 p_batch = p_batch.to(self.device)
                 n_batch = n_batch.to(self.device)
