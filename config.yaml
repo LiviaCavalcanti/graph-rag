@@ -1,6 +1,6 @@
 data:
   # CVEfixes is now the primary dataset for ingestion and graph generation
-  active: [cvefixes]
+  active: [cvefixes_file]
   # AutoPatch dataset config. NOTE: patching (--mode batch/full) ALWAYS uses this
   # dataset (independent of `active` above) since db_entry.json fields like
   # root_cause/fix_list are AutoPatch-specific and required by the prompt
@@ -27,6 +27,21 @@ data:
     # Matches cvefixes_experiments/scripts/performance/exp_method_vs_file_level.py.
     # Override with --input-file <path>, or bypass with --full-dataset.
     input_file: experiments_cves/selected_entries.json
+  # File-based CVEfixes variant: loads FunctionPairs from a pinned JSON
+  # entries file (src.data.entries_cache) instead of streaming the whole DB,
+  # with optional CVE-aware CWE resampling. Set `data.active: [cvefixes_file]`
+  # to use this for --mode query/full/experiment/diagnostics instead of the
+  # full DB (export/index still need the `cvefixes` dataset above for bulk
+  # CPG generation over the whole corpus).
+  cvefixes_file:
+    input_file: experiments_cves/selected_entries.json
+    # original: keep the file's pairs unchanged (default).
+    # proportional: CVE-aware resample preserving natural CWE proportions.
+    # balanced: CVE-aware resample capping every CWE to the same quota.
+    sample_mode: original
+    sample_total: null
+    seed: 42
+    min_cves_per_cwe: 1
 joern:
   workers: 8
   timeout_s: 120
