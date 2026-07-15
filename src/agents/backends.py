@@ -61,9 +61,10 @@ class CompletionResult:
     completion_tokens: int = 0
     total_tokens: int = 0
     cached: bool = False  # True when served from a cassette
+    tool_calls: list[dict] = field(default_factory=list)
 
     def to_dict(self) -> dict:
-        return {
+        d = {
             "content": self.content,
             "finish_reason": self.finish_reason,
             "response_id": self.response_id,
@@ -71,6 +72,9 @@ class CompletionResult:
             "completion_tokens": self.completion_tokens,
             "total_tokens": self.total_tokens,
         }
+        if self.tool_calls:
+            d["tool_calls"] = self.tool_calls
+        return d
 
     @classmethod
     def from_dict(cls, d: dict, *, cached: bool = False) -> "CompletionResult":
@@ -82,6 +86,7 @@ class CompletionResult:
             completion_tokens=int(d.get("completion_tokens", 0) or 0),
             total_tokens=int(d.get("total_tokens", 0) or 0),
             cached=cached,
+            tool_calls=d.get("tool_calls", []),
         )
 
 
@@ -97,6 +102,8 @@ class CompletionBackend(Protocol):
         temperature: float,
         max_tokens: int,
         api_version: str = "",
+        tools: list[dict] | None = None,
+        tool_choice: str | dict | None = None,
     ) -> CompletionResult: ...
 
 
@@ -151,10 +158,12 @@ class LiveBackend:
         temperature: float,
         max_tokens: int,
         api_version: str = "",
+        tools: list[dict] | None = None,
+        tool_choice: str | dict | None = None,
     ) -> CompletionResult:
         import litellm  # lazy: keeps the harness importable & offline-safe
 
-        response = litellm.completion(
+        kwargs: dict = dict(
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
@@ -163,8 +172,30 @@ class LiveBackend:
             api_base=os.getenv(self._api_base_env),
             api_version=api_version,
         )
+        if tools:
+            kwargs["tools"] = tools
+        if tool_choice is not None:
+            kwargs["tool_choice"] = tool_choice
+
+        response = litellm.completion(**kwargs)
         choice = response.choices[0]
         usage = getattr(response, "usage", None)
+
+        # Extract tool calls if present
+        tc_list: list[dict] = []
+        if hasattr(choice.message, "tool_calls") and choice.message.tool_calls:
+            for tc in choice.message.tool_calls:
+                tc_list.append(
+                    {
+                        "id": tc.id,
+                        "type": "function",
+                        "function": {
+                            "name": tc.function.name,
+                            "arguments": tc.function.arguments,
+                        },
+                    }
+                )
+
         return CompletionResult(
             content=choice.message.content or "",
             finish_reason=choice.finish_reason or "",
@@ -172,6 +203,7 @@ class LiveBackend:
             prompt_tokens=getattr(usage, "prompt_tokens", 0) or 0,
             completion_tokens=getattr(usage, "completion_tokens", 0) or 0,
             total_tokens=getattr(usage, "total_tokens", 0) or 0,
+            tool_calls=tc_list,
         )
 
 
@@ -216,6 +248,8 @@ class MockBackend:
         temperature: float,
         max_tokens: int,
         api_version: str = "",
+        tools: list[dict] | None = None,
+        tool_choice: str | dict | None = None,
     ) -> CompletionResult:
         self.calls.append(messages)
         content = self._responder(messages)
@@ -325,6 +359,8 @@ class ReplayBackend:
         temperature: float,
         max_tokens: int,
         api_version: str = "",
+        tools: list[dict] | None = None,
+        tool_choice: str | dict | None = None,
     ) -> CompletionResult:
         key = request_fingerprint(
             model=model,
@@ -363,6 +399,8 @@ class RecordBackend:
         temperature: float,
         max_tokens: int,
         api_version: str = "",
+        tools: list[dict] | None = None,
+        tool_choice: str | dict | None = None,
     ) -> CompletionResult:
         key = request_fingerprint(
             model=model,
@@ -378,6 +416,8 @@ class RecordBackend:
             temperature=temperature,
             max_tokens=max_tokens,
             api_version=api_version,
+            tools=tools,
+            tool_choice=tool_choice,
         )
         self.cassette.put(
             key,
