@@ -66,7 +66,7 @@ class ToolCallingAgent:
         backend: CompletionBackend | None = None,
         max_iterations: int = 6,
         verify_backend: CompletionBackend | None = None,
-        verify_model: str = "azure/gpt-4o-mini",
+        verify_model: str | None = None,
     ):
         self.prompt_variant = prompt_variant
         self.model_name = model_name or MODEL_NAME
@@ -74,7 +74,10 @@ class ToolCallingAgent:
         self.backend = backend or get_default_backend()
         self.max_iterations = max_iterations
         self.verify_backend = verify_backend
-        self.verify_model = verify_model
+        # Default to the same deployment as the main model: Azure requires the
+        # model string to match an actual deployment name on the resource, and
+        # there is no guarantee a separate "gpt-4o-mini" deployment exists.
+        self.verify_model = verify_model or f"azure/{self.model_name}"
 
     def run(self, ctx: PatchContext) -> AgentResult:
         model = f"azure/{self.model_name}"
