@@ -352,7 +352,15 @@ if __name__ == "__main__":
             or agent_cfg.get("prompt_variant")
             or cfg.get("rag", {}).get("prompt_variant", "default"),
             cve_root=args.cve_root,
-            dataset=args.dataset or "autopatch",
+            dataset=args.dataset or (
+                # When using precomputed retrieval (--query-run), the dataset
+                # must match what the query run used, which is cfg["data"]["active"].
+                # Defaulting to "autopatch" here causes 100% lookup misses because
+                # autopatch CVE IDs (CVE-2025-xxx) are absent from a cvefixes JSONL.
+                cfg.get("data", {}).get("active", ["autopatch"])[0]
+                if args.query_run
+                else "autopatch"
+            ),
         )
 
     elif args.mode == "full":
