@@ -191,6 +191,38 @@ class CodeBERTSeqEmbedder(BaseEmbedder):
             f"Device: { self._device} \n Final dimension: {self._codebert_dim} \n Batch size: {self._cb_batch_size}"
         )
 
+    requires_fitting = True
+
+    def fit(self, graphs: list) -> None:
+        """Fit PCA on the full index corpus.  Must be called before embed_many()."""
+        from sklearn.decomposition import PCA
+        self._load_codebert()
+        code_strings = [collect_changed_code(G) for G in graphs]
+        raw = self.encode_batch(code_strings)
+        valid = np.linalg.norm(raw, axis=1) > 1e-8
+        if not valid.any():
+            raise RuntimeError(f"[{self.name}] No valid graphs to fit PCA on")
+        valid_raw = raw[valid]
+        target_dim = self.dim if self.dim is not None else raw.shape[1]
+        n_comp = min(target_dim, valid_raw.shape[0] - 1, valid_raw.shape[1])
+        self._pca = PCA(n_components=n_comp, random_state=42)
+        self._pca.fit(valid_raw)
+        self._fitted = True
+        self.dim = n_comp
+        expl = self._pca.explained_variance_ratio_.sum()
+        print(f"    [{self.name}] PCA fitted — {n_comp} comp, explained variance: {expl:.2%}")
+
+    def get_pca_state(self) -> dict | None:
+        if not self._fitted or self._pca is None:
+            return None
+        return {"pca": self._pca, "dim": self.dim}
+
+    def load_pca_state(self, state: dict) -> None:
+        self._pca = state["pca"]
+        self.dim = state["dim"]
+        self._fitted = True
+        print(f"    [{self.name}] PCA state loaded (dim={self.dim})")
+
     def _load_codebert(self):
         if self._cb_available is not None:
             return
@@ -349,6 +381,25 @@ class CodeBERTFlowEmbedder(CodeBERTSeqEmbedder):
     @property
     def name(self) -> str:
         return "codebert_flow"
+
+    def fit(self, graphs: list) -> None:
+        """Override: use flow-ordered code collection instead of line-order."""
+        from sklearn.decomposition import PCA
+        self._load_codebert()
+        code_strings = [collect_flow_ordered_code(G) for G in graphs]
+        raw = self.encode_batch(code_strings)
+        valid = np.linalg.norm(raw, axis=1) > 1e-8
+        if not valid.any():
+            raise RuntimeError(f"[{self.name}] No valid graphs to fit PCA on")
+        valid_raw = raw[valid]
+        target_dim = self.dim if self.dim is not None else raw.shape[1]
+        n_comp = min(target_dim, valid_raw.shape[0] - 1, valid_raw.shape[1])
+        self._pca = PCA(n_components=n_comp, random_state=42)
+        self._pca.fit(valid_raw)
+        self._fitted = True
+        self.dim = n_comp
+        expl = self._pca.explained_variance_ratio_.sum()
+        print(f"    [{self.name}] PCA fitted — {n_comp} comp, explained variance: {expl:.2%}")
 
     def embed_one(self, G: nx.MultiDiGraph) -> np.ndarray:
         raw_dim = 768
