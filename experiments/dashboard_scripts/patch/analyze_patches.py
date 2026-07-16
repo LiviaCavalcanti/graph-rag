@@ -351,6 +351,11 @@ def _render_html(analysis: dict) -> str:
         ("Char Seq Ratio", "char_sequence_ratio"),
         ("Line Seq Ratio", "line_sequence_ratio"),
         ("Edit Dist (norm)", "normalised_edit_distance"),
+        ("Hunk F1", "hunk_f1"),
+        ("Hunk Added F1", "hunk_added_f1"),
+        ("Hunk Removed F1", "hunk_removed_f1"),
+        ("Hunk Jaccard", "hunk_jaccard"),
+        ("Hunk Token Jaccard", "hunk_token_jaccard"),
     ]
     for label, key in key_metrics:
         s = agg.get(key, {})
@@ -375,6 +380,7 @@ def _render_html(analysis: dict) -> str:
             f"<td style='color:{score_color(stats.get('avg_rouge1_f1'))}'>{fmt(stats.get('avg_rouge1_f1'))}</td>"
             f"<td style='color:{score_color(stats.get('avg_rouge2_f1'))}'>{fmt(stats.get('avg_rouge2_f1'))}</td>"
             f"<td style='color:{score_color(stats.get('avg_rougeL_f1'))}'>{fmt(stats.get('avg_rougeL_f1'))}</td>"
+            f"<td style='color:{score_color(stats.get('avg_hunk_f1'))}'>{fmt(stats.get('avg_hunk_f1'))}</td>"
             f"</tr>\n"
         )
 
@@ -390,6 +396,7 @@ def _render_html(analysis: dict) -> str:
             f"<td style='color:{score_color(stats.get('avg_rouge1_f1'))}'>{fmt(stats.get('avg_rouge1_f1'))}</td>"
             f"<td style='color:{score_color(stats.get('avg_rouge2_f1'))}'>{fmt(stats.get('avg_rouge2_f1'))}</td>"
             f"<td style='color:{score_color(stats.get('avg_rougeL_f1'))}'>{fmt(stats.get('avg_rougeL_f1'))}</td>"
+            f"<td style='color:{score_color(stats.get('avg_hunk_f1'))}'>{fmt(stats.get('avg_hunk_f1'))}</td>"
             f"</tr>\n"
         )
 
@@ -684,13 +691,13 @@ def _render_html(analysis: dict) -> str:
 
 <h2>By CWE Type</h2>
 <table>
-  <tr><th>CWE</th><th>Count</th><th>BLEU-4</th><th>BERTScore F1</th><th>Jaccard</th><th>ROUGE-1</th><th>ROUGE-2</th><th>ROUGE-L</th></tr>
+  <tr><th>CWE</th><th>Count</th><th>BLEU-4</th><th>BERTScore F1</th><th>Jaccard</th><th>ROUGE-1</th><th>ROUGE-2</th><th>ROUGE-L</th><th>Hunk F1</th></tr>
   {cwe_rows}
 </table>
 
 <h2>By Variant</h2>
 <table>
-  <tr><th>Variant</th><th>Count</th><th>BLEU-4</th><th>BERTScore F1</th><th>Jaccard</th><th>ROUGE-1</th><th>ROUGE-2</th><th>ROUGE-L</th></tr>
+  <tr><th>Variant</th><th>Count</th><th>BLEU-4</th><th>BERTScore F1</th><th>Jaccard</th><th>ROUGE-1</th><th>ROUGE-2</th><th>ROUGE-L</th><th>Hunk F1</th></tr>
   {variant_rows}
 </table>
 
@@ -878,6 +885,7 @@ def main():
         ("ROUGE-L F1", "rougeL_f1"),
         ("Token Jaccard", "token_jaccard"),
         ("Edit Dist", "normalised_edit_distance"),
+        ("Hunk F1", "hunk_f1"),
     ]:
         s = agg.get(key, {})
         print(f"  {label:20s}  mean={fmt(s.get('mean'))}  median={fmt(s.get('median'))}")
