@@ -162,7 +162,9 @@ class TestPrecomputedRetrieverDbCacheIntegration:
         which is used to look up db_cache."""
         retriever = PrecomputedRetriever.__new__(PrecomputedRetriever)
         retriever._lookup = {
-            ("CVE-2025-0001", "original"): {
+            # 3-tuple key: (cve_id, variant, dir_name) — dir_name="" because
+            # this simulated entry has no query_dir (legacy / no-dir_name case).
+            ("CVE-2025-0001", "original", ""): {
                 "query_cve": "CVE-2025-0001",
                 "status": "retrieved",
                 "example_cve": "CVE-2025-0099",
