@@ -334,6 +334,8 @@ class VulnPatternEmbedder(BaseEmbedder):
     No CodeBERT — proves whether graph structure alone is discriminative.
     """
 
+    requires_fitting = True
+
     def __init__(self, cfg: dict):
         super().__init__(cfg)
         self._pca = None
@@ -362,6 +364,29 @@ class VulnPatternEmbedder(BaseEmbedder):
             padded[: proj.shape[0]] = proj
             proj = padded
         return self._norm_vec(proj)
+
+    def fit(self, graphs: list) -> None:
+        """Fit PCA on the full index corpus.  Must be called before embed_many()."""
+        from sklearn.decomposition import PCA
+        raw = self.build_raw_many(graphs)
+        n_comp = min(self.dim, raw.shape[0] - 1, raw.shape[1])
+        self._pca = PCA(n_components=n_comp, random_state=42)
+        self._pca.fit(raw)
+        self._fitted = True
+        self.dim = n_comp
+        expl = self._pca.explained_variance_ratio_.sum()
+        print(f"    [vuln_pattern] PCA fitted — {n_comp} comp, explained variance: {expl:.2%}")
+
+    def get_pca_state(self) -> dict | None:
+        if not self._fitted or self._pca is None:
+            return None
+        return {"pca": self._pca, "dim": self.dim}
+
+    def load_pca_state(self, state: dict) -> None:
+        self._pca = state["pca"]
+        self.dim = state["dim"]
+        self._fitted = True
+        print(f"    [vuln_pattern] PCA state loaded (dim={self.dim})")
 
     def embed_many(self, graphs: list) -> np.ndarray:
         raw = self.build_raw_many(graphs)
@@ -407,6 +432,8 @@ class CodeBERTPatternEmbedder(BaseEmbedder):
     Key ablation variant.  If this beats codebert_seq, graph structure
     adds value.  If it beats vuln_pattern, CodeBERT adds value.
     """
+
+    requires_fitting = True
 
     def __init__(self, cfg: dict, apply_norm: bool = True):
         super().__init__(cfg)
@@ -461,6 +488,32 @@ class CodeBERTPatternEmbedder(BaseEmbedder):
             proj = padded
         return self._norm_vec(proj)
 
+    def fit(self, graphs: list) -> None:
+        """Fit PCA on the full index corpus.  Must be called before embed_many()."""
+        from sklearn.decomposition import PCA
+        raw, valid_idx = self._build_raw(graphs)
+        if not valid_idx:
+            raise RuntimeError(f"[{self.name}] No valid graphs to fit PCA on")
+        valid_raw = raw[valid_idx]
+        n_comp = min(self.dim, valid_raw.shape[0] - 1, valid_raw.shape[1])
+        self._pca = PCA(n_components=n_comp, random_state=42)
+        self._pca.fit(valid_raw)
+        self._fitted = True
+        self.dim = n_comp
+        expl = self._pca.explained_variance_ratio_.sum()
+        print(f"    [{self.name}] PCA fitted — {n_comp} comp, explained variance: {expl:.2%}")
+
+    def get_pca_state(self) -> dict | None:
+        if not self._fitted or self._pca is None:
+            return None
+        return {"pca": self._pca, "dim": self.dim}
+
+    def load_pca_state(self, state: dict) -> None:
+        self._pca = state["pca"]
+        self.dim = state["dim"]
+        self._fitted = True
+        print(f"    [{self.name}] PCA state loaded (dim={self.dim})")
+
     def embed_many(self, graphs: list) -> np.ndarray:
         raw, valid_idx = self._build_raw(graphs)
         if not valid_idx:
@@ -514,7 +567,7 @@ class CodeBERTFlowPatternEmbedder(BaseEmbedder):
     so CodeBERT's self-attention sees flow-connected statements as adjacent
     tokens. Inspired by GraphFVD's graph-aware code representation.
     """
-
+    requires_fitting = True
     def __init__(self, cfg: dict, apply_norm: bool = True):
         super().__init__(cfg)
         from .codebert_seq import CodeBERTFlowEmbedder, collect_flow_ordered_code
@@ -563,6 +616,32 @@ class CodeBERTFlowPatternEmbedder(BaseEmbedder):
             padded[: proj.shape[0]] = proj
             proj = padded
         return self._norm_vec(proj)
+
+    def fit(self, graphs: list) -> None:
+        """Fit PCA on the full index corpus.  Must be called before embed_many()."""
+        from sklearn.decomposition import PCA
+        raw, valid_idx = self._build_raw(graphs)
+        if not valid_idx:
+            raise RuntimeError(f"[{self.name}] No valid graphs to fit PCA on")
+        valid_raw = raw[valid_idx]
+        n_comp = min(self.dim, valid_raw.shape[0] - 1, valid_raw.shape[1])
+        self._pca = PCA(n_components=n_comp, random_state=42)
+        self._pca.fit(valid_raw)
+        self._fitted = True
+        self.dim = n_comp
+        expl = self._pca.explained_variance_ratio_.sum()
+        print(f"    [{self.name}] PCA fitted — {n_comp} comp, explained variance: {expl:.2%}")
+
+    def get_pca_state(self) -> dict | None:
+        if not self._fitted or self._pca is None:
+            return None
+        return {"pca": self._pca, "dim": self.dim}
+
+    def load_pca_state(self, state: dict) -> None:
+        self._pca = state["pca"]
+        self.dim = state["dim"]
+        self._fitted = True
+        print(f"    [{self.name}] PCA state loaded (dim={self.dim})")
 
     def embed_many(self, graphs: list) -> np.ndarray:
         raw, valid_idx = self._build_raw(graphs)
