@@ -6,12 +6,88 @@ variant" splitting lives in ``AutoPatchDataset.build_split``
 (``src/data/autopatch.py``); ``build_split`` here transparently delegates to
 it whenever any of the given pairs came from AutoPatch
 (``pair.project == "autopatch"``), so callers never need to know or care.
+
+A split can also be *anchored* to a previously-generated ``split_info.json``
+(see ``experiment.split.anchor_split_path`` in ``config.yaml``) so that a run
+reproduces the exact index/query partition of an earlier experiment instead
+of resampling. See ``_anchor_split`` below.
 """
 
 from __future__ import annotations
 
+import json
 import random
 from collections import defaultdict
+from pathlib import Path
+
+
+def _entry_key(cve_id, func_name):
+    return (cve_id or "", func_name or "")
+
+
+def _anchor_split(pairs: list, anchor_path: str) -> tuple[list, list, dict] | None:
+    """Partition ``pairs`` to reproduce a baseline split from ``split_info.json``.
+
+    Reads ``index_entries``/``query_entries`` (each a ``{cve_id, cwe_id,
+    func_name}`` triple) from the anchor file and matches them against the
+    given pairs by ``(cve_id, func_name)``. Pairs not found in either list are
+    dropped; anchor entries not resolved against ``pairs`` are reported but
+    otherwise ignored (e.g. a different dataset subset was loaded).
+
+    Returns ``None`` if the anchor file is missing/unreadable so callers can
+    fall back to a fresh stratified split.
+    """
+    path = Path(anchor_path)
+    if not path.is_file():
+        print(f"  [anchor_split] file not found, falling back to fresh split: {anchor_path}")
+        return None
+
+    try:
+        si = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"  [anchor_split] failed to read/parse {anchor_path}: {exc}")
+        return None
+
+    index_keys = {_entry_key(e.get("cve_id"), e.get("func_name")) for e in si.get("index_entries", [])}
+    query_keys = {_entry_key(e.get("cve_id"), e.get("func_name")) for e in si.get("query_entries", [])}
+
+    index_pairs, query_pairs = [], []
+    seen_index, seen_query = set(), set()
+    for p in pairs:
+        key = _entry_key(p.cve_id, p.func_name)
+        if key in index_keys:
+            index_pairs.append(p)
+            seen_index.add(key)
+        elif key in query_keys:
+            query_pairs.append(p)
+            seen_query.add(key)
+
+    missing_index = len(index_keys) - len(seen_index)
+    missing_query = len(query_keys) - len(seen_query)
+    unmatched = len(pairs) - len(index_pairs) - len(query_pairs)
+    if missing_index or missing_query or unmatched:
+        print(
+            f"  [anchor_split] anchor={anchor_path} "
+            f"unresolved_anchor_entries(index={missing_index}, query={missing_query}) "
+            f"pairs_not_in_anchor={unmatched}"
+        )
+
+    info = {
+        "enabled": True,
+        "mode": "anchored",
+        "anchor_split_path": str(anchor_path),
+        "counts": {
+            "total": len(index_pairs) + len(query_pairs),
+            "index_total": len(index_pairs),
+            "query_total": len(query_pairs),
+        },
+        "unresolved": {
+            "anchor_index_entries": missing_index,
+            "anchor_query_entries": missing_query,
+            "pairs_not_in_anchor": unmatched,
+        },
+    }
+    return index_pairs, query_pairs, info
 
 
 def _stratified_split(pairs, test_ratio, seed):
@@ -75,6 +151,11 @@ def build_split(pairs: list, cfg: dict, seed_override: int | None = None) -> tup
     ``AutoPatchDataset.build_split`` instead, which understands the
     AutoPatch-specific real/augmented-variant split. Callers never need to
     branch on dataset type.
+
+    If ``experiment.split.anchor_split_path`` is set, reproduces that
+    baseline's exact index/query partition (matched by ``(cve_id,
+    func_name)``) instead of resampling — see ``_anchor_split``. Falls back to
+    the normal stratified/random split if the anchor file can't be read.
     """
     split_cfg = (cfg or {}).get("experiment", {}).get("split", {})
     enabled = bool(split_cfg.get("enabled", False))
@@ -86,6 +167,12 @@ def build_split(pairs: list, cfg: dict, seed_override: int | None = None) -> tup
             "query_n": len(pairs),
             "mode": "all_vs_all",
         }
+
+    anchor_path = split_cfg.get("anchor_split_path")
+    if anchor_path:
+        anchored = _anchor_split(pairs, anchor_path)
+        if anchored is not None:
+            return anchored
 
     if pairs and any(getattr(p, "project", None) == "autopatch" for p in pairs):
         from .autopatch import AutoPatchDataset
