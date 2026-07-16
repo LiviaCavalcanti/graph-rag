@@ -53,6 +53,8 @@ def apply_split_overrides(cfg: dict, args) -> None:
         split_cfg["test_ratio"] = args.split_test_ratio
     if args.aug_train_ratio is not None:
         split_cfg["augmented_train_ratio"] = args.aug_train_ratio
+    if getattr(args, "anchor_split_path", None) is not None:
+        split_cfg["anchor_split_path"] = args.anchor_split_path
 
 
 def run_full_pipeline(cfg: dict, args):
@@ -216,6 +218,14 @@ if __name__ == "__main__":
         "--aug-train-ratio",
         type=float,
         help="fraction of augmented train pairs to keep in index, e.g. 0.5",
+    )
+    parser.add_argument(
+        "--anchor-split-path",
+        type=str,
+        default=None,
+        help="path to a baseline split_info.json to reproduce its exact "
+        "index/query partition (matched by cve_id+func_name) instead of "
+        "resampling",
     )
     # batch-mode arguments
     parser.add_argument(
