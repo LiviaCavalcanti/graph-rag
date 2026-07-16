@@ -45,7 +45,7 @@ data:
 joern:
   workers: 8
   timeout_s: 120
-  bin_dir: 
+  bin_dir: /home/z0050s2b/bin/joern/joern-cli
 graph:
   # ── program-slice / semantic-diff parameters (compute_graph_diff) ──
   # Control G_vuln construction; tune these to run slicing experiments.
@@ -167,6 +167,11 @@ experiment:
     include_real_in_index: true
     augmented_train_ratio: 0.5
     query_source: graphml_augmented
+    # Optional: path to a previously-generated split_info.json (its
+    # index_entries/query_entries, matched by cve_id+func_name) to reproduce
+    # an exact baseline index/query partition instead of resampling. Falls
+    # back to the stratified/random split above if unset or unreadable.
+    anchor_split_path: null
   # Pipeline verification experiment configuration
   pipeline_verification:
     seed: 42
