@@ -45,8 +45,12 @@ def build_index(cfg: dict) -> None:
     for ds_name, dataset in datasets:
         print(f"-----------{dataset.name()}-----------")
 
-        # Pre-fit PCA-based embedders on full corpus before batched indexing
-        if hasattr(indexer, "fit") and not getattr(indexer, "_fitted", True):
+        # Pre-fit PCA-based embedders on full corpus before batched indexing.
+        # requires_fitting is True for all embedders that apply a data-dependent
+        # PCA projection (codebert_pattern, codebert_seq, combined, …).
+        # Fitting here on the COMPLETE index corpus is the training step;
+        # query/batch runs must load the persisted state instead of re-fitting.
+        if indexer.requires_fitting:
             print(f"  [pre-fit] Loading all graphs to fit PCA embedder '{variant}'...")
             all_pairs = list(dataset.stream())
             all_graphs = [p.G_vuln for p in all_pairs]
@@ -129,6 +133,12 @@ def build_index(cfg: dict) -> None:
         )
 
     index.save()
+
+    # Persist the fitted PCA alongside the index so query/batch runs can
+    # load it and transform-only without re-fitting on the wrong data.
+    pca_state = indexer.get_pca_state()
+    if pca_state is not None:
+        index.save_embedder_state(variant, pca_state)
 
     index_contract = IndexUpdateResult(
         run_id="index",
