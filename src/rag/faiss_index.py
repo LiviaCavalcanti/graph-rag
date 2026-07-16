@@ -46,3 +46,27 @@ class FAISSIndex:
         vec = embedding.reshape(1, -1).astype(np.float32)
         self.index.add(vec)
         self.metadata.append(meta)
+
+    # ── PCA state persistence ───────────────────────────────────────────────
+
+    def embedder_state_path(self, variant: str) -> Path:
+        """Path for the PCA state file co-located with the FAISS index."""
+        return self.index_path.with_name(f"{variant}__embedder_state.joblib")
+
+    def save_embedder_state(self, variant: str, state: dict) -> None:
+        """Persist the fitted PCA alongside the index vectors."""
+        import joblib
+        path = self.embedder_state_path(variant)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump(state, path)
+        print(f"Embedder PCA state saved → {path}")
+
+    def load_embedder_state(self, variant: str) -> "dict | None":
+        """Load a previously persisted PCA state, or None if not found."""
+        import joblib
+        path = self.embedder_state_path(variant)
+        if not path.exists():
+            return None
+        state = joblib.load(path)
+        print(f"Embedder PCA state loaded ← {path}")
+        return state
