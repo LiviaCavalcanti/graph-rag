@@ -147,6 +147,8 @@ def analyze(
         "bleu_1", "bleu_2", "bleu_4",
         "bertscore_precision", "bertscore_recall", "bertscore_f1",
         "rouge1_f1", "rouge2_f1", "rougeL_f1", "rougeL_precision", "rougeL_recall",
+        "hunk_f1", "hunk_added_f1", "hunk_removed_f1",
+        "hunk_jaccard", "hunk_token_jaccard",
     ]
     aggregates = {}
     for mk in metric_keys:
@@ -177,6 +179,7 @@ def analyze(
             "avg_rouge1_f1": _cwe_avg("rouge1_f1"),
             "avg_rouge2_f1": _cwe_avg("rouge2_f1"),
             "avg_rougeL_f1": _cwe_avg("rougeL_f1"),
+            "avg_hunk_f1": _cwe_avg("hunk_f1"),
         }
 
     # Per-variant breakdown
@@ -199,6 +202,7 @@ def analyze(
             "avg_rouge1_f1": _var_avg("rouge1_f1"),
             "avg_rouge2_f1": _var_avg("rouge2_f1"),
             "avg_rougeL_f1": _var_avg("rougeL_f1"),
+            "avg_hunk_f1": _var_avg("hunk_f1"),
         }
 
     # LLM evaluation summary
