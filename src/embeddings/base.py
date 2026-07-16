@@ -44,6 +44,27 @@ class BaseEmbedder(ABC):
     @abstractmethod
     def name(self) -> str: ...
 
+    # ── PCA lifecycle contract ───────────────────────────────────────────
+    # Embedders that apply a data-dependent projection (PCA) set this to
+    # True and implement fit() / get_pca_state() / load_pca_state().
+    # Non-PCA embedders (WL, GIN, NetLSD, …) leave all three as no-ops.
+    #
+    # Training rule:  fit() once on the full index corpus inside build_index.
+    # Inference rule: load_pca_state() from the persisted artifact; never
+    #                 call fit() again at query / batch time.
+    requires_fitting: bool = False
+
+    def fit(self, graphs: list) -> None:
+        """Fit PCA on a representative corpus.  No-op for non-PCA embedders."""
+
+    def get_pca_state(self) -> "dict | None":
+        """Return serialisable PCA state for persistence.  None if no PCA."""
+        return None
+
+    def load_pca_state(self, state: dict) -> None:
+        """Restore PCA state produced by get_pca_state().  No-op if no PCA."""
+
+
 
 def resolve_codebert_path(cfg: dict) -> str:
     """Resolve the local CodeBERT model path from an ``embeddings`` config.
