@@ -373,7 +373,6 @@ class VulnPatternEmbedder(BaseEmbedder):
         self._pca = PCA(n_components=n_comp, random_state=42)
         self._pca.fit(raw)
         self._fitted = True
-        self.dim = n_comp
         expl = self._pca.explained_variance_ratio_.sum()
         print(f"    [vuln_pattern] PCA fitted — {n_comp} comp, explained variance: {expl:.2%}")
 
@@ -499,7 +498,6 @@ class CodeBERTPatternEmbedder(BaseEmbedder):
         self._pca = PCA(n_components=n_comp, random_state=42)
         self._pca.fit(valid_raw)
         self._fitted = True
-        self.dim = n_comp
         expl = self._pca.explained_variance_ratio_.sum()
         print(f"    [{self.name}] PCA fitted — {n_comp} comp, explained variance: {expl:.2%}")
 
@@ -628,7 +626,6 @@ class CodeBERTFlowPatternEmbedder(BaseEmbedder):
         self._pca = PCA(n_components=n_comp, random_state=42)
         self._pca.fit(valid_raw)
         self._fitted = True
-        self.dim = n_comp
         expl = self._pca.explained_variance_ratio_.sum()
         print(f"    [{self.name}] PCA fitted — {n_comp} comp, explained variance: {expl:.2%}")
 
