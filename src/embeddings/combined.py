@@ -15,6 +15,8 @@ class CombinedEmbedder(BaseEmbedder):
     data distribution changes significantly.
     """
 
+    requires_fitting = True
+
     def __init__(self, cfg: dict):
         super().__init__(cfg)
         # self._netlsd = NetLSDEmbedder(cfg)
@@ -66,6 +68,17 @@ class CombinedEmbedder(BaseEmbedder):
         print(
             f"    [combined] PCA fitted — dim={n_components}, explained variance: {explained:.2%}"
         )
+
+    def get_pca_state(self) -> dict | None:
+        if not self._fitted or self._pca is None:
+            return None
+        return {"pca": self._pca, "dim": self.dim}
+
+    def load_pca_state(self, state: dict) -> None:
+        self._pca = state["pca"]
+        self.dim = state["dim"]
+        self._fitted = True
+        print(f"    [combined] PCA state loaded (dim={self.dim})")
 
     def embed_many(self, graphs: list[nx.MultiDiGraph]) -> np.ndarray:
         # Batch embed with each sub-embedder (more efficient than per-graph calls)
