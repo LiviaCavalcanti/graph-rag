@@ -69,10 +69,10 @@ from pathlib import Path
 from typing import Any, Callable
 
 # ── Experiment entry points ──────────────────────────────────────────
-from cvefixes_experiments.scripts.pipeline_verification.exp_method_vs_file_level import (
+from cvefixes_experiments.scripts.performance.exp_method_vs_file_level import (
     run_comparison as run_method_vs_file,
 )
-from cvefixes_experiments.scripts.pipeline_verification.exp_cvefixes_index_distribution import (
+from cvefixes_experiments.scripts.performance.exp_cvefixes_index_distribution import (
     run_study as run_index_distribution,
 )
 from src.metrics.threshold_analysis import build_analysis
