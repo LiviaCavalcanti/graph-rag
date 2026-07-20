@@ -57,18 +57,12 @@ import numpy as np
 import yaml
 
 from cvefixes_experiments.scripts.performance.exp_cvefixes_retrieval_grid_file_level import (
-    CVEFixesFileLevelRetrievalExperiment,
-    _normalize_embedder_name,
-    _prepare_cfg,
-    _sync_top_level_split,
-)
+    CVEFixesFileLevelRetrievalExperiment, _normalize_embedder_name,
+    _prepare_cfg, _sync_top_level_split)
 from src.embeddings import REGISTRY as EMBEDDER_REGISTRY
 from src.metrics.metrics import embedding_space_stats
-from src.metrics.retrieval_eval import (
-    cve_retrieval_metrics,
-    cwe_recall_metrics,
-    retrieve_all,
-)
+from src.metrics.retrieval_eval import (cve_retrieval_metrics,
+                                        cwe_recall_metrics, retrieve_all)
 from src.rag.hnsw import HNSWIndex
 from src.rag.utils import populate_index
 
@@ -268,7 +262,8 @@ def run_variant_retrieval(
     )
 
     try:
-        from experiments.dashboard_scripts.dashboard import generate_html_dashboard
+        from experiments.dashboard_scripts.dashboard import \
+            generate_html_dashboard
 
         generate_html_dashboard(str(variant_dir))
         print(f"  Dashboard -> {variant_dir / 'dashboard.html'}")

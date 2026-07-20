@@ -26,8 +26,8 @@ from typing import Any
 import networkx as nx
 import yaml
 
-from experiments.exp.retrieval_experiment import RetrievalGridExperiment
 from experiments.base import ExperimentOutput
+from experiments.exp.retrieval_experiment import RetrievalGridExperiment
 from src.data.cvefixes import CVEFixesDataset
 from src.data.sampling import sample_cve_aware
 from src.embeddings import REGISTRY as EMBEDDER_REGISTRY
@@ -65,30 +65,41 @@ class CVEFixesFileLevelRetrievalExperiment(RetrievalGridExperiment):
 
     def load_data(self, cfg: dict) -> dict[str, Any]:
         """Load file-level pairs: metadata from filesystem, split, then load graphs for needed pairs."""
-        from src.data.pipeline import cpg_dir_for, load_cpg_dirs_parallel, compute_graph_diff
-        from src.data.split import build_split
-        from collections import Counter
         import time
-        
+        from collections import Counter
+
+        from src.data.pipeline import (compute_graph_diff, cpg_dir_for,
+                                       load_cpg_dirs_parallel)
+        from src.data.split import build_split
+
         # Use CVEFixesDataset to load file-level pairs
         cvefixes_cfg = cfg.get("data", {}).get("cvefixes", {})
         dataset = CVEFixesDataset(cvefixes_cfg)
         self._dataset = dataset
         graphml_root = cvefixes_cfg.get("graphml_root", "graphml_cvefixes_file")
-        
+
         # Step 1: Load metadata from filesystem (instant — reads metadata.json files)
         # Falls back to DB query if no metadata.json files found
         from pathlib import Path
-        metadata_files = list(Path(graphml_root).glob("*/metadata.json")) if Path(graphml_root).exists() else []
-        
+
+        metadata_files = (
+            list(Path(graphml_root).glob("*/metadata.json"))
+            if Path(graphml_root).exists()
+            else []
+        )
+
         if metadata_files:
             all_file_pairs = dataset.load_from_filesystem()
-            print(f"  [CVEfixes] loaded {len(all_file_pairs)} file-level pairs from filesystem")
+            print(
+                f"  [CVEfixes] loaded {len(all_file_pairs)} file-level pairs from filesystem"
+            )
         else:
-            print(f"  [CVEfixes] no metadata.json found in {graphml_root}, falling back to DB query")
+            print(
+                f"  [CVEfixes] no metadata.json found in {graphml_root}, falling back to DB query"
+            )
             all_file_pairs = dataset.load_lightweight_file_level()
             print(f"  [CVEfixes] loaded {len(all_file_pairs)} file-level pairs from DB")
-        
+
         # Step 1b: Optional CVE-aware distribution sampling. Builds a reshaped
         # sample (natural vs. uniform CWE mix) so we can measure how the dataset
         # distribution affects retrieval. Whole CVE groups are kept together.
@@ -115,9 +126,9 @@ class CVEFixesFileLevelRetrievalExperiment(RetrievalGridExperiment):
         # Reuses the same CVE/CWE-aware split as the method-level experiment so
         # index/query are disjoint and every query has same-CVE support in index.
         # Settings come from config experiment.split (seed, test_ratio, enabled).
-        from cvefixes_experiments.scripts.performance.exp_cvefixes_retrieval_grid import (
-            _split_cvefixes_pairs,
-        )
+        from cvefixes_experiments.scripts.performance.exp_cvefixes_retrieval_grid import \
+            _split_cvefixes_pairs
+
         split_cfg = cfg.get("experiment", {}).get("split", {})
         if split_cfg.get("enabled", True):
             index_pairs, query_pairs, split_info = _split_cvefixes_pairs(
@@ -129,33 +140,47 @@ class CVEFixesFileLevelRetrievalExperiment(RetrievalGridExperiment):
         else:
             index_pairs, query_pairs, split_info = build_split(all_file_pairs, cfg)
         split_info["sampling"] = sample_info
-        print(f"  Split -> index={len(index_pairs)} files  query={len(query_pairs)} files")
+        print(
+            f"  Split -> index={len(index_pairs)} files  query={len(query_pairs)} files"
+        )
         print(f"  Index CWE dist: {dict(Counter(p.cwe_id for p in index_pairs))}")
         print(f"  Query CWE dist: {dict(Counter(p.cwe_id for p in query_pairs))}")
-        
+
         # Step 3: Load graphs ONLY for pairs we'll actually use (index + query)
         # File-level graphs: one CPG per file (dir_name = CVE-XXXX_fYYYYY)
         needed_pairs = list(index_pairs) + list(query_pairs)
-        
+
         graph_dirs_before = []
         graph_dirs_after = []
         for p in needed_pairs:
             dir_name = p.meta["dir_name"]
-            graph_dirs_before.append(cpg_dir_for(graphml_root, cve_id=dir_name, variant="original", version="before"))
-            graph_dirs_after.append(cpg_dir_for(graphml_root, cve_id=dir_name, variant="original", version="after"))
-        
+            graph_dirs_before.append(
+                cpg_dir_for(
+                    graphml_root, cve_id=dir_name, variant="original", version="before"
+                )
+            )
+            graph_dirs_after.append(
+                cpg_dir_for(
+                    graphml_root, cve_id=dir_name, variant="original", version="after"
+                )
+            )
+
         all_dirs = graph_dirs_before + graph_dirs_after
-        print(f"  Loading {len(all_dirs)} graphs in parallel for {len(needed_pairs)} pairs...")
+        print(
+            f"  Loading {len(all_dirs)} graphs in parallel for {len(needed_pairs)} pairs..."
+        )
         t0 = time.perf_counter()
         loaded_graphs = load_cpg_dirs_parallel(all_dirs, max_workers=8)
-        print(f"  Loaded {len(loaded_graphs)}/{len(all_dirs)} graphs in {time.perf_counter()-t0:.1f}s")
-        
+        print(
+            f"  Loaded {len(loaded_graphs)}/{len(all_dirs)} graphs in {time.perf_counter()-t0:.1f}s"
+        )
+
         # Assign graphs to pairs
         loaded_count = 0
         for i, p in enumerate(needed_pairs):
             dir_b = graph_dirs_before[i]
             dir_a = graph_dirs_after[i]
-            
+
             if dir_b in loaded_graphs and dir_a in loaded_graphs:
                 G_before = loaded_graphs[dir_b]
                 G_after = loaded_graphs[dir_a]
@@ -164,14 +189,18 @@ class CVEFixesFileLevelRetrievalExperiment(RetrievalGridExperiment):
                     p.G_after = G_after
                     p.G_vuln = compute_graph_diff(G_before, G_after)
                     loaded_count += 1
-        
-        print(f"  Successfully populated {loaded_count}/{len(needed_pairs)} pairs with graphs")
-        
+
+        print(
+            f"  Successfully populated {loaded_count}/{len(needed_pairs)} pairs with graphs"
+        )
+
         # Filter out pairs that have no graphs
         index_pairs = [p for p in index_pairs if p.G_before.number_of_nodes() > 0]
         query_pairs = [p for p in query_pairs if p.G_before.number_of_nodes() > 0]
-        print(f"  After graph filter: index={len(index_pairs)}  query={len(query_pairs)}")
-        
+        print(
+            f"  After graph filter: index={len(index_pairs)}  query={len(query_pairs)}"
+        )
+
         return {
             "pairs": all_file_pairs,
             "index_pairs": index_pairs,
@@ -180,13 +209,14 @@ class CVEFixesFileLevelRetrievalExperiment(RetrievalGridExperiment):
             "sample_info": sample_info,
         }
 
-
     def after_run(self, output: ExperimentOutput) -> None:
         """Generate dashboard after run."""
         super().after_run(output)
-        
+
         try:
-            from experiments.dashboard_scripts.dashboard import generate_html_dashboard
+            from experiments.dashboard_scripts.dashboard import \
+                generate_html_dashboard
+
             generate_html_dashboard(str(output.run_dir))
             print(f"Dashboard -> {output.run_dir / 'dashboard.html'}")
         except Exception as exc:
@@ -416,4 +446,3 @@ if __name__ == "__main__":
         min_cves_per_cwe=args.min_cves_per_cwe,
         seed=args.seed,
     )
-

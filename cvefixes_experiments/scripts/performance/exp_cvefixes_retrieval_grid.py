@@ -27,8 +27,8 @@ from typing import Any
 
 import yaml
 
-from experiments.exp.retrieval_experiment import RetrievalGridExperiment
 from experiments.base import ExperimentOutput
+from experiments.exp.retrieval_experiment import RetrievalGridExperiment
 from src.data import load_pairs
 from src.embeddings import REGISTRY as EMBEDDER_REGISTRY
 
@@ -179,7 +179,11 @@ class CVEFixesRetrievalComparisonExperiment(RetrievalGridExperiment):
         pairs = load_pairs(cfg)
 
         # Keep only pairs with non-empty vulnerability slices.
-        pairs = [p for p in pairs if getattr(p, "G_vuln", None) and p.G_vuln.number_of_nodes() > 0]
+        pairs = [
+            p
+            for p in pairs
+            if getattr(p, "G_vuln", None) and p.G_vuln.number_of_nodes() > 0
+        ]
 
         if self._max_pairs_per_cwe > 0:
             pairs = _sample_per_cwe(pairs, self._max_pairs_per_cwe, self._split_seed)
@@ -209,7 +213,8 @@ class CVEFixesRetrievalComparisonExperiment(RetrievalGridExperiment):
 
         # Generate the unified HTML dashboard used by pipeline_verification.
         try:
-            from experiments.dashboard_scripts.dashboard import generate_html_dashboard
+            from experiments.dashboard_scripts.dashboard import \
+                generate_html_dashboard
 
             generate_html_dashboard(str(output.run_dir))
             print(f"Dashboard -> {output.run_dir / 'dashboard.html'}")
