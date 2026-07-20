@@ -295,6 +295,13 @@ if __name__ == "__main__":
         default=None,
         help="embedder name to use for query mode (default: config rag.embedding_variant).",
     )
+    parser.add_argument(
+        "--output-dir",
+        default=None,
+        help="base directory for run outputs (query/batch modes), overrides the "
+        "default experiments/output/. Useful to consolidate multiple runs "
+        "(e.g. one per embedding variant) under one parent folder.",
+    )
 
     args = parser.parse_args()
     app_cfg = AppConfig.from_yaml(args.config)
@@ -356,6 +363,7 @@ if __name__ == "__main__":
             max_queries=args.max_queries,
             batch_size=args.batch_size,
             resume=args.resume,
+            output_dir=Path(args.output_dir) if args.output_dir else None,
             architecture=args.architecture
             or agent_cfg.get("architecture", "single_turn"),
             prompt_variant=args.prompt_variant
