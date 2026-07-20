@@ -255,30 +255,37 @@ def main() -> None:
         for cwe in sorted(target_cwes)
     }
 
-    # Assign each CVE to index/query ONCE globally (not per CWE class).
-    # A CVE can appear in multiple CWE classes (multi-CWE entries); splitting
-    # per class independently could put the same (cve, func) in both index
-    # and query depending on which class ran the random split first.
-    all_cves_order: list[str] = []
-    seen_cves: set[str] = set()
-    for cwe in sorted(target_cwes):
-        for cve, _func in balanced_classes[cwe]:
-            if cve not in seen_cves:
-                seen_cves.add(cve)
-                all_cves_order.append(cve)
-
-    shuffled_cves = all_cves_order[:]
-    rng.shuffle(shuffled_cves)
-    n_query_cves = max(1, round(len(shuffled_cves) * QUERY_RATIO))
-    query_cve_set = set(shuffled_cves[:n_query_cves])
-
+    # Split each CVE's functions ~half/half between index and query.
+    # This is a retrieval pipeline: we WANT the query's CVE to already be
+    # present in the index (oracle-style), so a CVE is never wholly
+    # confined to only index or only query. For a CVE with n functions,
+    # floor(n/2) go to query and the rest to index (at least 1 each side
+    # since MIN_PER_CVE=3).
     index_list: list[dict[str, Any]] = []
     query_list: list[dict[str, Any]] = []
     for cwe, entries in balanced_classes.items():
+        by_cve: dict[str, list[str]] = defaultdict(list)
+        cve_order: list[str] = []
         for cve, func in entries:
-            bucket = query_list if cve in query_cve_set else index_list
-            bucket.append(
-                {"cve_id": cve, "func_name": func, "variant": "original", "cwe_id": cwe}
+            if cve not in by_cve:
+                cve_order.append(cve)
+            by_cve[cve].append(func)
+
+        for cve in cve_order:
+            funcs = sorted(by_cve[cve])
+            local_rng = random.Random(f"{SEED}:{cwe}:{cve}")
+            local_rng.shuffle(funcs)
+            n_query = max(1, len(funcs) // 2)
+            n_query = min(n_query, len(funcs) - 1)  # keep at least 1 in index
+            query_funcs = funcs[:n_query]
+            index_funcs = funcs[n_query:]
+            index_list.extend(
+                {"cve_id": cve, "func_name": f, "variant": "original", "cwe_id": cwe}
+                for f in index_funcs
+            )
+            query_list.extend(
+                {"cve_id": cve, "func_name": f, "variant": "original", "cwe_id": cwe}
+                for f in query_funcs
             )
 
     index_list.sort(key=lambda x: (x["cwe_id"], x["cve_id"], x["func_name"]))
@@ -303,10 +310,13 @@ def main() -> None:
 
     index_keys = {(e["cve_id"], e["func_name"], e["variant"]) for e in index_list}
     query_keys = {(e["cve_id"], e["func_name"], e["variant"]) for e in query_list}
-    assert not (index_keys & query_keys), "index/query overlap"
+    assert not (index_keys & query_keys), "index/query overlap (same function in both)"
     index_cves = {e["cve_id"] for e in index_list}
     query_cves = {e["cve_id"] for e in query_list}
-    assert not (index_cves & query_cves), "same CVE split across index and query"
+    assert query_cves <= index_cves, (
+        "every query CVE must also have functions in the index "
+        f"(retrieval oracle requirement); missing: {query_cves - index_cves}"
+    )
 
     # balanced split_info.json output
     out = {
