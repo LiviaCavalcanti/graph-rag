@@ -1,17 +1,24 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Dataset sources
+#
+# Two modes, controlled by `data.active`:
+#
+#   [cvefixes_file]  (default) — loads prebuilt JSON entries; used for all
+#                                experiment steps (index / query / patching).
+#                                run_embedding_sweep.py overrides input_file
+#                                per step via _make_direct_cfg.
+#
+#   [cvefixes]       (export only) — streams raw CVEfixes DB; use ONLY for
+#                                `uv run python main.py --mode export` to
+#                                regenerate GraphML CPGs.  Switch back to
+#                                [cvefixes_file] immediately after.
+# ─────────────────────────────────────────────────────────────────────────────
 data:
-  # CVEfixes is now the primary dataset for ingestion and graph generation
   active: [cvefixes_file]
-  # AutoPatch dataset config. NOTE: patching (--mode batch/full) ALWAYS uses this
-  # dataset (independent of `active` above) since db_entry.json fields like
-  # root_cause/fix_list are AutoPatch-specific and required by the prompt
-  # builder. Override the root via --cve-root or PatchingExperiment(cve_root=...).
-  autopatch:
-    root: CVE-list
-    graphml_root: graphml_cvefixes_files
-    include_variants: true
-  # CVEfixes dataset configuration
-  # Source: https://zenodo.org/record/4476563 (DOI: 10.5281/zenodo.4476563)
-  # After downloading: gzcat CVEfixes.sql.gz | sqlite3 data/cvefixes/CVEfixes.db
+
+  # ── Raw CVEfixes DB (export / bulk CPG generation only) ──────────────────
+  # Do NOT use for index/query/patching — it streams the entire DB and
+  # ignores the prebuilt split in experiment.split.precomputed_split_dir.
   cvefixes:
     db_path: data/cvefixes/CVEfixes.db
     graphml_root: graphml_fixedcves_file
@@ -19,29 +26,27 @@ data:
     level: method
     max_lines: 500
     sample_limit: 0
-    # Optional: filter to specific CWEs (empty = load all CWEs)
-    # Common choices: [CWE-20, CWE-476, CWE-362, CWE-416, CWE-787, CWE-400, CWE-190]
-    target_cwes: [CWE-20, CWE-476, CWE-362, CWE-416, CWE-787, CWE-400, CWE-190]
-    # Pinned entries subset used by default for `main.py --mode query` (and
-    # therefore `--mode batch`/`full`), instead of streaming the whole DB.
-    # Matches cvefixes_experiments/scripts/performance/exp_method_vs_file_level.py.
-    # Override with --input-file <path>, or bypass with --full-dataset.
-    input_file: experiments_cves/selected_entries.json
-  # File-based CVEfixes variant: loads FunctionPairs from a pinned JSON
-  # entries file (src.data.entries_cache) instead of streaming the whole DB,
-  # with optional CVE-aware CWE resampling. Set `data.active: [cvefixes_file]`
-  # to use this for --mode query/full/experiment/diagnostics instead of the
-  # full DB (export/index still need the `cvefixes` dataset above for bulk
-  # CPG generation over the whole corpus).
+    target_cwes: [CWE-20, CWE-476, CWE-362, CWE-416, CWE-787, CWE-190]
+
+  # ── Prebuilt JSON entries (index / query / patching experiments) ──────────
+  # input_file MUST point to the combined pipeline_entries.json from the same
+  # directory as experiment.split.precomputed_split_dir (below).
+  # run_embedding_sweep.py further overrides this per step:
+  #   build_index  → <split_dir>/index_pairs_entries.json
+  #   run_batch_query + patching → <split_dir>/query_pairs_entries.json
   cvefixes_file:
-    input_file: experiments_cves/selected_entries.json
-    # original: keep the file's pairs unchanged (default).
-    # proportional: CVE-aware resample preserving natural CWE proportions.
-    # balanced: CVE-aware resample capping every CWE to the same quota.
+    input_file: testing_te_dataset/pipeline_entries.json
     sample_mode: original
     sample_total: null
     seed: 42
     min_cves_per_cwe: 1
+
+  # ── AutoPatch (patching prompt builder only) ──────────────────────────────
+  # Used by PatchingExperiment when dataset=autopatch.  Independent of `active`.
+  autopatch:
+    root: CVE-list
+    graphml_root: graphml_cvefixes_files
+    include_variants: true
 joern:
   workers: 8
   timeout_s: 120
@@ -135,8 +140,10 @@ embeddings:
       label_mode: cve           # cve or dir_name
       warm_start: true
 rag:
-  index_path: rag/cvefixes/faiss.index
-  metadata_path: rag/cvefixes/metadata.json
+  # Overridden per variant by run_embedding_sweep.py — these are fallback
+  # defaults for direct main.py --mode query calls only.
+  index_path: rag/cvefixes_file__G_vuln__hnsw.index
+  metadata_path: rag/cvefixes_file__G_vuln__hnsw_meta.json
   top_k: 5
   embedding_variant: codebert_pattern
   prompt_variant: graph       # default | graph
@@ -164,14 +171,13 @@ experiment:
     stratified: true
     seed: 42
     test_ratio: 0.2
-    include_real_in_index: true
-    augmented_train_ratio: 0.5
-    query_source: graphml_augmented
-    # Optional: path to a previously-generated split_info.json (its
-    # index_entries/query_entries, matched by cve_id+func_name) to reproduce
-    # an exact baseline index/query partition instead of resampling. Falls
-    # back to the stratified/random split above if unset or unreadable.
-    anchor_split_path: null
+    # ── Precomputed split (canonical) ─────────────────────────────────────
+    # Points to the output of data_pipeline.py.  MUST stay in sync with
+    # data.cvefixes_file.input_file (both reference the same pipeline run).
+    # run_embedding_sweep.py uses index_pairs_entries.json /
+    # query_pairs_entries.json from this directory directly.
+    precomputed_split_dir: testing_te_dataset/
+    precomputed_split_variant: balanced
   # Pipeline verification experiment configuration
   pipeline_verification:
     seed: 42
