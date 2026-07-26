@@ -20,10 +20,12 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
-import networkx as nx
+
 import yaml
 
 from experiments.base import ExperimentOutput
@@ -31,6 +33,65 @@ from experiments.exp.retrieval_experiment import RetrievalGridExperiment
 from src.data.cvefixes import CVEFixesDataset
 from src.data.sampling import sample_cve_aware
 from src.embeddings import REGISTRY as EMBEDDER_REGISTRY
+
+_SPLIT_VARIANT_FILENAMES = {
+    "balanced": "split_info_balanced.json",
+    "stratified": "split_info_stratified.json",
+}
+
+
+def _load_precomputed_split(
+    split_dir: str | Path, variant: str, all_pairs: list
+) -> tuple[list, list, dict[str, Any]]:
+    """Build index/query pairs from a precomputed split_info json folder.
+
+    Only the CVE membership (index vs. query) from the spec is used — the
+    spec's own entries (func_name) may be at a different granularity (e.g.
+    method-level) than the file-level pairs being split here. Every whole
+    CVE stays on one side, preserving the leakage-safe guarantee.
+    """
+    variant = variant.lower()
+    fname = _SPLIT_VARIANT_FILENAMES.get(variant)
+    if fname is None:
+        raise ValueError(
+            f"Unknown split variant '{variant}', expected one of {sorted(_SPLIT_VARIANT_FILENAMES)}"
+        )
+
+    split_path = Path(split_dir) / fname
+    if not split_path.exists():
+        raise FileNotFoundError(f"Precomputed split file not found: {split_path}")
+
+    spec = json.loads(split_path.read_text(encoding="utf-8"))
+    index_cves = {e["cve_id"] for e in spec.get("index", [])}
+    query_cves = {e["cve_id"] for e in spec.get("query", [])}
+
+    overlap = index_cves & query_cves
+    if overlap:
+        print(
+            f"  [PrecomputedSplit] WARNING: {len(overlap)} CVEs appear in both "
+            "index and query specs; treating as index-only."
+        )
+        query_cves -= overlap
+
+    index_pairs = [p for p in all_pairs if p.cve_id in index_cves]
+    query_pairs = [p for p in all_pairs if p.cve_id in query_cves]
+
+    split_info = {
+        "enabled": True,
+        "source": "precomputed",
+        "split_dir": str(split_dir),
+        "variant": variant,
+        "counts": {
+            "total": len(all_pairs),
+            "index_total": len(index_pairs),
+            "query_total": len(query_pairs),
+            "index_cve_unique": len({p.cve_id for p in index_pairs}),
+            "query_cve_unique": len({p.cve_id for p in query_pairs}),
+        },
+        "index_cwe_dist": dict(Counter(p.cwe_id for p in index_pairs)),
+        "query_cwe_dist": dict(Counter(p.cwe_id for p in query_pairs)),
+    }
+    return index_pairs, query_pairs, split_info
 
 
 def _normalize_embedder_name(name: str) -> str:
@@ -64,9 +125,15 @@ class CVEFixesFileLevelRetrievalExperiment(RetrievalGridExperiment):
         return "cvefixes_retrieval_grid_file_level"
 
     def load_data(self, cfg: dict) -> dict[str, Any]:
-        """Load file-level pairs: metadata from filesystem, split, then load graphs for needed pairs."""
+        """Load file-level pairs: metadata from filesystem, split, then load graphs for needed pairs.
+
+        The split can either be computed on the fly (CVE/CWE-aware, sampling
+        optional) or loaded from a precomputed folder produced by
+        utils/build_balanced_split.py (containing split_info_balanced.json
+        and/or split_info_stratified.json) via
+        cfg["experiment"]["precomputed_split"] = {"dir": ..., "variant": ...}.
+        """
         import time
-        from collections import Counter
 
         from src.data.pipeline import (compute_graph_diff, cpg_dir_for,
                                        load_cpg_dirs_parallel)
@@ -100,45 +167,59 @@ class CVEFixesFileLevelRetrievalExperiment(RetrievalGridExperiment):
             all_file_pairs = dataset.load_lightweight_file_level()
             print(f"  [CVEfixes] loaded {len(all_file_pairs)} file-level pairs from DB")
 
-        # Step 1b: Optional CVE-aware distribution sampling. Builds a reshaped
-        # sample (natural vs. uniform CWE mix) so we can measure how the dataset
-        # distribution affects retrieval. Whole CVE groups are kept together.
-        sampling_cfg = cfg.get("experiment", {}).get("sampling", {})
-        sample_mode = str(sampling_cfg.get("mode", "none") or "none")
-        if sample_mode in ("proportional", "balanced"):
-            all_file_pairs, sample_info = sample_cve_aware(
-                all_file_pairs,
-                mode=sample_mode,
-                seed=int(sampling_cfg.get("seed", 42)),
-                min_cves_per_cwe=int(sampling_cfg.get("min_cves_per_cwe", 3)),
-                total=sampling_cfg.get("total"),
-            )
-            per_cwe_pairs = {c: v["pairs"] for c, v in sample_info["per_cwe"].items()}
-            print(
-                f"  [Sampler] mode={sample_mode} -> {sample_info['result_total_pairs']} pairs, "
-                f"{sample_info['result_total_cves']} CVEs across {len(sample_info['per_cwe'])} CWEs"
-            )
-            print(f"  [Sampler] per-CWE pairs: {per_cwe_pairs}")
-        else:
-            sample_info = {"mode": "none", "applied": False}
+        precomputed_cfg = cfg.get("experiment", {}).get("precomputed_split", {})
+        precomputed_dir = precomputed_cfg.get("dir")
 
-        # Step 2: Leakage-safe train/test split BEFORE loading graphs.
-        # Reuses the same CVE/CWE-aware split as the method-level experiment so
-        # index/query are disjoint and every query has same-CVE support in index.
-        # Settings come from config experiment.split (seed, test_ratio, enabled).
-        from cvefixes_experiments.scripts.performance.exp_cvefixes_retrieval_grid import \
-            _split_cvefixes_pairs
-
-        split_cfg = cfg.get("experiment", {}).get("split", {})
-        if split_cfg.get("enabled", True):
-            index_pairs, query_pairs, split_info = _split_cvefixes_pairs(
+        if precomputed_dir:
+            # Precomputed split: skip on-the-fly sampling/splitting, just
+            # partition the loaded pairs by CVE membership from the spec.
+            sample_info = {"mode": "none", "applied": False, "skipped_reason": "precomputed_split"}
+            index_pairs, query_pairs, split_info = _load_precomputed_split(
+                precomputed_dir,
+                precomputed_cfg.get("variant", "balanced"),
                 all_file_pairs,
-                test_ratio=float(split_cfg.get("test_ratio", 0.2)),
-                seed=int(split_cfg.get("seed", 42)),
-                min_pairs_per_cve=int(split_cfg.get("min_pairs_per_cve", 2)),
             )
         else:
-            index_pairs, query_pairs, split_info = build_split(all_file_pairs, cfg)
+            # Step 1b: Optional CVE-aware distribution sampling. Builds a reshaped
+            # sample (natural vs. uniform CWE mix) so we can measure how the dataset
+            # distribution affects retrieval. Whole CVE groups are kept together.
+            sampling_cfg = cfg.get("experiment", {}).get("sampling", {})
+            sample_mode = str(sampling_cfg.get("mode", "none") or "none")
+            if sample_mode in ("proportional", "balanced"):
+                all_file_pairs, sample_info = sample_cve_aware(
+                    all_file_pairs,
+                    mode=sample_mode,
+                    seed=int(sampling_cfg.get("seed", 42)),
+                    min_cves_per_cwe=int(sampling_cfg.get("min_cves_per_cwe", 3)),
+                    total=sampling_cfg.get("total"),
+                )
+                per_cwe_pairs = {c: v["pairs"] for c, v in sample_info["per_cwe"].items()}
+                print(
+                    f"  [Sampler] mode={sample_mode} -> {sample_info['result_total_pairs']} pairs, "
+                    f"{sample_info['result_total_cves']} CVEs across {len(sample_info['per_cwe'])} CWEs"
+                )
+                print(f"  [Sampler] per-CWE pairs: {per_cwe_pairs}")
+            else:
+                sample_info = {"mode": "none", "applied": False}
+
+            # Step 2: Leakage-safe train/test split BEFORE loading graphs.
+            # Reuses the same CVE/CWE-aware split as the method-level experiment so
+            # index/query are disjoint and every query has same-CVE support in index.
+            # Settings come from config experiment.split (seed, test_ratio, enabled).
+            from cvefixes_experiments.scripts.performance.exp_cvefixes_retrieval_grid import \
+                _split_cvefixes_pairs
+
+            split_cfg = cfg.get("experiment", {}).get("split", {})
+            if split_cfg.get("enabled", True):
+                index_pairs, query_pairs, split_info = _split_cvefixes_pairs(
+                    all_file_pairs,
+                    test_ratio=float(split_cfg.get("test_ratio", 0.2)),
+                    seed=int(split_cfg.get("seed", 42)),
+                    min_pairs_per_cve=int(split_cfg.get("min_pairs_per_cve", 2)),
+                )
+            else:
+                index_pairs, query_pairs, split_info = build_split(all_file_pairs, cfg)
+
         split_info["sampling"] = sample_info
         print(
             f"  Split -> index={len(index_pairs)} files  query={len(query_pairs)} files"
@@ -281,8 +362,16 @@ def run_experiment(
     sample_total: int | None = None,
     min_cves_per_cwe: int = 3,
     seed: int | None = None,
+    precomputed_split_dir: str | None = None,
+    precomputed_split_variant: str = "balanced",
 ) -> ExperimentOutput:
-    """Run file-level retrieval experiment."""
+    """Run file-level retrieval experiment.
+
+    If ``precomputed_split_dir`` is given, index/query membership is taken
+    from ``<precomputed_split_dir>/split_info_{variant}.json`` (as produced
+    by utils/build_balanced_split.py) instead of computing the split on the
+    fly; sampling and on-the-fly splitting are skipped in that case.
+    """
     if embedders is None:
         embedders = ["codebert_seq", "codebert_pattern", "combined", "gin"]
     embedders = [_normalize_embedder_name(name) for name in embedders]
@@ -320,6 +409,12 @@ def run_experiment(
         "seed": int(cfg["experiment"].get("split", {}).get("seed", 42)),
     }
 
+    if precomputed_split_dir is not None:
+        cfg["experiment"]["precomputed_split"] = {
+            "dir": precomputed_split_dir,
+            "variant": precomputed_split_variant,
+        }
+
     # Keep proportional vs. balanced comparison runs in separate folders.
     if sample_mode in ("proportional", "balanced"):
         output_dir = str(Path(output_dir) / sample_mode)
@@ -337,6 +432,10 @@ def run_experiment(
         f"Sampling: mode={sample_mode} total={sample_total} "
         f"min_cves_per_cwe={min_cves_per_cwe}"
     )
+    if precomputed_split_dir is not None:
+        print(
+            f"Precomputed split: dir={precomputed_split_dir} variant={precomputed_split_variant}"
+        )
 
     exp = CVEFixesFileLevelRetrievalExperiment(
         run_leave_one_out=run_leave_one_out,
@@ -428,6 +527,22 @@ if __name__ == "__main__":
         default=None,
         help="Override split/sampling seed (default: config experiment.split.seed).",
     )
+    parser.add_argument(
+        "--precomputed-split-dir",
+        default=None,
+        help=(
+            "Path to a folder containing split_info_balanced.json / "
+            "split_info_stratified.json (as produced by utils/build_balanced_split.py). "
+            "If set, index/query membership is taken from this precomputed split "
+            "(by CVE) instead of computing it on the fly; sampling is skipped."
+        ),
+    )
+    parser.add_argument(
+        "--precomputed-split-variant",
+        choices=["balanced", "stratified"],
+        default="balanced",
+        help="Which precomputed split file to use from --precomputed-split-dir.",
+    )
 
     args = parser.parse_args()
 
@@ -445,4 +560,6 @@ if __name__ == "__main__":
         sample_total=args.sample_total,
         min_cves_per_cwe=args.min_cves_per_cwe,
         seed=args.seed,
+        precomputed_split_dir=args.precomputed_split_dir,
+        precomputed_split_variant=args.precomputed_split_variant,
     )
