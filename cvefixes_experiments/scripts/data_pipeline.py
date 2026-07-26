@@ -521,7 +521,15 @@ def step_7_precomputed_split(pairs_dict: list[dict], cfg: dict, output_dir: Path
     with (output_dir / "query_pairs.json").open("w") as f:
         json.dump({"entries": query_pairs}, f, indent=2)
 
-    # Save split info in the precomputed format
+    # Save split info in the precomputed format (index/query lists are required
+    # by exp_file_method_interface and exp_cvefixes_retrieval_grid_file_level).
+    def _to_spec(rows):
+        return [
+            {"cve_id": r["cve_id"], "func_name": r["func_name"],
+             "variant": r.get("variant", "original"), "cwe_id": r["cwe_id"]}
+            for r in rows
+        ]
+
     split_info = {
         "enabled": True,
         "mode": "stratified",
@@ -530,6 +538,8 @@ def step_7_precomputed_split(pairs_dict: list[dict], cfg: dict, output_dir: Path
         "index_n": len(index_pairs),
         "query_n": len(query_pairs),
         "total_n": len(index_pairs) + len(query_pairs),
+        "index": _to_spec(index_pairs),
+        "query": _to_spec(query_pairs),
     }
     with (output_dir / "split_info_balanced.json").open("w") as f:
         json.dump(split_info, f, indent=2)
@@ -597,96 +607,84 @@ def step_9_convert_to_entries_format(
     index_pairs: list[dict], query_pairs: list[dict], cfg: dict, output_dir: Path
 ) -> None:
     """Convert pipeline output to entries JSON format compatible with cvefixes_file.
-    
-    Reads CVE metadata from the CVEfixes database and reformats each pair into
-    the full entries structure, matching selected_entries.json format.
+
+    Re-enriches each pair with CVE-level metadata (description, severity, …)
+    from the CVEfixes DB, scoped to only the CVEs present in the sample.
+    Method code is taken directly from the pair dicts (already in memory from
+    step 7) — the large file-level blobs (code_before/code_after on
+    file_change) are intentionally NOT fetched to avoid OOM on WSL.
     """
     print("\n[STEP 9] Converting to entries format...")
-    
+
     import sqlite3
-    
+
     db_path = Path(cfg.get("data", {}).get("cvefixes", {}).get("db_path", "data/cvefixes/CVEfixes.db"))
     if not db_path.exists():
         print(f"  ✗ CVEfixes database not found at {db_path}, skipping Step 9")
         return
-    
-    # Build a lookup dict: (cve_id, cwe_id, method_change_id) -> full entry metadata
+
+    all_pairs = index_pairs + query_pairs
+    sample_cve_ids = list({p["cve_id"] for p in all_pairs})
+    placeholders = ",".join("?" * len(sample_cve_ids))
+    print(f"  Fetching CVE metadata for {len(sample_cve_ids)} CVEs from DB...")
+
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
-    
-    # Query CVE metadata and method code
-    query = """\
-    SELECT DISTINCT
-        cv.cve_id,
-        cv.description AS cve_description,
-        cv.severity AS cve_severity,
-        cv.cvss3_base_score,
-        cv.cvss3_base_severity,
-        cv.published_date,
-        cc.cwe_id,
-        m_after.method_change_id,
-        m_after.name AS func_name,
-        m_after.code AS method_code_after,
-        m_before.code AS method_code_before,
-        f.file_change_id,
-        f.filename,
-        f.code_before AS file_code_before,
-        f.code_after AS file_code_after,
-        f.programming_language
-    FROM method_change m_after
-    JOIN method_change m_before
-        ON m_before.file_change_id = m_after.file_change_id
-        AND m_before.name = m_after.name
-        AND m_before.before_change = 'True'
-    JOIN file_change f ON m_after.file_change_id = f.file_change_id
-    JOIN commits c ON f.hash = c.hash
-    JOIN fixes fx ON c.hash = fx.hash
-    JOIN cve cv ON fx.cve_id = cv.cve_id
-    LEFT JOIN cwe_classification cc ON cv.cve_id = cc.cve_id
-    WHERE m_after.before_change = 'False'
-    """
-    
-    cursor.execute(query)
-    all_rows = cursor.fetchall()
-    
-    # Index by (cve_id, method_change_id) for fast lookup
-    metadata_map = {}
-    for row in all_rows:
+
+    # Scoped to sample CVEs only; no file-level blobs (they are unused and
+    # can be hundreds of MB for the full DB).
+    cursor.execute(f"""
+        SELECT DISTINCT
+            cv.cve_id,
+            cv.description        AS cve_description,
+            cv.severity           AS cve_severity,
+            cv.cvss3_base_score,
+            cv.cvss3_base_severity,
+            cv.published_date,
+            cc.cwe_id,
+            m_after.method_change_id,
+            m_after.name          AS func_name,
+            f.file_change_id,
+            f.filename,
+            f.programming_language
+        FROM method_change m_after
+        JOIN file_change f  ON m_after.file_change_id = f.file_change_id
+        JOIN commits c      ON f.hash = c.hash
+        JOIN fixes fx       ON c.hash = fx.hash
+        JOIN cve cv         ON fx.cve_id = cv.cve_id
+        LEFT JOIN cwe_classification cc ON cv.cve_id = cc.cve_id
+        WHERE m_after.before_change = 'False'
+          AND cv.cve_id IN ({placeholders})
+    """, sample_cve_ids)
+
+    # Index by (cve_id, method_change_id) — code comes from the pair dict
+    metadata_map: dict[tuple, dict] = {}
+    for row in cursor.fetchall():
         key = (row["cve_id"], row["method_change_id"])
         metadata_map[key] = dict(row)
-    
+
     conn.close()
-    
+    print(f"  DB metadata loaded for {len(metadata_map)} (cve, method_change) rows")
+
     def _pair_to_entry(pair_dict: dict) -> dict:
         """Convert a pair dict to entries format."""
         cve_id = pair_dict["cve_id"]
         cwe_id = pair_dict["cwe_id"]
         method_change_id = pair_dict.get("method_change_id", "")
-        
-        # Lookup metadata
+
         meta = metadata_map.get((cve_id, method_change_id), {})
-        if not meta:
-            # Fallback: use data from pair_dict
-            meta = pair_dict
-        
-        # Compute changes statistics
-        code_before = meta.get("method_code_before", pair_dict.get("source_before", ""))
-        code_after = meta.get("method_code_after", pair_dict.get("source_after", ""))
-        lines_before = len(code_before.split('\n')) if code_before else 0
-        lines_after = len(code_after.split('\n')) if code_after else 0
-        
-        # Similarity (simple approximation)
-        similarity = 0.99 if lines_before == lines_after else 0.9
-        
-        entry = {
+
+        # Code is already present in the pair dict from the pipeline steps —
+        # no need to re-fetch it from the DB.
+        code_before = pair_dict.get("source_before", "")
+        code_after = pair_dict.get("source_after", "")
+        lines_before = len(code_before.splitlines()) if code_before else 0
+        lines_after = len(code_after.splitlines()) if code_after else 0
+
+        return {
             "cve_id": cve_id,
-            "cwe": [
-                {
-                    "cwe_id": cwe_id,
-                    "cwe_name": "Unknown",  # We don't have names in DB
-                }
-            ],
+            "cwe": [{"cwe_id": cwe_id, "cwe_name": "Unknown"}],
             "cve_description": meta.get("cve_description", ""),
             "cve_severity": meta.get("cve_severity", "UNKNOWN"),
             "cvss3_base_score": meta.get("cvss3_base_score", "0.0"),
@@ -696,20 +694,16 @@ def step_9_convert_to_entries_format(
             "filename": meta.get("filename", pair_dict.get("filename", "")),
             "programming_language": meta.get("programming_language", pair_dict.get("language", "")),
             "method_name": meta.get("func_name", pair_dict.get("func_name", "")),
-            "method_signature": "",  # Not available in DB
-            "code_before": meta.get("method_code_before", pair_dict.get("source_before", "")),
-            "code_after": meta.get("method_code_after", pair_dict.get("source_after", "")),
+            "method_signature": "",
+            "code_before": code_before,
+            "code_after": code_after,
             "changes": {
                 "lines_added": max(0, lines_after - lines_before),
                 "lines_removed": max(0, lines_before - lines_after),
                 "lines_before": lines_before,
                 "lines_after": lines_after,
-                "similarity_ratio": similarity,
             },
-            "file_code_before": meta.get("file_code_before", ""),
-            "file_code_after": meta.get("file_code_after", ""),
         }
-        return entry
     
     # Convert pairs
     index_entries = [_pair_to_entry(p) for p in index_pairs]
