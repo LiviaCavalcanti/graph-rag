@@ -40,8 +40,8 @@ and typical fix patterns for this class of vulnerability.
 was fixed. Extract the fix pattern.
 3. **Generate a patch**: Produce a unified diff (`diff -u` format) containing ONLY the \
 changed lines. Do NOT output the entire source file.
-4. **Verify**: Call `check_c_syntax` on the patched function body only (the `+++` side of \
-your diff). Pass the modified function, not the whole file.
+4. **(Optional) Verify**: Call `verify_fix_correctness` with your diagnosis and diff to \
+confirm the fix addresses the root cause. Skip if the fix is straightforward.
 5. **Submit**: Call `submit_patch` with your unified diff.
 
 ## Rules
@@ -50,7 +50,6 @@ your diff). Pass the modified function, not the whole file.
 - Do NOT invent struct members, functions, or APIs that don't exist in the codebase.
 - Keep the patch minimal — change only what's necessary to fix the vulnerability.
 - If the example's CWE differs from the target's CWE, adapt your approach accordingly.
-- If syntax check fails, fix the issues and re-check before submitting.
 - You MUST call `submit_patch` to finalize your answer.
 
 ## Output discipline
