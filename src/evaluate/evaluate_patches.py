@@ -21,12 +21,12 @@ import re
 import sys
 from pathlib import Path
 
-from src.data.autopatch import AutoPatchDataset
 from src.evaluate.preprocessing import extract_function_body
 from src.metrics.similarity import (
     bertscore_pair,
     bleu_score,
     compute_diff_details,
+    diff_hunk_scores,
     exact_match,
     line_level_ratio,
     normalised_edit_distance,
@@ -39,6 +39,26 @@ from src.metrics.similarity import (
 )
 
 # ── main evaluation ──────────────────────────────────────────────────
+
+
+def _load_ground_truth(gt_path_str: str, base_dir: Path) -> str | None:
+    """Load ground-truth source from an inline string or a file path.
+
+    Inline detection: the value contains a newline or is longer than 260
+    characters (too long to be a plain path).  Otherwise it is treated as a
+    path relative to *base_dir*, with a fallback to an absolute path.
+    """
+    if not gt_path_str:
+        return None
+    if "\n" in gt_path_str or len(gt_path_str) > 260:
+        return gt_path_str
+    candidate = base_dir / gt_path_str
+    if candidate.exists():
+        return candidate.read_text(errors="replace")
+    abs_path = Path(gt_path_str)
+    if abs_path.is_absolute() and abs_path.exists():
+        return abs_path.read_text(errors="replace")
+    return None
 
 
 def strip_c_comments(code: str) -> str:
@@ -59,6 +79,7 @@ def evaluate_one(record: dict, base_dir: Path, strip_comments: bool = False) -> 
         "query_cve": record.get("query_cve"),
         "query_cwe": record.get("query_cwe"),
         "query_variant": record.get("query_variant"),
+        "query_dir": record.get("query_dir", ""),
         "example_cve": record.get("example_cve"),
         "example_variant": record.get("example_variant"),
         "status": record.get("status"),
@@ -73,7 +94,7 @@ def evaluate_one(record: dict, base_dir: Path, strip_comments: bool = False) -> 
 
     cve_id = record.get("query_cve", "")
     variant = record.get("query_variant", "")
-    gt_full = AutoPatchDataset.load_ground_truth(cve_id, variant, gt_path_str, base_dir)
+    gt_full = _load_ground_truth(gt_path_str, base_dir)
 
     if gt_full is None:
         return {
@@ -89,11 +110,19 @@ def evaluate_one(record: dict, base_dir: Path, strip_comments: bool = False) -> 
     # Also keep the full file for a secondary comparison
     gt_full_stripped = gt_full.strip()
 
+    # Vulnerable baseline (the code the model was asked to patch) — enables the
+    # change-isolating diff-hunk metrics.  Taken from the inline ``target_code``
+    # field written by batch_inference; absent for older runs (hunk metrics
+    # are simply omitted from the output in that case).
+    baseline = (record.get("target_code") or "").strip()
+
     # ── optionally strip comments before comparison ──────────
     if strip_comments:
         generated = strip_c_comments(generated).strip()
         gt_body = strip_c_comments(gt_body).strip()
         gt_full_stripped = strip_c_comments(gt_full_stripped).strip()
+        if baseline:
+            baseline = strip_c_comments(baseline).strip()
 
     # ── compute metrics against extracted function body ──────────
     metrics_body = {
@@ -111,6 +140,12 @@ def evaluate_one(record: dict, base_dir: Path, strip_comments: bool = False) -> 
         "bleu_4": round(bleu_score(generated, gt_body, max_n=4), 4),
         **bertscore_pair(generated, gt_body),
         **{k: round(v, 4) for k, v in rouge_scores(generated, gt_body).items()},
+        # change-isolating metrics (vs the vulnerable baseline); omitted when
+        # the baseline is unavailable so aggregates simply skip them
+        **{
+            k: round(v, 4)
+            for k, v in diff_hunk_scores(generated, gt_body, baseline).items()
+        },
     }
 
     # ── compute metrics against full file (secondary) ────────────
@@ -193,6 +228,11 @@ def aggregate(results: list[dict]) -> dict:
         "avg_rouge1_f1": _avg("rouge1_f1"),
         "avg_rouge2_f1": _avg("rouge2_f1"),
         "avg_rougeL_f1": _avg("rougeL_f1"),
+        "avg_hunk_f1": _avg("hunk_f1"),
+        "avg_hunk_added_f1": _avg("hunk_added_f1"),
+        "avg_hunk_removed_f1": _avg("hunk_removed_f1"),
+        "avg_hunk_jaccard": _avg("hunk_jaccard"),
+        "avg_hunk_token_jaccard": _avg("hunk_token_jaccard"),
         "by_cwe": _aggregate_by_field(evaluated, "query_cwe"),
         "by_variant": _aggregate_by_field(evaluated, "query_variant"),
     }
@@ -227,6 +267,11 @@ def _aggregate_by_field(evaluated: list[dict], field: str) -> dict:
             ),
             "avg_rougeL_f1": round(
                 sum(r["metrics_vs_function_body"].get("rougeL_f1", 0) for r in recs)
+                / n,
+                4,
+            ),
+            "avg_hunk_f1": round(
+                sum(r["metrics_vs_function_body"].get("hunk_f1", 0) for r in recs)
                 / n,
                 4,
             ),
