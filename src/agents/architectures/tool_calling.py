@@ -12,6 +12,10 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import re
+import subprocess
+import tempfile
 import time
 
 from src.agents.backends import CompletionBackend, CompletionResult, get_default_backend
@@ -26,7 +30,7 @@ _SYSTEM_PROMPT = """\
 You are an expert C/C++ security engineer specializing in vulnerability patching.
 
 Your task: given vulnerable C code and a retrieved similar vulnerability example, \
-generate a correct patch that fixes the vulnerability.
+generate a minimal unified diff that fixes the vulnerability.
 
 ## Workflow
 
@@ -34,12 +38,11 @@ generate a correct patch that fixes the vulnerability.
 and typical fix patterns for this class of vulnerability.
 2. **Study the example**: Call `analyze_example_fix` to see how a similar vulnerability \
 was fixed. Extract the fix pattern.
-3. **Generate a patch**: Based on your diagnosis and the example pattern, write the \
-patched version of the target code. Apply the fix pattern adapted to the target's \
-specific context.
-4. **Verify**: Call `check_c_syntax` on your patch to catch syntax errors. \
-Optionally call `verify_fix_correctness` for semantic verification.
-5. **Submit**: Call `submit_patch` with your final, verified patch.
+3. **Generate a patch**: Produce a unified diff (`diff -u` format) containing ONLY the \
+changed lines. Do NOT output the entire source file.
+4. **Verify**: Call `check_c_syntax` on the patched function body only (the `+++` side of \
+your diff). Pass the modified function, not the whole file.
+5. **Submit**: Call `submit_patch` with your unified diff.
 
 ## Rules
 
@@ -49,6 +52,15 @@ Optionally call `verify_fix_correctness` for semantic verification.
 - If the example's CWE differs from the target's CWE, adapt your approach accordingly.
 - If syntax check fails, fix the issues and re-check before submitting.
 - You MUST call `submit_patch` to finalize your answer.
+
+## Output discipline
+
+- Do NOT write explanatory text between tool calls. Message content must be empty or \
+at most one short sentence.
+- All reasoning belongs in the `reasoning` argument of `submit_patch`, not in message \
+content.
+- The `patch` argument to `submit_patch` must be a unified diff string (lines starting \
+with `---`, `+++`, `@@`, ` `, `+`, `-`). Never regenerate the entire source file.
 """
 
 
@@ -82,7 +94,7 @@ class ToolCallingAgent:
     def run(self, ctx: PatchContext) -> AgentResult:
         model = f"azure/{self.model_name}"
         temperature = self.llm_params.get("temperature", 0.2)
-        max_tokens = self.llm_params.get("max_tokens", 4096)
+        max_tokens = self.llm_params.get("max_tokens", 8192)
 
         # Build tool execution context
         tool_ctx = {
@@ -190,8 +202,33 @@ class ToolCallingAgent:
 
                     # Check for terminal tool
                     if fn_name == "submit_patch":
-                        submitted_patch = fn_args.get("patch", "")
-                        submitted_reasoning = fn_args.get("reasoning", "")
+                        # Handle the gpt-4o errors of returning true to patch field instead of a string
+                        raw_patch = fn_args.get("patch", "")
+                        if isinstance(raw_patch, str) and raw_patch.strip():
+                            patch_text = raw_patch
+                            # Phase 2: if the model returned a unified diff,
+                            # apply it to the target code server-side so that
+                            # `generated_patch` in results.jsonl is always a
+                            # full file — evaluation metrics unchanged.
+                            if self._is_unified_diff(patch_text):
+                                applied = self._apply_diff(ctx.target_code, patch_text)
+                                if applied is not None:
+                                    logger.info(
+                                        "Applied unified diff → full file (%d chars)",
+                                        len(applied),
+                                    )
+                                    patch_text = applied
+                            submitted_patch = patch_text
+                            submitted_reasoning = fn_args.get("reasoning", "")
+                        else:
+                            # Model passed a non-string (e.g. boolean True) or empty
+                            # string. The tool already returned an error message that
+                            # will be fed back so the model can retry.
+                            logger.warning(
+                                "submit_patch: 'patch' arg is %s (not a non-empty string)"
+                                " — ignoring submission, model will receive error feedback",
+                                type(raw_patch).__name__,
+                            )
 
                     # Append tool result message
                     messages.append(
@@ -213,6 +250,33 @@ class ToolCallingAgent:
                     submitted_patch = self._try_extract_code(result.content)
                     submitted_reasoning = result.content[:200]
                 break
+            elif result.finish_reason == "length":
+                # Completion was cut off by the token limit. Inject a compact
+                # recovery prompt and continue so the model can retry with a
+                # tool call rather than verbose prose.
+                logger.warning(
+                    "finish_reason=length at iteration %d — injecting recovery prompt",
+                    iteration,
+                )
+                if iteration < self.max_iterations - 1:
+                    if result.content:
+                        messages.append(
+                            {"role": "assistant", "content": result.content}
+                        )
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": (
+                                "Your last response was cut off because it was too long. "
+                                "Do NOT write any text. "
+                                "Output ONLY a tool call with no explanatory prose."
+                            ),
+                        }
+                    )
+                    continue
+                else:
+                    logger.warning("finish_reason=length on last iteration — giving up")
+                    break
             else:
                 # Unexpected finish reason
                 logger.warning(
@@ -261,6 +325,47 @@ class ToolCallingAgent:
             "Use the available tools to understand the vulnerability and verify your fix.",
         ]
         return "\n".join(parts)
+
+    @staticmethod
+    def _is_unified_diff(text: str) -> bool:
+        """Return True when text looks like a unified diff (contains @@ hunk headers)."""
+        return bool(re.search(r"^@@\s+-\d+", text, re.MULTILINE))
+
+    @staticmethod
+    def _apply_diff(original: str, diff: str) -> str | None:
+        """Apply a unified diff to original code using the system ``patch`` utility.
+
+        Returns the full patched file content, or None if the application
+        failed (caller should fall back to the raw diff string).
+        """
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                orig_path = os.path.join(tmpdir, "original.c")
+                patch_path = os.path.join(tmpdir, "changes.patch")
+                out_path = os.path.join(tmpdir, "patched.c")
+
+                with open(orig_path, "w") as f:
+                    f.write(original)
+                with open(patch_path, "w") as f:
+                    f.write(diff)
+
+                proc = subprocess.run(
+                    ["patch", "-u", orig_path, patch_path, "-o", out_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                if proc.returncode == 0 and os.path.exists(out_path):
+                    with open(out_path) as f:
+                        return f.read()
+                logger.warning(
+                    "patch apply failed (rc=%d): %s",
+                    proc.returncode,
+                    proc.stderr[:300],
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("_apply_diff error: %s", exc)
+        return None
 
     @staticmethod
     def _try_extract_code(text: str) -> str | None:
