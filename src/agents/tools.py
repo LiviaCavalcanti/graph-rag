@@ -61,9 +61,9 @@ TOOL_SCHEMAS: list[dict] = [
         "function": {
             "name": "check_c_syntax",
             "description": (
-                "Check whether a C code snippet parses correctly. Returns 'OK' "
-                "if the syntax is valid, or a list of parse errors. Use this to "
-                "verify your generated patch before submitting."
+                "Check whether a C/C++ function body parses correctly. Pass ONLY "
+                "a valid C/C++ function body — NOT a unified diff. Returns 'OK' "
+                "or a list of parse errors."
             ),
             "parameters": {
                 "type": "object",
@@ -107,15 +107,21 @@ TOOL_SCHEMAS: list[dict] = [
         "function": {
             "name": "submit_patch",
             "description": (
-                "Submit your final patched code. Only call this after you have "
-                "verified the patch is correct. This ends the patching session."
+                "Submit your final patch as a unified diff. Only call this after "
+                "you have verified the patch is correct. This ends the patching "
+                "session."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "patch": {
                         "type": "string",
-                        "description": "The final patched C code.",
+                        "description": (
+                            "A unified diff string (`diff -u` format) showing ONLY "
+                            "the changed lines. Lines must start with `---`, `+++`, "
+                            "`@@`, ` ` (context), `+` (added), or `-` (removed). "
+                            "Do NOT include the entire source file."
+                        ),
                     },
                     "reasoning": {
                         "type": "string",
@@ -455,6 +461,12 @@ def _tool_submit_patch(args: dict, ctx: dict) -> str:
     """Terminal tool — marks the patch as final."""
     patch = args.get("patch", "")
     reasoning = args.get("reasoning", "")
+    if not isinstance(patch, str):
+        return (
+            f"Error: 'patch' must be a string containing the patched C code, "
+            f"got {type(patch).__name__}. "
+            "Please call submit_patch again with the full patched code as a string."
+        )
     if not patch.strip():
         return "Error: cannot submit empty patch"
     # The agent loop checks for this tool name to terminate

@@ -243,6 +243,33 @@ def _run_single_query(
     else:
         status = "parse_error"
 
+    # Compact, reproducible transcript for post-hoc analysis of multi-turn /
+    # tool-calling runs. Single-turn agents have exactly one turn and no tool
+    # calls, so this stays small; long tool arguments are truncated.
+    transcript = {
+        "turns": [
+            {
+                "finish_reason": t.finish_reason,
+                "prompt_tokens": t.prompt_tokens,
+                "completion_tokens": t.completion_tokens,
+                "raw_output_preview": (t.raw_output or "")[:500],
+            }
+            for t in result.turns
+        ],
+        "tool_calls": [
+            {
+                "iteration": tc.get("iteration"),
+                "tool": tc.get("tool"),
+                "arguments": {
+                    k: (v[:1000] if isinstance(v, str) else v)
+                    for k, v in (tc.get("arguments") or {}).items()
+                },
+                "output_preview": tc.get("output_preview", ""),
+            }
+            for tc in result.tool_calls
+        ],
+    }
+
     return {
         **base,
         "example_cve": example_pair.cve_id,
@@ -269,6 +296,7 @@ def _run_single_query(
         "prompt_fingerprint": result.prompt_fingerprint,
         "n_turns": result.n_turns,
         "n_tool_calls": result.n_tool_calls,
+        "transcript": transcript,
     }
 
 
