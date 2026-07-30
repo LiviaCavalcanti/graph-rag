@@ -83,9 +83,29 @@ def _make_direct_cfg(cfg: dict, entries_file: Path) -> dict:
     with the split machinery disabled.  Avoids the (cve_id, func_name)
     re-matching in build_split which can silently drop unresolved entries."""
     out = copy.deepcopy(cfg)
-    out.setdefault("data", {}).setdefault("cvefixes_file", {})["input_file"] = str(entries_file)
+    # Ensure the file-based dataset is active — critical: if data.active is
+    # still [cvefixes], build_index will stream the raw DB instead of the JSON.
+    out.setdefault("data", {})["active"] = ["cvefixes_file"]
+    out["data"].setdefault("cvefixes_file", {})["input_file"] = str(entries_file)
     split_cfg = out.setdefault("experiment", {}).setdefault("split", {})
     split_cfg["enabled"] = False
+    split_cfg.pop("precomputed_split_dir", None)
+    split_cfg.pop("precomputed_split_variant", None)
+    return out
+
+
+def _make_file_level_cfg(cfg: dict) -> dict:
+    """Return a config override that uses CVEFixesDataset in file-level mode.
+
+    Sets data.active=[cvefixes] with level=file so load_all() dispatches to
+    _load_file_level_with_graphs() (reads graphml_root metadata.json dirs).
+    Strips precomputed split entries paths since those are method-level files.
+    """
+    out = copy.deepcopy(cfg)
+    out.setdefault("data", {})["active"] = ["cvefixes"]
+    out["data"].setdefault("cvefixes", {})["level"] = "file"
+    split_cfg = out.setdefault("experiment", {}).setdefault("split", {})
+    split_cfg["enabled"] = True
     split_cfg.pop("precomputed_split_dir", None)
     split_cfg.pop("precomputed_split_variant", None)
     return out
@@ -108,25 +128,34 @@ def run_variant(base_cfg: dict, variant: str, sweep_dir: Path, args) -> dict:
     cfg["rag"]["index_path"] = str(indices_dir / f"{variant}__G_vuln__hnsw.index")
     cfg["rag"]["metadata_path"] = str(indices_dir / f"{variant}__G_vuln__hnsw_meta.json")
 
-    # ── Resolve prebuilt index / query pair files ───────────────────
-    # When pipeline_data_v0/ (or equivalent) already has the exact
-    # index_pairs_entries.json + query_pairs_entries.json produced by
-    # data_pipeline.py, use them directly as the dataset input rather
-    # than going through split_info re-matching (which can silently drop
-    # entries whose func_name doesn't match exactly).
-    split_dir_str = cfg.get("experiment", {}).get("split", {}).get("precomputed_split_dir")
-    index_cfg = cfg
-    query_cfg = cfg
-    if split_dir_str:
-        _sd = Path(split_dir_str)
-        _if = _sd / "index_pairs_entries.json"
-        _qf = _sd / "query_pairs_entries.json"
-        if _if.exists() and _qf.exists():
-            index_cfg = _make_direct_cfg(cfg, _if)
-            query_cfg = _make_direct_cfg(cfg, _qf)
-            print(f"  Using prebuilt pairs directly:")
-            print(f"    index → {_if}")
-            print(f"    query → {_qf}")
+    # ── Apply data-level override ────────────────────────────────────
+    data_level = getattr(args, "data_level", "method")
+    if data_level == "file":
+        cfg = _make_file_level_cfg(cfg)
+        index_cfg = cfg
+        query_cfg = cfg
+        print(f"  Using file-level graphs (graphml_root={cfg['data']['cvefixes']['graphml_root']})")
+    else:
+        # ── Resolve prebuilt index / query pair files ───────────────────
+        # When pipeline_data_v0/ (or equivalent) already has the exact
+        # index_pairs_entries.json + query_pairs_entries.json produced by
+        # data_pipeline.py, use them directly as the dataset input rather
+        # than going through split_info re-matching (which can silently drop
+        # entries whose func_name doesn't match exactly).
+        split_dir_str = cfg.get("experiment", {}).get("split", {}).get("precomputed_split_dir")
+        index_cfg = cfg
+        query_cfg = cfg
+        _if = _qf = None
+        if split_dir_str:
+            _sd = Path(split_dir_str)
+            _if = _sd / "index_pairs_entries.json"
+            _qf = _sd / "query_pairs_entries.json"
+            if _if.exists() and _qf.exists():
+                index_cfg = _make_direct_cfg(cfg, _if)
+                query_cfg = _make_direct_cfg(cfg, _qf)
+                print(f"  Using prebuilt pairs directly:")
+                print(f"    index → {_if}")
+                print(f"    query → {_qf}")
 
     # Save query_cfg as the canonical variant config (governs query +
     # patching + evaluation; index_cfg differs only in input_file).
@@ -136,18 +165,24 @@ def run_variant(base_cfg: dict, variant: str, sweep_dir: Path, args) -> dict:
     print(f"  Resolved config → {variant_config_path}")
 
     # ── 1/4 index ──────────────────────────────────────────────────
-    print(f"\n--- [1/4] index ({variant}) ---")
-    build_index(index_cfg)
+    existing_query_run = (getattr(args, "query_run", {}) or {}).get(variant)
+    if existing_query_run:
+        print(f"\n--- [1/4] index ({variant}) --- SKIPPED (--query-run provided)")
+        print(f"--- [2/4] query ({variant}) --- SKIPPED (using: {existing_query_run})")
+        query_run_dir = Path(existing_query_run)
+    else:
+        print(f"\n--- [1/4] index ({variant}) ---")
+        build_index(index_cfg)
 
-    # ── 2/4 query (full retrieval batch, no --max-queries) ─────────
-    print(f"\n--- [2/4] query ({variant}) ---")
-    query_args = SimpleNamespace(
-        index_dir=None,
-        embedding_variant=variant,
-        max_queries=None,
-        output_dir=str(variant_dir / "query"),
-    )
-    query_run_dir = run_batch_query(query_cfg, query_args)
+        # ── 2/4 query (full retrieval batch, no --max-queries) ─────────
+        print(f"\n--- [2/4] query ({variant}) ---")
+        query_args = SimpleNamespace(
+            index_dir=None,
+            embedding_variant=variant,
+            max_queries=None,
+            output_dir=str(variant_dir / "query"),
+        )
+        query_run_dir = run_batch_query(query_cfg, query_args)
 
     # ── 3/4 batch (LLM patching, capped by --max-queries) ───────────
     print(f"\n--- [3/4] batch ({variant}) ---")
@@ -185,11 +220,15 @@ def run_variant(base_cfg: dict, variant: str, sweep_dir: Path, args) -> dict:
         "query_run_dir": str(query_run_dir),
         "patch_run_dir": str(patch_run_dir),
         "results_jsonl": str(results_jsonl),
-        "split": {
-            "index_entries": str(_if) if split_dir_str and _if.exists() else None,
-            "query_entries": str(_qf) if split_dir_str and _qf.exists() else None,
-            "precomputed_split_dir": split_dir_str,
-        },
+        "split": (
+            {"data_level": "file", "graphml_root": cfg["data"]["cvefixes"]["graphml_root"]}
+            if data_level == "file"
+            else {
+                "index_entries": str(_if) if split_dir_str and _if.exists() else None,
+                "query_entries": str(_qf) if split_dir_str and _qf.exists() else None,
+                "precomputed_split_dir": split_dir_str,
+            }
+        ),
     }
 
 
@@ -269,9 +308,15 @@ def main():
         help=f"embedding variants to sweep (default: {DEFAULT_VARIANTS})",
     )
     parser.add_argument("--architecture", default="tool_calling")
-    parser.add_argument("--max-queries", type=int, default=5)
+    parser.add_argument("--max-queries", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=10)
     parser.add_argument("--model", default=None)
+    parser.add_argument(
+        "--data-level", default="method", choices=["method", "file"],
+        help="Graph granularity: 'method' (default, uses prebuilt entries JSON) or "
+             "'file' (uses CVEFixesDataset with level=file, loading from graphml_root "
+             "metadata.json dirs — ignores --precomputed-split-dir)",
+    )
     parser.add_argument(
         "--strip-comments", action="store_true", default=True,
         help="strip C/C++ comments before patch comparison (default: on)",
@@ -283,6 +328,13 @@ def main():
     parser.add_argument(
         "--output-root", default=str(DEFAULT_OUTPUT_ROOT),
         help="parent directory under which the sweep's output folder is created",
+    )
+    parser.add_argument(
+        "--query-run", action="append", default=[],
+        metavar="VARIANT=QUERY_RUN_DIR",
+        help="skip index+query phases for VARIANT and reuse an existing query run "
+        "(e.g. combined=cvefixes_experiments/output/.../combined/query/<run_dir>). "
+        "Can be repeated for multiple variants.",
     )
     parser.add_argument(
         "--extra-summary", action="append", default=[],
@@ -318,6 +370,17 @@ def main():
             f"Pinned split: {args.precomputed_split_dir} "
             f"(variant={args.precomputed_split_variant}) — applied to all variants"
         )
+
+    # Parse --query-run specs into a dict: variant → path
+    _qr_specs = args.query_run  # list from argparse
+    args.query_run = {}
+    for spec in _qr_specs:
+        variant_name, _, run_path = spec.partition("=")
+        if not run_path:
+            parser.error(f"--query-run must be VARIANT=PATH, got: {spec!r}")
+        args.query_run[variant_name.strip()] = run_path.strip()
+    if args.query_run:
+        print(f"Reusing existing query runs: {args.query_run}")
 
     _run_id, sweep_dir = make_run_dir(args.tag, output_dir=Path(args.output_root))
     print(f"Consolidated output folder: {sweep_dir}")
