@@ -487,6 +487,81 @@ def _render_agent_behavior_tab(ab: dict) -> str:
     elif ab.get("n_called_verify", 0) > 0:
         viol_html = "<p style='color:#2e7d32;margin-top:1.5rem'>✓ No verification violations — agent always respected INCORRECT verdicts.</p>"
 
+    # ── Language breakdown ─────────────────────────────────────────
+    lang_beh = ab.get("by_language") or {}
+    lang_beh_rows = ""
+    lang_colors = {"C": "var(--c5)", "C++": "var(--c1)", "unknown": "var(--muted)"}
+    for lang, stats in sorted(lang_beh.items()):
+        ab_score = stats.get("avg_bertscore")
+        dot = f"<span style='display:inline-block;width:10px;height:10px;border-radius:50%;background:{lang_colors.get(lang, 'var(--muted)')};margin-right:5px'></span>"
+        lang_beh_rows += (
+            f"<tr>"
+            f"<td>{dot}<strong>{escape(lang)}</strong></td>"
+            f"<td>{stats['count']}</td>"
+            f"<td>{fmt(stats.get('avg_turns'), 1)}</td>"
+            f"<td>{fmt(stats.get('verify_rate'), 1)}%</td>"
+            f"<td style='color:{score_color(1 - (stats.get(\"violation_rate\") or 0)/100)}'>"
+            f"{fmt(stats.get('violation_rate'), 1)}%</td>"
+            f"<td style='color:{score_color((100 - (stats.get(\"error_rate\") or 0))/100)}'>"
+            f"{fmt(stats.get('error_rate'), 1)}%</td>"
+            f"<td>{fmt(stats.get('submit_fail_rate'), 1)}%</td>"
+            f"<td style='color:{score_color(ab_score)}'>{fmt(ab_score, 3)}</td>"
+            f"<td>{fmt(stats.get('cve_match_rate'), 1)}%</td>"
+            f"<td>{fmt(stats.get('cwe_match_rate'), 1)}%</td>"
+            f"<td>{fmt(stats.get('avg_retrieval_sim'), 3)}</td>"
+            f"</tr>\n"
+        )
+
+    # Language × CWE heatmap table
+    lang_cwe_data = ab.get("by_language_cwe") or {}
+    lang_cwe_rows = ""
+    for key, stats in sorted(lang_cwe_data.items(), key=lambda x: (x[1]["language"], x[1]["cwe"])):
+        lang = stats["language"]
+        cwe = stats["cwe"]
+        ab_score = stats.get("avg_bertscore")
+        dot = f"<span style='display:inline-block;width:8px;height:8px;border-radius:50%;background:{lang_colors.get(lang, 'var(--muted)')};margin-right:4px'></span>"
+        lang_cwe_rows += (
+            f"<tr>"
+            f"<td>{dot}{escape(lang)}</td>"
+            f"<td>{escape(cwe)}</td>"
+            f"<td>{stats['count']}</td>"
+            f"<td style='color:{score_color(1 - stats.get(\"error_rate\", 0)/100)}'>"
+            f"{fmt(stats.get('error_rate'), 1)}%</td>"
+            f"<td style='color:{score_color(ab_score)}'>{fmt(ab_score, 3)}</td>"
+            f"</tr>\n"
+        )
+
+    lang_html = ""
+    if lang_beh_rows:
+        lang_html = f"""
+<h3 style='margin-top:2rem'>Language Breakdown (C vs C++)</h3>
+<p style='font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem'>
+  Retrieval and patching quality split by source language.
+  Violation % = submitted after INCORRECT verdict.
+  Error rate = non-success status.
+  Retrieval metrics use the precomputed split index.
+</p>
+<table>
+  <tr>
+    <th>Language</th><th>N</th><th>Avg Turns</th>
+    <th>Verify %</th><th>Violation %</th><th>Error %</th><th>Submit Fail %</th>
+    <th>Avg BERTScore F1</th><th>CVE Match %</th><th>CWE Match %</th><th>Avg Sim</th>
+  </tr>
+  {lang_beh_rows}
+</table>"""
+
+    if lang_cwe_rows:
+        lang_html += f"""
+<h3 style='margin-top:1.5rem'>Language × CWE Performance</h3>
+<p style='font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem'>
+  Shows which language × CWE combinations have the highest error rates.
+  Single-occurrence combinations may not be statistically significant.
+</p>
+<table>
+  <tr><th>Language</th><th>CWE</th><th>N</th><th>Error %</th><th>Avg BERTScore F1</th></tr>
+  {lang_cwe_rows}
+</table>"""
+
     return f"""
 <h2>Agent Behavior Overview</h2>
 <p class='sub' style='margin-bottom:0.8rem'>
@@ -500,6 +575,7 @@ def _render_agent_behavior_tab(ab: dict) -> str:
   <div>{tool_html}</div>
 </div>
 {cwe_html}
+{lang_html}
 {viol_html}
 """
 
@@ -641,8 +717,13 @@ def _render_html(analysis: dict) -> str:
             </div>
             """
 
-        # Behavior timeline
-        behavior = rec.get("behavior") or {}
+        # Language badge for card summary
+        rec_lang = rec.get("language") or ""
+        lang_dot_colors = {"C": "var(--c5)", "C++": "var(--c1)"}
+        lang_badge = ""
+        if rec_lang and rec_lang != "unknown":
+            lcol = lang_dot_colors.get(rec_lang, "var(--muted)")
+            lang_badge = f"<span style='display:inline-block;padding:0.1rem 0.4rem;border-radius:3px;background:{lcol};color:#fff;font-size:0.72rem;font-weight:600'>{escape(rec_lang)}</span>"
         behavior_html = ""
         if behavior.get("tool_sequence"):
             step_icons = {
@@ -690,6 +771,7 @@ def _render_html(analysis: dict) -> str:
               BLEU-4={fmt(scores.get('bleu_4'))}
             </span>
             &nbsp; CWE: {escape(str(rec.get('query_cwe', '')))}
+            &nbsp; {lang_badge}
             &nbsp; {verdict_badge}
           </summary>
           <div class="card-body">
@@ -732,6 +814,40 @@ def _render_html(analysis: dict) -> str:
         llm_human_section += _render_llm_summary(llm_summary)
         llm_human_section += _render_human_summary(human_summary)
         llm_human_section += _render_agreement_table(records)
+
+    # ── By language table (main tab) ─────────────────────────────
+    by_lang_quality = analysis.get("by_language", {})
+    language_rows = ""
+    _lang_dot_colors = {"C": "var(--c5)", "C++": "var(--c1)", "unknown": "var(--muted)"}
+    for lang, stats in sorted(by_lang_quality.items()):
+        dot = f"<span style='display:inline-block;width:9px;height:9px;border-radius:50%;background:{_lang_dot_colors.get(lang, 'var(--muted)')};margin-right:5px'></span>"
+        language_rows += (
+            f"<tr>"
+            f"<td>{dot}<strong>{escape(lang)}</strong></td>"
+            f"<td>{stats['count']}</td>"
+            f"<td style='color:{score_color(stats.get('avg_bleu_4'))}'>{fmt(stats.get('avg_bleu_4'))}</td>"
+            f"<td style='color:{score_color(stats.get('avg_bertscore_f1'))}'>{fmt(stats.get('avg_bertscore_f1'))}</td>"
+            f"<td style='color:{score_color(stats.get('avg_token_jaccard'))}'>{fmt(stats.get('avg_token_jaccard'))}</td>"
+            f"<td style='color:{score_color(stats.get('avg_hunk_f1'))}'>{fmt(stats.get('avg_hunk_f1'))}</td>"
+            f"<td>{fmt(stats.get('cve_match_rate'), 1)}%</td>"
+            f"<td>{fmt(stats.get('cwe_match_rate'), 1)}%</td>"
+            f"<td>{fmt(stats.get('avg_retrieval_sim'))}</td>"
+            f"<td style='color:{score_color((100 - stats.get(\"success_rate\", 100))/100)}'>{fmt(100 - stats.get('success_rate', 100), 1)}%</td>"
+            f"</tr>\n"
+        )
+
+    language_section = ""
+    if language_rows:
+        language_section = f"""
+<h2>By Language</h2>
+<table>
+  <tr>
+    <th>Language</th><th>Count</th>
+    <th>BLEU-4</th><th>BERTScore F1</th><th>Token Jaccard</th><th>Hunk F1</th>
+    <th>CVE Match %</th><th>CWE Match %</th><th>Avg Retrieval Sim</th><th>Error %</th>
+  </tr>
+  {language_rows}
+</table>"""
 
     # ── Data Evaluation tab content ──────────────────────────────
     data_eval_content = _render_data_eval_tab(analysis)
@@ -911,6 +1027,8 @@ def _render_html(analysis: dict) -> str:
   <tr><th>Variant</th><th>Count</th><th>BLEU-4</th><th>BERTScore F1</th><th>Jaccard</th><th>ROUGE-1</th><th>ROUGE-2</th><th>ROUGE-L</th><th>Hunk F1</th></tr>
   {variant_rows}
 </table>
+
+{language_section}
 
 {llm_human_section}
 
