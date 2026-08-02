@@ -110,7 +110,8 @@ class CVEFixesDataset(BaseDataset):
         db_path:       path to CVEfixes.db
         graphml_root:  directory for Joern CPG outputs
         languages:     list of languages to include (default: [C, C++])
-        level:         'method' (only method supported currently)
+        level:         'method' (default) or 'file' — 'file' uses
+                       load_from_filesystem() + parallel graph loading
         max_lines:     skip functions longer than this (default: 500)
         sample_limit:  max rows to process, 0 = unlimited (default: 0)
     """
@@ -210,17 +211,66 @@ class CVEFixesDataset(BaseDataset):
                     if cwe_id not in target_cwes:
                         continue
 
-                code_before = row["file_code_before"]
-                code_after = row["file_code_after"]
-                if not self._passes_filter(code_before):
+                # NOTE: max_lines is documented/intended as a per-method cutoff,
+                # so filter on the method's own code, not the whole file's code
+                # (a short method inside a large file must still pass).
+                method_code_before = row["method_code_before"]
+                method_code_after = row["method_code_after"]
+                if not self._passes_filter(method_code_before):
                     continue
-                if not self._passes_filter(code_after):
+                if not self._passes_filter(method_code_after):
                     continue
                 yield row
         finally:
             conn.close()
 
+    def _load_file_level_with_graphs(self) -> list:
+        """Load file-level pairs from filesystem metadata.json, populating
+        graphs in parallel using cpg_dir_for(graphml_root, dir_name, ...)."""
+        import time
+        from .pipeline import load_cpg_dirs_parallel
+
+        graphml_root = self.cfg["graphml_root"]
+        pairs = self.load_from_filesystem()
+
+        graph_dirs_before, graph_dirs_after = [], []
+        for p in pairs:
+            dir_name = p.meta["dir_name"]
+            graph_dirs_before.append(
+                cpg_dir_for(graphml_root, cve_id=dir_name, variant="original", version="before")
+            )
+            graph_dirs_after.append(
+                cpg_dir_for(graphml_root, cve_id=dir_name, variant="original", version="after")
+            )
+
+        all_dirs = graph_dirs_before + graph_dirs_after
+        t0 = time.perf_counter()
+        loaded = load_cpg_dirs_parallel(all_dirs, max_workers=8)
+        print(
+            f"  [CVEfixes/file] loaded {len(loaded)}/{len(all_dirs)} graphs "
+            f"in {time.perf_counter() - t0:.1f}s"
+        )
+
+        result = []
+        for i, p in enumerate(pairs):
+            dir_b, dir_a = graph_dirs_before[i], graph_dirs_after[i]
+            if dir_b in loaded and dir_a in loaded:
+                g_before, g_after = loaded[dir_b], loaded[dir_a]
+                if g_before.number_of_nodes() > 0 and g_after.number_of_nodes() > 0:
+                    p.G_before, p.G_after = g_before, g_after
+                    p.G_vuln = compute_graph_diff(
+                        g_before, g_after, **graph_diff_params(self.cfg)
+                    )
+                    result.append(p)
+
+        print(f"  [CVEfixes/file] {len(result)}/{len(pairs)} pairs have valid graphs")
+        return result
+
     def stream(self) -> Iterator[FunctionPair]:
+        if self.cfg.get("level") == "file":
+            yield from self._load_file_level_with_graphs()
+            return
+
         graphml_root = self.cfg["graphml_root"]
 
         for row in tqdm(self._iter_rows(), desc="Loading CVEFixes pairs"):
