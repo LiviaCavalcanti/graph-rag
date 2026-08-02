@@ -97,6 +97,30 @@ class PatchingExperiment(Experiment):
         else:
             pairs, db_cache = self._load_autopatch_data(cfg)
 
+        # When using precomputed retrieval, the query JSONL was generated from
+        # CPG-valid pairs only (resolve_pairs_from_entries skips missing CPGs),
+        # while load_lightweight() above returned ALL entries.  Pairs absent
+        # from the JSONL would all become skipped (no_example_found) after the
+        # split.  Filter to the JSONL-covered subset BEFORE splitting so every
+        # test pair is guaranteed to have a precomputed retrieval result.
+        if self._query_run:
+            from pathlib import Path as _Path
+            from src.rag.precomputed import PrecomputedRetriever
+            _qr = _Path(self._query_run)
+            _results = _qr / "results.jsonl"
+            if not _results.exists():
+                _results = _qr / "retrieval_results.jsonl"
+            if _results.exists():
+                _pr = PrecomputedRetriever(_results)
+                before = len(pairs)
+                pairs = [p for p in pairs if _pr.retrieve(p)[0] is not None]
+                db_cache = {k: v for k, v in db_cache.items()
+                            if any(p.meta.get("dir_name") == k for p in pairs)}
+                print(
+                    f"  [precomputed filter] {before} → {len(pairs)} pairs "
+                    f"(kept only those covered by the query JSONL)"
+                )
+
         index_pairs, query_pairs, split_info = build_split(pairs, cfg)
 
         if self._cve_filter:
