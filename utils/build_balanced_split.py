@@ -30,11 +30,11 @@ from pathlib import Path
 from typing import Any
 
 MIN_PER_CVE = 3
-MAX_PER_CVE = 7
+MAX_PER_CVE = 12
 MIN_PER_CWE = 20
 SEED = 42
 QUERY_RATIO = 0.2  # fraction of CVEs (per class) held out as query
-CAP_MULTIPLIER = 1
+CAP_MULTIPLIER = 2
 CAP_SLACK = 0
 
 
@@ -275,7 +275,10 @@ def main() -> None:
             funcs = sorted(by_cve[cve])
             local_rng = random.Random(f"{SEED}:{cwe}:{cve}")
             local_rng.shuffle(funcs)
-            n_query = max(1, len(funcs) // 2)
+            # Keep only 1 function per CVE as query; the rest (up to
+            # MAX_PER_CVE - 1) stay in the index as retrievable siblings —
+            # maximizes index-side coverage per CVE instead of a ~50/50 split.
+            n_query = 1
             n_query = min(n_query, len(funcs) - 1)  # keep at least 1 in index
             query_funcs = funcs[:n_query]
             index_funcs = funcs[n_query:]
