@@ -726,6 +726,7 @@ def _render_html(analysis: dict) -> str:
         if rec_lang and rec_lang != "unknown":
             lcol = lang_dot_colors.get(rec_lang, "var(--muted)")
             lang_badge = f"<span style='display:inline-block;padding:0.1rem 0.4rem;border-radius:3px;background:{lcol};color:#fff;font-size:0.72rem;font-weight:600'>{escape(rec_lang)}</span>"
+        behavior = rec.get("behavior") or {}
         behavior_html = ""
         if behavior.get("tool_sequence"):
             step_icons = {
