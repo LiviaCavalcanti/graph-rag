@@ -31,6 +31,7 @@ from .pipeline import (
 _CACHE_DIR_RE = re.compile(r"^\d+_(CVE-\d+-\d+)_(.*)$")
 
 DEFAULT_ENTRIES_FILE = "experiments_cves/selected_entries.json"
+DEFAULT_ENTRIES_FILE = "testing_te_dataset/queries_pairs.json"
 DEFAULT_CACHE_DIRS = [
     "cvefixes_experiments/output/pipeline_verification_method_ctxt/cpg_cache",
 ]
