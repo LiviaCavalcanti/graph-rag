@@ -18,7 +18,7 @@ load_dotenv()
 _PROMPTS_DIR = Path(__file__).parent / "prompts"
 
 # ── LLM invocation defaults (override per-call via AutoPatchPatcher(...) / config) ──
-DEFAULT_TEMPERATURE = 0.2
+DEFAULT_TEMPERATURE = 1
 DEFAULT_MAX_TOKENS = 4096
 DEFAULT_API_VERSION = "2024-12-01-preview"
 
