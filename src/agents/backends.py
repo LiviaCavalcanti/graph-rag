@@ -122,7 +122,7 @@ def request_fingerprint(
         {
             "model": model,
             "messages": messages,
-            "temperature": round(float(temperature), 6),
+            "temperature": round(float(temperature), 1),
             "max_tokens": int(max_tokens),
         },
         sort_keys=True,
