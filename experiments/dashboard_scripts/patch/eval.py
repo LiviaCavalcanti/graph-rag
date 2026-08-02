@@ -100,15 +100,17 @@ def analyze(
     llm_eval_index = _load_llm_eval(results_path.parent)
     human_label_index = _load_human_labels(results_path.parent)
 
-    # Index evaluations by (query_cve, query_variant)
-    eval_index: dict[tuple[str, str], dict] = {}
+    # Index evaluations by (query_cve, query_variant, query_dir).  Including
+    # query_dir disambiguates multiple functions from the same CVE — without it
+    # two CVE-XXXX/original entries collide and the last one silently wins.
+    eval_index: dict[tuple[str, str, str], dict] = {}
     for ev in evaluations:
-        key = (ev.get("query_cve", ""), ev.get("query_variant", ""))
+        key = (ev.get("query_cve", ""), ev.get("query_variant", ""), ev.get("query_dir", ""))
         eval_index[key] = ev
 
     records = []
     for r in results:
-        key = (r.get("query_cve", ""), r.get("query_variant", ""))
+        key = (r.get("query_cve", ""), r.get("query_variant", ""), r.get("query_dir", ""))
         ev = eval_index.get(key, {})
         rec = build_record(r, ev, base_dir)
 
