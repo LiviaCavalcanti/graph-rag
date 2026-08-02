@@ -12,10 +12,7 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import re
-import subprocess
-import tempfile
 import time
 
 from src.agents.backends import CompletionBackend, CompletionResult, get_default_backend
@@ -30,7 +27,7 @@ _SYSTEM_PROMPT = """\
 You are an expert C/C++ security engineer specializing in vulnerability patching.
 
 Your task: given vulnerable C code and a retrieved similar vulnerability example, \
-generate a minimal unified diff that fixes the vulnerability.
+generate a minimal patch that fixes the vulnerability.
 
 ## Workflow
 
@@ -38,18 +35,34 @@ generate a minimal unified diff that fixes the vulnerability.
 and typical fix patterns for this class of vulnerability.
 2. **Study the example**: Call `analyze_example_fix` to see how a similar vulnerability \
 was fixed. Extract the fix pattern.
-3. **Generate a patch**: Produce a unified diff (`diff -u` format) containing ONLY the \
-changed lines. Do NOT output the entire source file.
-4. **(Optional) Verify**: Call `verify_fix_correctness` with your diagnosis and diff to \
-confirm the fix addresses the root cause. Skip if the fix is straightforward.
-5. **Submit**: Call `submit_patch` with your unified diff.
+3. **Generate a patch**: Write Search & Replace blocks for ONLY the lines that need \
+changing (see format below). Do NOT output the entire source file.
+4. **(Optional) Verify**: Call `verify_fix_correctness` with your diagnosis and patch to \
+confirm the fix addresses the root cause. **If the verdict is INCORRECT, revise and \
+verify again before submitting. Do not submit a patch that has been flagged as incorrect.**
+5. **Submit**: Call `submit_patch` with your Search & Replace blocks.
+
+## Patch format
+
+Use one or more Search & Replace blocks — each one replaces an exact code section:
+
+<<<<<<< SEARCH
+[exact lines from the vulnerable code, copied verbatim including whitespace]
+=======
+[patched replacement lines]
+>>>>>>> REPLACE
+
+- Copy the SEARCH lines **exactly** from the target code (tabs, spacing, everything).
+- Use one block per change location.
+- Do NOT use unified diff format (– no `@@` headers, no `+`/`-` line prefixes).
 
 ## Rules
 
 - The patch MUST address the actual root cause, not just add superficial checks.
-- Do NOT invent struct members, functions, or APIs that don't exist in the codebase.
-- Keep the patch minimal — change only what's necessary to fix the vulnerability.
-- If the example's CWE differs from the target's CWE, adapt your approach accordingly.
+- Do NOT invent struct members, functions, or APIs that don’t exist in the codebase.
+- Keep the patch minimal — change only what’s necessary to fix the vulnerability.
+- If the example’s CWE differs from the target’s CWE, adapt your approach accordingly.
+- Never submit a patch that `verify_fix_correctness` has flagged as INCORRECT.
 - You MUST call `submit_patch` to finalize your answer.
 
 ## Output discipline
@@ -58,8 +71,6 @@ confirm the fix addresses the root cause. Skip if the fix is straightforward.
 at most one short sentence.
 - All reasoning belongs in the `reasoning` argument of `submit_patch`, not in message \
 content.
-- The `patch` argument to `submit_patch` must be a unified diff string (lines starting \
-with `---`, `+++`, `@@`, ` `, `+`, `-`). Never regenerate the entire source file.
 """
 
 
@@ -92,7 +103,7 @@ class ToolCallingAgent:
 
     def run(self, ctx: PatchContext) -> AgentResult:
         model = f"azure/{self.model_name}"
-        temperature = self.llm_params.get("temperature", 0.2)
+        temperature = self.llm_params.get("temperature", 1)
         max_tokens = self.llm_params.get("max_tokens", 8192)
 
         # Build tool execution context
@@ -201,24 +212,42 @@ class ToolCallingAgent:
 
                     # Check for terminal tool
                     if fn_name == "submit_patch":
-                        # Handle the gpt-4o errors of returning true to patch field instead of a string
                         raw_patch = fn_args.get("patch", "")
                         if isinstance(raw_patch, str) and raw_patch.strip():
-                            patch_text = raw_patch
-                            # Phase 2: if the model returned a unified diff,
-                            # apply it to the target code server-side so that
-                            # `generated_patch` in results.jsonl is always a
-                            # full file — evaluation metrics unchanged.
-                            if self._is_unified_diff(patch_text):
-                                applied = self._apply_diff(ctx.target_code, patch_text)
+                            # Apply Search & Replace blocks to reconstruct the
+                            # full patched file so evaluation metrics work
+                            # against the same full-file format as before.
+                            blocks = self._parse_search_replace_blocks(raw_patch)
+                            if blocks and ctx.target_code:
+                                applied = self._apply_search_replace(
+                                    ctx.target_code, blocks
+                                )
                                 if applied is not None:
                                     logger.info(
-                                        "Applied unified diff → full file (%d chars)",
+                                        "Applied %d S&R block(s) → full file (%d chars)",
+                                        len(blocks),
                                         len(applied),
                                     )
-                                    patch_text = applied
-                            submitted_patch = patch_text
-                            submitted_reasoning = fn_args.get("reasoning", "")
+                                    submitted_patch = applied
+                                else:
+                                    logger.warning(
+                                        "S&R block(s) not found in source — "
+                                        "storing raw blocks; model will receive error feedback"
+                                    )
+                                    # Override tool_output to give the model a
+                                    # chance to correct its SEARCH lines.
+                                    tool_output = (
+                                        "Error: one or more SEARCH blocks were not found "
+                                        "verbatim in the target source. Copy the exact lines "
+                                        "from the target code (including tabs/whitespace) and "
+                                        "call submit_patch again."
+                                    )
+                            else:
+                                # No blocks found — treat raw text as the patch
+                                # (e.g. model returned full code instead)
+                                submitted_patch = raw_patch
+                            if submitted_patch is not None:
+                                submitted_reasoning = fn_args.get("reasoning", "")
                         else:
                             # Model passed a non-string (e.g. boolean True) or empty
                             # string. The tool already returned an error message that
@@ -326,45 +355,34 @@ class ToolCallingAgent:
         return "\n".join(parts)
 
     @staticmethod
-    def _is_unified_diff(text: str) -> bool:
-        """Return True when text looks like a unified diff (contains @@ hunk headers)."""
-        return bool(re.search(r"^@@\s+-\d+", text, re.MULTILINE))
+    def _parse_search_replace_blocks(text: str) -> list[tuple[str, str]]:
+        """Extract (search, replace) pairs from <<<<<<< SEARCH / >>>>>>> REPLACE blocks."""
+        pattern = re.compile(
+            r"<<<<<<< SEARCH\n(.*?)\n=======\n(.*?)\n>>>>>>> REPLACE",
+            re.DOTALL,
+        )
+        return [(m.group(1), m.group(2)) for m in pattern.finditer(text)]
 
     @staticmethod
-    def _apply_diff(original: str, diff: str) -> str | None:
-        """Apply a unified diff to original code using the system ``patch`` utility.
+    def _apply_search_replace(
+        original: str, blocks: list[tuple[str, str]]
+    ) -> str | None:
+        """Apply a list of (search, replace) pairs to *original* in order.
 
-        Returns the full patched file content, or None if the application
-        failed (caller should fall back to the raw diff string).
+        Returns the patched code, or None if any SEARCH block is not found.
         """
-        try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                orig_path = os.path.join(tmpdir, "original.c")
-                patch_path = os.path.join(tmpdir, "changes.patch")
-                out_path = os.path.join(tmpdir, "patched.c")
-
-                with open(orig_path, "w") as f:
-                    f.write(original)
-                with open(patch_path, "w") as f:
-                    f.write(diff)
-
-                proc = subprocess.run(
-                    ["patch", "-u", orig_path, patch_path, "-o", out_path],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                )
-                if proc.returncode == 0 and os.path.exists(out_path):
-                    with open(out_path) as f:
-                        return f.read()
+        result = original
+        for search, replace in blocks:
+            if search in result:
+                result = result.replace(search, replace, 1)
+            else:
                 logger.warning(
-                    "patch apply failed (rc=%d): %s",
-                    proc.returncode,
-                    proc.stderr[:300],
+                    "_apply_search_replace: SEARCH block not found (len=%d, preview=%r)",
+                    len(search),
+                    search[:80],
                 )
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("_apply_diff error: %s", exc)
-        return None
+                return None
+        return result
 
     @staticmethod
     def _try_extract_code(text: str) -> str | None:
