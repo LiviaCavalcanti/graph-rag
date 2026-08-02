@@ -172,6 +172,178 @@ def _render_agreement_table(records: list[dict]) -> str:
 """
 
 
+def _render_llm_judge_tab(analysis: dict) -> str:
+    """Render the LLM-as-a-Judge tab.
+
+    Based on: 'Towards a Human-in-the-Loop Framework for Reliable Patch
+    Evaluation Using an LLM-as-a-Judge'.
+
+    Shows aggregate VALID/INVALID statistics, per-CWE breakdown, and
+    per-record expandable cards with the judge's thought + justification
+    alongside the unified diff.
+    """
+    judge_summary = analysis.get("llm_judge")
+    records = analysis.get("records", [])
+    judge_records = [r for r in records if r.get("llm_judge")]
+
+    if not judge_records:
+        return """
+<p style='color:var(--muted);margin-top:2rem'>
+  No LLM judge results available for this run.<br>
+  Run the judge with:<br>
+  <code>uv run python -m src.evaluate.llm_judge &lt;run_dir&gt;/results.jsonl</code>
+</p>
+"""
+
+    js = judge_summary or {}
+    total = js.get("total", len(judge_records))
+    n_valid = js.get("valid", 0)
+    n_invalid = js.get("invalid", 0)
+    n_error = js.get("errors", 0)
+    valid_rate = js.get("valid_rate", 0.0)
+
+    # ── Summary cards ──────────────────────────────────────────────
+    summary_html = f"""
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="stat-value">{total}</div>
+    <div class="stat-label">Judged</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color:#2e7d32">{n_valid}</div>
+    <div class="stat-label">VALID ({valid_rate:.1f}%)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color:#c62828">{n_invalid}</div>
+    <div class="stat-label">INVALID ({round(n_invalid/total*100,1) if total else 0:.1f}%)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color:#888">{n_error}</div>
+    <div class="stat-label">ERROR</div>
+  </div>
+</div>
+"""
+
+    # ── Per-CWE table ──────────────────────────────────────────────
+    by_cwe = js.get("by_cwe") or {}
+    cwe_rows = ""
+    for cwe, stats in sorted(by_cwe.items()):
+        t = stats["total"]
+        v = stats["valid"]
+        inv = stats["invalid"]
+        vr = stats["valid_rate"]
+        cwe_rows += (
+            f"<tr>"
+            f"<td>{escape(cwe)}</td>"
+            f"<td>{t}</td>"
+            f"<td style='color:#2e7d32;font-weight:600'>{v}</td>"
+            f"<td style='color:#c62828'>{inv}</td>"
+            f"<td style='color:{score_color(vr/100)}'>{vr}%</td>"
+            f"</tr>\n"
+        )
+    cwe_section = ""
+    if cwe_rows:
+        cwe_section = f"""
+<h2 style='margin-top:1.5rem'>By CWE Type</h2>
+<table>
+  <tr><th>CWE</th><th>Total</th><th>VALID</th><th>INVALID</th><th>Valid Rate</th></tr>
+  {cwe_rows}
+</table>
+"""
+
+    # ── Per-record drilldown cards ──────────────────────────────────
+    import difflib as _difflib
+    cards_html = ""
+    colors = {"VALID": "#2e7d32", "INVALID": "#c62828", "ERROR": "#888"}
+
+    for i, rec in enumerate(judge_records, 1):
+        jd = rec["llm_judge"]
+        verdict = jd.get("verdict", "")
+        color = colors.get(verdict, "#888")
+        thought = jd.get("thought", "")
+        justification = jd.get("justification", "")
+        rubric = jd.get("cwe_rubric", "")
+        model = jd.get("model", "")
+        elapsed = jd.get("elapsed_s")
+
+        cve = rec.get("query_cve", "")
+        variant = rec.get("query_variant", "")
+        cwe = rec.get("query_cwe", "")
+
+        # Unified diff display
+        vulnerable = rec.get("input_code") or ""
+        generated = rec.get("generated_patch") or ""
+        a_lines = vulnerable.splitlines(keepends=True)
+        b_lines = generated.splitlines(keepends=True)
+        diff_lines = list(_difflib.unified_diff(
+            a_lines, b_lines,
+            fromfile="vulnerable.c",
+            tofile="generated_patch.c",
+            n=5,
+        ))
+        if diff_lines:
+            diff_text = "".join(diff_lines)
+        else:
+            diff_text = "(no differences — patch identical to vulnerable code)"
+
+        thought_html = ""
+        if thought:
+            thought_html = f"""
+<details style='margin-top:0.6rem'>
+  <summary style='cursor:pointer;font-size:0.85rem;color:var(--muted)'>Show thought process</summary>
+  <pre style='font-size:0.8rem;background:#f9f9f9;padding:0.6rem;border-radius:4px;overflow:auto;white-space:pre-wrap'>{escape(thought)}</pre>
+</details>"""
+
+        rubric_html = ""
+        if rubric:
+            rubric_html = f"""
+<div style='margin:0.5rem 0;font-size:0.82rem;color:#555;background:#fffde7;
+     padding:0.5rem 0.8rem;border-left:3px solid #f9a825;border-radius:2px'>
+  <strong>Rubric:</strong> {escape(rubric)}
+</div>"""
+
+        cards_html += f"""
+<details class="card" {'open' if i <= 3 else ''}>
+  <summary>
+    <span class="idx">#{i}</span>
+    <strong>{escape(cve)}</strong> / {escape(variant)}
+    &nbsp; <span class="pill">{escape(cwe)}</span>
+    &nbsp; <span class="verdict-badge" style="background:{color}">{escape(verdict)}</span>
+  </summary>
+  <div class="card-body">
+    <div style='font-size:0.82rem;color:var(--muted);margin-bottom:0.4rem'>
+      Model: <code>{escape(model)}</code> &nbsp;|&nbsp; Elapsed: {fmt(elapsed, 2)}s
+    </div>
+    {rubric_html}
+    <div class="llm-eval-box" style='border-left-color:{color}'>
+      <h4 style='color:{color}'>Verdict: {escape(verdict)}</h4>
+      <div class="llm-reasoning"><strong>Justification:</strong> {escape(justification)}</div>
+      {thought_html}
+    </div>
+    <h4 style='margin-top:1rem'>Unified Diff (vulnerable \u2192 generated)</h4>
+    <pre style='font-size:0.78rem;background:#1e1e1e;color:#d4d4d4;padding:0.8rem;
+         border-radius:4px;overflow:auto;max-height:400px'>{escape(diff_text)}</pre>
+  </div>
+</details>
+"""
+
+    return f"""
+<h2>LLM-as-a-Judge Results</h2>
+<p class='sub'>
+  Judge design from: <em>Towards a Human-in-the-Loop Framework for Reliable Patch
+  Evaluation Using an LLM-as-a-Judge</em>.<br>
+  Each patch is judged as <strong>VALID</strong> (fixes the root cause per the CWE rubric)
+  or <strong>INVALID</strong> (does not fix it or introduces new issues).
+</p>
+{summary_html}
+{cwe_section}
+<h2 style='margin-top:1.5rem'>Per-Record Judgments</h2>
+<p class='sub'>First 3 expanded. Each card shows the rubric, verdict, justification,
+and unified diff (vulnerable \u2192 generated).</p>
+{cards_html}
+"""
+
+
 def _render_data_eval_tab(analysis: dict) -> str:
     """Render the Data Evaluation tab: augmented data pairs (vulnerable code + ground truth)."""
     base_dir = Path(analysis["source"].get("base_dir", "."))
@@ -676,9 +848,14 @@ def _render_html(analysis: dict) -> str:
             f"Retrieved variant: <strong>{escape(str(retrieval.get('retrieved_variant', '-')))}</strong>"
         )
 
-        # Verdict badge for summary line
+        # Verdict badge for summary line (prefer LLM Judge if available)
         verdict_badge = ""
-        if llm_eval:
+        llm_judge = rec.get("llm_judge")
+        if llm_judge:
+            v = llm_judge.get("verdict", "")
+            vc = {"VALID": "#2e7d32", "INVALID": "#c62828", "ERROR": "#888"}.get(v, "#888")
+            verdict_badge = f"<span class='verdict-badge' style='background:{vc}' title='LLM Judge'>J:{escape(v)}</span>"
+        elif llm_eval:
             v = llm_eval.get("verdict", "")
             vc = {"FIXED": "#2e7d32", "PARTIAL": "#f57c00", "NOT_FIXED": "#c62828", "ERROR": "#888"}.get(v, "#888")
             verdict_badge = f"<span class='verdict-badge' style='background:{vc}'>{escape(v)}</span>"
@@ -853,6 +1030,9 @@ def _render_html(analysis: dict) -> str:
   {language_rows}
 </table>"""
 
+    # ── LLM Judge tab content ────────────────────────────────────
+    llm_judge_content = _render_llm_judge_tab(analysis)
+
     # ── Data Evaluation tab content ──────────────────────────────
     data_eval_content = _render_data_eval_tab(analysis)
     agent_behavior_content = _render_agent_behavior_tab(analysis.get("agent_behavior", {}))
@@ -1009,6 +1189,7 @@ def _render_html(analysis: dict) -> str:
   <button class="tab-btn active" data-tab="tab-test-eval">Test Data Evaluation</button>
   <button class="tab-btn" data-tab="tab-data-eval">Data Evaluation</button>
   <button class="tab-btn" data-tab="tab-agent-behavior">Agent Behavior</button>
+  <button class="tab-btn" data-tab="tab-llm-judge">LLM Judge</button>
 </nav>
 
 <div class="content">
@@ -1047,6 +1228,10 @@ def _render_html(analysis: dict) -> str:
 
 <div id="tab-agent-behavior" class="tab-panel">
 {agent_behavior_content}
+</div>
+
+<div id="tab-llm-judge" class="tab-panel">
+{llm_judge_content}
 </div>
 
 </div>
