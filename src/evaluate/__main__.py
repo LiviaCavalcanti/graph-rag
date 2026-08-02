@@ -24,6 +24,8 @@ def run_all(
     base_dir: Path | None = None,
     top_k: int = 5,
     strip_comments: bool = True,
+    llm_judge: bool = False,
+    judge_model: str | None = None,
 ) -> Path:
     """Execute the full evaluation pipeline and return the patch analysis path."""
     run_dir = results_path.parent
@@ -35,9 +37,19 @@ def run_all(
     print(f"{'━'*60}")
     _run_patch_eval(results_path, base, strip_comments=strip_comments)
 
-    # ── 2. Patch analysis dashboard ──────────────────────────────
+    # ── 2. (Optional) LLM-as-a-Judge ─────────────────────────────
+    if llm_judge:
+        print(f"\n{'━'*60}")
+        print(f"  STEP 2/3 — LLM-as-a-Judge")
+        print(f"{'━'*60}")
+        from src.evaluate.llm_judge import run_judge
+        run_judge(results_path, model=judge_model, resume=True)
+
+    # ── 3. Patch analysis dashboard ──────────────────────────────
+    step_n = "3" if llm_judge else "2"
+    total_steps = "3" if llm_judge else "2"
     print(f"\n{'━'*60}")
-    print(f"  STEP 2/2 — Patch Analysis Dashboard")
+    print(f"  STEP {step_n}/{total_steps} — Patch Analysis Dashboard")
     print(f"{'━'*60}")
     from experiments.dashboard_scripts.patch.analyze_patches import (
         _render_html as _render_patch_html,
@@ -141,6 +153,14 @@ def main():
     parser.add_argument(
         "--top-k", type=int, default=5, help="Retrieval top-k (default: 5)"
     )
+    parser.add_argument(
+        "--llm-judge", action="store_true",
+        help="Run the LLM-as-a-Judge after patch evaluation (requires AZURE_API_KEY)",
+    )
+    parser.add_argument(
+        "--judge-model", default=None,
+        help="Azure model deployment name for the judge (default: MODEL_NAME env var or gpt-4o)",
+    )
     args = parser.parse_args()
 
     path = Path(args.path)
@@ -154,7 +174,14 @@ def main():
         sys.exit(1)
 
     base_dir = Path(args.base_dir) if args.base_dir else None
-    run_all(results_path, config_path=args.config, base_dir=base_dir, top_k=args.top_k)
+    run_all(
+        results_path,
+        config_path=args.config,
+        base_dir=base_dir,
+        top_k=args.top_k,
+        llm_judge=args.llm_judge,
+        judge_model=args.judge_model,
+    )
 
 
 if __name__ == "__main__":
