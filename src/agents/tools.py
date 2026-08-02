@@ -107,8 +107,8 @@ TOOL_SCHEMAS: list[dict] = [
         "function": {
             "name": "submit_patch",
             "description": (
-                "Submit your final patch as a unified diff. Only call this after "
-                "you have verified the patch is correct. This ends the patching "
+                "Submit your final patch as Search & Replace blocks. Only call this "
+                "after you have verified the patch is correct. This ends the patching "
                 "session."
             ),
             "parameters": {
@@ -117,10 +117,13 @@ TOOL_SCHEMAS: list[dict] = [
                     "patch": {
                         "type": "string",
                         "description": (
-                            "A unified diff string (`diff -u` format) showing ONLY "
-                            "the changed lines. Lines must start with `---`, `+++`, "
-                            "`@@`, ` ` (context), `+` (added), or `-` (removed). "
-                            "Do NOT include the entire source file."
+                            "One or more Search & Replace blocks. Each block:\n"
+                            "<<<<<<< SEARCH\n"
+                            "[exact original lines copied verbatim from the target code]\n"
+                            "=======\n"
+                            "[replacement lines]\n"
+                            ">>>>>>> REPLACE\n\n"
+                            "Do NOT use unified diff format (no @@ headers, no +/- prefixes)."
                         ),
                     },
                     "reasoning": {
@@ -421,7 +424,7 @@ def _llm_verify(
         result = backend.complete(
             model=model,
             messages=messages,
-            temperature=0.0,
+            temperature=1.0,
             max_tokens=500,
         )
         return result.content
