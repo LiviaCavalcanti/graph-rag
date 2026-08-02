@@ -500,10 +500,12 @@ def _render_agent_behavior_tab(ab: dict) -> str:
             f"<td>{stats['count']}</td>"
             f"<td>{fmt(stats.get('avg_turns'), 1)}</td>"
             f"<td>{fmt(stats.get('verify_rate'), 1)}%</td>"
-            f"<td style='color:{score_color(1 - (stats.get(\"violation_rate\") or 0)/100)}'>"
-            f"{fmt(stats.get('violation_rate'), 1)}%</td>"
-            f"<td style='color:{score_color((100 - (stats.get(\"error_rate\") or 0))/100)}'>"
-            f"{fmt(stats.get('error_rate'), 1)}%</td>"
+        )
+        viol_rate = stats.get("violation_rate") or 0
+        err_rate = stats.get("error_rate") or 0
+        lang_beh_rows += (
+            f"<td style='color:{score_color(1 - viol_rate/100)}'>{fmt(viol_rate, 1)}%</td>"
+            f"<td style='color:{score_color((100 - err_rate)/100)}'>{fmt(err_rate, 1)}%</td>"
             f"<td>{fmt(stats.get('submit_fail_rate'), 1)}%</td>"
             f"<td style='color:{score_color(ab_score)}'>{fmt(ab_score, 3)}</td>"
             f"<td>{fmt(stats.get('cve_match_rate'), 1)}%</td>"
@@ -520,13 +522,13 @@ def _render_agent_behavior_tab(ab: dict) -> str:
         cwe = stats["cwe"]
         ab_score = stats.get("avg_bertscore")
         dot = f"<span style='display:inline-block;width:8px;height:8px;border-radius:50%;background:{lang_colors.get(lang, 'var(--muted)')};margin-right:4px'></span>"
+        lang_cwe_err = stats.get("error_rate", 0)
         lang_cwe_rows += (
             f"<tr>"
             f"<td>{dot}{escape(lang)}</td>"
             f"<td>{escape(cwe)}</td>"
             f"<td>{stats['count']}</td>"
-            f"<td style='color:{score_color(1 - stats.get(\"error_rate\", 0)/100)}'>"
-            f"{fmt(stats.get('error_rate'), 1)}%</td>"
+            f"<td style='color:{score_color(1 - lang_cwe_err/100)}'>{fmt(lang_cwe_err, 1)}%</td>"
             f"<td style='color:{score_color(ab_score)}'>{fmt(ab_score, 3)}</td>"
             f"</tr>\n"
         )
@@ -821,6 +823,7 @@ def _render_html(analysis: dict) -> str:
     _lang_dot_colors = {"C": "var(--c5)", "C++": "var(--c1)", "unknown": "var(--muted)"}
     for lang, stats in sorted(by_lang_quality.items()):
         dot = f"<span style='display:inline-block;width:9px;height:9px;border-radius:50%;background:{_lang_dot_colors.get(lang, 'var(--muted)')};margin-right:5px'></span>"
+        _err = 100 - stats.get("success_rate", 100)
         language_rows += (
             f"<tr>"
             f"<td>{dot}<strong>{escape(lang)}</strong></td>"
@@ -832,7 +835,7 @@ def _render_html(analysis: dict) -> str:
             f"<td>{fmt(stats.get('cve_match_rate'), 1)}%</td>"
             f"<td>{fmt(stats.get('cwe_match_rate'), 1)}%</td>"
             f"<td>{fmt(stats.get('avg_retrieval_sim'))}</td>"
-            f"<td style='color:{score_color((100 - stats.get(\"success_rate\", 100))/100)}'>{fmt(100 - stats.get('success_rate', 100), 1)}%</td>"
+            f"<td style='color:{score_color((100 - _err)/100)}'>{fmt(_err, 1)}%</td>"
             f"</tr>\n"
         )
 
