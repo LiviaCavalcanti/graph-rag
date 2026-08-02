@@ -116,35 +116,49 @@ def evaluate_one(record: dict, base_dir: Path, strip_comments: bool = False) -> 
     # are simply omitted from the output in that case).
     baseline = (record.get("target_code") or "").strip()
 
-    # ── optionally strip comments before comparison ──────────
+    # When the generated patch is a full file (produced by S&R block application
+    # server-side), extract the same function body from it so both sides of
+    # metrics_body are at the same granularity.  Without this a ~88 KB generated
+    # file is compared to a ~5 KB gt_body, collapsing BLEU/Jaccard precision.
+    # Heuristic: generated is a full file when it is >3x the size of gt_body.
+    generated_for_body = generated
+    if gt_body and len(generated) > len(gt_body) * 3:
+        _candidate = extract_function_body(generated).strip()
+        if _candidate:
+            generated_for_body = _candidate
+
+    # ── optionally strip comments before comparison ──────
     if strip_comments:
         generated = strip_c_comments(generated).strip()
+        generated_for_body = strip_c_comments(generated_for_body).strip()
         gt_body = strip_c_comments(gt_body).strip()
         gt_full_stripped = strip_c_comments(gt_full_stripped).strip()
         if baseline:
             baseline = strip_c_comments(baseline).strip()
 
+    # print(generated_for_body)
     # ── compute metrics against extracted function body ──────────
+    # generated_for_body vs gt_body — both at function-body granularity.
     metrics_body = {
-        "exact_match": exact_match(generated, gt_body),
-        "normalised_exact_match": normalised_exact_match(generated, gt_body),
-        "char_sequence_ratio": round(sequence_matcher_ratio(generated, gt_body), 4),
-        "line_sequence_ratio": round(line_level_ratio(generated, gt_body), 4),
+        "exact_match": exact_match(generated_for_body, gt_body),
+        "normalised_exact_match": normalised_exact_match(generated_for_body, gt_body),
+        "char_sequence_ratio": round(sequence_matcher_ratio(generated_for_body, gt_body), 4),
+        "line_sequence_ratio": round(line_level_ratio(generated_for_body, gt_body), 4),
         "normalised_edit_distance": round(
-            normalised_edit_distance(generated, gt_body), 4
+            normalised_edit_distance(generated_for_body, gt_body), 4
         ),
-        "token_jaccard": round(token_jaccard(generated, gt_body), 4),
-        "token_jaccard_multiset": round(token_jaccard_multiset(generated, gt_body), 4),
-        "bleu_1": round(bleu_score(generated, gt_body, max_n=1), 4),
-        "bleu_2": round(bleu_score(generated, gt_body, max_n=2), 4),
-        "bleu_4": round(bleu_score(generated, gt_body, max_n=4), 4),
-        **bertscore_pair(generated, gt_body),
-        **{k: round(v, 4) for k, v in rouge_scores(generated, gt_body).items()},
+        "token_jaccard": round(token_jaccard(generated_for_body, gt_body), 4),
+        "token_jaccard_multiset": round(token_jaccard_multiset(generated_for_body, gt_body), 4),
+        "bleu_1": round(bleu_score(generated_for_body, gt_body, max_n=1), 4),
+        "bleu_2": round(bleu_score(generated_for_body, gt_body, max_n=2), 4),
+        "bleu_4": round(bleu_score(generated_for_body, gt_body, max_n=4), 4),
+        **bertscore_pair(generated_for_body, gt_body),
+        **{k: round(v, 4) for k, v in rouge_scores(generated_for_body, gt_body).items()},
         # change-isolating metrics (vs the vulnerable baseline); omitted when
         # the baseline is unavailable so aggregates simply skip them
         **{
             k: round(v, 4)
-            for k, v in diff_hunk_scores(generated, gt_body, baseline).items()
+            for k, v in diff_hunk_scores(generated_for_body, gt_body, baseline).items()
         },
     }
 
@@ -158,12 +172,12 @@ def evaluate_one(record: dict, base_dir: Path, strip_comments: bool = False) -> 
     }
 
     # ── diff details ─────────────────────────────────────────────
-    diff = compute_diff_details(generated, gt_body)
+    diff = compute_diff_details(generated_for_body, gt_body)
 
     # ── size info ────────────────────────────────────────────────
-    gen_lines = generated.count("\n") + 1
+    gen_lines = generated_for_body.count("\n") + 1
     ref_lines = gt_body.count("\n") + 1
-    gen_tokens = len(tokenize(generated))
+    gen_tokens = len(tokenize(generated_for_body))
     ref_tokens = len(tokenize(gt_body))
 
     size_info = {
