@@ -37,6 +37,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 from helpers import load_jsonl, load_input_code, score_color, summarize_metric, fmt
 from eval import build_record, _load_llm_eval, analyze
 from helpers import load_ground_truth, find_cve_dir
+from agent_behavior import _TOOL_LABELS
 from experiments.dashboard_scripts._theme import THEME_CSS, THEME_JS
 from src.evaluate.preprocessing import extract_function_body
 
@@ -330,8 +331,181 @@ def _render_data_eval_tab(analysis: dict) -> str:
     return content
 
 
+# ── Agent Behavior tab ──────────────────────────────────────────────
+
+def _render_agent_behavior_tab(ab: dict) -> str:
+    """Render the Agent Behavior tab from aggregate_behavior output."""
+    if not ab or ab.get("records_with_behavior_data", 0) == 0:
+        return "<p style='color:var(--muted)'>No agent behavior data available (single-turn run or missing transcript).</p>"
+
+    n = ab["records_with_behavior_data"]
+
+    # ── Summary cards ──────────────────────────────────────────────
+    status_html = "".join(
+        f"<span class='pill'>{escape(k)}: {v}</span> "
+        for k, v in sorted((ab.get("status_counts") or {}).items())
+    )
+
+    verdict_html = ""
+    for v, c in sorted((ab.get("verify_verdict_counts") or {}).items()):
+        col = {"CORRECT": "#2e7d32", "INCORRECT": "#c62828", "UNCERTAIN": "#f57c00"}.get(v, "#888")
+        verdict_html += f"<span style='color:{col};font-weight:600'>{escape(v)}: {c}</span> &nbsp;"
+
+    summary_html = f"""
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="stat-value">{fmt(ab.get('avg_turns'), 1)}</div>
+    <div class="stat-label">Avg Turns</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{fmt(ab.get('median_turns'), 1)}</div>
+    <div class="stat-label">Median Turns</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{fmt(ab.get('avg_tool_calls'), 1)}</div>
+    <div class="stat-label">Avg Tool Calls</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{ab.get('pct_called_verify', 0):.0f}%</div>
+    <div class="stat-label">Called Verify</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" style="color:#c62828">{ab.get('pct_violated_verdict', 0):.0f}%</div>
+    <div class="stat-label">Violated INCORRECT Verdict</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{ab.get('pct_submit_failed', 0):.0f}%</div>
+    <div class="stat-label">Submit Failed ≥1</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">{ab.get('pct_hit_length', 0):.0f}%</div>
+    <div class="stat-label">Hit Token Limit</div>
+  </div>
+</div>
+<div style='margin:0.5rem 0'><strong>Status distribution:</strong> {status_html}</div>
+<div style='margin:0.5rem 0'><strong>Verify verdicts (of {ab.get('n_called_verify',0)} that called verify):</strong> {verdict_html or '—'}</div>
+"""
+
+    # ── Turns histogram ────────────────────────────────────────────
+    hist = ab.get("turns_histogram") or {}
+    max_count = max(hist.values(), default=1)
+    hist_bars = ""
+    for n_turns, count in sorted(hist.items()):
+        bar_w = max(3, int(count / max_count * 200))
+        hist_bars += (
+            f"<div style='display:flex;align-items:center;gap:8px;margin:2px 0;font-size:0.85rem'>"
+            f"<span style='width:40px;text-align:right;color:var(--muted)'>{n_turns}t</span>"
+            f"<div style='width:{bar_w}px;height:16px;background:var(--accent);border-radius:3px'></div>"
+            f"<span>{count}</span></div>"
+        )
+    hist_html = f"<h3 style='margin-top:1.5rem'>Turns Distribution</h3>{hist_bars}" if hist_bars else ""
+
+    # ── Tool usage frequency ────────────────────────────────────────
+    tool_usage = ab.get("tool_usage") or {}
+    tool_max = max(tool_usage.values(), default=1)
+    tool_bars = ""
+    tool_colors = {
+        "get_vulnerability_context": "var(--c5)",
+        "analyze_example_fix": "var(--c4)",
+        "verify_fix_correctness": "var(--c3)",
+        "submit_patch": "var(--c1)",
+    }
+    for tool, count in tool_usage.items():
+        bar_w = max(3, int(count / tool_max * 250))
+        label = _TOOL_LABELS.get(tool, tool)
+        color = tool_colors.get(tool, "var(--c2)")
+        tool_bars += (
+            f"<div style='display:flex;align-items:center;gap:8px;margin:3px 0;font-size:0.85rem'>"
+            f"<span style='width:130px;text-align:right;color:var(--muted);font-family:var(--font-mono);font-size:0.78rem'>{escape(label)}</span>"
+            f"<div style='width:{bar_w}px;height:16px;background:{color};border-radius:3px'></div>"
+            f"<span>{count}</span></div>"
+        )
+    tool_html = f"<h3 style='margin-top:1.5rem'>Tool Call Frequency</h3>{tool_bars}" if tool_bars else ""
+
+    # ── Per-CWE breakdown ───────────────────────────────────────────
+    cwe_rows = ""
+    for cwe, stats in sorted((ab.get("by_cwe") or {}).items()):
+        at = fmt(stats.get("avg_turns"), 1)
+        ab_score = stats.get("avg_bertscore")
+        cwe_rows += (
+            f"<tr>"
+            f"<td>{escape(cwe)}</td>"
+            f"<td>{stats['count']}</td>"
+            f"<td>{at}</td>"
+            f"<td>{fmt(stats.get('verify_rate'), 1)}%</td>"
+            f"<td style='color:{score_color(stats.get('violation_rate', 100)/100) if stats.get('violation_rate') is not None else ''}'>"
+            f"{fmt(stats.get('violation_rate'), 1)}%</td>"
+            f"<td>{fmt(stats.get('success_rate'), 1)}%</td>"
+            f"<td>{fmt(stats.get('submit_fail_rate'), 1)}%</td>"
+            f"<td style='color:{score_color(ab_score)}'>{fmt(ab_score, 3)}</td>"
+            f"</tr>\n"
+        )
+    cwe_html = ""
+    if cwe_rows:
+        cwe_html = f"""
+<h3 style='margin-top:1.5rem'>Per-CWE Agent Behavior</h3>
+<table>
+  <tr>
+    <th>CWE</th><th>N</th><th>Avg Turns</th>
+    <th>Verify %</th><th>Violation %</th><th>Success %</th>
+    <th>Submit Fail %</th><th>Avg BERTScore F1</th>
+  </tr>
+  {cwe_rows}
+</table>"""
+
+    # ── Verification violations table ───────────────────────────────
+    violations = ab.get("violations") or []
+    viol_rows = ""
+    for v in violations:
+        bs = v.get("bertscore_f1")
+        viol_rows += (
+            f"<tr>"
+            f"<td>{escape(v.get('query_cve',''))}</td>"
+            f"<td>{escape(v.get('query_cwe',''))}</td>"
+            f"<td>{escape(v.get('query_variant',''))}</td>"
+            f"<td style='color:#c62828;font-weight:600'>{escape(v.get('verify_verdict',''))}</td>"
+            f"<td>{v.get('n_turns','—')}</td>"
+            f"<td style='color:{score_color(bs)}'>{fmt(bs, 3)}</td>"
+            f"<td style='color:{score_color(v.get('bleu_4'))}'>{fmt(v.get('bleu_4'), 3)}</td>"
+            f"<td>{escape(v.get('status',''))}</td>"
+            f"</tr>\n"
+        )
+    viol_html = ""
+    if viol_rows:
+        viol_html = f"""
+<h3 style='margin-top:1.5rem;color:#c62828'>Verification Violations
+  <small style='font-weight:normal;color:var(--muted)'> — submitted after INCORRECT verdict</small>
+</h3>
+<p style='font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem'>
+  If BERTScore is still high here, the agent got it right despite ignoring the verdict.
+  Low scores confirm the verdict was correct.
+</p>
+<table>
+  <tr><th>CVE</th><th>CWE</th><th>Variant</th><th>Verdict</th><th>Turns</th><th>BERTScore F1</th><th>BLEU-4</th><th>Status</th></tr>
+  {viol_rows}
+</table>"""
+    elif ab.get("n_called_verify", 0) > 0:
+        viol_html = "<p style='color:#2e7d32;margin-top:1.5rem'>✓ No verification violations — agent always respected INCORRECT verdicts.</p>"
+
+    return f"""
+<h2>Agent Behavior Overview</h2>
+<p class='sub' style='margin-bottom:0.8rem'>
+  Covers <strong>{ab.get('records_with_behavior_data', 0)}</strong> of
+  {ab.get('total_records', 0)} records that have transcript data
+  (tool-calling architecture only).
+</p>
+{summary_html}
+<div style='display:flex;gap:3rem;flex-wrap:wrap;align-items:flex-start'>
+  <div>{hist_html}</div>
+  <div>{tool_html}</div>
+</div>
+{cwe_html}
+{viol_html}
+"""
+
+
 def _render_html(analysis: dict) -> str:
-    """Render the full two-tab HTML dashboard."""
+    """Render the full three-tab HTML dashboard."""
     records = analysis["records"]
     agg = analysis["aggregates"]
 
@@ -467,6 +641,40 @@ def _render_html(analysis: dict) -> str:
             </div>
             """
 
+        # Behavior timeline
+        behavior = rec.get("behavior") or {}
+        behavior_html = ""
+        if behavior.get("tool_sequence"):
+            step_icons = {
+                "get_vulnerability_context": "🔍",
+                "analyze_example_fix": "📖",
+                "verify_fix_correctness": "✅" if behavior.get("verify_verdict") != "INCORRECT" else "❌",
+                "submit_patch": "📤",
+            }
+            steps = " → ".join(
+                f"{step_icons.get(t, '🔧')}<code style='font-size:0.78rem'>{escape(_TOOL_LABELS.get(t, t))}</code>"
+                for t in behavior["tool_sequence"]
+            )
+            verify_note = ""
+            if behavior.get("verify_verdict"):
+                vcolor = {"CORRECT": "#2e7d32", "INCORRECT": "#c62828", "UNCERTAIN": "#f57c00"}.get(behavior["verify_verdict"], "#888")
+                verify_note = f" &nbsp; <span style='color:{vcolor};font-size:0.8rem'>verdict: <strong>{escape(behavior['verify_verdict'])}</strong></span>"
+                if behavior.get("submitted_after_incorrect"):
+                    verify_note += " <span style='color:#c62828;font-weight:bold;font-size:0.78rem'>[VIOLATED]</span>"
+            fail_note = ""
+            if behavior.get("submit_failed_once"):
+                fail_note = " &nbsp; <span style='color:#f57c00;font-size:0.78rem'>⚠ submit failed once</span>"
+            length_note = ""
+            if behavior.get("hit_length_limit"):
+                length_note = " &nbsp; <span style='color:#7209B7;font-size:0.78rem'>✂ hit token limit</span>"
+            behavior_html = (
+                f"<div style='margin:0.5rem 0;font-size:0.85rem;color:var(--muted)'>"
+                f"<strong>Agent:</strong> {behavior.get('n_turns','?')} turns, "
+                f"{behavior.get('n_tool_calls','?')} tool calls &nbsp;|&nbsp; {steps}"
+                f"{verify_note}{fail_note}{length_note}"
+                f"</div>"
+            )
+
         record_cards += f"""
         <details class="card" {'open' if i <= 3 else ''}>
           <summary>
@@ -491,6 +699,7 @@ def _render_html(analysis: dict) -> str:
               &nbsp;|&nbsp; Status: {escape(str(rec.get('status', '')))}
               &nbsp;|&nbsp; Elapsed: {fmt(rec.get('elapsed_s'), 2)}s
             </div>
+            {behavior_html}
             <table class="score-table">
               <tr><th>Metric</th><th>Value</th></tr>
               {score_rows}
@@ -526,6 +735,7 @@ def _render_html(analysis: dict) -> str:
 
     # ── Data Evaluation tab content ──────────────────────────────
     data_eval_content = _render_data_eval_tab(analysis)
+    agent_behavior_content = _render_agent_behavior_tab(analysis.get("agent_behavior", {}))
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -678,6 +888,7 @@ def _render_html(analysis: dict) -> str:
 <nav class="tab-nav">
   <button class="tab-btn active" data-tab="tab-test-eval">Test Data Evaluation</button>
   <button class="tab-btn" data-tab="tab-data-eval">Data Evaluation</button>
+  <button class="tab-btn" data-tab="tab-agent-behavior">Agent Behavior</button>
 </nav>
 
 <div class="content">
@@ -710,6 +921,10 @@ def _render_html(analysis: dict) -> str:
 
 <div id="tab-data-eval" class="tab-panel">
 {data_eval_content}
+</div>
+
+<div id="tab-agent-behavior" class="tab-panel">
+{agent_behavior_content}
 </div>
 
 </div>
