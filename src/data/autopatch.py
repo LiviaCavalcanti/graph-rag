@@ -133,11 +133,14 @@ class AutoPatchDataset(BaseDataset):
                     return gt_file.read_text(errors="replace")
 
         if gt_path_str:
-            gt_candidate = base_dir / gt_path_str if len(gt_path_str) < 260 else None
-            if gt_candidate is not None and gt_candidate.exists():
-                return gt_candidate.read_text(errors="replace")
+            # Detect inline code first (before any path operations) to avoid
+            # [Errno 36] File name too long when the content is short but
+            # contains newlines or other non-path characters.
             if "\n" in gt_path_str or len(gt_path_str) > 260:
                 return gt_path_str
+            gt_candidate = base_dir / gt_path_str
+            if gt_candidate.exists():
+                return gt_candidate.read_text(errors="replace")
 
         return None
 
