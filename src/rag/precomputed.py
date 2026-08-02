@@ -17,14 +17,19 @@ class PrecomputedRetriever:
     """Retriever backed by a results.jsonl file from ``--mode query``."""
 
     def __init__(self, query_results_path: Path):
-        self._lookup: dict[tuple[str, str], dict] = {}
+        # Key: (cve_id, variant, dir_name).  dir_name is included to avoid
+        # collisions when a CVE has multiple functions that all share the same
+        # (cve_id, variant) pair — without it only the last row wins.
+        # Old JSONL files (pre-fix) omit query_dir; they use dir_name="" and
+        # are handled by the fallback in retrieve().
+        self._lookup: dict[tuple[str, str, str], dict] = {}
         with open(query_results_path) as f:
             for line in f:
                 line = line.strip()
                 if not line:
                     continue
                 rec = json.loads(line)
-                key = (rec["query_cve"], rec.get("query_variant", ""))
+                key = (rec["query_cve"], rec.get("query_variant", ""), rec.get("query_dir", ""))
                 self._lookup[key] = rec
         print(f"PrecomputedRetriever: loaded {len(self._lookup)} query results")
 
@@ -34,8 +39,14 @@ class PrecomputedRetriever:
         Returns ``(example_pair | None, retrieval_info)`` — same contract as
         :meth:`OracleRetriever.retrieve`.
         """
-        key = (query_pair.cve_id, query_pair.meta.get("variant", ""))
-        rec = self._lookup.get(key)
+        variant = query_pair.meta.get("variant", "")
+        dir_name = query_pair.meta.get("dir_name", "")
+        # Try the precise 3-part key first (new JSONL files that store query_dir).
+        # Fall back to the legacy 2-part key (old files without query_dir) so
+        # that existing results.jsonl files remain usable.
+        rec = self._lookup.get((query_pair.cve_id, variant, dir_name))
+        if rec is None and dir_name:
+            rec = self._lookup.get((query_pair.cve_id, variant, ""))
         if rec is None or rec.get("status") not in ("retrieved", "success"):
             return None, {"cve_match": False, "cwe_match": False}
 
