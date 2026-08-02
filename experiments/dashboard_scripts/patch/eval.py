@@ -116,6 +116,18 @@ def _load_human_labels(run_dir: Path) -> dict[tuple[str, str], dict]:
     return index
 
 
+def _load_llm_judge(run_dir: Path) -> dict[tuple[str, str], dict]:
+    """Load LLM-as-a-Judge results if available (llm_judge_results.jsonl)."""
+    judge_path = run_dir / "llm_judge_results.jsonl"
+    if not judge_path.exists():
+        return {}
+    index: dict[tuple[str, str], dict] = {}
+    for entry in load_jsonl(judge_path):
+        key = (entry.get("query_cve", ""), entry.get("query_variant", ""))
+        index[key] = entry
+    return index
+
+
 def analyze(
     results_path: Path,
     evaluation_path: Path,
@@ -126,6 +138,7 @@ def analyze(
     evaluations = load_jsonl(evaluation_path)
     llm_eval_index = _load_llm_eval(results_path.parent)
     human_label_index = _load_human_labels(results_path.parent)
+    llm_judge_index = _load_llm_judge(results_path.parent)
 
     # Load language index from the precomputed split dir (if available)
     lang_index = _load_lang_index_from_run(results_path.parent)
@@ -168,6 +181,21 @@ def analyze(
             }
         else:
             rec["human_label"] = None
+
+        # Attach LLM-as-a-Judge result if available
+        jkey = (r.get("query_cve", ""), r.get("query_variant", ""))
+        jd = llm_judge_index.get(jkey)
+        if jd:
+            rec["llm_judge"] = {
+                "verdict": jd.get("verdict", ""),
+                "thought": jd.get("thought", ""),
+                "justification": jd.get("justification", ""),
+                "cwe_rubric": jd.get("cwe_rubric", ""),
+                "model": jd.get("model", ""),
+                "elapsed_s": jd.get("elapsed_s"),
+            }
+        else:
+            rec["llm_judge"] = None
 
         records.append(rec)
 
@@ -300,6 +328,42 @@ def analyze(
             "avg_hunk_f1": _lang_avg("hunk_f1"),
         }
 
+    # LLM-as-a-Judge summary
+    judge_summary = None
+    judge_records = [r for r in records if r.get("llm_judge")]
+    if judge_records:
+        j_counts: dict[str, int] = {}
+        for r in judge_records:
+            v = r["llm_judge"]["verdict"]
+            j_counts[v] = j_counts.get(v, 0) + 1
+        total_judged = len(judge_records)
+        # Per-CWE judge breakdown
+        j_by_cwe: dict[str, dict] = {}
+        for r in judge_records:
+            cwe = r.get("query_cwe") or "unknown"
+            if cwe not in j_by_cwe:
+                j_by_cwe[cwe] = {"total": 0, "valid": 0, "invalid": 0, "error": 0}
+            j_by_cwe[cwe]["total"] += 1
+            v = r["llm_judge"]["verdict"]
+            if v == "VALID":
+                j_by_cwe[cwe]["valid"] += 1
+            elif v == "INVALID":
+                j_by_cwe[cwe]["invalid"] += 1
+            else:
+                j_by_cwe[cwe]["error"] += 1
+        for stats in j_by_cwe.values():
+            t = stats["total"]
+            stats["valid_rate"] = round(stats["valid"] / t * 100, 1) if t else 0.0
+        judge_summary = {
+            "total": total_judged,
+            "counts": j_counts,
+            "valid": j_counts.get("VALID", 0),
+            "invalid": j_counts.get("INVALID", 0),
+            "errors": j_counts.get("ERROR", 0),
+            "valid_rate": round(j_counts.get("VALID", 0) / total_judged * 100, 1) if total_judged else 0.0,
+            "by_cwe": j_by_cwe,
+        }
+
     return {
         "source": {
             "results": str(results_path),
@@ -313,6 +377,7 @@ def analyze(
         "by_language": by_language_quality,
         "llm_evaluation": llm_summary,
         "human_evaluation": human_summary,
+        "llm_judge": judge_summary,
         "agent_behavior": aggregate_behavior(records),
         "records": records,
     }
