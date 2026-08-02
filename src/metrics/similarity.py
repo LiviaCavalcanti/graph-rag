@@ -234,6 +234,77 @@ def codebleu_weighted(gen: str, ref: str) -> float:
     )
 
 
+# ── diff-hunk (change-isolating) metrics ─────────────────────────────
+
+
+def _hunk_norm_lines(code: str) -> set[str]:
+    """Normalise code into a set of non-empty, whitespace-collapsed lines."""
+    out: set[str] = set()
+    for ln in code.splitlines():
+        s = re.sub(r"\s+", " ", ln).strip()
+        if s:
+            out.add(s)
+    return out
+
+
+def _set_f1(pred: set[str], gold: set[str]) -> float:
+    """F1 between two sets of lines (1.0 when both empty, 0.0 when only one is)."""
+    if not pred and not gold:
+        return 1.0
+    if not pred or not gold:
+        return 0.0
+    tp = len(pred & gold)
+    if tp == 0:
+        return 0.0
+    precision = tp / len(pred)
+    recall = tp / len(gold)
+    return 2 * precision * recall / (precision + recall)
+
+
+def diff_hunk_scores(gen: str, ref: str, baseline: str) -> dict[str, float]:
+    """Compare the *change* a patch makes against the *reference* change.
+
+    Whole-function metrics (BLEU/ROUGE/Jaccard) saturate because most lines are
+    copied verbatim from the vulnerable ``baseline``. These scores isolate the
+    fix itself — the lines added/removed relative to ``baseline`` — so they can
+    distinguish a patch that makes the *right* change from one that merely
+    echoes the surrounding code.
+
+    Returns an empty dict when ``baseline`` is unavailable (metric undefined).
+    Keys: ``hunk_added_f1``, ``hunk_removed_f1``, ``hunk_f1``, ``hunk_jaccard``,
+    ``hunk_token_jaccard``.
+    """
+    if not baseline.strip():
+        return {}
+
+    base = _hunk_norm_lines(baseline)
+    ref_lines = _hunk_norm_lines(ref)
+    gen_lines = _hunk_norm_lines(gen)
+
+    gold_added, gold_removed = ref_lines - base, base - ref_lines
+    gen_added, gen_removed = gen_lines - base, base - gen_lines
+    gold_changed = gold_added | gold_removed
+    gen_changed = gen_added | gen_removed
+
+    union_changed = gen_changed | gold_changed
+    hunk_jaccard = (
+        len(gen_changed & gold_changed) / len(union_changed) if union_changed else 1.0
+    )
+
+    gold_tok = set(tokenize(" ".join(sorted(gold_changed))))
+    gen_tok = set(tokenize(" ".join(sorted(gen_changed))))
+    tok_union = gold_tok | gen_tok
+    hunk_token_jaccard = len(gold_tok & gen_tok) / len(tok_union) if tok_union else 1.0
+
+    return {
+        "hunk_added_f1": _set_f1(gen_added, gold_added),
+        "hunk_removed_f1": _set_f1(gen_removed, gold_removed),
+        "hunk_f1": _set_f1(gen_changed, gold_changed),
+        "hunk_jaccard": hunk_jaccard,
+        "hunk_token_jaccard": hunk_token_jaccard,
+    }
+
+
 # ── diff details ─────────────────────────────────────────────────────
 
 
