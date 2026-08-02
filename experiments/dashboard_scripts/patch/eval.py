@@ -13,6 +13,7 @@ from pathlib import Path
 from statistics import mean
 
 from helpers import load_jsonl, load_input_code, load_ground_truth, summarize_metric
+from agent_behavior import extract_behavior, aggregate_behavior
 
 
 # ── core analysis ────────────────────────────────────────────────────
@@ -35,7 +36,7 @@ def build_record(result: dict, evaluation: dict, base_dir: Path) -> dict:
     metrics = evaluation.get("metrics_vs_function_body", {})
     size = evaluation.get("size_info", {})
 
-    return {
+    rec = {
         "query_cve": cve_id,
         "query_cwe": result.get("query_cwe"),
         "query_variant": variant,
@@ -57,7 +58,12 @@ def build_record(result: dict, evaluation: dict, base_dir: Path) -> dict:
         "size_info": size,
         "status": result.get("status"),
         "elapsed_s": result.get("elapsed_s"),
+        # raw result for agent behavior extraction
+        "_raw_result": result,
+        "behavior": None,
     }
+    rec["behavior"] = extract_behavior(rec)
+    return rec
 
 
 def _load_llm_eval(run_dir: Path) -> dict[tuple[str, str], dict]:
@@ -252,5 +258,6 @@ def analyze(
         "by_variant": variant_summary,
         "llm_evaluation": llm_summary,
         "human_evaluation": human_summary,
+        "agent_behavior": aggregate_behavior(records),
         "records": records,
     }
