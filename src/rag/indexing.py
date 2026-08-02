@@ -30,39 +30,51 @@ def build_index(cfg: dict) -> None:
             f"Embedding variant '{variant}' not found. Available embedders: {available}"
         )
 
-    index = FAISSIndex(
-        dim=cfg["embeddings"]["dim"],
-        index_path=rag_cfg["index_path"],
-        metadata_path=rag_cfg["metadata_path"],
-    )
+    index = None
 
     total = 0
     contract_batches: list[DatasetBatch] = []
     contract_embedded: list[EmbeddedBatch] = []
+
+    # Determine whether a train/test split should restrict the index to the
+    # support set only.  When enabled, query pairs are held out so retrieval
+    # metrics are measured on truly unseen examples.
+    split_cfg = cfg.get("experiment", {}).get("split", {})
+    split_enabled = bool(
+        split_cfg.get("enabled") or split_cfg.get("precomputed_split_dir")
+    )
+    if split_enabled:
+        from src.data.split import build_split
 
     datasets = _resolve_datasets(cfg)
     active_datasets = [ds_name for ds_name, _ds in datasets]
     for ds_name, dataset in datasets:
         print(f"-----------{dataset.name()}-----------")
 
-        # Pre-fit PCA-based embedders on full corpus before batched indexing.
-        # requires_fitting is True for all embedders that apply a data-dependent
-        # PCA projection (codebert_pattern, codebert_seq, combined, …).
-        # Fitting here on the COMPLETE index corpus is the training step;
-        # query/batch runs must load the persisted state instead of re-fitting.
+        # Always load all pairs upfront so we can (a) apply the split and
+        # (b) pre-fit PCA-based embedders.  For non-PCA embedders without a
+        # split this adds a small memory cost but keeps the code uniform.
+        all_pairs = list(dataset.stream())
+
+        if split_enabled:
+            all_pairs, _, split_info = build_split(all_pairs, cfg)
+            print(
+                f"  [split] Indexing {len(all_pairs)} support-set pairs "
+                f"({split_info.get('mode', 'split')} mode — query pairs excluded to prevent leakage)"
+            )
+
+        # Pre-fit PCA-based embedders on the support-set corpus (index pairs
+        # only when a split is active; full corpus otherwise).
         if indexer.requires_fitting:
             print(f"  [pre-fit] Loading all graphs to fit PCA embedder '{variant}'...")
-            all_pairs = list(dataset.stream())
             all_graphs = [p.G_vuln for p in all_pairs]
             indexer.fit(all_graphs)
             print(f"  [pre-fit] PCA fitted on {len(all_graphs)} graphs")
-        else:
-            all_pairs = None
 
         ds_total = 0
         batch_pairs = []
 
-        stream = iter(all_pairs) if all_pairs is not None else dataset.stream()
+        stream = iter(all_pairs)
         for pair in stream:
             try:
                 batch_pairs.append(pair)
@@ -72,6 +84,18 @@ def build_index(cfg: dict) -> None:
                     try:
                         graphs = [p.G_vuln for p in batch_pairs]
                         embeddings = indexer.embed_many(graphs)
+
+                        if index is None:
+                            index = FAISSIndex(
+                                dim=int(embeddings.shape[1]),
+                                index_path=rag_cfg["index_path"],
+                                metadata_path=rag_cfg["metadata_path"],
+                            )
+                        elif embeddings.shape[1] != index.dim:
+                            raise ValueError(
+                                f"Embedding dimension changed within index build: "
+                                f"expected {index.dim}, got {embeddings.shape[1]}"
+                            )
 
                         for p, emb in zip(batch_pairs, embeddings):
                             index.add(p, emb, variant)
@@ -93,6 +117,18 @@ def build_index(cfg: dict) -> None:
             try:
                 graphs = [p.G_vuln for p in batch_pairs]
                 embeddings = indexer.embed_many(graphs)
+
+                if index is None:
+                    index = FAISSIndex(
+                        dim=int(embeddings.shape[1]),
+                        index_path=rag_cfg["index_path"],
+                        metadata_path=rag_cfg["metadata_path"],
+                    )
+                elif embeddings.shape[1] != index.dim:
+                    raise ValueError(
+                        f"Embedding dimension changed within index build: "
+                        f"expected {index.dim}, got {embeddings.shape[1]}"
+                    )
 
                 for p, emb in zip(batch_pairs, embeddings):
                     index.add(p, emb, variant)
@@ -121,7 +157,7 @@ def build_index(cfg: dict) -> None:
                 run_id="index",
                 embedder_name=variant,
                 embedder_version=None,
-                dim=cfg["embeddings"]["dim"],
+                dim=index.dim if index is not None else cfg["embeddings"]["dim"],
                 pairs=[],
                 embeddings=[],
                 metadata={
@@ -130,6 +166,12 @@ def build_index(cfg: dict) -> None:
                     "embedded_count": ds_total,
                 },
             )
+        )
+
+    if index is None or total == 0:
+        raise RuntimeError(
+            "No vectors were added to the FAISS index. "
+            "Check the active dataset, split settings, or embedder output dimension."
         )
 
     index.save()
