@@ -112,7 +112,7 @@ def _build_index_and_retriever(
     When a fresh index is built it is saved into *run_dir* for reuse.
     """
     rag_cfg = cfg["rag"]
-    dim = cfg["embeddings"]["dim"]
+    configured_dim = cfg["embeddings"]["dim"]
 
     embedders = build_embedders(cfg)
     if embedder_name:
@@ -124,7 +124,13 @@ def _build_index_and_retriever(
         embedder = matches[0]
     else:
         embedder = embedders[0]
-    print(f"Using embedder: {embedder.name}  dim={dim}")
+    print(f"Using embedder: {embedder.name}  configured_dim={configured_dim}")
+
+    # --- fit embedder PCA (always needed for query-time embed_one) ---
+    graphs = [p.G_vuln for p in index_pairs]
+    print(f"Fitting embedder on {len(graphs)} index graphs...")
+    embeddings = embedder.embed_many(graphs)
+    effective_dim = int(embeddings.shape[1]) if len(embeddings) else configured_dim
 
     # --- try loading an existing index (run_dir first, then global) ---
     candidates: list[tuple[Path, Path]] = []
@@ -136,10 +142,10 @@ def _build_index_and_retriever(
     for idx_path, meta_path in candidates:
         if idx_path.exists() and meta_path.exists():
             trial = FAISSIndex(
-                dim=dim, index_path=str(idx_path), metadata_path=str(meta_path)
+                dim=effective_dim, index_path=str(idx_path), metadata_path=str(meta_path)
             )
             trial.load()
-            if trial.index.d == dim and trial.index.ntotal == len(index_pairs):
+            if trial.index.d == effective_dim and trial.index.ntotal == len(index_pairs):
                 print(
                     f"Loaded index from {idx_path}: {trial.index.ntotal} vectors, dim={trial.index.d}"
                 )
@@ -150,11 +156,6 @@ def _build_index_and_retriever(
                     f"Index at {idx_path} incompatible (d={trial.index.d}, n={trial.index.ntotal}), skipping..."
                 )
 
-    # --- fit embedder PCA (always needed for query-time embed_one) ---
-    graphs = [p.G_vuln for p in index_pairs]
-    print(f"Fitting embedder on {len(graphs)} index graphs...")
-    embeddings = embedder.embed_many(graphs)
-
     # --- build fresh index if none loaded ---
     if index is None:
         save_path = (
@@ -163,7 +164,7 @@ def _build_index_and_retriever(
         idx_path = save_path / "faiss.index"
         meta_path = save_path / "faiss_metadata.json"
         index = FAISSIndex(
-            dim=dim, index_path=str(idx_path), metadata_path=str(meta_path)
+            dim=effective_dim, index_path=str(idx_path), metadata_path=str(meta_path)
         )
         retriever = populate_index(
             index, index_pairs, embeddings, embedder.name, top_k=top_k
