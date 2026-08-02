@@ -84,13 +84,17 @@ def _precomputed_row(query_meta: dict, example_meta: dict | None, score: float) 
     }
 
 
-def _write_query_results(rows: list[dict], run_tag: str) -> Path:
+def _write_query_results(
+    rows: list[dict], run_tag: str, output_dir: Path | None = None
+) -> Path:
     """Write query-retrieval rows as results.jsonl in a new run dir.
 
     The output is consumable by ``--mode batch --query-run <run_dir>``
-    (src.rag.precomputed.PrecomputedRetriever).
+    (src.rag.precomputed.PrecomputedRetriever). ``output_dir`` overrides the
+    default ``experiments/output/`` base (e.g. to consolidate a multi-variant
+    sweep under one parent folder).
     """
-    _run_id, run_dir = make_run_dir(run_tag)
+    _run_id, run_dir = make_run_dir(run_tag, output_dir=output_dir)
     out_path = run_dir / "results.jsonl"
     with open(out_path, "w") as f:
         for row in rows:
@@ -166,19 +170,34 @@ def run_batch_query(cfg: dict, args):
       (default): live retrieval — embeds all pairs from cfg["data"]["active"]
         (needs CPGs) against the global index built by ``--mode index``.
     """
+    output_dir = Path(args.output_dir) if getattr(args, "output_dir", None) else None
     if args.index_dir:
         rows = _leave_one_out_from_index(
             Path(args.index_dir),
             args.embedding_variant or cfg["rag"]["embedding_variant"],
             args.max_queries,
         )
-        return _write_query_results(rows, "query_indexed")
+        return _write_query_results(rows, "query_indexed", output_dir=output_dir)
 
     from src.data import load_pairs
     from src.metrics.retrieval_eval import retrieve_all
     from src.rag.retriever import Retriever
 
     pairs = load_pairs(cfg)
+
+    # Apply train/test split when configured so we only query the held-out
+    # set (pairs NOT in the index).  Without this every query would find
+    # itself in the index — a guaranteed perfect hit that measures nothing.
+    split_cfg = cfg.get("experiment", {}).get("split", {})
+    if split_cfg.get("enabled") or split_cfg.get("precomputed_split_dir"):
+        from src.data.split import build_split
+
+        _, pairs, split_info = build_split(pairs, cfg)
+        print(
+            f"  [split] Querying {len(pairs)} held-out pairs "
+            f"({split_info.get('mode', 'split')} mode — index pairs excluded to prevent leakage)"
+        )
+
     if args.max_queries:
         pairs = pairs[: args.max_queries]
 
@@ -229,4 +248,4 @@ def run_batch_query(cfg: dict, args):
         )
         for pair, hits in query_results
     ]
-    return _write_query_results(rows, "query")
+    return _write_query_results(rows, "query", output_dir=output_dir)
