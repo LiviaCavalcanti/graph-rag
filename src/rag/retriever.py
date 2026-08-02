@@ -16,6 +16,13 @@ class Retriever:
     def query(self, embedding: np.ndarray, top_k: int | None = None) -> list[dict]:
         k = top_k or self.top_k
         vec = embedding.reshape(1, -1).astype(np.float32)
+        index_dim = int(getattr(self.index.index, "d", vec.shape[1]))
+
+        if vec.shape[1] != index_dim:
+            raise ValueError(
+                f"Query embedding dimension {vec.shape[1]} does not match index dimension {index_dim}. "
+                "Rebuild the index for this embedding variant or reload the matching embedder state."
+            )
 
         distances, indices = self.index.index.search(vec, k)
 
