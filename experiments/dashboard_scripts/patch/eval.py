@@ -13,7 +13,7 @@ from pathlib import Path
 from statistics import mean
 
 from helpers import load_jsonl, load_input_code, load_ground_truth, summarize_metric
-from agent_behavior import extract_behavior, aggregate_behavior
+from agent_behavior import extract_behavior, aggregate_behavior, load_language_index, infer_language
 
 
 # ── core analysis ────────────────────────────────────────────────────
@@ -61,9 +61,30 @@ def build_record(result: dict, evaluation: dict, base_dir: Path) -> dict:
         # raw result for agent behavior extraction
         "_raw_result": result,
         "behavior": None,
+        "language": None,
     }
     rec["behavior"] = extract_behavior(rec)
     return rec
+
+
+def _load_lang_index_from_run(run_dir: Path) -> dict:
+    """Load language index by finding the split dir from run_meta.json."""
+    import json as _json
+    meta_path = run_dir / "run_meta.json"
+    if not meta_path.exists():
+        return load_language_index(None)
+    try:
+        meta = _json.loads(meta_path.read_text())
+        split_dir = meta.get("split_info", {}).get("precomputed_split_dir")
+        if split_dir:
+            # Resolve relative path from repo root (CWD)
+            resolved = Path(split_dir)
+            if not resolved.is_absolute():
+                resolved = Path.cwd() / resolved
+            return load_language_index(resolved)
+    except Exception:
+        pass
+    return load_language_index(None)
 
 
 def _load_llm_eval(run_dir: Path) -> dict[tuple[str, str], dict]:
@@ -106,6 +127,9 @@ def analyze(
     llm_eval_index = _load_llm_eval(results_path.parent)
     human_label_index = _load_human_labels(results_path.parent)
 
+    # Load language index from the precomputed split dir (if available)
+    lang_index = _load_lang_index_from_run(results_path.parent)
+
     # Index evaluations by (query_cve, query_variant, query_dir).  Including
     # query_dir disambiguates multiple functions from the same CVE — without it
     # two CVE-XXXX/original entries collide and the last one silently wins.
@@ -119,6 +143,7 @@ def analyze(
         key = (r.get("query_cve", ""), r.get("query_variant", ""), r.get("query_dir", ""))
         ev = eval_index.get(key, {})
         rec = build_record(r, ev, base_dir)
+        rec["language"] = infer_language(rec, lang_index)
 
         # Attach LLM evaluation if available
         llm = llm_eval_index.get(key)
@@ -246,6 +271,35 @@ def analyze(
             ) if total_human else 0,
         }
 
+    # Per-language retrieval + quality breakdown
+    by_lang_groups: dict[str, list[dict]] = {}
+    for rec in records:
+        lang = rec.get("language") or "unknown"
+        by_lang_groups.setdefault(lang, []).append(rec)
+
+    by_language_quality: dict[str, dict] = {}
+    for lang, recs in sorted(by_lang_groups.items()):
+        n = len(recs)
+        def _lang_avg(key, _recs=recs):
+            vals = [r["scores"][key] for r in _recs if key in r.get("scores", {}) and isinstance(r["scores"].get(key), (int, float))]
+            return round(mean(vals), 4) if vals else None
+        n_cve_match = sum(1 for r in recs if r.get("retrieval", {}).get("cve_match"))
+        n_cwe_match = sum(1 for r in recs if r.get("retrieval", {}).get("cwe_match"))
+        n_success = sum(1 for r in recs if r.get("status") == "success")
+        sim_vals = [r.get("retrieval", {}).get("similarity") for r in recs
+                    if isinstance(r.get("retrieval", {}).get("similarity"), float)]
+        by_language_quality[lang] = {
+            "count": n,
+            "cve_match_rate": round(n_cve_match / n * 100, 1) if n else 0,
+            "cwe_match_rate": round(n_cwe_match / n * 100, 1) if n else 0,
+            "avg_retrieval_sim": round(mean(sim_vals), 4) if sim_vals else None,
+            "success_rate": round(n_success / n * 100, 1) if n else 0,
+            "avg_bleu_4": _lang_avg("bleu_4"),
+            "avg_bertscore_f1": _lang_avg("bertscore_f1"),
+            "avg_token_jaccard": _lang_avg("token_jaccard"),
+            "avg_hunk_f1": _lang_avg("hunk_f1"),
+        }
+
     return {
         "source": {
             "results": str(results_path),
@@ -256,6 +310,7 @@ def analyze(
         "aggregates": aggregates,
         "by_cwe": cwe_summary,
         "by_variant": variant_summary,
+        "by_language": by_language_quality,
         "llm_evaluation": llm_summary,
         "human_evaluation": human_summary,
         "agent_behavior": aggregate_behavior(records),
