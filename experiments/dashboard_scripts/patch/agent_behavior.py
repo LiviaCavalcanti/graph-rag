@@ -1,5 +1,5 @@
 """
-Agent behavior analysis — extracts and aggregates agent-level signals from the
+Agent behavior analysis -- extracts and aggregates agent-level signals from the
 ``transcript``, ``n_turns``, and ``n_tool_calls`` fields logged in results.jsonl.
 
 Answers questions such as:
@@ -66,7 +66,7 @@ def load_language_index(split_dir: str | Path | None) -> dict:
     except Exception:
         return index
 
-    # Find (cve_id, variant) groups where language is mixed — those need code fallback
+    # Find (cve_id, variant) groups where language is mixed -- those need code fallback
     from collections import defaultdict
     by_key: dict[tuple[str, str], set[str]] = defaultdict(set)
     for e in entries:
@@ -128,7 +128,7 @@ def extract_behavior(record: dict) -> dict:
     """
     Parse behavior signals from a single enriched record (as returned by
     ``build_record``).  Safe for records that have no ``transcript`` (e.g.
-    single-turn agents) — all fields default gracefully.
+    single-turn agents) -- all fields default gracefully.
     """
     raw = record.get("_raw_result", {})
     transcript: dict[str, Any] = raw.get("transcript") or {}
@@ -405,45 +405,12 @@ def aggregate_behavior(records: list[dict]) -> dict:
     }
 
 
-Answers questions such as:
-  - How many rounds/turns did the agent take per case and per CWE?
-  - Did the agent call verify_fix_correctness?
-  - Did it respect an INCORRECT verdict or submit anyway?
-  - How often did submit_patch fail (SEARCH block not found) before succeeding?
-  - Do these patterns correlate with patch quality (BERTScore)?
-"""
-
-from __future__ import annotations
-
-import re
-from collections import Counter
-from statistics import mean, median
-from typing import Any
-
-
-_TOOL_ORDER = [
-    "get_vulnerability_context",
-    "analyze_example_fix",
-    "verify_fix_correctness",
-    "submit_patch",
-]
-
-_TOOL_LABELS = {
-    "get_vulnerability_context": "get_vuln_ctx",
-    "analyze_example_fix": "analyze_example",
-    "verify_fix_correctness": "verify",
-    "submit_patch": "submit",
-}
-
-_VERDICT_RE = re.compile(r"VERDICT:\s*(CORRECT|INCORRECT|UNCERTAIN)", re.IGNORECASE)
-_SUBMIT_ERROR_RE = re.compile(r"Error:.*SEARCH block", re.IGNORECASE)
-
 
 def extract_behavior(record: dict) -> dict:
     """
     Parse behavior signals from a single enriched record (as returned by
     ``build_record``).  Safe for records that have no ``transcript`` (e.g.
-    single-turn agents) — all fields default gracefully.
+    single-turn agents) -- all fields default gracefully.
     """
     raw = record.get("_raw_result", {})
     transcript: dict[str, Any] = raw.get("transcript") or {}
